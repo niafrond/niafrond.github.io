@@ -6,8 +6,8 @@
  * l'URL, donc installe un nouveau service worker, sans rien à synchroniser dans ce fichier.
  *
  * Deux caches (liste des fichiers : precache-manifest.json, généré par tools/precache-manifest.mjs) :
- *   - match3-core-v<build>  : code, css, polices, données, effets sonores ; rempli à l'installation, un par build, purgé à l'activation.
- *   - match3-media-v1       : musiques, sprites GBA (sprites/gba/) et dessins des cinématiques, sorts et ultimes (≈ 120 Mo) ; survit aux builds, indexé par chemin
+ *   - houyi-core-v<build>  : code, css, polices, données, effets sonores ; rempli à l'installation, un par build, purgé à l'activation.
+ *   - houyi-media-v1       : musiques, sprites GBA (sprites/gba/) et dessins des cinématiques, sorts et ultimes (≈ 120 Mo) ; survit aux builds, indexé par chemin
  *                             (sans `?v=`) ; à l'installation seuls les fichiers déjà présents dont l'empreinte a changé sont retéléchargés.
  *                             Rempli au fil des demandes du jeu et par le pré-téléchargement en arrière-plan (offlineCache.js).
  *
@@ -18,10 +18,10 @@
 'use strict';
 
 var BUILD = new URL(self.location.href).searchParams.get('v') || '0';
-var CORE_CACHE = 'match3-core-v' + BUILD;
-var MEDIA_CACHE = 'match3-media-v1';
-var CACHE_PREFIX = 'match3-core-v';
-var SCOPE_PATH = new URL(self.registration.scope).pathname;          // « /match3-quest/ »
+var CORE_CACHE = 'houyi-core-v' + BUILD;
+var MEDIA_CACHE = 'houyi-media-v1';
+var CACHE_PREFIX = 'houyi-core-v';
+var SCOPE_PATH = new URL(self.registration.scope).pathname;          // « /houyi/ »
 var ORIGIN = self.location.origin;
 var MANIFEST_PATH = SCOPE_PATH + 'precache-manifest.json';
 var VERSION_PATH = '/version.js';                                    // à la racine du site, réécrit à chaque release

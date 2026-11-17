@@ -15,7 +15,7 @@ import { setMusicEnvironment, setMusicScene, stopMusic, preloadMusic } from "./m
 import { getUltimateById, playUltimateCinematic } from "./ultimates.js";
 import { registerServiceWorkerWhenLoaded, createPrefetcher, startBackgroundPrefetch, bindOfflineOptions } from "./offlineCache.js";
 import { proposeTutorial, initTutorialUI, startTutorial, hasTutorialBeenCompleted } from "./tutorial.js";
-import { getMatch3BuildDate, getMatch3Version } from "./version.js";
+import { getHouyiBuildDate, getHouyiVersion } from "./version.js";
 import { rechargeReusableItems, allItems } from "./items.js";
 import { getOption, animationsEnabled, effectsLevel, setOption, applyOptions, vibrate, canVibrate, armVibration } from "./gameOptions.js";
 import { realPlayTimeStats, formatDuration, startPlayTimeTracking } from "./playTime.js";
@@ -40,7 +40,7 @@ import { readLastPlayed, touchLastPlayed, isLongAbsence, buildRecap, absenceDays
 // initialisation de la partie
 console.log('Main.js loaded');
 
-const THEME_STORAGE_KEY = 'match3Theme';
+const THEME_STORAGE_KEY = 'houyiTheme';
 
 function setThemeMode(isDarkMode, toggleButton){
     document.body.classList.toggle('dark-mode', isDarkMode);
@@ -136,7 +136,7 @@ function showClassSelection() {
 
         // Nouvelle partie : pas de question, le tutoriel est le duel contre Fengmeng.
         modal.classList.remove('active');
-        window.dispatchEvent(new Event('match3:start-tutorial-duel'));
+        window.dispatchEvent(new Event('houyi:start-tutorial-duel'));
     };
 
     modal.classList.add('active');
@@ -198,7 +198,7 @@ function init() {
         onOpenMap: () => showWorldMap(),
         onOpenArena: () => openArena(),
         onExportSave: () => {
-            const res = exportSaveToFile(player, getMatch3Version());
+            const res = exportSaveToFile(player, getHouyiVersion());
             if(!res.success) return false;
             downloadSaveFile(res.blob, res.filename);
             log(res.message);
@@ -212,7 +212,7 @@ function init() {
     // Musique d'ambiance (pentatonique chinoise, music.js) : la scène voulue se déduit de l'état de l'interface.
     setMusicEnvironment({ getContext: getSharedAudioContext, getVolume: getMusicVolume, isMuted: isMusicMuted });
     let lastCombatVictory = true;   // issue du dernier combat : choisit la musique de l'écran de résultat
-    let pendingFight = null;        // musique du combat annoncé par l'animation d'entrée (match3:encounter-start), jouée dès son début
+    let pendingFight = null;        // musique du combat annoncé par l'animation d'entrée (houyi:encounter-start), jouée dès son début
     const desiredMusic = () => {
         if(document.querySelector('.cine-ending, .cine-credits')) return ['ending'];   // l'animation de fin et le générique partagent la musique de fin
         if(document.querySelector('.title-screen, .cine-overlay')) return ['title'];
@@ -250,7 +250,7 @@ function init() {
     };
     setInterval(() => { if(!document.hidden) syncMusic(); }, 400);   // inutile onglet masqué (batterie)
     // Interaction avec un ennemi sur la carte : la musique de combat se lance à l'instant, sans attendre le prochain passage du minuteur.
-    window.addEventListener('match3:encounter-start', e => {
+    window.addEventListener('houyi:encounter-start', e => {
         pendingFight = e.detail?.scene ? [e.detail.scene, e.detail.options || {}] : null;
         if(pendingFight) syncMusic();
     });
@@ -334,14 +334,14 @@ function init() {
     companionMenuHooks.setActive = id => exploration.setActiveCompanion(id);
     combatHooks.onVictory = () => exploration.onCombatVictory();
     combatHooks.onEnd = isVictory => { lastCombatVictory = !!isVictory; exploration.onCombatEnd(isVictory); };
-    window.addEventListener('match3:enter-exploration', enterExploration);
+    window.addEventListener('houyi:enter-exploration', enterExploration);
     // Nouvelle partie, classe choisie : on enchaîne directement sur le duel-tutoriel contre Fengmeng.
-    window.addEventListener('match3:start-tutorial-duel', () => {
+    window.addEventListener('houyi:start-tutorial-duel', () => {
         enterExploration();
         exploration.startTutorialDuel('fengmeng_1');
     });
     // Tout combat (y compris le tutoriel) masque la carte.
-    window.addEventListener('match3:combat-start', () => {
+    window.addEventListener('houyi:combat-start', () => {
         syncMusic();   // combat lancé hors de la carte : pas d'attente du minuteur
         exploration.hide();
     });
@@ -442,7 +442,7 @@ function init() {
 
     // Sauvegarde dans un fichier : permet de reprendre la partie sur un autre appareil.
     document.getElementById('save-export-btn')?.addEventListener('click', () => {
-        const res = exportSaveToFile(player, getMatch3Version());
+        const res = exportSaveToFile(player, getHouyiVersion());
         if(res.success) { downloadSaveFile(res.blob, res.filename); log(res.message); }
         else alert(res.message);
     });

@@ -1,4 +1,4 @@
-// Recherche d'équilibrage par simulation (tools/combatSim.mjs). Usage : node match3-quest/tools/balance-search.mjs [rates|search] [combats]
+// Recherche d'équilibrage par simulation (tools/combatSim.mjs). Usage : node houyi/tools/balance-search.mjs [rates|search] [combats]
 // 1. rates : mesure, par niveau, les dégâts effectifs du héros par cycle et les dégâts bruts de l'ennemi par cycle (avant calibrage).
 // 2. search : avec ces taux, cherche pour chaque catégorie le rapport ENEMY_WIN_RATIO qui donne le taux de victoire visé, puis vérifie
 //    durée (cycles × 30 s) et victoires sur des combats calibrés comme dans le jeu.

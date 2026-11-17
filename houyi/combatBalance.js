@@ -3,7 +3,7 @@
 // (un tour du joueur + un tour de l'ennemi) et les dégâts effectifs, puis `summarizeCombats` en tire la durée moyenne d'un cycle et les dégâts par cycle.
 // Module pur (sans DOM) ; seul le stockage local est protégé par try/catch.
 
-export const COMBAT_STATS_STORAGE_KEY = 'match3quest.combatStats';
+export const COMBAT_STATS_STORAGE_KEY = 'houyi.combatStats';
 export const THINK_PAUSE_CAP_MS = 20000;   // entre deux événements du combat, au-delà de 20 s on considère que le joueur réfléchit : l'excédent n'est pas compté
 export const COMBAT_STATS_KEEP = 60;   // combats gardés (les plus récents)
 

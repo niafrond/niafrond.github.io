@@ -96,7 +96,7 @@ const workflow = (prompt, seed, [width, height]) => ({
   5: { class_type: 'EmptyLatentImage', inputs: { width, height, batch_size: 1 } },
   6: { class_type: 'KSampler', inputs: { model: ['2', 0], positive: ['3', 0], negative: ['4', 0], latent_image: ['5', 0], seed, steps: STEPS, cfg: CFG, sampler_name: 'euler', scheduler: 'normal', denoise: 1 } },
   7: { class_type: 'VAEDecode', inputs: { samples: ['6', 0], vae: ['1', 2] } },
-  8: { class_type: 'SaveImage', inputs: { images: ['7', 0], filename_prefix: 'match3-winter-decor/s' } }
+  8: { class_type: 'SaveImage', inputs: { images: ['7', 0], filename_prefix: 'houyi-winter-decor/s' } }
 });
 
 // Moteur FLUX.2 Klein 4B (--flux) : texte → image bien plus propre que SDXL (objet isolé, pas de décor parasite) ; même détourage et même réduction ensuite.
@@ -114,7 +114,7 @@ const workflowFlux = (prompt, seed, [width, height]) => ({
   16: { class_type: 'RandomNoise', inputs: { noise_seed: seed } },
   17: { class_type: 'SamplerCustomAdvanced', inputs: { noise: ['16', 0], guider: ['14', 0], sampler: ['15', 0], sigmas: ['13', 0], latent_image: ['12', 0] } },
   18: { class_type: 'VAEDecode', inputs: { samples: ['17', 0], vae: ['4', 0] } },
-  19: { class_type: 'SaveImage', inputs: { images: ['18', 0], filename_prefix: 'match3-winter-decor/f' } }
+  19: { class_type: 'SaveImage', inputs: { images: ['18', 0], filename_prefix: 'houyi-winter-decor/f' } }
 });
 const FLUX_STYLE = (view, desc) => `A single game sprite in crisp retro 16-bit pixel art style: ${desc}. ${view}. Bold dark outline, chunky visible pixels, rich shading with highlights, saturated warm festive colors. ` +
   'The object is alone and centered, fully visible with a wide margin around it, on a perfectly flat plain solid medium gray (#808080) background, no ground, no shadow, no scenery.';

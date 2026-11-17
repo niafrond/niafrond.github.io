@@ -10,8 +10,8 @@ données (cartes, textes, sprites, pistes audio), sauvegardes.
 - `SAUVEGARDE.md` et `saveManager.js` (migration des sauvegardes), `.github/workflows/ci.yml`.
 
 ## Commandes
-- Unitaires : `npm run test:unit` (racine du dépôt ; projet `match3-quest-node`).
-- E2E : `npm run test:e2e` (projet `match3-quest-mobile`, Pixel 5 émulé, CPU ralenti).
+- Unitaires : `npm run test:unit` (racine du dépôt ; projet `houyi-node`).
+- E2E : `npm run test:e2e` (projet `houyi-mobile`, Pixel 5 émulé, CPU ralenti).
 - Ne jamais lancer `playwright install` (Chromium est déjà fourni).
 
 ## Responsabilités

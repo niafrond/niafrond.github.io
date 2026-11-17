@@ -2,10 +2,10 @@
 // Avec COMPANION_SHOTS=<dossier>, des captures (à l'arrêt, en marche, après un virage) y sont enregistrées pour relecture visuelle.
 import { test, expect } from '@playwright/test';
 
-const URL = '/match3-quest/';
+const URL = '/houyi/';
 const loaded = page => page.waitForFunction(() => !document.getElementById('loading-screen')?.classList.contains('visible'), null, { timeout: 30_000 });
 
-test.describe('match3-quest · compagnon suiveur', () => {
+test.describe('houyi · compagnon suiveur', () => {
     test.setTimeout(120_000);
 
     test('Xiao Gui suit le héros à la trace sans erreur', async ({ page }) => {

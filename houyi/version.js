@@ -1,1 +1,1 @@
-export { SITE_SEMVER as MATCH3_SEMVER, getVersion as getMatch3Version, getBuildDate as getMatch3BuildDate } from '../version.js';
+export { SITE_SEMVER as HOUYI_SEMVER, getVersion as getHouyiVersion, getBuildDate as getHouyiBuildDate } from '../version.js';

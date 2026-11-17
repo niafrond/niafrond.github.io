@@ -6,7 +6,7 @@ Pilote l'API REST d'[ACE-Step 1.5](https://github.com/ace-step/ACE-Step-1.5) pou
 
 ## Prérequis
 1. Serveur ACE-Step lancé en local par **game-maker** (dans WSL) : `tools/gm up audio` (port 8001). Node ≥ 18. `ffmpeg` pour `install`.
-2. Se placer dans ce dossier : `cd match3-quest/tools/audio/acestep`. Aucune dépendance npm.
+2. Se placer dans ce dossier : `cd houyi/tools/audio/acestep`. Aucune dépendance npm.
 
 ## Installation (WSL Ubuntu-22.04, GPU NVIDIA)
 ACE-Step n'est plus installé ici : il vit dans **game-maker** (`/mnt/c/Users/Niafrond/dev/game-maker`, voir son `README.md`) avec le reste de la pile IA locale.
@@ -51,7 +51,7 @@ node generate.mjs install                         # approved/ -> audio/music/*.m
 - `approved/` : pistes retenues + `.json` (prompt, graine, paramètres) + `approved.json` ; seuls les `.json` sont versionnés (MP3 sources ignorés, trop lourds : voir `export`).
 
 ## Export vers Google Drive
-`node generate.mjs export` copie les pistes approuvées dans `D:\GoogleDriveCFO\musicMatchQuest\v<AAAA-MM-JJ_HHMM>\` (côté WSL : `/mnt/d/GoogleDriveCFO/musicMatchQuest`). Chaque export crée un dossier horodaté ; `--dest DIR` change la destination.
+`node generate.mjs export` copie les pistes approuvées dans `D:\GoogleDriveCFO\musicHouyi\v<AAAA-MM-JJ_HHMM>\` (côté WSL : `/mnt/d/GoogleDriveCFO/musicHouyi`). Chaque export crée un dossier horodaté ; `--dest DIR` change la destination.
 
 ## Limites à connaître
 - Un prompt texte ne reproduit pas les mêmes notes d'un morceau à l'autre : la référence audio réduit l'écart, sans le supprimer.

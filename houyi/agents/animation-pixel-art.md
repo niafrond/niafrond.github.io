@@ -61,7 +61,7 @@ appelé par `explorationView.js` (`paintGroundCells`, `drawBuilding`, bloc `bloc
 - Interdits dans les SVG : `<text>`, emoji, caractères non ASCII, `<image>`, ressource externe, `<script>`, `style` externe,
   animation SMIL interne (les images sont séquencées par le moteur). Ids de dégradés préfixés par la clé du sprite.
 - Poids : ≤ 6 000 caractères par image SVG (max 9 000) ; regrouper en paquets par région (`cn/`), régénérer l'index avec
-  `node match3-quest/sprites/build-packs.mjs`.
+  `node houyi/sprites/build-packs.mjs`.
 - Respecter `prefers-reduced-motion` : prévoir une image fixe de repli pour chaque animation décorative.
 - Une clé d'ennemi nommé (boss, rival) prime sur la clé de son gabarit.
 

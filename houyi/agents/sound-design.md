@@ -11,7 +11,7 @@ l'esthétique chinoise (gongs, bois, cordes pincées, clochettes, jade).
 - `audio/manifest.json`.
 
 ## Responsabilités
-- Recettes dans `sfxRecipes.js` ; rendu `node match3-quest/tools/audio/render.mjs --sfx` (ou `--only=clé`).
+- Recettes dans `sfxRecipes.js` ; rendu `node houyi/tools/audio/render.mjs --sfx` (ou `--only=clé`).
 - Hiérarchie sonore : feedback de match > sorts > UI > ambiance ; un son doit être identifiable en <150 ms.
 - Variantes pour éviter la fatigue (les matches fréquents), progression de hauteur avec la longueur et les cascades.
 - Distinction nette joueur / ennemi, victoire / défaite, sort offensif / soin.

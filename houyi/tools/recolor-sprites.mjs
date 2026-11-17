@@ -3,7 +3,7 @@
  * Dérive les sprites des classes (templar, barbarian, assassin, sorcerer)
  * depuis les sprites archer par rotation de teinte HSL.
  *
- * Usage : node match3-quest/tools/recolor-sprites.mjs
+ * Usage : node houyi/tools/recolor-sprites.mjs
  */
 
 import { readFileSync, writeFileSync, mkdirSync } from 'fs';
@@ -142,9 +142,9 @@ for (const [cls, { hueShift, satScale, label }] of Object.entries(CLASS_RECOLOR)
 
 // Réécrit generated.js en préservant l'archer et les autres persos
 const lines = [
-  '// Généré par match3-quest/tools/gen-sprites.mjs — ne pas éditer à la main',
+  '// Généré par houyi/tools/gen-sprites.mjs — ne pas éditer à la main',
   `// Dernière mise à jour : ${new Date().toISOString().slice(0, 10)}`,
-  '// Lancez: node match3-quest/tools/gen-sprites.mjs --only=all --dir=all',
+  '// Lancez: node houyi/tools/gen-sprites.mjs --only=all --dir=all',
   'export const GBA_SPRITES = {',
 ];
 for (const [key, dirs] of Object.entries(sprites)) {

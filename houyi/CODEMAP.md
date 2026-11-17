@@ -42,7 +42,7 @@ Objectif : localiser un module sans lire de gros fichiers. Consulter cette carte
 - `companionMoves.js` — Choix « ultra smart » du coup supplémentaire de Xiao Gui (logique pure, sans DOM ; appliqué par board.js : foxMakeRandomMove).
 - `companionPowers.js` — Pouvoirs de combat des compagnons (données pures et tirage, sans DOM ; appliqués par game.js : applyCompanionPowers).
 - `companionTrail.js` — (sans description)
-- `companions.js` — Compagnons de route et dialogues contextuels de Match3-Quest (données pures, sans DOM ; propriétaire : agent Scénario).
+- `companions.js` — Compagnons de route et dialogues contextuels de Houyi (données pures, sans DOM ; propriétaire : agent Scénario).
 - `compareView.js` — Comparaison de deux sorts, armes ou stuffs : bouton « Comparer » sur chaque ligne (1er clic = référence, 2e clic = tableau comparatif).
 - `constants.js` — Constantes globales utilisées par le jeu
 - `creatureScale.js` — Échelle des ennemis et des boss sur la carte d'exploration (module pur, aucun DOM).
@@ -113,7 +113,7 @@ Objectif : localiser un module sans lire de gros fichiers. Consulter cette carte
 - `spellFx.js` — (sans description)
 - `spells.js` — Catalogue des sorts charge depuis spells.json
 - `statusBadges.js` — Bonus / malus actifs d'un combattant, affichés en pastilles sur sa carte (survol ou appui long = explication).
-- `story.js` — Histoire et cartes d'exploration de Match3-Quest : « La Légende de Hou Yi ».
+- `story.js` — Histoire et cartes d'exploration de Houyi : « La Légende de Hou Yi ».
 - `storyMirror.js` — Le miroir brisé de Chang'e : interludes joués après chaque soleil abattu (MIRROR_TALKS) et orateur de Fengmeng.
 - `storyQuests.js` — Quêtes de base de l'histoire : histoire principale puis quêtes annexes. Données pures, extraites de story.js.
 - `storyScreens.js` — Écrans de base de l'histoire (un par région/sanctuaire : décor, PNJ, ennemis, coffres, sorties).
@@ -124,7 +124,7 @@ Objectif : localiser un module sans lire de gros fichiers. Consulter cette carte
 - `stuffView.js` — Onglet « Stuff » : casque, collier, bracelet et bague (stuff.js). Affichage et actions du joueur ; la logique est dans stuff.js.
 - `sw.js` — (sans description)
 - `terrain.js` — Préparation du terrain et règles de biome. Module pur (aucun DOM) : exploration.js, game.js et board.js l'appliquent.
-- `test-localstorage.js` — Test du système de localStorage pour Match3-Quest
+- `test-localstorage.js` — Test du système de localStorage pour Houyi
 - `tileBitmaps.js` — Tuiles du plateau en bitmap. Chaque tuile est un <div> dont le fond est un SVG (≈ 40 primitives vectorielles : cercles tracés, dégradé radia
 - `tilePainter.js` — Rendu « tuiles à la Pokémon (GBA) » de l'exploration : herbe en nappes de tons, chemins et étangs aux coins arrondis et aux
 - `tilePainterBuildings.js` — Bâtiments de la vue d exploration (maisons, toits, portes). Extrait de tilePainter.js.

@@ -210,5 +210,5 @@ recouvertes plus tard par du décor, de l'eau ou un bâtiment sont retirées de 
 Le moteur de rencontre (exploration.js) est indépendant de ce format.
 
 ### 9.6 Outil d'aperçu
-`node match3-quest/tools/map-preview.mjs <screenId>` : carte assemblée en ASCII (règles de coordonnées), statistiques, entités et éléments
+`node houyi/tools/map-preview.mjs <screenId>` : carte assemblée en ASCII (règles de coordonnées), statistiques, entités et éléments
 inatteignables à pied depuis l'apparition (avertissement). `--all` : résumé de tous les écrans de plein air ; `--json` ; `--routes` ; `--no-entities`.

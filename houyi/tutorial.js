@@ -33,7 +33,7 @@ export const tutorialCallbacks = {
 // ─── Constantes internes ───────────────────────────────────────────────────
 const TOTAL_STEPS = 14;
 const TUTO_SPELL_ID = 'tutorial_fireball';
-const TUTORIAL_COMPLETED_KEY = 'match3_tutorial_done';
+const TUTORIAL_COMPLETED_KEY = 'houyi_tutorial_done';
 const ENEMY_FINISH_HP = 10;      // PV laissés à l'adversaire après le sort : le dernier coup (3 crânes) l'achève
 const COLORS = ['red', 'blue', 'green', 'yellow', 'purple'];
 const COLOR_FR = { red: 'rouges', blue: 'bleus', green: 'verts', yellow: 'jaunes', purple: 'violets' };

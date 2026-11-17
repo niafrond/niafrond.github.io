@@ -222,7 +222,7 @@ describe('ennemis nommés (gabarits copyOf) : dessin dédié', () => {
 });
 
 describe('sprites GBA découpés par clé (sprites/build-gba.mjs), chargés avec leur région', () => {
-    test('le découpage est à jour avec sprites/generated.js (sinon : node match3-quest/sprites/build-gba.mjs)', () => {
+    test('le découpage est à jour avec sprites/generated.js (sinon : node houyi/sprites/build-gba.mjs)', () => {
         const { files, index } = splitGba();
         expect(readFileSync(new URL('../../sprites/gbaIndex.js', import.meta.url), 'utf8')).toBe(index);
         expect(readdirSync(GBA_DIR).sort()).toEqual(Object.keys(files).sort());

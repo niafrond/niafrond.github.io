@@ -17,7 +17,7 @@ describe('options d\'affichage', () => {
         expect(setOption('speed', 'turbo')).toBe(false);
         expect(setOption('inconnue', 1)).toBe(false);
         expect(setOption('speed', 'fast')).toBe(true);
-        expect(JSON.parse(localStorage.getItem('match3quest.options')).speed).toBe('fast');
+        expect(JSON.parse(localStorage.getItem('houyi.options')).speed).toBe('fast');
     });
 
     test('vitesse : facteur de durée', () => {
@@ -192,7 +192,7 @@ describe('animations et prefers-reduced-motion', () => {
     test('rappel de pause activé par défaut et mémorisé', () => {
         expect(getOption('breakReminder')).toBe(true);
         setOption('breakReminder', false);
-        expect(JSON.parse(localStorage.getItem('match3quest.options')).breakReminder).toBe(false);
+        expect(JSON.parse(localStorage.getItem('houyi.options')).breakReminder).toBe(false);
         setOption('breakReminder', true);
     });
 

@@ -23,7 +23,7 @@
  *   preloadMusic(sceneId, options)  Télécharge et décode la piste d'une scène sans la jouer (combat : prête avant le contact avec l'ennemi).
  */
 import { SCENE_IDS, BIOMES, trackCandidates, trackUrl, playlist } from './musicTracks.js';
-import { getMatch3Version } from './version.js';
+import { getHouyiVersion } from './version.js';
 
 export { SCENE_IDS, BIOMES };
 
@@ -107,7 +107,7 @@ async function loadTrack(ctx, key) {
     const promise = (async () => {
         try {
             // `?v=<version>` : à chaque release le navigateur retélécharge la piste, jamais une ancienne copie en cache
-            const res = await doFetch(`${resolveUrl(trackUrl(key))}?v=${getMatch3Version()}`);
+            const res = await doFetch(`${resolveUrl(trackUrl(key))}?v=${getHouyiVersion()}`);
             if (!res || !res.ok) throw new Error(`HTTP ${res && res.status}`);
             const buf = await decode(ctx, await res.arrayBuffer());
             S.cache.set(key, buf);
@@ -171,7 +171,7 @@ function openStream(key) {
         el.preload = 'auto';
         el.loop = true;
         // `?v=<version>` : à chaque release le navigateur retélécharge la piste, jamais une ancienne copie en cache
-        el.src = `${resolveUrl(trackUrl(key))}?v=${getMatch3Version()}`;
+        el.src = `${resolveUrl(trackUrl(key))}?v=${getHouyiVersion()}`;
         el.load();
     });
     return { key, el };

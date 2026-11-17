@@ -82,7 +82,7 @@ multiplie pas les dégâts ni les statistiques ; les chances finales restent pla
 malus, et la règle est la même pour le joueur et pour l'ennemi.
 
 Avant le lot 2, le bonus était multiplicatif (×1,35 à ×4) : une statistique brute de 33 passait à 98 % dès 3 niveaux
-d'écart. Comparaison reproductible : `node match3-quest/tools/simulate-level-edge.mjs`.
+d'écart. Comparaison reproductible : `node houyi/tools/simulate-level-edge.mjs`.
 
 L'avantage est annoncé dans le journal au début du combat (« 2 niveaux d'avance : +12 % de critique et de blocage »).
 

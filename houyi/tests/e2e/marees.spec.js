@@ -2,14 +2,14 @@
 // Avec MAREES_SHOTS=<dossier>, une capture de chaque écran y est enregistrée (relecture visuelle).
 import { test, expect } from '@playwright/test';
 
-const URL = '/match3-quest/';
+const URL = '/houyi/';
 const SCREENS = [
     ['marees_road', 8, 10], ['marees_village', 2, 12], ['marees_wild', 2, 12], ['marees', 3, 10]
 ];
 
 const loaded = page => page.waitForFunction(() => !document.getElementById('loading-screen')?.classList.contains('visible'), null, { timeout: 30_000 });
 
-test.describe('match3-quest · Hautes-Eaux', () => {
+test.describe('houyi · Hautes-Eaux', () => {
     test.setTimeout(90_000);
 
     for (const [id, x, y] of SCREENS) {

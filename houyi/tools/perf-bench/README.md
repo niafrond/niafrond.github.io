@@ -1,4 +1,4 @@
-# perf-bench — mesurer la fluidité de match3-quest
+# perf-bench — mesurer la fluidité de houyi
 
 Scripts Playwright utilisés pour le chantier « vieux téléphones » (voir `docs/PERF-ETAT-DES-LIEUX.md`). Ils pilotent un vrai Chromium, ralentissent
 le CPU (CDP) et mesurent images/s, blocage du thread principal, déplacement réel de la caméra et fonctions les plus coûteuses.
@@ -15,7 +15,7 @@ export CHROMIUM_ARGS="--no-sandbox"                 # facultatif ; machine avec 
 export URL=http://127.0.0.1:4180                    # facultatif (défaut)
 
 # 3. une fois : écrans types + sauvegarde d'un héros neuf → .cache/ (non versionné)
-node match3-quest/tools/perf-bench/setup.mjs
+node houyi/tools/perf-bench/setup.mjs
 ```
 
 ## Scripts
@@ -48,7 +48,7 @@ Les premières mesures du chantier ont été faites **sans GPU** (rendu logiciel
 
 ```bash
 export CHROMIUM_ARGS="--no-sandbox --use-angle=gl --enable-gpu-rasterization --ignore-gpu-blocklist"
-node match3-quest/tools/perf-bench/walk.mjs clic 4 rizieres_wild tonnerre_wild mer_wild
+node houyi/tools/perf-bench/walk.mjs clic 4 rizieres_wild tonnerre_wild mer_wild
 ```
 
 **Vérifier que l'accélération est réellement active** (sans les options ci-dessus Chromium retombe sur SwiftShader, sans message) : `chrome://gpu` est inaccessible en headless,

@@ -5,7 +5,7 @@
  * citée dans la consigne, scène du jeu, groupe. Une seule source pour la page du dépôt et pour la copie publiée ailleurs.
  *
  * Usage (WSL, Node 22) : node tools/gen-musiques-page.mjs [--out=musiques.html] [--base=audio/music/]
- *   --base : dossier des MP3 vu depuis la page (défaut `audio/music/`, relatif à match3-quest/).
+ *   --base : dossier des MP3 vu depuis la page (défaut `audio/music/`, relatif à houyi/).
  */
 import { writeFileSync, existsSync } from 'fs';
 import { fileURLToPath } from 'url';

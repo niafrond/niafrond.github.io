@@ -1,4 +1,4 @@
-// Compagnons de route et dialogues contextuels de Match3-Quest (données pures, sans DOM ; propriétaire : agent Scénario).
+// Compagnons de route et dialogues contextuels de Houyi (données pures, sans DOM ; propriétaire : agent Scénario).
 //
 // COMPANIONS : personnages qui rejoignent le héros pendant l'aventure.
 //   { id, name, title, npc, joinWhen }

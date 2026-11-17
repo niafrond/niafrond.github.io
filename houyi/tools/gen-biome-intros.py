@@ -62,7 +62,7 @@ def flux_image(prompt, seed, dest, size=(1344, 768)):
         '16': {'class_type': 'RandomNoise', 'inputs': {'noise_seed': int(seed)}},
         '17': {'class_type': 'SamplerCustomAdvanced', 'inputs': {'noise': ['16', 0], 'guider': ['14', 0], 'sampler': ['15', 0], 'sigmas': ['13', 0], 'latent_image': ['12', 0]}},
         '18': {'class_type': 'VAEDecode', 'inputs': {'samples': ['17', 0], 'vae': ['4', 0]}},
-        '19': {'class_type': 'SaveImage', 'inputs': {'images': ['18', 0], 'filename_prefix': 'match3-biome-intro/f'}},
+        '19': {'class_type': 'SaveImage', 'inputs': {'images': ['18', 0], 'filename_prefix': 'houyi-biome-intro/f'}},
     }
     req = urllib.request.Request(base + '/prompt', json.dumps({'prompt': wf}).encode(), {'Content-Type': 'application/json'})
     pid = json.load(urllib.request.urlopen(req))['prompt_id']

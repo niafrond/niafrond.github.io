@@ -1,5 +1,5 @@
 // Compare l'ancien et le nouvel avantage lié à l'écart de niveau (combatStats.js) : chances finales de critique / blocage.
-// Usage : node match3-quest/tools/simulate-level-edge.mjs   (reproductible, aucune part d'aléatoire)
+// Usage : node houyi/tools/simulate-level-edge.mjs   (reproductible, aucune part d'aléatoire)
 import { levelEdgeBonus, STAT_CHANCE_CAP } from '../combatStats.js';
 
 // Ancienne formule (avant lot 2), conservée ici uniquement pour la comparaison.

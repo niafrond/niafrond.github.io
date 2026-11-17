@@ -3,10 +3,10 @@
 // (~11 i/s) quand plus rien n'est touché depuis 20 s.
 import { test, expect } from '@playwright/test';
 
-const URL = '/match3-quest/';
+const URL = '/houyi/';
 const loaded = page => page.waitForFunction(() => !document.getElementById('loading-screen')?.classList.contains('visible'), null, { timeout: 30_000 });
 
-test.describe('match3-quest · économie de batterie', () => {
+test.describe('houyi · économie de batterie', () => {
     test.setTimeout(120_000);
 
     test('la carte au repos ne redessine pas à chaque rafraîchissement', async ({ page }) => {

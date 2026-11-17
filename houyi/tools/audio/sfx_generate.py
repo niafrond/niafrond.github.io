@@ -8,7 +8,7 @@ Un seul script pour tous les modèles texte -> son : on change `--model`, rien d
 Les wrappers `sfx-sample.sh` et `sfx-all.sh` (même dossier) préparent l'environnement et appellent ce script.
 
 Modèles (`--model`) :
-  gm                 la commande `gm studio sfx generate` de game-maker (MMAudio, poids non commerciaux) : projet `match3-sfx` (`--gm-project=NOM`), un
+  gm                 la commande `gm studio sfx generate` de game-maker (MMAudio, poids non commerciaux) : projet `houyi-sfx` (`--gm-project=NOM`), un
                      appel par clip, GPU rendu à chaque sortie ; chaque clip est aussi versionné comme asset du projet game-maker
   audioldm2          cvssp/audioldm2             diffusers, libre d'accès (licence CC BY-NC-SA 4.0)
   audioldm2-large    cvssp/audioldm2-large       idem, plus gros
@@ -211,7 +211,7 @@ class GmBackend(Backend):
 
     def __init__(self):
         self.gm = Path(os.environ.get("GAME_MAKER_DIR", "/mnt/c/Users/Niafrond/dev/game-maker")) / "gm"
-        self.project = str(args.get("gm-project", "match3-sfx"))
+        self.project = str(args.get("gm-project", "houyi-sfx"))
         if not self.gm.exists():
             raise SystemExit(f"gm introuvable ({self.gm}) : définir GAME_MAKER_DIR")
         subprocess.run([str(self.gm), "studio", "project", "create", self.project], capture_output=True)   # sans effet s'il existe déjà

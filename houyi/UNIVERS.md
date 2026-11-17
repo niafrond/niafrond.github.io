@@ -1,4 +1,4 @@
-# Univers de Match3-Quest : « Hou Yi et les Dix Soleils »
+# Univers de Houyi : « Hou Yi et les Dix Soleils »
 
 Fantasy chinoise inspirée de la légende de **Hou Yi** (l'archer divin), de **Chang'e** (sa femme, qui s'envole vers la
 Lune après avoir bu l'élixir d'immortalité) et des **dix soleils**. Le puzzle match-3 reste le moteur de combat ; les gemmes
@@ -121,7 +121,7 @@ mythique, 🌳🏮), `moon` (nuit bleu-violet, sol de pierre pâle, 🌕🏮).
 
 ## 7. Direction artistique des sprites (charte commune)
 
-Même charte que les sprites existants (voir `match3-quest/sprites/`) : SVG autonome, `viewBox="0 0 64 64"`, fond transparent,
+Même charte que les sprites existants (voir `houyi/sprites/`) : SVG autonome, `viewBox="0 0 64 64"`, fond transparent,
 style chibi de face (légèrement 3/4), grosse tête, contour foncé `#2b1b17` de 2 px (`stroke-linejoin/linecap` arrondis),
 aplats + ombre portée décalée en bas à droite + 1 ou 2 reflets, pieds vers y ≈ 58, **sans ombre au sol**. Interdits :
 `<text>`, emoji / caractères non ASCII, `<image>`, ressources externes, `<script>`, `style` externe, animations. Ids de

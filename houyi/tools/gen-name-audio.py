@@ -2,7 +2,7 @@
 """Prononciation des noms chinois du bestiaire et des mots de « Un mot de chinois » (chineseWords.js) : un mp3 par nom (voix neuronale zh-CN gratuite d'edge-tts), rangé dans audio/noms/.
 Le nom du fichier est le code Unicode des caractères en hexadécimal séparés par « - » (même règle que nameAudio.js).
 Ces fichiers ne sont ni dans le manifeste de précache ni dans le cache du service worker : ils ne se téléchargent qu'au clic sur « Écouter ».
-Usage (depuis la racine du dépôt) : python3 match3-quest/tools/gen-name-audio.py [--voice zh-CN-XiaoxiaoNeural] [--force]
+Usage (depuis la racine du dépôt) : python3 houyi/tools/gen-name-audio.py [--voice zh-CN-XiaoxiaoNeural] [--force]
 Prérequis : pip install edge-tts ; node (lit bestiaryNames.js)."""
 import argparse, asyncio, json, subprocess, sys
 from pathlib import Path

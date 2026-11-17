@@ -1,8 +1,8 @@
-// Génère la soluce du jeu (match3-quest/soluce.html + match3-quest/soluce/*.html) à partir des données réelles du jeu :
+// Génère la soluce du jeu (houyi/soluce.html + houyi/soluce/*.html) à partir des données réelles du jeu :
 // quêtes (story.js), compagnons (companions.js, companionPowers.js), stuff (stuff.js), bestiaire (enemies.catalog.json).
-// Usage : node match3-quest/tools/build-soluce.mjs
+// Usage : node houyi/tools/build-soluce.mjs
 //
-// La soluce n'est liée depuis aucune page du jeu : on y accède uniquement en connaissant l'adresse (…/match3-quest/soluce.html).
+// La soluce n'est liée depuis aucune page du jeu : on y accède uniquement en connaissant l'adresse (…/houyi/soluce.html).
 // Les pages sont `noindex` et ne figurent pas dans precache-manifest.json.
 
 import { readFileSync, writeFileSync, mkdirSync, rmSync, existsSync, readdirSync } from 'node:fs';
@@ -321,7 +321,7 @@ function page({ file, title, desc, body, crumbs = [], active }) {
 <style>${CSS}</style>
 </head>
 <body>
-<header class="top"><div class="in"><h1>Soluce complète<small>La Légende de Hou Yi — Match3 Quest</small></h1><nav class="menu">${menu}</nav></div></header>
+<header class="top"><div class="in"><h1>Soluce complète<small>La Légende de Hou Yi</small></h1><nav class="menu">${menu}</nav></div></header>
 <main>
 ${cr}
 ${body}

@@ -50,7 +50,7 @@ const workflow = (image, seed) => ({
   10: { class_type: 'VAEEncode', inputs: { pixels: ['7', 0], vae: ['6', 0] } },
   11: { class_type: 'KSampler', inputs: { model: ['4', 0], positive: ['8', 0], negative: ['9', 0], latent_image: ['10', 0], seed, steps: 4, cfg: 1, sampler_name: 'euler', scheduler: 'simple', denoise: 1 } },
   12: { class_type: 'VAEDecode', inputs: { samples: ['11', 0], vae: ['6', 0] } },
-  13: { class_type: 'SaveImage', inputs: { images: ['12', 0], filename_prefix: 'match3-backs/b' } }
+  13: { class_type: 'SaveImage', inputs: { images: ['12', 0], filename_prefix: 'houyi-backs/b' } }
 });
 
 async function upload(base, name, png) {

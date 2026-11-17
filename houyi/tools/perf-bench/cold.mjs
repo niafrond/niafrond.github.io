@@ -17,7 +17,7 @@ await loaded(page);
 const first = Date.now() - t;
 // le service worker doit avoir rempli le cache du cœur avant la visite suivante
 await page.waitForFunction(async () => {
-    const k = (await caches.keys()).find(x => x.startsWith('match3-core-v'));
+    const k = (await caches.keys()).find(x => x.startsWith('houyi-core-v'));
     return Boolean(k) && (await (await caches.open(k)).keys()).length > 150;
 }, null, { timeout: 240_000 }).catch(() => {});
 t = Date.now();

@@ -44,7 +44,7 @@ no electric guitar, no rock drum kit, no synthesizer, no electronic drums, no ED
 
 ## Lancer la génération
 
-Depuis `match3-quest/tools/audio/acestep`, serveur lancé (`tools/gm up audio`).
+Depuis `houyi/tools/audio/acestep`, serveur lancé (`tools/gm up audio`).
 
 **1. Avec le style du catalogue (piste `combat-0`) : le prompt ci-dessus s'ajoute au style global**
 

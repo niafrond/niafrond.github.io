@@ -25,6 +25,6 @@ fi
 if command -v node >/dev/null; then
   node tools/precache-manifest.mjs
 else
-  echo "node introuvable : lancer ensuite  node match3-quest/tools/precache-manifest.mjs  (depuis la racine du dépôt)"
+  echo "node introuvable : lancer ensuite  node houyi/tools/precache-manifest.mjs  (depuis la racine du dépôt)"
 fi
-echo "Terminé. Vérifier : npx jest match3-quest/tests/unit/music match3-quest/tests/unit/precache ; page d'écoute : voir sfx-sample.sh."
+echo "Terminé. Vérifier : npx jest houyi/tests/unit/music houyi/tests/unit/precache ; page d'écoute : voir sfx-sample.sh."

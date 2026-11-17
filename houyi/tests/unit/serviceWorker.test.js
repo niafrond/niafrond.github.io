@@ -6,7 +6,7 @@ import { registerServiceWorker, registerServiceWorkerWhenLoaded, serviceWorkerUr
 // sw.js est exécuté tel quel dans un faux environnement de worker (caches, réseau et minuteries simulés).
 const SW_CODE = readFileSync(new URL('../../sw.js', import.meta.url), 'utf8');
 const ORIGIN = 'https://site.test';
-const SCOPE = `${ORIGIN}/match3-quest/`;
+const SCOPE = `${ORIGIN}/houyi/`;
 
 const MANIFEST = {
     version: 1,
@@ -72,7 +72,7 @@ describe('sw.js — installation et activation', () => {
     test('installe le cœur, le manifeste et version.js dans un cache propre au build, puis prend la main', async () => {
         const sw = loadSw({ build: 'B1' });
         await sw.lifecycle('install');
-        const core = await sw.caches.open('match3-core-vB1');
+        const core = await sw.caches.open('houyi-core-vB1');
         [...MANIFEST.core.map(p => `${SCOPE}${p}`), `${SCOPE}precache-manifest.json`, `${ORIGIN}/version.js`].forEach(key => expect(core.map.has(key)).toBe(true));
         expect(core.text(`${SCOPE}game.js`)).toBe('CORE:game.js');
         expect(sw.state.skipped).toBe(true);
@@ -84,7 +84,7 @@ describe('sw.js — installation et activation', () => {
         const sw = loadSw();
         sw.server.redirected = new Set([`${SCOPE}index.html`]);
         await sw.lifecycle('install');
-        const core = await sw.caches.open('match3-core-vB1');
+        const core = await sw.caches.open('houyi-core-vB1');
         const stored = await core.match(`${SCOPE}index.html`);
         expect(await stored.text()).toBe('INDEX');
         expect(stored.redirected).toBe(false);
@@ -105,7 +105,7 @@ describe('sw.js — installation et activation', () => {
 
     test('met à jour les médias déjà en cache dont l\'empreinte a changé et retire ceux qui ne sont plus au manifeste', async () => {
         const sw = loadSw();
-        const media = await sw.caches.open('match3-media-v1');
+        const media = await sw.caches.open('houyi-media-v1');
         await media.put(`${SCOPE}audio/music/a.mp3`, new Response('old'));
         await media.put(`${SCOPE}audio/music/gone.mp3`, new Response('gone'));
         await media.put(`${SCOPE}sprites/ultimates/x.png`, new Response('PNG'));
@@ -120,9 +120,9 @@ describe('sw.js — installation et activation', () => {
 
     test('l\'activation supprime les anciens caches du cœur, garde le cache média et prend le contrôle des pages', async () => {
         const sw = loadSw({ build: 'B2' });
-        for (const name of ['match3-core-vB1', 'match3-core-vB2', 'match3-media-v1', 'autre-app']) await sw.caches.open(name);
+        for (const name of ['houyi-core-vB1', 'houyi-core-vB2', 'houyi-media-v1', 'autre-app']) await sw.caches.open(name);
         await sw.lifecycle('activate');
-        expect([...sw.caches.stores.keys()].sort()).toEqual(['autre-app', 'match3-core-vB2', 'match3-media-v1']);
+        expect([...sw.caches.stores.keys()].sort()).toEqual(['autre-app', 'houyi-core-vB2', 'houyi-media-v1']);
         expect(sw.state.claimed).toBe(true);
     });
 });
@@ -162,7 +162,7 @@ describe('sw.js — requêtes', () => {
         const online = await sw.fetchEvent(sw.request(SCOPE, { mode: 'navigate' }));
         expect(await online.text()).toBe('INDEX-2');
         await sw.flush();
-        expect((await sw.caches.open('match3-core-vB1')).text(`${SCOPE}index.html`)).toBe('INDEX-2');
+        expect((await sw.caches.open('houyi-core-vB1')).text(`${SCOPE}index.html`)).toBe('INDEX-2');
         sw.server.online = false;
         const offline = await sw.fetchEvent(sw.request('index.html', { mode: 'navigate' }));
         expect(await offline.text()).toBe('INDEX-2');
@@ -178,7 +178,7 @@ describe('sw.js — requêtes', () => {
         expect(await (await pending).text()).toBe('INDEX');
         release();
         await sw.flush(); await sw.flush();
-        expect((await sw.caches.open('match3-core-vB1')).text(`${SCOPE}index.html`)).toBe('INDEX-NEUF');
+        expect((await sw.caches.open('houyi-core-vB1')).text(`${SCOPE}index.html`)).toBe('INDEX-NEUF');
     });
 
     test('version.js : réseau d\'abord, repli sur le cache hors ligne', async () => {
@@ -201,7 +201,7 @@ describe('sw.js — requêtes', () => {
         const first = await sw.fetchEvent(sw.request('audio/music/a.mp3?v=B1'));
         expect(await first.text()).toBe('0123456789');
         await sw.flush(); await sw.flush();
-        const media = await sw.caches.open('match3-media-v1');
+        const media = await sw.caches.open('houyi-media-v1');
         expect(media.text(`${SCOPE}audio/music/a.mp3`)).toBe('0123456789');
         expect(JSON.parse(media.text(`${SCOPE}__hashes.json`))).toEqual({ 'audio/music/a.mp3': 'h1' });
         sw.server.online = false;
@@ -217,7 +217,7 @@ describe('sw.js — requêtes', () => {
         await sw.lifecycle('install');
         await Promise.all(media.map(async m => (await sw.fetchEvent(sw.request(m.p))).text()));
         for (let i = 0; i < 30; i++) await sw.flush();
-        const cache = await sw.caches.open('match3-media-v1');
+        const cache = await sw.caches.open('houyi-media-v1');
         const hashes = JSON.parse(cache.text(`${SCOPE}__hashes.json`));
         expect(Object.keys(hashes).sort()).toEqual(media.map(m => m.p).sort());
         media.forEach(m => expect(hashes[m.p]).toBe(m.h));
@@ -231,7 +231,7 @@ describe('sw.js — requêtes', () => {
             const res = await prefetch(sw, 'audio/music/a.mp3');
             expect(res.status).toBe(204);
             expect(await res.text()).toBe('');
-            const media = await sw.caches.open('match3-media-v1');
+            const media = await sw.caches.open('houyi-media-v1');
             expect(media.text(`${SCOPE}audio/music/a.mp3`)).toBe('0123456789');
             expect(JSON.parse(media.text(`${SCOPE}__hashes.json`))).toEqual({ 'audio/music/a.mp3': 'h1' });   // déjà noté au moment de la réponse
             expect(sw.server.calls.filter(c => c.url.endsWith('a.mp3')).length).toBe(1);
@@ -239,7 +239,7 @@ describe('sw.js — requêtes', () => {
 
         test('déjà en cache : 204 sans réseau, et l\'empreinte est notée si elle manquait', async () => {
             const sw = await installed();
-            const media = await sw.caches.open('match3-media-v1');
+            const media = await sw.caches.open('houyi-media-v1');
             await media.put(`${SCOPE}audio/music/a.mp3`, new Response('0123456789'));
             const res = await prefetch(sw, 'audio/music/a.mp3');
             expect(res.status).toBe(204);
@@ -252,7 +252,7 @@ describe('sw.js — requêtes', () => {
             expect((await prefetch(sw, 'sprites/ultimates/inconnu.png')).status).toBe(502);
             sw.server.online = false;
             expect((await prefetch(sw, 'audio/music/a.mp3')).status).toBe(502);
-            const media = await sw.caches.open('match3-media-v1');
+            const media = await sw.caches.open('houyi-media-v1');
             expect([...media.map.keys()].filter(k => !k.endsWith('__hashes.json'))).toEqual([]);   // (l'installation a écrit un fichier d'empreintes vide)
             expect(JSON.parse(media.text(`${SCOPE}__hashes.json`))).toEqual({});
         });
@@ -263,7 +263,7 @@ describe('sw.js — requêtes', () => {
             await sw.lifecycle('install');
             const results = await Promise.all(media.map(m => prefetch(sw, m.p)));
             expect(results.map(r => r.status)).toEqual(media.map(() => 204));
-            const cache = await sw.caches.open('match3-media-v1');
+            const cache = await sw.caches.open('houyi-media-v1');
             expect(Object.keys(JSON.parse(cache.text(`${SCOPE}__hashes.json`))).sort()).toEqual(media.map(m => m.p).sort());
         });
 
@@ -281,7 +281,7 @@ describe('sw.js — requêtes', () => {
         const res = await sw.fetchEvent(sw.request('sprites/ultimates/inconnu.png'));
         expect(res.status).toBe(404);
         await sw.flush();
-        expect((await sw.caches.open('match3-media-v1')).map.has(`${SCOPE}sprites/ultimates/inconnu.png`)).toBe(false);
+        expect((await sw.caches.open('houyi-media-v1')).map.has(`${SCOPE}sprites/ultimates/inconnu.png`)).toBe(false);
     });
 
     test('médias : lectures partielles (Range) servies depuis le cache, absentes du cache → réseau sans rien stocker', async () => {
@@ -302,7 +302,7 @@ describe('sw.js — requêtes', () => {
         const res = await other.fetchEvent(other.request('sprites/ultimates/x.png', { headers: { Range: 'bytes=0-1' } }));
         expect(res.status).toBe(200);   // le faux réseau ignore Range : on vérifie surtout l'absence de mise en cache
         await other.flush();
-        expect((await other.caches.open('match3-media-v1')).map.has(`${SCOPE}sprites/ultimates/x.png`)).toBe(false);
+        expect((await other.caches.open('houyi-media-v1')).map.has(`${SCOPE}sprites/ultimates/x.png`)).toBe(false);
     });
 
     test('musique lue en flux (Range) et absente du cache : téléchargée en entier une seule fois, rangée, plage servie depuis la copie', async () => {
@@ -315,7 +315,7 @@ describe('sw.js — requêtes', () => {
         expect(sw.server.calls.filter(c => c.url.endsWith('audio/music/a.mp3'))).toHaveLength(1);
         expect(sw.server.calls.find(c => c.url.endsWith('audio/music/a.mp3')).init.headers).toBeUndefined();   // le fichier complet, pas la plage
         await sw.flush(); await sw.flush();
-        const cache = await sw.caches.open('match3-media-v1');
+        const cache = await sw.caches.open('houyi-media-v1');
         expect(cache.map.has(`${SCOPE}audio/music/a.mp3`)).toBe(true);
         expect(JSON.parse(cache.text(`${SCOPE}__hashes.json`))['audio/music/a.mp3']).toBe('h1');
         // la scène revient (ou le jeu est relancé hors ligne) : plus aucun réseau
@@ -331,7 +331,7 @@ describe('sw.js — requêtes', () => {
         const res = await sw.fetchEvent(sw.request('audio/music/gone.mp3', { headers: { Range: 'bytes=0-3' } }));
         expect(res.status).toBe(404);
         await sw.flush();
-        expect((await sw.caches.open('match3-media-v1')).map.has(`${SCOPE}audio/music/gone.mp3`)).toBe(false);
+        expect((await sw.caches.open('houyi-media-v1')).map.has(`${SCOPE}audio/music/gone.mp3`)).toBe(false);
     });
 });
 
@@ -340,7 +340,7 @@ describe('offlineCache.js — enregistrement', () => {
         const calls = [];
         return {
             calls,
-            __match3Build: '20261020201631854',
+            __houyiBuild: '20261020201631854',
             isSecureContext: true,
             location: { protocol: 'https:' },
             navigator: { serviceWorker: { register: async (...a) => { calls.push(a); return { scope: 'x' }; } } },
@@ -359,7 +359,7 @@ describe('offlineCache.js — enregistrement', () => {
     });
 
     test('ne fait rien sans build connu, hors contexte sécurisé, en file:// ou sans service worker ; ne lève jamais', async () => {
-        expect(await registerServiceWorker(env({ __match3Build: '0' }))).toBeNull();
+        expect(await registerServiceWorker(env({ __houyiBuild: '0' }))).toBeNull();
         expect(await registerServiceWorker(env({ isSecureContext: false }))).toBeNull();
         expect(await registerServiceWorker(env({ location: { protocol: 'file:' } }))).toBeNull();
         expect(await registerServiceWorker(env({ navigator: {} }))).toBeNull();

@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Rend toute la musique et tous les effets sonores en MP3 : `node match3-quest/tools/audio/render.mjs [--only clé,clé] [--music|--sfx]`.
+// Rend toute la musique et tous les effets sonores en MP3 : `node houyi/tools/audio/render.mjs [--only clé,clé] [--music|--sfx]`.
 // Rendu hors ligne dans Chromium (OfflineAudioContext), encodage MP3 par ffmpeg. Résultat : audio/music, audio/sfx, audio/manifest.json.
 // Les fichiers sont versionnés : on ne relance cette commande que pour changer la musique ou les sons (voir README.md).
 import http from 'node:http';
@@ -10,7 +10,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import { chromium } from 'playwright';
 
 const ROOT = fileURLToPath(new URL('../../../', import.meta.url));      // racine du dépôt
-const GAME = join(ROOT, 'match3-quest');
+const GAME = join(ROOT, 'houyi');
 const args = process.argv.slice(2);
 const only = (args.find(a => a.startsWith('--only=')) || '').slice(7).split(',').filter(Boolean);
 const wantMusic = !args.includes('--sfx');
@@ -62,7 +62,7 @@ await new Promise(r => server.listen(0, '127.0.0.1', r));
 const origin = `http://127.0.0.1:${server.address().port}`;
 const browser = await chromium.launch(process.env.PLAYWRIGHT_BROWSERS_PATH ? { executablePath: '/opt/pw-browsers/chromium' } : {});
 const page = await browser.newPage();
-await page.goto(`${origin}/match3-quest/tools/audio/blank.html`);
+await page.goto(`${origin}/houyi/tools/audio/blank.html`);
 
 function encodeMp3(pcmB64, sampleRate, bitrate, outFile) {
     mkdirSync(join(outFile, '..'), { recursive: true });
@@ -78,7 +78,7 @@ const keep = key => !only.length || only.includes(key);
 if (wantMusic) {
     for (const t of trackList().filter(t => keep(t.key))) {
         const res = await page.evaluate(async ({ scene, opts, origin }) => {
-            const m = await import(`${origin}/match3-quest/tools/audio/browser.js`);
+            const m = await import(`${origin}/houyi/tools/audio/browser.js`);
             return m.renderMusic(scene, opts, { sampleRate: 32000, targetSeconds: 30 });
         }, { scene: t.scene, opts: t.opts, origin });
         const out = join(GAME, trackUrl(t.key));
@@ -91,7 +91,7 @@ if (wantSfx) {
     for (const v of sfxVariants().filter(v => keep(v.key))) {
         const payload = v.payload.spellId ? { ...v.payload, meta: spellMeta[v.payload.spellId] || {} } : v.payload;
         const res = await page.evaluate(async ({ event, payload, origin }) => {
-            const m = await import(`${origin}/match3-quest/tools/audio/browser.js`);
+            const m = await import(`${origin}/houyi/tools/audio/browser.js`);
             return m.renderSfx(event, payload);
         }, { event: v.event, payload, origin });
         encodeMp3(res.pcm, res.sampleRate, '64k', join(GAME, 'audio', 'sfx', `${v.key}.mp3`));

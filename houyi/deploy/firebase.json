@@ -37,38 +37,38 @@
     ],
     "redirects": [
       {
-        "source": "/match3-quest/:f*",
+        "source": "/houyi/:f*",
         "destination": "/:f*",
         "type": 302
       },
       {
         "regex": "/((?:[^/]+/)+[^/]+|[^sv/][^/]*|s|s[^w/][^/]*|sw[^/]+|v|v[^e/][^/]*|ve|ve[^r/][^/]*|ver|ver[^s/][^/]*|vers|vers[^i/][^/]*|versi|versi[^o/][^/]*|versio|versio[^n/][^/]*|version[^/]+)\\.js",
-        "destination": "https://niafrond.github.io/match3-quest/:1.js",
+        "destination": "https://niafrond.github.io/houyi/:1.js",
         "type": 302
       },
       {
         "regex": "/((?:[^/]+/)+[^/]+\\.json|enemies\\.catalog\\.json|spells\\.json|precache-manifest\\.json)",
-        "destination": "https://niafrond.github.io/match3-quest/:1",
+        "destination": "https://niafrond.github.io/houyi/:1",
         "type": 302
       },
       {
         "regex": "/(.+\\.css)",
-        "destination": "https://niafrond.github.io/match3-quest/:1",
+        "destination": "https://niafrond.github.io/houyi/:1",
         "type": 302
       },
       {
         "source": "/audio/:f*",
-        "destination": "https://niafrond.github.io/match3-quest/audio/:f*",
+        "destination": "https://niafrond.github.io/houyi/audio/:f*",
         "type": 302
       },
       {
         "source": "/soluce/img/:f*",
-        "destination": "https://niafrond.github.io/match3-quest/soluce/img/:f*",
+        "destination": "https://niafrond.github.io/houyi/soluce/img/:f*",
         "type": 302
       },
       {
         "regex": "/sprites/(.+\\.(?:png|gif|webp|jpg))",
-        "destination": "https://niafrond.github.io/match3-quest/sprites/:1",
+        "destination": "https://niafrond.github.io/houyi/sprites/:1",
         "type": 302
       }
     ]

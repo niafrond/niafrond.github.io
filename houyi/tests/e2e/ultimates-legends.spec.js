@@ -2,7 +2,7 @@
 // quelle que soit la classe, et conservés après un rechargement (sauvegarde).
 import { test, expect } from '@playwright/test';
 
-const URL = '/match3-quest/';
+const URL = '/houyi/';
 const loaded = page => page.waitForFunction(() => !document.getElementById('loading-screen')?.classList.contains('visible'), null, { timeout: 30_000 });
 
 // Lignes de la liste « Ultime » de l'onglet Sorts : nom, verrouillé ou non, texte, bouton « Choisir » présent
@@ -17,7 +17,7 @@ const rows = page => page.evaluate(async () => {
     }));
 });
 
-test.describe('match3-quest · ultimes de légende', () => {
+test.describe('houyi · ultimes de légende', () => {
     test.setTimeout(60_000);
 
     for (const index of [0, 1, 2, 3]) {

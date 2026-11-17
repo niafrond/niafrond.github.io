@@ -3,7 +3,7 @@
 // celles fondées sur le temps ont de larges marges pour rester stables en CI (rendu logiciel, machine variable).
 import { test, expect } from '@playwright/test';
 
-const URL = '/match3-quest/';
+const URL = '/houyi/';
 // Profil de l'appareil émulé : lu dans `metadata` du projet Playwright (voir playwright.config.js), valeurs par défaut = Pixel 5.
 let CPU_SLOWDOWN = 4;
 let DEFAULT_CORES = 4;
@@ -84,7 +84,7 @@ async function reloadAt(page, screenId, x, y) {
     await page.waitForSelector('#explore-canvas', { state: 'visible' });
 }
 
-test.describe('match3-quest · performances mobile', () => {
+test.describe('houyi · performances mobile', () => {
     test.beforeEach(({}, testInfo) => {
         const m = testInfo.project.metadata || {};
         CPU_SLOWDOWN = m.cpuSlowdown ?? 4;

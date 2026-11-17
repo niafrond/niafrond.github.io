@@ -35,7 +35,7 @@ function load() {
   return Function(`return ${m[1]}`)();
 }
 function save(sprites) {
-  const lines = ['// Généré par match3-quest/tools/gen-sprites.mjs — ne pas éditer à la main', `// Dernière mise à jour : ${new Date().toISOString().slice(0, 10)}`, '// Lancez: node match3-quest/tools/gen-sprites.mjs --only=all --dir=all', 'export const GBA_SPRITES = {'];
+  const lines = ['// Généré par houyi/tools/gen-sprites.mjs — ne pas éditer à la main', `// Dernière mise à jour : ${new Date().toISOString().slice(0, 10)}`, '// Lancez: node houyi/tools/gen-sprites.mjs --only=all --dir=all', 'export const GBA_SPRITES = {'];
   for (const [k, dirs] of Object.entries(sprites)) { lines.push(`  ${JSON.stringify(k)}: {`); for (const [d, u] of Object.entries(dirs)) lines.push(`    ${d}: ${JSON.stringify(u)},`); lines.push('  },'); }
   lines.push('};');
   writeFileSync(GENERATED, lines.join('\n') + '\n', 'utf8');

@@ -129,7 +129,7 @@ Les cases sont posées dans la grille avec `"` ; le moteur les lit en `screen.gr
 | C | Intégrateur (le chef) | `SPECS.md`, `world/DESIGN-V2.md`, `world/connections.js`, `world/maps/index.js`, `world/text/index.js`, tests transverses |
 
 Vérification de chaque région : `node tools/map-preview.mjs <screenId>` (aperçu ASCII de la carte assemblée + atteignabilité) puis
-`npx jest match3-quest/tests/unit/<fichier> -t <regionId>` sous WSL (Ubuntu-22.04, nvm Node 22). La suite complète est lancée par l'intégrateur.
+`npx jest houyi/tests/unit/<fichier> -t <regionId>` sous WSL (Ubuntu-22.04, nvm Node 22). La suite complète est lancée par l'intégrateur.
 
 ## 8. Critères de réussite
 1. Les 47 suites existantes restent vertes (contraintes de nombre d'ennemis / tailles adaptées dans les tests, jamais supprimées).

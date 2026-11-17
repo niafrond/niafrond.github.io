@@ -18,7 +18,7 @@ export const EVENTS_DEFAULT = {
 // Lue une seule fois, au premier chargement du module (jamais en continu). Mémorisée dans sessionStorage pour survivre aux rechargements
 // sans le paramètre, mais perdue à la fermeture de l'onglet. Les identifiants inconnus sont ignorés.
 export const EVENTS_URL_PARAM = 'events';
-export const EVENTS_SESSION_KEY = 'match3.events.override';
+export const EVENTS_SESSION_KEY = 'houyi.events.override';
 
 /** Analyse la valeur du paramètre (`a,-b`) → `{ id: true|false }`, limitée aux événements connus. */
 export function parseEventOverrides(value, known = Object.keys(EVENTS_DEFAULT)) {

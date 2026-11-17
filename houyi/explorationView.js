@@ -570,7 +570,7 @@ export function createExplorationView(cfg) {
     function playBattleTransition(enc, done) {
         removeBattleTransition();
         // La musique de combat démarre dès que l'interaction commence, pas à la fin de l'animation (main.js : `desiredMusic`)
-        window.dispatchEvent(new CustomEvent('match3:encounter-start', {
+        window.dispatchEvent(new CustomEvent('houyi:encounter-start', {
             detail: enc.boss ? { scene: 'boss', options: { boss: enc.boss.name } } : { scene: 'combat', options: { variant: enc.name, biome: enc.biome || null } }
         }));
         const reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;

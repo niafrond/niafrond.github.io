@@ -6,7 +6,7 @@ import { sectionCountFor } from '../../tools/audio/synth.js';
 import {
     setMusicEnvironment, setMusicScene, stopMusic, pauseMusic, resumeMusic, isMusicPlaying, getSceneList, duckMusic, preloadMusic, __internals
 } from '../../music.js';
-import { getMatch3Version } from '../../version.js';
+import { getHouyiVersion } from '../../version.js';
 import { trackCandidates, trackUrl, playlist, bossSlug, bossArchetypeIndex, combatStyleIndex, BOSS_ARCHETYPE_COUNT, COMBAT_STYLE_COUNT as TRACK_COMBAT } from '../../musicTracks.js';
 import { sfxVariants, sfxKeyFor, sfxGainFor, sfxUrl, sfxFallbackKey, sfxDuckFor, SPELL_SFX_IDS, WEAPON_RARITIES } from '../../sfxCatalog.js';
 import { spellFx, bowHitFx, sfxRecipe } from '../../tools/audio/sfxRecipes.js';
@@ -212,7 +212,7 @@ const flush = async () => { for (let i = 0; i < 6; i++) await Promise.resolve();
 function setup(ctx, existing = new Set(['title', 'menu', 'combat-1', 'boss-a0', 'boss-soleil-ardent', 'village-paddy']), extra = {}) {
     const state = { volume: 1, muted: false };
     const fetchFn = makeFetch(existing);
-    setMusicEnvironment({ getContext: () => ctx, getVolume: () => state.volume, isMuted: () => state.muted, fetch: fetchFn, baseUrl: 'http://x/match3-quest/', timer: noopTimer, random: () => 0, ...extra });
+    setMusicEnvironment({ getContext: () => ctx, getVolume: () => state.volume, isMuted: () => state.muted, fetch: fetchFn, baseUrl: 'http://x/houyi/', timer: noopTimer, random: () => 0, ...extra });
     return { state, fetchFn };
 }
 
@@ -361,7 +361,7 @@ describe('lecteur de musique', () => {
         const ctx = makeCtx(); const { fetchFn } = setup(ctx);
         setMusicScene('title');
         await flush();
-        expect(fetchFn.calls).toEqual(['title-b', 'title'].map((k) => `http://x/match3-quest/audio/music/${k}.mp3?v=${getMatch3Version()}`));   // ?v : pas de copie périmée en cache ; variante traditionnelle absente -> repli sur la piste de base
+        expect(fetchFn.calls).toEqual(['title-b', 'title'].map((k) => `http://x/houyi/audio/music/${k}.mp3?v=${getHouyiVersion()}`));   // ?v : pas de copie périmée en cache ; variante traditionnelle absente -> repli sur la piste de base
         const src = ctx.nodes.find((n) => n.kind === 'source');
         expect(src.started).toBe(true);
         expect(src.loop).toBe(true);
@@ -558,7 +558,7 @@ describe('lecteur de musique : lecture en flux', () => {
         // variante traditionnelle absente → repli sur la piste de base ; l'élément refusé est libéré
         expect(createAudio.made.map((el) => el.released)).toEqual([true, false]);
         const el = createAudio.made[1];
-        expect(el.src).toBe(`http://x/match3-quest/audio/music/title.mp3?v=${getMatch3Version()}`);
+        expect(el.src).toBe(`http://x/houyi/audio/music/title.mp3?v=${getHouyiVersion()}`);
         expect(el.loop).toBe(true);
         expect(el.paused).toBe(false);
         expect(isMusicPlaying()).toBe(true);

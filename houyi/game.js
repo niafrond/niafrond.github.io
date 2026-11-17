@@ -1336,7 +1336,7 @@ export function startNewCombat(selectedEnemy = null){
     beginCombatRecord({ enemyLevel: selectedEnemy?.level || 0, playerLevel: player.level || 0, boss: Boolean(selectedEnemy?.isBoss), enemyMaxHp: selectedEnemy?.maxHp || 0 });
     resetSpellCooldowns();
     setBoardSize((selectedEnemy?.isBoss && !selectedEnemy.isTutorialEnemy) ? BOSS_BOARD_SIZE : BASE_BOARD_SIZE);   // plateau 10×10 contre un boss, 8×8 sinon (et pour le duel-tutoriel, dont le plateau figé est en 8×8)
-    window.dispatchEvent(new CustomEvent('match3:combat-start', { detail: { boss: Boolean(selectedEnemy?.isBoss) } }));   // le jingle de boss a déjà joué avec l'annonce du combat
+    window.dispatchEvent(new CustomEvent('houyi:combat-start', { detail: { boss: Boolean(selectedEnemy?.isBoss) } }));   // le jingle de boss a déjà joué avec l'annonce du combat
     ensureCombatUsableActiveItem();
     resetCombatRewards();
     hideCombatResultScreen();

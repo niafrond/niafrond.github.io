@@ -10,7 +10,7 @@
  * Ne figurent PAS dans le manifeste : sprites/png, sprites/ultimates-*, tools, tests, docs… (sources de génération, jamais demandées par le
  * jeu) ni `../version.js` (réécrit à chaque release : le service worker le gère à part). Un test jest vérifie que le fichier est à jour.
  *
- * Usage : node match3-quest/tools/precache-manifest.mjs   (ou : npm run precache:build)
+ * Usage : node houyi/tools/precache-manifest.mjs   (ou : npm run precache:build)
  */
 import { readFileSync, writeFileSync, readdirSync, statSync, existsSync } from 'fs';
 import { createHash } from 'crypto';

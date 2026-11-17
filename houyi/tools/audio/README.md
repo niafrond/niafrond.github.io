@@ -6,7 +6,7 @@ rendus une fois pour toutes, puis simplement lus (`music.js`, `sound.js`). Aucun
 * Les pistes sont composées et synthétisées par du code (`composer.js`, `synth.js`, `sfxRecipes.js`) : aucune API externe, aucun
   sample sous licence. (Les services de sons gratuits comme freesound.org ne sont pas joignables depuis l'environnement de
   développement, et le style chinois généré est cohérent avec le jeu.)
-* **Régénérer** (seulement pour changer la musique ou les sons) : `node match3-quest/tools/audio/render.mjs`
+* **Régénérer** (seulement pour changer la musique ou les sons) : `node houyi/tools/audio/render.mjs`
   (`--music`, `--sfx`, `--only=clé,clé`). Prérequis : `ffmpeg` et Playwright/Chromium. Le rendu se fait hors ligne dans Chromium
   (`OfflineAudioContext`), puis ffmpeg encode en MP3 mono (48 kbps pour la musique, 64 kbps pour les effets).
 * Chaque piste de musique est une boucle sans raccord (la queue de résonance est repliée sur le début), d'environ 30 s.

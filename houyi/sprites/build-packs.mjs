@@ -1,5 +1,5 @@
 // Régénère sprites/packs.js (index « clé de sprite → paquet ») à partir des fichiers de sprites/cn/.
-// À relancer après tout ajout ou renommage de sprite :  node match3-quest/sprites/build-packs.mjs
+// À relancer après tout ajout ou renommage de sprite :  node houyi/sprites/build-packs.mjs
 // (tests/unit/sprites.test.js vérifie que l'index est à jour).
 import { writeFileSync } from 'fs';
 import { SPRITE_PACK_FILES, packContents } from './packContents.js';

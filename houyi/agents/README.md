@@ -1,4 +1,4 @@
-# Agents IA de Match3-Quest
+# Agents IA de Houyi
 
 Un fichier Markdown par **agent spécialisé**. Chaque fichier est un prompt système autonome : il dit ce que l'agent possède
 (périmètre), ce qu'il lit avant d'agir, ce qu'il produit, ses règles et ses vérifications. À coller (ou à référencer) quand on
@@ -28,7 +28,7 @@ lance un sous-agent sur une tâche de ce domaine.
 5. **Aucune synthèse audio en temps réel** : la musique et les effets sont pré-rendus (voir `tools/audio/README.md`).
 6. **Chargement à la demande** : ne rien charger au démarrage qui puisse l'être par région (sprites en paquets, pistes à la scène).
 7. **Tout public** : pas de gore, ton épique, poétique, humour léger.
-8. **Vérifier avant de rendre** : `npm run test:unit` (projet `match3-quest-node`) doit rester vert ; ajouter un test pour toute
+8. **Vérifier avant de rendre** : `npm run test:unit` (projet `houyi-node`) doit rester vert ; ajouter un test pour toute
    règle chiffrée ou tout nouveau contenu.
 9. **Périmètre** : ne pas modifier les fichiers d'un autre agent sans le dire ; en cas de besoin croisé, le signaler dans le
    compte rendu plutôt que de contourner.

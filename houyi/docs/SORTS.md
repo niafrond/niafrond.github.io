@@ -1,4 +1,4 @@
-# Sorts de Match3 Quest
+# Sorts de Houyi
 
 161 sorts, générés depuis `spells.json`. Effets uniquement. « Ennemis » : l'ennemi peut aussi lancer le sort (pour les sorts de classe, les ennemis de la même classe ; un sort de plateau détruit sur le vrai plateau des lignes, colonnes ou gemmes tirées au hasard).
 

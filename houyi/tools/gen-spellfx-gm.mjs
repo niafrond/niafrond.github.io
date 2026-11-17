@@ -59,7 +59,7 @@ const workflow = (prompt, seed) => ({
   5: { class_type: 'EmptyLatentImage', inputs: { width: GEN, height: GEN, batch_size: 1 } },
   6: { class_type: 'KSampler', inputs: { model: ['2', 0], positive: ['3', 0], negative: ['4', 0], latent_image: ['5', 0], seed, steps: STEPS, cfg: CFG, sampler_name: 'euler', scheduler: 'normal', denoise: 1 } },
   7: { class_type: 'VAEDecode', inputs: { samples: ['6', 0], vae: ['1', 2] } },
-  8: { class_type: 'SaveImage', inputs: { images: ['7', 0], filename_prefix: 'match3-spellfx/s' } }
+  8: { class_type: 'SaveImage', inputs: { images: ['7', 0], filename_prefix: 'houyi-spellfx/s' } }
 });
 
 const seedOf = id => ([...id].reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>> 0, 7) + Number(args.seed || 0) * 104729) % 2147483647;

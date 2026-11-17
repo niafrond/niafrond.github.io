@@ -2,7 +2,7 @@
 // Le chrono n'avance que lorsque la page est visible ; les jours sont ceux du fuseau local.
 // Le temps de jeu « réel » (`real`) ne compte en plus que si le joueur a agi (clic, touche, toucher) dans les dernières IDLE_LIMIT_MS.
 
-export const PLAYTIME_STORAGE_KEY = 'match3quest.playtime';
+export const PLAYTIME_STORAGE_KEY = 'houyi.playtime';
 const IDLE_LIMIT_MS = 60000;
 const FLUSH_S = 15;   // temps de jeu accumulé avant enregistrement (s)   // sans action au-delà, le jeu est allumé mais pas vraiment utilisé
 const KEEP_DAYS = 14;   // le détail par jour est élagué ; le total, lui, est conservé

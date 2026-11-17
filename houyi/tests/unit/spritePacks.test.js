@@ -63,7 +63,7 @@ describe('chargement des sprites à la demande', () => {
 });
 
 describe('index des paquets (sprites/packs.js)', () => {
-    test('à jour avec le contenu des fichiers de sprites (sinon : node match3-quest/sprites/build-packs.mjs)', async () => {
+    test('à jour avec le contenu des fichiers de sprites (sinon : node houyi/sprites/build-packs.mjs)', async () => {
         const npc = {};
         const enemy = {};
         for (const pack of Object.keys(SPRITE_PACK_FILES)) {

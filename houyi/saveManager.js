@@ -53,7 +53,7 @@ export function exportSaveToFile(player, gameVersion = "1.0.0") {
         const date = new Date();
         const dateStr = date.toISOString().split('T')[0];
         const timeStr = date.toTimeString().split(' ')[0].replace(/:/g, '-');
-        const filename = `match3quest-save-${dateStr}-${timeStr}.json`;
+        const filename = `houyi-save-${dateStr}-${timeStr}.json`;
 
         return {
             success: true,

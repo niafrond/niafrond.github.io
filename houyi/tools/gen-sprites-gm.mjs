@@ -65,7 +65,7 @@ const workflow = (prompt, seed) => ({
   5: { class_type: 'EmptyLatentImage', inputs: { width: SIZE, height: SIZE, batch_size: 1 } },
   6: { class_type: 'KSampler', inputs: { model: ['2', 0], positive: ['3', 0], negative: ['4', 0], latent_image: ['5', 0], seed, steps: STEPS, cfg: CFG, sampler_name: 'euler', scheduler: 'normal', denoise: 1 } },
   7: { class_type: 'VAEDecode', inputs: { samples: ['6', 0], vae: ['1', 2] } },
-  8: { class_type: 'SaveImage', inputs: { images: ['7', 0], filename_prefix: 'match3-sprites/s' } }
+  8: { class_type: 'SaveImage', inputs: { images: ['7', 0], filename_prefix: 'houyi-sprites/s' } }
 });
 
 const seedOf = id => ([...id].reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>> 0, 7) + Number(args.seed || 0) * 104729) % 2147483647;
@@ -178,8 +178,8 @@ function loadGenerated() {
   return Function(`return ${m[1]}`)();
 }
 function saveGenerated(sprites) {
-  const lines = ['// Généré par match3-quest/tools/gen-sprites.mjs — ne pas éditer à la main', `// Dernière mise à jour : ${new Date().toISOString().slice(0, 10)}`,
-    '// Lancez: node match3-quest/tools/gen-sprites.mjs --only=all --dir=all', 'export const GBA_SPRITES = {'];
+  const lines = ['// Généré par houyi/tools/gen-sprites.mjs — ne pas éditer à la main', `// Dernière mise à jour : ${new Date().toISOString().slice(0, 10)}`,
+    '// Lancez: node houyi/tools/gen-sprites.mjs --only=all --dir=all', 'export const GBA_SPRITES = {'];
   for (const [key, dirs] of Object.entries(sprites)) {
     lines.push(`  ${JSON.stringify(key)}: {`);
     for (const [dir, uri] of Object.entries(dirs)) lines.push(`    ${dir}: ${JSON.stringify(uri)},`);

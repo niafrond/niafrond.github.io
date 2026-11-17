@@ -10,7 +10,7 @@ describe('stockage permanent sur l\'appareil', () => {
     test('premier accès : réseau puis Cache Storage ; ensuite servi sans réseau ; versions anciennes purgées', async () => {
         const store = new Map(), deleted = [];
         const fakeCache = { match: async u => store.get(u), put: async (u, r) => { store.set(u, r); } };
-        globalThis.caches = { open: async () => fakeCache, keys: async () => ['match3-ultimates-v0', 'autre'], delete: async k => { deleted.push(k); } };
+        globalThis.caches = { open: async () => fakeCache, keys: async () => ['houyi-ultimates-v0', 'autre'], delete: async k => { deleted.push(k); } };
         let calls = 0;
         globalThis.fetch = async () => { calls++; return { ok: true, clone() { return this; } }; };
         try {
@@ -19,7 +19,7 @@ describe('stockage permanent sur l\'appareil', () => {
             expect(calls).toBe(1);
             expect(store.has('https://x/a.png')).toBe(true);
             await new Promise(r => setTimeout(r, 0));
-            expect(deleted).toEqual(['match3-ultimates-v0']);
+            expect(deleted).toEqual(['houyi-ultimates-v0']);
             globalThis.fetch = async () => ({ ok: false, status: 404 });
             await expect(deviceFetch('https://x/absent.png')).rejects.toThrow('404');
         } finally {

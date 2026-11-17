@@ -1,6 +1,6 @@
 // Captures d'interface de la soluce (soluce/img/change_puzzle.jpg, change_tuto.jpg, stuff_onglet.jpg) : puzzle de soin de Chang'e (avec son tutoriel)
 // et onglet Stuff de l'inventaire, dans le vrai jeu (téléphone 430×860, aspect rétro).
-// Usage : NODE_PATH=$(npm root -g) node match3-quest/tools/build-soluce-ui-shots.mjs [--base=http://localhost:4173]
+// Usage : NODE_PATH=$(npm root -g) node houyi/tools/build-soluce-ui-shots.mjs [--base=http://localhost:4173]
 // Prérequis : serveur statique à la racine du dépôt (ex. `python3 -m http.server 4173`) et Playwright (CHROMIUM_PATH si besoin).
 import { createRequire } from 'node:module';
 import { dirname, join } from 'node:path';
@@ -15,7 +15,7 @@ const ctx = await browser.newContext({ viewport: { width: 430, height: 860 }, de
 const page = await ctx.newPage();
 page.on('pageerror', e => console.log('erreur page :', e.message));
 const loaded = () => page.waitForFunction(() => !document.getElementById('loading-screen')?.classList.contains('visible'), null, { timeout: 60_000 });
-await page.goto(`${BASE}/match3-quest/?shot=1`);
+await page.goto(`${BASE}/houyi/?shot=1`);
 await loaded();
 await page.click('.class-card');
 await page.click('#confirm-class');

@@ -1,4 +1,4 @@
-// Test du système de localStorage pour Match3-Quest
+// Test du système de localStorage pour Houyi
 // Ce fichier peut être exécuté dans la console du navigateur pour tester le système de sauvegarde
 
 console.log('=== Test du système de localStorage ===');

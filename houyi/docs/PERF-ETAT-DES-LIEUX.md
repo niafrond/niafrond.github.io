@@ -1,4 +1,4 @@
-# match3-quest — état des lieux du chantier « vieux téléphones » (2026-10-21)
+# houyi — état des lieux du chantier « vieux téléphones » (2026-10-21)
 
 Document de reprise : ce qui a été fait, mesuré, ce qui reste, et les pièges. Le détail chronologique est dans `SPECS.md` (entrées 2026-10-20 et 2026-10-21).
 Outils de mesure : `tools/perf-bench/` (voir son README).
@@ -11,7 +11,7 @@ Décisions de l'utilisateur : service worker (et non le seul Cache Storage), **t
 
 ## Branches et commits
 
-Tout le travail est sur `ccr-f77478a3-58hzl2` (9 commits depuis la base `afa26e3`), repris ici sur `perf/match3-quest-vieux-telephones` + ces outils.
+Tout le travail est sur `ccr-f77478a3-58hzl2` (9 commits depuis la base `afa26e3`), repris ici sur `perf/houyi-vieux-telephones` + ces outils.
 
 | Commit | Contenu |
 |---|---|
@@ -83,8 +83,8 @@ Accélération vérifiée (`SystemInfo.getInfo` : `2d_canvas`, `gpu_compositing`
 
 ## Architecture livrée
 
-- **`sw.js`** (classique ES2017, version lue dans `sw.js?v=<build>`) : cache du cœur par build (`match3-core-v<build>`), cache des médias commun à tous les builds
-  (`match3-media-v1`, indexé par chemin, empreintes dans `__hashes.json`, mises à jour sérialisées). Page d'accueil, `version.js` et manifeste : réseau d'abord avec délai (3 s / 2 s) puis cache ;
+- **`sw.js`** (classique ES2017, version lue dans `sw.js?v=<build>`) : cache du cœur par build (`houyi-core-v<build>`), cache des médias commun à tous les builds
+  (`houyi-media-v1`, indexé par chemin, empreintes dans `__hashes.json`, mises à jour sérialisées). Page d'accueil, `version.js` et manifeste : réseau d'abord avec délai (3 s / 2 s) puis cache ;
   cœur et médias : cache d'abord ; `Range` géré ; une URL `?v=` d'un autre build va au réseau (repli sur le cache hors ligne seulement) ; réponses redirigées reconstruites.
 - **`offlineCache.js`** : enregistrement du service worker (`registerServiceWorkerWhenLoaded`), `createPrefetcher` (reprenable, 2 fichiers à la fois, quota, hors ligne, économiseur de données),
   statut et bouton « Jeu hors ligne » dans les Options.
@@ -92,12 +92,12 @@ Accélération vérifiée (`SystemInfo.getInfo` : `2d_canvas`, `gpu_compositing`
   `sprites/png`, `sprites/ultimates-seq|comfy|sdxl`, `tools`, `tests`… n'y sont pas (≈ 1,2 Go suivis par git mais jamais demandés par le jeu).
 - **`explorationGrids.js`** (`gridsOf`) et, dans `explorationView.js` : `inView` (découpage hors écran), `groundPainter`/`groundJob`/`prebuildNeighborGround` (sol voisin par tranches),
   fond en bandes, suspension du dessin quand la carte est couverte.
-- **`index.html`** : le script anti-cache lit la version par une XHR **synchrone**, qui ne passe pas par le service worker ; hors ligne il retombait sur `v=0` : le dernier build lu est mémorisé (`localStorage` `match3.build`).
+- **`index.html`** : le script anti-cache lit la version par une XHR **synchrone**, qui ne passe pas par le service worker ; hors ligne il retombait sur `v=0` : le dernier build lu est mémorisé (`localStorage` `houyi.build`).
 
 ## Tests
 
-- jest : `NODE_OPTIONS=--experimental-vm-modules npx jest --selectProjects match3-quest-node` → 72 suites / 2 346 tests verts le 2026-10-21 (≈ 3 min ; dont un test d'une autre session, `bibleGraphique.test.js`). Filtre : `--testPathPatterns "<motif>"` (**pas** `--testPathPattern`, ignoré en silence).
-- Playwright : `npx playwright test --project=match3-quest-mobile` → 12/12 verts. Ici, la version de Playwright du dépôt attendait un autre Chromium que celui installé : un fichier local **non versionné** `.pw-local.config.mjs`
+- jest : `NODE_OPTIONS=--experimental-vm-modules npx jest --selectProjects houyi-node` → 72 suites / 2 346 tests verts le 2026-10-21 (≈ 3 min ; dont un test d'une autre session, `bibleGraphique.test.js`). Filtre : `--testPathPatterns "<motif>"` (**pas** `--testPathPattern`, ignoré en silence).
+- Playwright : `npx playwright test --project=houyi-mobile` → 12/12 verts. Ici, la version de Playwright du dépôt attendait un autre Chromium que celui installé : un fichier local **non versionné** `.pw-local.config.mjs`
   à la racine (ajouté à `.git/info/exclude`) réutilisait la config du dépôt en forçant `launchOptions.executablePath` ; inutile sur une machine où `npx playwright install chromium` a fonctionné.
 - Tests ajoutés : `explorationGrids`, `precacheManifest`, `serviceWorker` (sw.js exécuté dans un faux environnement ; plusieurs mutations volontaires détectées), `offlinePrefetch`, et dans `tests/e2e` : `perf-mobile.spec.js` (compteurs `fillRect`, tâche la plus longue d'une transition, pas de remplissage plein écran) et `offline.spec.js` (jeu hors ligne, tout pré-téléchargé, témoin sans service worker).
 - Connus et **hors périmètre** : 31 échecs Playwright dans `dj-mix` (29) et `flash-guess` (2), présents avant le chantier ; test jest instable `progression.test.js` « les ennemis générés utilisent cette défense » (≈ 3,4 % d'échecs : défense tirée au hasard dans `enemies.js`, mesuré sur 3 000 tirages).

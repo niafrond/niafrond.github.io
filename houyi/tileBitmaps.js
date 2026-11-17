@@ -80,7 +80,7 @@ export function createTileBitmaps(env = globalThis, { svgUrl, schedule = (fn, ms
 }
 
 // Instance du jeu : SVG versionnés comme le reste (`?v=<build>` posé par index.html)
-const build = () => (typeof window !== 'undefined' && window.__match3Build) || '0';
+const build = () => (typeof window !== 'undefined' && window.__houyiBuild) || '0';
 const instance = typeof window !== 'undefined'
     ? createTileBitmaps(window, { svgUrl: name => new URL(`./sprites/tiles/tile-${name}.svg?v=${build()}`, import.meta.url).href })
     : null;

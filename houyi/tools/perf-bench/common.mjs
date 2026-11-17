@@ -6,7 +6,7 @@ import fs from 'fs';
 
 export const DIR = dirname(fileURLToPath(import.meta.url));
 export const CACHE = join(DIR, '.cache');   // screens.json, base-player.json, captures : générés, non versionnés
-export const BASE_URL = `${(process.env.URL || 'http://127.0.0.1:4180').replace(/\/$/, '')}/match3-quest/`;
+export const BASE_URL = `${(process.env.URL || 'http://127.0.0.1:4180').replace(/\/$/, '')}/houyi/`;
 export const VIEWPORT = { width: 393, height: 851 };   // téléphone portrait
 
 /** Chromium : CHROMIUM_PATH (exécutable) et CHROMIUM_ARGS (ex. « --use-angle=gl --enable-gpu-rasterization ») pour une machine avec GPU. */

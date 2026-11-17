@@ -22,7 +22,7 @@ const VARIANTS = {
     'sans-filtres': css('*{filter:none !important;backdrop-filter:none !important}'),
     'sans-animations': css('*,*::before,*::after{animation:none !important;transition:none !important}'),
     'plateau-masque': css('#board{visibility:hidden !important}'),
-    'effets-economes': 'try{localStorage.setItem("match3quest.options",JSON.stringify({effects:"low"}))}catch(e){}',
+    'effets-economes': 'try{localStorage.setItem("houyi.options",JSON.stringify({effects:"low"}))}catch(e){}',
     // les 8 SVG des tuiles rastérisés une fois en PNG (côté en pixels) puis utilisés comme fond, avant le combat
     'tuiles-bitmap-90': bitmapTiles(90),
     'tuiles-bitmap-128': bitmapTiles(128),

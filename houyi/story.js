@@ -1,4 +1,4 @@
-// Histoire et cartes d'exploration de Match3-Quest : « La Légende de Hou Yi ».
+// Histoire et cartes d'exploration de Houyi : « La Légende de Hou Yi ».
 //
 // Fantasy chinoise : l'archer Hou Yi doit abattre neuf des dix soleils (UNIVERS.md est la source de
 // vérité pour les identifiants). Données pures (aucun accès DOM) : la logique est dans exploration.js,

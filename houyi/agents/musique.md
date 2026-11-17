@@ -25,7 +25,7 @@ Biomes : paddy, riverbed, bamboo, gobi, storm, volcano, savanna, coast, fusang, 
 
 ## Livrables
 - Modifications dans `tools/audio/composer.js` (graines, modes, instruments, tempos) puis rendu :
-  `node match3-quest/tools/audio/render.mjs --music` (ou `--only=clé,clé`). Prérequis : `ffmpeg`, Playwright/Chromium.
+  `node houyi/tools/audio/render.mjs --music` (ou `--only=clé,clé`). Prérequis : `ffmpeg`, Playwright/Chromium.
 - MP3 mono 48 kbps dans `audio/music/`, `audio/manifest.json` régénéré.
 - Entrée `SPECS.md` : pistes ajoutées ou modifiées, graines, durées.
 

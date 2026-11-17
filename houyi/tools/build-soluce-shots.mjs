@@ -3,7 +3,7 @@
 // tienne entière (tuile minimale du jeu : 44 px), puis capture du canvas. Le cercle rouge est posé ensuite par les pages de la soluce
 // (build-soluce.mjs), à partir des coordonnées des entités : une même capture sert à toutes les quêtes de l'écran.
 // Les zones de chaque région (route, village, zone sauvage, hameau, sanctuaire) et leurs intérieurs (maisons, grottes, cryptes) sont aussi photographiés pour la page « Zones et jonctions ».
-// Usage : NODE_PATH=$(npm root -g) node match3-quest/tools/build-soluce-shots.mjs [--base=http://localhost:4173] [--only=id1,id2] [--jobs=4]
+// Usage : NODE_PATH=$(npm root -g) node houyi/tools/build-soluce-shots.mjs [--base=http://localhost:4173] [--only=id1,id2] [--jobs=4]
 // Prérequis : un serveur statique à la racine du dépôt (ex. `python3 -m http.server 4173`) et Playwright (Chromium).
 import { createRequire } from 'node:module';
 import { mkdirSync, existsSync } from 'node:fs';
@@ -30,7 +30,7 @@ async function worker(queue) {
     const ctx = await browser.newContext({ viewport: { width: 800, height: 600 } });
     const page = await ctx.newPage();
     page.on('pageerror', e => console.log('erreur page :', e.message));
-    await page.goto(`${BASE}/match3-quest/?shot=1`);   // shot=1 : sans minimap (elle masquerait un coin de la carte)
+    await page.goto(`${BASE}/houyi/?shot=1`);   // shot=1 : sans minimap (elle masquerait un coin de la carte)
     await loaded(page);
     await page.click('.class-card');
     await page.click('#confirm-class');

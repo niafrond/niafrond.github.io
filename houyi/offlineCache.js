@@ -11,7 +11,7 @@ export function canUseServiceWorker(env = globalThis) {
 
 /** Enregistre le service worker ; retourne l'enregistrement, ou null (build inconnu, navigateur sans service worker, échec). Ne lève jamais. */
 export async function registerServiceWorker(env = globalThis) {
-    const build = String(env.__match3Build || '0');
+    const build = String(env.__houyiBuild || '0');
     if (build === '0' || !canUseServiceWorker(env)) return null;   // '0' : version.js illisible (hors ligne sans cache, file://)
     try {
         return await env.navigator.serviceWorker.register(serviceWorkerUrl(build), { scope: './' });
@@ -29,11 +29,11 @@ export function registerServiceWorkerWhenLoaded(env = globalThis) {
 }
 
 // ── Pré-téléchargement de tout le jeu (≈ 270 Mo de musiques et de dessins) ────────────────────────────────────────────
-// Le service worker (sw.js) range dans `match3-media-v1` tout média qu'il voit passer : il suffit donc de demander chaque fichier du manifeste
+// Le service worker (sw.js) range dans `houyi-media-v1` tout média qu'il voit passer : il suffit donc de demander chaque fichier du manifeste
 // (precache-manifest.json). Reprenable (ce qui est déjà en cache avec la bonne empreinte n'est pas redemandé), prudent (quota, hors ligne,
 // économiseur de données) et sans effet sur le jeu (2 téléchargements à la fois, en tâche de fond).
 
-export const MEDIA_CACHE = 'match3-media-v1';
+export const MEDIA_CACHE = 'houyi-media-v1';
 export const MANIFEST_URL = './precache-manifest.json';
 
 // Espace laissé libre sur l'appareil : on ne remplit jamais le stockage jusqu'au bout.

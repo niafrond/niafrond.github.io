@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════════════════════════════════════
-   Thème « jeu rétro » de Match3-Quest — chargé APRÈS style.css, actif via <body class="rt">.
+   Thème « jeu rétro » de Houyi — chargé APRÈS style.css, actif via <body class="rt">.
    Même langage visuel que l'exploration : police pixel, panneaux crème à bordure brune épaisse,
    ombres franches (sans flou), boutons en relief, barres de vie segmentées, plateau biseauté.
    Les couleurs passent par des variables : le mode sombre ne change que les valeurs (body.rt.dark-mode).

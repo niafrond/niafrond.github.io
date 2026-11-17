@@ -1,14 +1,14 @@
 #!/usr/bin/env node
 /**
- * Génère les sprites GBA pour match3-quest via l'API pixel.lab.
- * Sortie : match3-quest/sprites/generated.js
+ * Génère les sprites GBA pour houyi via l'API pixel.lab.
+ * Sortie : houyi/sprites/generated.js
  *
  * Stratégie (NPCs / ennemis) :
  *   1. Génère le sprite de face (south) via PixFlux avec un prompt détaillé
  *   2. Dérive back/left/right via l'endpoint /rotate (cohérence visuelle garantie)
  *
  * Usage :
- *   node match3-quest/tools/gen-sprites.mjs [options]
+ *   node houyi/tools/gen-sprites.mjs [options]
  *
  * Options :
  *   --only=heroes|npcs|enemies|all   Catégorie à générer (défaut: heroes)
@@ -166,9 +166,9 @@ function loadExisting() {
 
 function writeGenerated(sprites) {
   const lines = [
-    '// Généré par match3-quest/tools/gen-sprites.mjs — ne pas éditer à la main',
+    '// Généré par houyi/tools/gen-sprites.mjs — ne pas éditer à la main',
     `// Dernière mise à jour : ${new Date().toISOString().slice(0, 10)}`,
-    '// Lancez: node match3-quest/tools/gen-sprites.mjs --only=all --dir=all',
+    '// Lancez: node houyi/tools/gen-sprites.mjs --only=all --dir=all',
     'export const GBA_SPRITES = {',
   ];
   for (const [key, dirs] of Object.entries(sprites)) {
@@ -230,7 +230,7 @@ function writePreview(sprites) {
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<title>Sprite Preview — match3-quest GBA</title>
+<title>Sprite Preview — houyi GBA</title>
 <style>
   body { background: #1a1a2e; color: #eee; font-family: monospace; margin: 0; padding: 16px; }
   h1 { color: #e94560; margin: 0 0 24px; }
@@ -247,7 +247,7 @@ function writePreview(sprites) {
 </style>
 </head>
 <body>
-<h1>Sprites GBA — match3-quest</h1>
+<h1>Sprites GBA — houyi</h1>
 <p class="stats">Généré le ${new Date().toLocaleString('fr-FR')} — ${Object.keys(sprites).length} personnages</p>
 ${renderGroup('Héros', categories.heroes)}
 ${renderGroup('PNJ', categories.npcs)}
@@ -375,7 +375,7 @@ async function main() {
   console.log(`\nTerminé : ${done} générés, ${failed} échecs → ${GENERATED_PATH}`);
 
   const pngCount = exportPngs(existing);
-  console.log(`PNGs exportés : ${pngCount} → match3-quest/sprites/png/`);
+  console.log(`PNGs exportés : ${pngCount} → houyi/sprites/png/`);
 
   const previewPath = writePreview(existing);
   console.log(`Preview : ${previewPath}`);

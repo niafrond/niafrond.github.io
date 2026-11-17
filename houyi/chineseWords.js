@@ -354,7 +354,7 @@ export const LESSON_LOTS = [...CURATED_LOTS, ...USUAL_LOTS, ...chunk(pickedCreat
 export const LESSON_WORDS = LESSON_LOTS.flat();
 export const lotTitle = i => LOT_TITLES[i] || 'Créatures';
 
-export const LESSON_STORAGE_KEY = 'match3quest.zhLesson';
+export const LESSON_STORAGE_KEY = 'houyi.zhLesson';
 const blank = () => ({ lot: 0, pos: 0, passes: 0, known: [] });
 function load(storage) {
     try {

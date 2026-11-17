@@ -8,7 +8,7 @@
  *   node generate.mjs status                       tableau : versions générées / version approuvée par piste
  *   node generate.mjs approve <clé> <vNNN> [<vNNN>]  marque une version retenue (+ une 2e variante, `<clé>-b`) dans approved/
  *   node generate.mjs install [clés…]              approved/ → ../../../audio/music/<clé>.mp3 (stéréo 96 kbps, ffmpeg)
- *   node generate.mjs export [--dest DIR]          copie approved/ dans DIR/v<AAAA-MM-JJ_HHMM>/ (défaut : /mnt/d/GoogleDriveCFO/musicMatchQuest)
+ *   node generate.mjs export [--dest DIR]          copie approved/ dans DIR/v<AAAA-MM-JJ_HHMM>/ (défaut : /mnt/d/GoogleDriveCFO/musicHouyi)
  *
  * Prérequis : serveur ACE-Step lancé en local (`acestep-api`, port 8001 par défaut) et Node ≥ 18.
  * Les <clés> acceptent les jokers : `boss-soleil-*`, `village-*`, `all`. Ordre conseillé (cohérence des leitmotivs) :
@@ -40,7 +40,7 @@ const OUT = path.join(HERE, 'out'), APPROVED = path.join(HERE, 'approved');
 const GAME_MUSIC = path.resolve(HERE, '../../../audio/music'), GAME_MANIFEST = path.resolve(HERE, '../../../audio/manifest.json');
 const APPROVED_DB = path.join(APPROVED, 'approved.json');
 /** Dossier de copie versionnée (chemin WSL du lecteur D:, car le script tourne dans WSL). */
-const DEFAULT_EXPORT_DIR = '/mnt/d/GoogleDriveCFO/musicMatchQuest';
+const DEFAULT_EXPORT_DIR = '/mnt/d/GoogleDriveCFO/musicHouyi';
 /** Durée minimale de chaque piste générée (secondes) : les pistes du jeu bouclent, 3 min évitent les boucles trop courtes. */
 const MIN_DURATION = 180;
 /** Suffixe de la 2e variante d'une piste (`<clé>-b.mp3`) : le jeu en tire une au hasard à chaque scène. */

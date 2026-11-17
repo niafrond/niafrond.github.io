@@ -4,7 +4,7 @@
 Chaque Gardien est pixellisé depuis son invoqué détouré (sprites/ultimates-seq/<ultimate>/elements/entity.png, voir tools/sequences/<ultimate>.json) :
 rognage au contenu, cadre carré, réduction à 64×64, 28 couleurs sans tramage, contour sombre #2b1b17 (charte des ennemis) ; le résultat est écrit en PNG data URI dans
 sprites/cn/legends.js (paquet « legends » : sprites/packContents.js), sous la clé du boss (`legend_zhuque_boss`…) pour ne pas changer le dessin des mêmes créatures en rencontre aléatoire.
-Relancer ensuite : node match3-quest/sprites/build-packs.mjs   (met à jour l'index sprites/packs.js).
+Relancer ensuite : node houyi/sprites/build-packs.mjs   (met à jour l'index sprites/packs.js).
 
 Usage (WSL) : python3 tools/gen-legend-sprites.py
 """

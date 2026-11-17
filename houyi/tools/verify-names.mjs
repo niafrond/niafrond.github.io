@@ -18,7 +18,7 @@
  *   littéral: OK (un mot significatif retrouvé dans la traduction ou dans le sens d'un caractère)
  *             NOM (nom propre : doit égaler le pinyin sans tons) | À REVOIR
  *
- * Usage : node match3-quest/tools/verify-names.mjs [--only id1,id2] [--limit N] [--md rapport.md] [--refresh]
+ * Usage : node houyi/tools/verify-names.mjs [--only id1,id2] [--limit N] [--md rapport.md] [--refresh]
  *   Les réponses de l'API sont gardées dans tools/.verify-names-cache.json (ignoré par git) : une seconde
  *   exécution ne réinterroge rien. --refresh vide ce cache.
  */

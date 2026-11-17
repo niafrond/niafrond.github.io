@@ -64,6 +64,6 @@ Héros complet (sorts à effet, ultime, objet, compagnon), niveaux 1 à 70, 4 cl
 ## Relancer les simulations
 
 ```
-node match3-quest/tools/balance-search.mjs mode-report 1 6
-AI=auto node match3-quest/tools/balance-search.mjs bosses 12
+node houyi/tools/balance-search.mjs mode-report 1 6
+AI=auto node houyi/tools/balance-search.mjs bosses 12
 ```

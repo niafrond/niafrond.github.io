@@ -2,7 +2,7 @@
 // l'index sprites/gbaIndex.js (clé → fichier). Le jeu ne télécharge ainsi que les dessins de la région affichée (sprites/index.js
 // loadGbaSprites), au lieu de tout le fichier au démarrage. Le nom de chaque fichier porte l'empreinte de son contenu : un dessin modifié
 // change d'adresse (pas de cache périmé), le service worker les range parmi les médias.
-// À relancer après toute modification de generated.js :  node match3-quest/sprites/build-gba.mjs
+// À relancer après toute modification de generated.js :  node houyi/sprites/build-gba.mjs
 // (tests/unit/sprites.test.js vérifie que le découpage est à jour).
 import { readFileSync, writeFileSync, readdirSync, mkdirSync, unlinkSync, existsSync } from 'fs';
 import { createHash } from 'crypto';

@@ -1,7 +1,7 @@
 import { FakeCaches } from './fixtures/fakeCaches.js';
 import { createPrefetcher, startBackgroundPrefetch, describeOffline, bindOfflineOptions, formatMegabytes, MEDIA_CACHE } from '../../offlineCache.js';
 
-const SCOPE = 'https://site.test/match3-quest/';
+const SCOPE = 'https://site.test/houyi/';
 const MEDIA = [
     { p: 'sprites/spellfx/a.png', s: 30e6, h: 'ha' },
     { p: 'sprites/ultimates/b.png', s: 30e6, h: 'hb' },

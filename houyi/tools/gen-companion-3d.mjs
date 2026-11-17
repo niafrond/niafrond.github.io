@@ -40,7 +40,7 @@ const fluxWf = (text, seed) => ({
   16: { class_type: 'RandomNoise', inputs: { noise_seed: seed } },
   17: { class_type: 'SamplerCustomAdvanced', inputs: { noise: ['16', 0], guider: ['14', 0], sampler: ['15', 0], sigmas: ['13', 0], latent_image: ['12', 0] } },
   18: { class_type: 'VAEDecode', inputs: { samples: ['17', 0], vae: ['4', 0] } },
-  19: { class_type: 'SaveImage', inputs: { images: ['18', 0], filename_prefix: 'match3-3d/src' } }
+  19: { class_type: 'SaveImage', inputs: { images: ['18', 0], filename_prefix: 'houyi-3d/src' } }
 });
 
 const hunyuanWf = (image, seed, steps) => ({
@@ -53,7 +53,7 @@ const hunyuanWf = (image, seed, steps) => ({
   7: { class_type: 'KSampler', inputs: { model: ['6', 0], positive: ['4', 0], negative: ['4', 1], latent_image: ['5', 0], seed, steps, cfg: 5, sampler_name: 'euler', scheduler: 'normal', denoise: 1 } },
   8: { class_type: 'VAEDecodeHunyuan3D', inputs: { samples: ['7', 0], vae: ['1', 2], num_chunks: 8000, octree_resolution: OCTREE } },
   9: { class_type: 'VoxelToMeshBasic', inputs: { voxel: ['8', 0], threshold: 0.6 } },
-  10: { class_type: 'SaveGLB', inputs: { mesh: ['9', 0], filename_prefix: 'match3-3d/mesh' } }
+  10: { class_type: 'SaveGLB', inputs: { mesh: ['9', 0], filename_prefix: 'houyi-3d/mesh' } }
 });
 
 async function run(wf) {

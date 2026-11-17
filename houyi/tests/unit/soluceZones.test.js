@@ -1,6 +1,6 @@
 // Soluce (soluce/zones.html, tools/build-soluce.mjs) : chaque zone de chaque région a sa carte annotée et la liste exacte de ses passages
-// (côté, position), cohérente avec les connexions du monde assemblé ; relancer `node --import ./match3-quest/tests/unit/fixtures/xhrFromDisk.js
-// match3-quest/tools/build-soluce.mjs` si ce test échoue après un changement de cartes.
+// (côté, position), cohérente avec les connexions du monde assemblé ; relancer `node --import ./houyi/tests/unit/fixtures/xhrFromDisk.js
+// houyi/tools/build-soluce.mjs` si ce test échoue après un changement de cartes.
 import './fixtures/xhrFromDisk.js';
 import { readFileSync, existsSync } from 'node:fs';
 import { describe, test, expect } from '@jest/globals';

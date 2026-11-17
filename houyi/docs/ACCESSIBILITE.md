@@ -23,7 +23,7 @@ Taille du texte, symboles en plus des couleurs, animations coupables, effets ré
 Aucun mécanisme problématique trouvé : pas de vies/énergie, streaks, récompenses quotidiennes ou expirantes, notifications, achats, loot boxes ni compte à rebours. Les événements ne dépendent pas de la date (`events/config.js`). La « série de défaites contre un boss » (`bossLossStreak`) ne sert qu'à proposer un conseil. Les effets à durée de vie (`ttl` du terrain, buffs) ne vivent que dans un combat. Le rappel de pause n'apparaît qu'à un moment calme, jamais en combat, ne pénalise rien.
 
 ## Tests
-- `npm run test:unit` (ou `NODE_OPTIONS=--experimental-vm-modules npx jest --selectProjects match3-quest-node`)
+- `npm run test:unit` (ou `NODE_OPTIONS=--experimental-vm-modules npx jest --selectProjects houyi-node`)
 - Ciblés : `a11y.test.js`, `breakReminder.test.js`, `gameOptions.test.js`.
 
 ## À vérifier à la main (appareil réel)

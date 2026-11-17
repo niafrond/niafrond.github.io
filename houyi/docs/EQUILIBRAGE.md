@@ -1,6 +1,6 @@
 # Équilibrage des combats
 
-Ce document explique le rééquilibrage des combats de Match3 Quest réalisé en novembre 2026 : ce qui est visé, comment le jeu calcule les ennemis à chaque combat, d'où viennent les chiffres et ce qu'il reste à surveiller.
+Ce document explique le rééquilibrage des combats de Houyi réalisé en novembre 2026 : ce qui est visé, comment le jeu calcule les ennemis à chaque combat, d'où viennent les chiffres et ce qu'il reste à surveiller.
 
 Toutes les valeurs citées vivent dans `combatBalance.js`. Le détail daté des décisions est dans `SPECS.md`.
 
@@ -126,7 +126,7 @@ Désormais `createMapEnemy` (`enemies.js`) sépare :
 
 ## 5. Mesures en jeu
 
-Chaque victoire enregistre, sur l'appareil, les 60 derniers combats (`match3quest.combatStats`) :
+Chaque victoire enregistre, sur l'appareil, les 60 derniers combats (`houyi.combatStats`) :
 
 - **durée réelle**, sans les pauses de réflexion longues (au-delà de 20 s entre deux actions, l'excédent n'est pas compté) ni le temps où la page est masquée ;
 - **nombre de cycles**, dégâts infligés et subis ;
@@ -134,7 +134,7 @@ Chaque victoire enregistre, sur l'appareil, les 60 derniers combats (`match3ques
 
 Dès 4 victoires à ±3 niveaux du héros, ces mesures remplacent les modèles de simulation pour la durée d'un cycle, les dégâts du héros et ceux de l'ennemi.
 
-Pour les lire : dans la console du jeu, `copy(localStorage.getItem('match3quest.combatStats'))`, puis coller dans le banc d'essai.
+Pour les lire : dans la console du jeu, `copy(localStorage.getItem('houyi.combatStats'))`, puis coller dans le banc d'essai.
 
 ## 6. D'où viennent les chiffres : la simulation
 
@@ -155,7 +155,7 @@ Pour les lire : dans la console du jeu, `copy(localStorage.getItem('match3quest.
 | `bosses 12` | simule chacun des 42 boss (variable `AI`, `BOSSES=id,…` pour un sous-ensemble) |
 | `boss-adjust 12` | cherche le réglage de chaque boss |
 
-Exemple : `AI=auto node match3-quest/tools/balance-search.mjs bosses 12`.
+Exemple : `AI=auto node houyi/tools/balance-search.mjs bosses 12`.
 
 ## 7. Résultats
 
@@ -205,7 +205,7 @@ Les boss de la carte ont une attaque signature (Brasier dévastateur, Raz-de-mar
 - Les coups ordinaires des boss sont réglés en conséquence (ils peuvent descendre à la moitié de leur grimoire).
 
 ### 8.5 Vérification des modes
-`node match3-quest/tools/balance-search.mjs mode-report` rend des verdicts réussi / échec : victoires à ±10 points de la cible (catégories et boss de la carte), ordre Facile ≥ Normal ≥ Difficile ≥ Expert, durées dans la fenêtre. Dernier résultat : 76 contrôles sur 77 réussis ; seul échec, Expert contre les ennemis normaux (75 % pour 60 % visés). Boss de la carte en mode Auto : 61 % de victoires (écart-type 12 points), durée moyenne 7 min 24 ; cinq boss encore hors de 40-80 % (Zhuque, Gardien du jugement, Zaochi, Soleil des Orages, Soleil des Bêtes Folles).
+`node houyi/tools/balance-search.mjs mode-report` rend des verdicts réussi / échec : victoires à ±10 points de la cible (catégories et boss de la carte), ordre Facile ≥ Normal ≥ Difficile ≥ Expert, durées dans la fenêtre. Dernier résultat : 76 contrôles sur 77 réussis ; seul échec, Expert contre les ennemis normaux (75 % pour 60 % visés). Boss de la carte en mode Auto : 61 % de victoires (écart-type 12 points), durée moyenne 7 min 24 ; cinq boss encore hors de 40-80 % (Zhuque, Gardien du jugement, Zaochi, Soleil des Orages, Soleil des Bêtes Folles).
 
 ## 9. Limites et points à surveiller
 

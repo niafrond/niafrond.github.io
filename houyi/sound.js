@@ -1,6 +1,6 @@
 import { icon } from "./icons.js";
 import { createCheatModeSection } from "./cheatMode.js";
-import { getMatch3Version } from "./version.js";
+import { getHouyiVersion } from "./version.js";
 import { sfxKeyFor, sfxGainFor, sfxFallbackKey, sfxDuckFor, sfxVariants, sfxUrl, SFX_PLAY_GAIN } from "./sfxCatalog.js";
 import { duckMusic } from "./music.js";
 
@@ -8,7 +8,7 @@ import { duckMusic } from "./music.js";
 // CONSTANTES
 // ===============================
 
-const AUDIO_SETTINGS_KEY = 'match3quest.audio.settings';
+const AUDIO_SETTINGS_KEY = 'houyi.audio.settings';
 
 const defaultSettings = {
     muted: false,
@@ -251,7 +251,7 @@ export function updateAudioToggleButton(button) {
                   mode === 'sfx'   ? 'Effets coupés'    : 'Son actif';
     button.innerHTML = icon(iconName);
     button.setAttribute('aria-pressed', mode === 'all' ? 'true' : 'false');
-    button.title = `${label} (clic: ouvrir les options audio) • v${getMatch3Version()}`;
+    button.title = `${label} (clic: ouvrir les options audio) • v${getHouyiVersion()}`;
 }
 
 export function initializeAudioUI(button) {
@@ -286,7 +286,7 @@ function loadSfx(ctx, key) {
     if (typeof fetch !== 'function') return Promise.resolve(null);
     const promise = (async () => {
         try {
-            const res = await fetch(`${new URL(sfxUrl(key), import.meta.url).href}?v=${getMatch3Version()}`);   // ?v : jamais d'ancienne copie en cache après une release
+            const res = await fetch(`${new URL(sfxUrl(key), import.meta.url).href}?v=${getHouyiVersion()}`);   // ?v : jamais d'ancienne copie en cache après une release
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
             const data = await res.arrayBuffer();
             const buf = await new Promise((resolve, reject) => {
@@ -396,7 +396,7 @@ function openMuteModeChooser(button) {
     subtitle.textContent = 'Choisis ce que tu veux couper et ajuste les volumes.';
 
     const versionBadge = document.createElement('div');
-    versionBadge.textContent = `Match3 v${getMatch3Version()}`;
+    versionBadge.textContent = `Houyi v${getHouyiVersion()}`;
     versionBadge.style.cssText = 'margin:0 0 12px;opacity:.72;font-size:.78rem;letter-spacing:.05em';
 
     const refreshSubtitle = () => {

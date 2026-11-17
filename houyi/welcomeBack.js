@@ -1,5 +1,5 @@
 // « Ça fait longtemps » : rappel succinct (armes, sorts, potions, quêtes actives) quand le joueur revient après une longue absence.
-const LAST_PLAYED_KEY = 'match3LastPlayed';
+const LAST_PLAYED_KEY = 'houyiLastPlayed';
 export const ABSENCE_MS = 2 * 24 * 60 * 60 * 1000;   // 2 jours
 
 const storage = () => { try { return globalThis.localStorage || null; } catch(_) { return null; } };

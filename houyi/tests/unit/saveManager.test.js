@@ -55,7 +55,7 @@ describe('Save Manager', () => {
 
             expect(result.success).toBe(true);
             expect(result.blob).toBeInstanceOf(Blob);
-            expect(result.filename).toMatch(/match3quest-save-\d{4}-\d{2}-\d{2}-\d{2}-\d{2}-\d{2}\.json/);
+            expect(result.filename).toMatch(/houyi-save-\d{4}-\d{2}-\d{2}-\d{2}-\d{2}-\d{2}\.json/);
         });
 
         it('includes correct metadata', async () => {

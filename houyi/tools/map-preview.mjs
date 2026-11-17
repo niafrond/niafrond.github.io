@@ -4,10 +4,10 @@
  * jonction et entités ajoutées par world/junctions.js comprises), avec statistiques et contrôle d'atteignabilité à pied.
  *
  * Usage (Node ≥ 22, sous WSL) :
- *   node match3-quest/tools/map-preview.mjs <screenId>            aperçu + règles de coordonnées + statistiques + atteignabilité
- *   node match3-quest/tools/map-preview.mjs <screenId> --json     même contenu en JSON
- *   node match3-quest/tools/map-preview.mjs --all                 résumé d'une ligne par écran de plein air
- *   node match3-quest/tools/map-preview.mjs --all --json
+ *   node houyi/tools/map-preview.mjs <screenId>            aperçu + règles de coordonnées + statistiques + atteignabilité
+ *   node houyi/tools/map-preview.mjs <screenId> --json     même contenu en JSON
+ *   node houyi/tools/map-preview.mjs --all                 résumé d'une ligne par écran de plein air
+ *   node houyi/tools/map-preview.mjs --all --json
  *   options : --routes (marque les trajets de patrouille « : »), --no-entities (sans la liste des entités)
  *
  * Légende : # obstacle · ~ liquide · = chemin · " hautes herbes · . sol · lettre A-H bâtiment (porte en minuscule) ·

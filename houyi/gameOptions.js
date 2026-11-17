@@ -22,7 +22,7 @@
 //    l'ennemi peut vaincre le héros (dégâts calibrés : combatBalance.js, DIFFICULTY_WIN_RATIO_FACTOR).
 // Les autres options sont purement visuelles : elles ne changent pas les règles du jeu.
 
-export const OPTIONS_STORAGE_KEY = 'match3quest.options';
+export const OPTIONS_STORAGE_KEY = 'houyi.options';
 export const OPTION_DEFAULTS = { manaFlight: true, effects: 'auto', speed: 'normal', vibration: true, textSize: 'normal', shapes: false, colorblind: false, animations: true, reduceFx: false, breakReminder: true, casual: false, horseAvoid: true, aiDifficulty: 'auto' };
 const CHOICES = { effects: ['auto', 'low', 'normal', 'high'], speed: ['slow', 'normal', 'fast'], textSize: ['normal', 'large', 'xlarge'], aiDifficulty: ['auto', 'story', 'easy', 'normal', 'hard', 'expert'] };
 const SPEED_FACTOR = { slow: 1.4, normal: 1, fast: 0.6 };
@@ -60,7 +60,7 @@ export function setOption(key, value) {
 //  - le nom du moteur de rendu est celui d'un rendu logiciel (le premier indice ne se déclenche pas pour SwiftShader choisi d'office).
 // Le matériel ne change pas : le résultat est mémorisé par navigateur (clé = user agent), le test ne coûte un contexte WebGL qu'une fois.
 export const SOFTWARE_RENDERER_RE = /swiftshader|llvmpipe|softpipe|software|basic render/i;
-const SOFT_GPU_STORAGE_KEY = 'match3quest.softgpu';
+const SOFT_GPU_STORAGE_KEY = 'houyi.softgpu';
 let softwareRendering = null;
 export function detectSoftwareRendering(env = globalThis) {
     try {
