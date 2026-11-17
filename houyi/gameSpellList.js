@@ -133,12 +133,11 @@ export const chargeEnabled = () => gameState.combatState === 'active';
  * (renvoie false) ; sinon elle entre dans la file d'attente (renvoie true) et `retry` la rejouera au début d'un tour du joueur, dès que sa classe est
  * chargée. Le joueur n'en voit pas l'ordre. Le duel-tutoriel part toujours tout de suite (déroulé scripté).
  */
-export function deferAction(retry, label){
+export function deferAction(retry){
     if(!chargeEnabled() || gameState.bypassCharge || enemy?.isTutorialEnemy) return false;
     const id = getTurnClass();
     if(!id || (isClassReady(gameState.charge, id) && !hasQueuedAction(gameState.actionQueue, 'player'))) return false;
     enqueueAction(gameState.actionQueue, { owner: 'player', classId: id, retry });
-    log(`${label || 'Action'} : ${CLASS_SHORT[id] || id} se recharge, l'action partira dès que possible. Jouez sur le plateau.`);
     updateStats();
     return true;
 }
