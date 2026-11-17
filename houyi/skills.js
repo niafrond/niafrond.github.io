@@ -20,7 +20,7 @@ export const SKILLS = [
     { id: 'oeil_du_dragon', kind: SUPPORT, name: 'Œil du dragon', ap: 90, cost: 3, bonus: { attack: 8 }, description: 'Attaque +8 en combat.' },
     { id: 'peau_de_serpent', kind: SUPPORT, name: 'Peau de serpent', ap: 50, cost: 2, bonus: { poisonResist: 50 }, description: 'Réduit de moitié les dégâts de poison.' },
     { id: 'souffle_regenerant', kind: SUPPORT, name: 'Souffle régénérant', ap: 70, cost: 3, bonus: { regenPct: 3 }, description: 'Rend 3 % des PV max à chaque tour.' },
-    { id: 'coeur_de_transe', kind: SUPPORT, name: 'Cœur de transe', ap: 60, cost: 2, bonus: { transePct: 30 }, description: 'La jauge de Xiūxiān se remplit 30 % plus vite.' },
+    { id: 'coeur_de_transe', kind: SUPPORT, name: 'Cœur de Xiūxiān', ap: 60, cost: 2, bonus: { transePct: 30 }, description: 'La jauge de Xiūxiān se remplit 30 % plus vite.' },
     { id: 'qi_de_reserve', kind: SUPPORT, name: 'Qì de réserve', ap: 50, cost: 2, bonus: { startMana: 2 }, description: 'Commence chaque combat avec 2 qì de chaque couleur.' },
     // ── Action (commande de combat) ──
     { id: 'tir_perforant', kind: ACTION, name: 'Tir perforant', ap: 30, description: 'Une flèche qui perce l\'armure : dégâts directs.',
