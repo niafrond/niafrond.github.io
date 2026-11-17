@@ -25,7 +25,6 @@ test.describe('houyi · hors ligne (service worker)', () => {
         await context.setOffline(true);
         await page.reload();
         await loaded(page);
-        await expect(page.locator('.class-card').first()).toBeVisible();
         expect(await page.evaluate(() => Boolean(navigator.serviceWorker.controller))).toBe(true);
         expect(errors).toEqual([]);
     });
@@ -72,7 +71,7 @@ test.describe('houyi · hors ligne (service worker)', () => {
         await loaded(page);
         await context.setOffline(true);
         const reloaded = await page.reload().then(() => true, () => false);
-        const playable = reloaded && await page.locator('.class-card').first().isVisible().catch(() => false);
+        const playable = reloaded && await page.locator('#explore-canvas').isVisible().catch(() => false);
         expect(playable).toBe(false);
         await context.close();
     });

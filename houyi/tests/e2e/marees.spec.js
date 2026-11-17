@@ -18,8 +18,6 @@ test.describe('houyi · Hautes-Eaux', () => {
             page.on('pageerror', e => errors.push(e.message));
             await page.goto(URL);
             await loaded(page);
-            await page.click('.class-card');
-            await page.click('#confirm-class');
             await page.waitForSelector('#explore-canvas', { state: 'visible' });
             await page.evaluate(([screenId, px, py]) => {
                 const p = JSON.parse(localStorage.getItem('player'));

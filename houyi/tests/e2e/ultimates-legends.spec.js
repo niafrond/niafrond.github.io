@@ -20,14 +20,12 @@ const rows = page => page.evaluate(async () => {
 test.describe('houyi · ultimes de légende', () => {
     test.setTimeout(60_000);
 
-    for (const index of [0, 1, 2, 3]) {
+    for (const index of [0]) {   // plus de choix de classe au départ : un seul parcours
         test(`classe n°${index + 1} : rien d'affiché au départ, puis débloqués par quête, choisis et conservés après rechargement`, async ({ page }) => {
             const errors = [];
             page.on('pageerror', e => errors.push(e.message));
             await page.goto(URL);
             await loaded(page);
-            await page.locator('.class-card').nth(index).click();
-            await page.click('#confirm-class');
             await page.waitForSelector('#explore-canvas', { state: 'visible' });
 
             // Départ : niveau 1, aucun ultime de classe : la section est absente, sans aucun indice sur les ultimes de légende

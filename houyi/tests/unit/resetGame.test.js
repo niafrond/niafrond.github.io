@@ -11,8 +11,9 @@ describe('réinitialiser le jeu et choix du personnage', () => {
         expect(read('main.js')).toMatch(/game-reset-btn'\)\?\.addEventListener\('click', \(\) => clearSaveData\(\)\)/);
         expect(readGameSource()).toMatch(/export function clearSaveData\(\) \{\s*if \(confirm\(/);
     });
-    it('plus de bouton « Sans classe » au choix du personnage', () => {
+    it('plus de choix de classe au départ (la classe se choisit à chaque tour de combat)', () => {
         expect(read('main.js')).not.toMatch(/skip-class|Sans classe/);
-        expect(read('main.js')).toMatch(/id="confirm-class"/);
+        expect(read('main.js')).not.toMatch(/id="confirm-class"/);
+        expect(read('index.html')).not.toMatch(/class-modal/);
     });
 });

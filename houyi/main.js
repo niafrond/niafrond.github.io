@@ -76,71 +76,24 @@ function initializeThemeUI(toggleButton){
     });
 }
 
-// Afficher le modal de sélection de classe au démarrage si pas de classe
+// Nouvelle partie : plus de choix de classe au départ. Hou Yi commence en Rôdeur errant (l'archer divin) ; en combat, le joueur choisit
+// une classe par tour (gameSpellList.js), la classe du héros n'est que celle proposée par défaut.
+const DEFAULT_HERO_CLASS = 'assassin';
 function showClassSelection() {
-    if(player.class) return; // Déjà une classe sélectionnée
-    
-    const modal = document.getElementById('class-modal');
-    const container = document.getElementById('class-selection');
-    const classes = getAllClasses();
-    
-    let selectedClass = null;
-    
-    const classGrid = document.createElement('div');
-    classGrid.className = 'class-grid';
-    
-    classes.forEach(cls => {
-        const card = document.createElement('div');
-        card.className = 'class-card';
-        card.dataset.classId = cls.id;
-        card.innerHTML = `
-            <div class="class-emoji">${heroSprite(cls.id) ? `<img alt="" src="${spriteUri(heroSprite(cls.id))}">` : icon(cls.icon)}</div>
-            <div class="class-name">${cls.name}</div>
-            <div class="class-description">${cls.description}</div>
-        `;
-        card.onclick = () => {
-            document.querySelectorAll('.class-card').forEach(c => c.classList.remove('selected'));
-            card.classList.add('selected');
-            selectedClass = cls.id;
-        };
-        classGrid.appendChild(card);
+    if(player.class) return; // Partie déjà commencée
+    const classData = playerClasses[DEFAULT_HERO_CLASS];
+    player.class = DEFAULT_HERO_CLASS;
+    // Le joueur est toujours Hou Yi, l'archer divin.
+    player.name = 'Hou Yi';
+    Object.keys(classData.startingStats).forEach(attr => {
+        player.attributes[attr] += classData.startingStats[attr];
     });
-    
-    container.innerHTML = '';
-    container.appendChild(classGrid);
-    
-    const actions = document.createElement('div');
-    actions.className = 'modal-actions';
-    actions.innerHTML = `
-        <button class="primary" id="confirm-class">Confirmer</button>
-    `;
-    container.appendChild(actions);
-    
-    document.getElementById('confirm-class').onclick = () => {
-        if(!selectedClass) {
-            log('Veuillez sélectionner une classe');
-            return;
-        }
-        player.class = selectedClass;
-        // Le joueur est toujours Hou Yi, l'archer divin ; la classe choisie est sa manière de combattre.
-        player.name = 'Hou Yi';
-        const classData = playerClasses[selectedClass];
-        // Appliquer les stats de départ de la classe
-        Object.keys(classData.startingStats).forEach(attr => {
-            player.attributes[attr] += classData.startingStats[attr];
-        });
-        log(`${escapeHtml(player.name)}, vous êtes maintenant ${classData.name} !`);
-        // Le joueur ne doit jamais commencer un combat sans arme équipée
-        grantStartingWeapon(classData.startingWeaponId || DEFAULT_STARTING_WEAPON_ID);
-        updateAvailableSpells();
-        saveUpdate();
-
-        // Nouvelle partie : pas de question, le tutoriel est le duel contre Fengmeng.
-        modal.classList.remove('active');
-        window.dispatchEvent(new Event('houyi:start-tutorial-duel'));
-    };
-
-    modal.classList.add('active');
+    // Le joueur ne doit jamais commencer un combat sans arme équipée
+    grantStartingWeapon(classData.startingWeaponId || DEFAULT_STARTING_WEAPON_ID);
+    updateAvailableSpells();
+    saveUpdate();
+    // Nouvelle partie : pas de question, le tutoriel est le duel contre Fengmeng.
+    window.dispatchEvent(new Event('houyi:start-tutorial-duel'));
 }
 
 // Attendre que le DOM soit prêt
@@ -232,7 +185,6 @@ function init() {
         const fight = info ? null : getCombatMusicScene();
         if(fight) return [fight, getCombatMusicOptions()];   // pas de jingle d'entrée : la musique de combat démarre directement
         if(document.getElementById('battle-result-screen')?.classList.contains('active')) return [lastCombatVictory ? 'victory' : 'defeat'];
-        if(document.getElementById('class-modal')?.classList.contains('active')) return ['title'];
         const tab = document.querySelector('.tab-panel.active')?.id;
         if(tab && tab !== 'tab-combat') return ['menu'];
         if(document.getElementById('worldmap-modal')?.classList.contains('active') || document.querySelector('.explore-journal')) return ['menu'];

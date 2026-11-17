@@ -24,8 +24,6 @@ const browser = await launch();
 const page = await (await browser.newContext({ viewport: VIEWPORT, isMobile: true, hasTouch: true })).newPage();
 await page.goto(BASE_URL);
 await loaded(page);
-await page.click('.class-card');
-await page.click('#confirm-class');
 await page.waitForSelector('#explore-canvas', { state: 'visible' });
 await page.waitForTimeout(1500);
 writeCache('base-player.json', await page.evaluate(() => localStorage.getItem('player')));

@@ -1511,7 +1511,7 @@ export function loadGameData() {
             player.bonusTurn = normalizeBonusTurnValue(loaded.bonusTurn ?? player.bonusTurn);
             player.abilities = loaded.abilities ?? player.abilities;
             player.class = loaded.class ?? player.class;
-            player.playStyle = PLAY_STYLES[loaded.playStyle] ? loaded.playStyle : null;
+            player.playStyle = null;   // le choix du style de jeu a été retiré : les anciennes sauvegardes repartent sans style
             player.statusEffects = loaded.statusEffects ?? player.statusEffects;
             player.defense = loaded.defense ?? player.defense;
             player.inventory = loaded.inventory ?? player.inventory;
