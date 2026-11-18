@@ -1174,3 +1174,13 @@ body.show-xiu-text #xiu-banner { display: block; }
 .class-pick .cp-xiu b { background: #e0556f; }
 .class-pick .cp-xiu.full b { background: #ffd56a; }
 .class-pick .cp-xiu.on b { background: #b58cff; }
+
+/* Écran de combat simplifié : en haut l'ennemi seul ; sous le plateau le qì accumulé (#player-stats), puis la barre d'action avec une zone par personnage. */
+@media (orientation: portrait) {
+    .stats-container:not([style*="none"]) { grid-template-columns: minmax(0, 1fr); }
+    .stats-container > #enemy-stats { grid-column: 1; }
+}
+#player-stats.qi-strip { display: flex !important; flex-wrap: wrap; align-items: center; justify-content: center; gap: 4px 8px; padding: 4px 6px; margin: 4px 0; }
+#player-stats.qi-strip::after { display: none !important; }
+#player-stats.qi-strip .stat { margin: 0 !important; }
+#player-stats.qi-strip .row-pills, #player-stats.qi-strip .mana-dots { display: flex; align-items: center; gap: 6px; }

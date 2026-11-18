@@ -94,26 +94,6 @@ function _animateCounter(id, from, to) {
 // Animation d'attaque jouée sur le portrait : les images défilent puis le portrait de face revient.
 const attackPlaying = new Set();
 export const ATTACK_FRAME_MS = 90;
-// Flèche qui vole du portrait de Hou Yi à celui de l'ennemi (élément posé sur la page, retiré à l'arrivée).
-function shootArrow(fromEl, toEl){
-    if(!fromEl || !toEl) return;
-    const center = el => { const r = el.getBoundingClientRect(); const w = r.width ? Math.min(64, r.width) : 64; return { x: r.right - 4 - w / 2, y: r.top + 2 + w * 0.5 }; };
-    const a = center(fromEl), b = center(toEl);
-    const arrow = document.createElement('div');
-    arrow.className = 'hero-arrow';
-    arrow.style.left = `${a.x}px`;
-    arrow.style.top = `${a.y}px`;
-    const angle = Math.atan2(b.y - a.y, b.x - a.x);
-    arrow.style.setProperty('--angle', `${angle}rad`);
-    document.body.appendChild(arrow);
-    const dx = b.x - a.x, dy = b.y - a.y, dur = 360 * animationFactor();
-    const anim = arrow.animate ? arrow.animate([
-        { transform: `translate(0px, 0px) rotate(${angle}rad)`, opacity: 1 },
-        { transform: `translate(${dx}px, ${dy}px) rotate(${angle}rad)`, opacity: 1 }
-    ], { duration: dur, easing: 'ease-in', fill: 'forwards' }) : null;
-    setTimeout(() => arrow.remove(), dur + 60);
-    if(anim) anim.onfinish = () => arrow.remove();
-}
 
 export function playFighterAttack(isPlayer){
     if(document.body.classList.contains('fx-low')) return;
@@ -125,7 +105,6 @@ export function playFighterAttack(isPlayer){
     attackPlaying.add(id);
     const ms = (isPlayer ? 130 : ATTACK_FRAME_MS) * animationFactor();
     frames.forEach((uri, i) => setTimeout(() => el.style.setProperty('--portrait', `url("${uri}")`), i * ms));
-    if(isPlayer) setTimeout(() => shootArrow(el, document.getElementById('enemy-stats')), (frames.length - 1) * ms);   // la flèche part quand la corde est lâchée
     setTimeout(() => { attackPlaying.delete(id); updateFighterPortraits(); }, frames.length * ms);
 }
 
@@ -278,15 +257,8 @@ export function updateStats(){
     // Affichage de la classe si définie
     Promise.resolve(classIcon(player.class)).then(emoji => {
         playerDiv.innerHTML = `
-            <div class="stat row-name"><span class="enemy-combat-name" title="${escapeHtml(player.name || 'Hou Yi')}">${emoji} ${escapeHtml((player.name || 'Hou Yi').split(' ')[0])}</span>${bonusTurnBadge(player)}</div>
-            ${statusBadgesHtml(player) || STATUS_ROW_PLACEHOLDER}
-            <div class="stat row-hp">
-                <div class="hp-bar-container">
-                    <progress value="${initPlayerHp}" max="${playerShield.max}"></progress>${playerShield.bar}
-                    <span class="hp-text"><span id="player-hp-current">${targetPlayerHp}</span>/${player.maxHp}${playerShield.text}</span>
-                </div>
-            </div>
-            <div class="stat stat-row row-stats"><span class="level-pill" title="Niveau ${player.level}">${player.level}</span><span class="stat-chip" title="Attaque"><strong>Att.</strong> ${statValueHtml(player, 'attack')}</span><span class="stat-chip" title="Défense"><strong>Déf.</strong> ${statValueHtml(player, 'defense')}</span></div>
+            ${bonusTurnBadge(player) ? `<div class="stat row-name">${bonusTurnBadge(player)}</div>` : ''}
+            ${statusBadgesHtml(player)}
             <div class="stat row-pills">
                 <div class="mana-dots">
                     <span id="player-mana-red" class="cost-badge mana-red" title="red">${targetPlayerMana.red}</span>
@@ -299,9 +271,6 @@ export function updateStats(){
             </div>`;
         
         // Animer les compteurs si les valeurs ont changé
-        const playerProgressEl = playerDiv.querySelector('.hp-bar-container progress');
-        syncHpShield(playerProgressEl);
-        _animateHpBar('player-hp-current', initPlayerHp, targetPlayerHp, playerProgressEl);
         for (const c of ['red','blue','green','yellow','purple']) {
             _animateCounter(`player-mana-${c}`, snapPlayerMana[c], targetPlayerMana[c]);
         }
@@ -318,11 +287,6 @@ export function updateStats(){
     // Icône de la classe de l'ennemi
     const enemyClassEmoji = classIcon(enemy.playerClass);
     
-    // Afficher un indicateur visuel si l'ennemi est plus fort
-    const levelIndicator = enemy.level > player.level ? 
-        `<span class="level-pill level-pill-danger" title="Niveau ${enemy.level} : plus fort que vous">${enemy.level}</span>` : 
-        `<span class="level-pill" title="Niveau ${enemy.level}">${enemy.level}</span>`;
-    
     enemyDiv.innerHTML = `
         <div class="stat row-name"><span class="enemy-combat-name${enemyNameIsHanzi(enemy, enemyNameAsHanzi) ? ' name-hanzi' : ''}" data-full-name="${enemy.name}" aria-label="Nom complet: ${enemy.name}">${enemyClassEmoji} ${escapeHtml(enemyNameLabel(enemy, enemyNameAsHanzi))}</span>${enemy.personality === 'aggressive' ? '<span class="enemy-mood">en colère</span>' : ''}${bonusTurnBadge(enemy)}</div>
         ${statusBadgesHtml(enemy) || STATUS_ROW_PLACEHOLDER}
@@ -332,7 +296,6 @@ export function updateStats(){
                 <span class="hp-text"><span id="enemy-hp-current">${targetEnemyHp}</span>/${enemy.maxHp}</span>
             </div>
         </div>
-        <div class="stat stat-row row-stats">${levelIndicator}<span class="stat-chip" title="Attaque"><strong>Att.</strong> ${statValueHtml(enemy, 'attack')}</span><span class="stat-chip" title="Défense"><strong>Déf.</strong> ${statValueHtml(enemy, 'defense')}</span></div>
         <div class="stat row-pills">
             <div class="mana-dots">
                 <span id="enemy-mana-red" class="cost-badge mana-red" title="red">${targetEnemyMana.red}</span>
