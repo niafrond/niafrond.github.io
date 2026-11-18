@@ -43,8 +43,9 @@ function supportAction(foe){
     try {
         asFoe(foe, () => {
             const decision = makeDecision();
+            // Qì et PA sont communs à tous les ennemis : un sort ou une arme se paie sur la réserve partagée ; sinon, coup de base gratuit.
             if(decision.action === 'spell' && !decision.data?.spell?.boardSpell && payEnemyAction(decision)){ applyEnemyAction(decision); return; }
-            if(foe.weapon){ applyEnemyAction({ action: 'weapon', data: decision.data }); return; }
+            if(decision.action === 'weapon' && foe.weapon && payEnemyAction(decision)){ applyEnemyAction(decision); return; }
             basicStrike(foe);
         });
     } finally { foe.damageScale = previousScale; }

@@ -29,6 +29,7 @@ describe('groupes d\'ennemis', () => {
         expect(shouldSummon({ ...s, summonsMade: 1 }, [s], () => 0)).toBe(false);
         expect(shouldSummon({ ...s, summonedLastTurn: true }, [s], () => 0)).toBe(false);
         expect(shouldSummon({ ...s, statusEffects: { stunned: 1 } }, [s], () => 0)).toBe(false);
+        expect(shouldSummon({ ...s, isBoss: true }, [s], () => 0)).toBe(false);
         expect(shouldSummon({ ...s, summon: { chance: 0.3, maxCalls: 1 } }, [s], () => 0.99)).toBe(false);
     });
     it('gabarit invoqué : précis ou au hasard, jamais un boss', () => {

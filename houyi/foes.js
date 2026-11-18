@@ -12,6 +12,26 @@ import { playSfx } from './sound.js';
 import { isAreaSpell } from './targeting.js';
 import { MAX_ENEMIES, REINFORCEMENT_HP_MULT, rollGroupSize, reinforcementLevel, livingFoes, isAlive, hasRoom, pickSummonTemplate, rewardShare } from './enemyGroup.js';
 
+// ── Qì et points d'action mutualisés : comme l'équipe du joueur, les ennemis partagent UNE réserve de qì et UNE barre de PA. ──
+/** Fait pointer `mana` et `combatPoints` de chaque ennemi sur la réserve commune (`gameState.foePool`). Les écritures (`foe.mana = …`, `foe.combatPoints -= …`) passent par la réserve. */
+function linkFoePool(foes){
+    const pool = gameState.foePool;
+    for(const foe of foes){
+        if(foe.poolLinked) continue;
+        Object.defineProperty(foe, 'mana', { configurable: true, enumerable: true, get: () => pool.mana,
+            set: v => { for(const c of Object.keys(pool.mana)) pool.mana[c] = Math.max(0, Math.floor(v?.[c] || 0)); } });   // la réserve garde son identité : tous la voient
+        Object.defineProperty(foe, 'combatPoints', { configurable: true, enumerable: true, get: () => pool.combatPoints, set: v => { pool.combatPoints = Math.max(0, Number(v) || 0); } });
+        foe.poolLinked = true;
+    }
+}
+/** Verse le qì et les PA de départ d'un nouvel ennemi dans la réserve commune, puis le rattache à elle. */
+function joinFoePool(foe){
+    const pool = gameState.foePool;
+    for(const c of Object.keys(pool.mana)) pool.mana[c] += Math.max(0, Math.floor(foe.mana?.[c] || 0));
+    pool.combatPoints += Math.max(0, Number(foe.combatPoints) || 0);
+    linkFoePool([foe]);
+}
+
 /** Ennemis du combat (au moins l'ennemi ciblé). */
 export const allFoes = () => (gameState.foes?.length ? gameState.foes : [enemy]);
 
@@ -19,6 +39,8 @@ export const allFoes = () => (gameState.foes?.length ? gameState.foes : [enemy])
 export function setupFoeGroup(lead){
     pending = null; document.body?.classList.remove('picking-target');
     gameState.foes = [lead];
+    gameState.foePool = { mana: lead.mana, combatPoints: lead.combatPoints || 0 };   // la réserve commune part de celle du meneur
+    linkFoePool([lead]);
     const size = rollGroupSize(lead);
     for(let i = 1; i < size; i++){
         const template = pickSummonTemplate(lead, enemyCatalogList());
@@ -26,6 +48,7 @@ export function setupFoeGroup(lead){
         const foe = prepareFoe(createReinforcement(reinforcementLevel(lead.level), template), { hpMult: REINFORCEMENT_HP_MULT, biome: lead.biome });
         foe.isReinforcement = true;
         foe.readyAt = (gameState.charge?.now || 0) + enemyChargeMs(foe, 1);   // barre de chargement propre
+        joinFoePool(foe);
         gameState.foes.push(foe);
     }
     if(gameState.foes.length > 1){
@@ -56,6 +79,7 @@ export function addFoe(summoner){
     foe.isReinforcement = true;
     foe.summonedBy = summoner.name;
     foe.readyAt = (gameState.charge?.now || 0) + enemyChargeMs(foe, 1);
+    joinFoePool(foe);
     gameState.foes = [...livingFoes(gameState.foes), foe].slice(0, MAX_ENEMIES);   // les vaincus libèrent leur place
     return foe;
 }

@@ -978,6 +978,7 @@ export const gameState = {
     charge: newCharge(),  // temps de chargement des classes et de l'ennemi (classCharge.js)
     actionQueue: newActionQueue(),   // actions (sort, compétence, objet, arme) en attente de chargement ; l'ordre n'est jamais montré
     enemyPending: null,   // (ancien) sort de plateau de l'ennemi en attente
+    foePool: null,        // qì et PA mutualisés des ennemis (foes.js)
     foes: [],             // ennemis du combat (foes.js) : jusqu'à MAX_ENEMIES ; `enemy` est celui qui est ciblé
     allies: {},           // compagnons de l'équipe de combat : { classId: entité avec PV } (allies.js), reconstruits à chaque combat
     heroKo: false,        // Hou Yi est à terre mais un compagnon tient encore : le combat continue (défaite quand toute l'équipe est à terre)
