@@ -19,7 +19,7 @@ import { createWeaponButton, statValueHtml } from './gameInventoryTabs.js';
 import { updatePlayerStatsTab } from './gameStatsTab.js';
 import { updateLevelHud } from './gameLevelUp.js';
 import { createSpellButtons, getTurnClass } from './gameSpellList.js';
-import { renderAllyBar } from './alliesView.js';
+import { renderAllyBar, showXiuText } from './alliesView.js';
 import { isInTranse, classAllowsUltimate, storeGauge, TRANSE_TURNS } from './transe.js';
 import { bonusTurnBadge, canEntityCastSpell, castUltimate, activateXiuxian, allyInXiuxian, syncGauge, clampManaToCaps, classIcon, currentTurn, enemy, gameState, getUltimateTooltipHtml, transeTooltipHtml, getWeaponIcon, markMultiManaSpell, player, spellCostHtml, spellEffectIcon, syncPlayerControlsLock, ultimateManaBarHtml } from './game.js';
 
@@ -149,10 +149,7 @@ function updateFighterPortraits(){
 const XIU_HOLD_MS = 450, XIU_SHOW_MS = 6000, XIU_MOVE_PX = 10;
 let xiuLongPressed = false, xiuHideTimer = null;
 export function setXiuZoneVisible(div, on){
-    if(!div) return;
-    div.classList.toggle('show-xiu', !!on);
-    clearTimeout(xiuHideTimer);
-    if(on) xiuHideTimer = setTimeout(() => div.classList.remove('show-xiu'), XIU_SHOW_MS);
+    showXiuText(on);
 }
 function bindXiuLongPress(div){
     let timer = null, startX = 0, startY = 0;
@@ -160,7 +157,7 @@ function bindXiuLongPress(div){
     div.addEventListener('pointerdown', (ev) => {
         if(ev.target.closest?.('.rage-bar-container')) return;   // un appui sur la jauge visible garde son rôle (déclencher)
         startX = ev.clientX; startY = ev.clientY; cancel();
-        timer = setTimeout(() => { timer = null; xiuLongPressed = true; setXiuZoneVisible(div, !div.classList.contains('show-xiu')); }, XIU_HOLD_MS);
+        timer = setTimeout(() => { timer = null; xiuLongPressed = true; setXiuZoneVisible(div, !document.body.classList.contains('show-xiu-text')); }, XIU_HOLD_MS);
     });
     div.addEventListener('pointermove', (ev) => { if(timer && Math.hypot(ev.clientX - startX, ev.clientY - startY) > XIU_MOVE_PX) cancel(); });
     ['pointerup', 'pointercancel', 'pointerleave'].forEach(t => div.addEventListener(t, cancel));
@@ -170,7 +167,7 @@ function bindXiuLongPress(div){
     div.addEventListener('keydown', (ev) => {
         if(ev.target !== div || (ev.key !== 'Enter' && ev.key !== ' ')) return;
         ev.preventDefault();
-        setXiuZoneVisible(div, !div.classList.contains('show-xiu'));
+        setXiuZoneVisible(div, !document.body.classList.contains('show-xiu-text'));
     });
 }
 
@@ -243,7 +240,7 @@ export function updateStats(){
             ${true ? `
             <div class="stat rage-stat row-rage">
                 <div class="rage-bar-container${isRageFull(player) ? ' full' : ''}${inTranse ? ' in-transe' : ''}${canActivate ? ' xiu-ready' : ''}${ultimateReady ? ' ultimate-ready' : ''}${ultimateReady && ultimateManaReached ? ' mana-reached' : ''}"${ultimateReady || canActivate ? ' role="button" tabindex="0"' : ''}>
-                    <div class="rage-bar" role="progressbar" aria-valuemin="0" aria-valuemax="${RAGE_MAX}" aria-valuenow="${Math.floor(player.rage || 0)}"><div class="rage-fill" style="height:${Math.min(100, Math.max(0, gaugeLevel))}%"></div></div>
+                    <div class="rage-bar" role="progressbar" aria-valuemin="0" aria-valuemax="${RAGE_MAX}" aria-valuenow="${Math.floor(player.rage || 0)}"><div class="rage-fill" style="--g:${Math.min(100, Math.max(0, gaugeLevel))}%"></div></div>
                     <span class="rage-text" title="${ultimateReady ? 'ULTIME' : canActivate ? 'DÉCLENCHER LA XIŪXIĀN' : inTranse ? 'XIŪXIĀN' : `XIŪXIĀN ${Math.floor(player.rage || 0)}`}">${ultimateReady ? '★' : canActivate ? '!' : inTranse ? `T${Math.max(1, Math.floor(player.transe || 1))}` : Math.floor(player.rage || 0)}</span>
                 </div>
                 ${equippedUltimate ? ultimateManaBarHtml(player, equippedUltimate) : ''}
