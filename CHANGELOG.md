@@ -1,3 +1,22 @@
+## [3.3.0](https://github.com/niafrond/niafrond.github.io/compare/v3.2.0...v3.3.0) (2026-11-18)
+
+### Features
+
+* **houyi:** afficher dégâts et parade sur un seul écran, sans animation de bouclier ([3da0218](https://github.com/niafrond/niafrond.github.io/commit/3da0218cac5481c28f00d32922cac9d63fd4c649))
+* **houyi:** armes de compagnon équipables (48 variantes), en butin et chez les marchands ([9898bad](https://github.com/niafrond/niafrond.github.io/commit/9898baddacb397f4ead72253a441182276aeaf3a))
+* **houyi:** attaques de mêlée animées et armes propres aux compagnons ([8bf0d1a](https://github.com/niafrond/niafrond.github.io/commit/8bf0d1ad0b0ff1b6cc202d084f699d8e52e0e1f4))
+* **houyi:** compagnons issus de la mythologie chinoise (Fuxi, Sun Wukong, Shennong, Nezha, Longwang, Jingwei) ([6f47400](https://github.com/niafrond/niafrond.github.io/commit/6f474009d7040fddf1d79dbdff1a1ea84e6acead))
+* **houyi:** flèche qui part vers la cible lors d'une attaque à l'arc ([c671838](https://github.com/niafrond/niafrond.github.io/commit/c671838e115e534763fedee7573b591da1f2927b))
+* **houyi:** la cible esquive en reculant quand le coup est bloqué ou paré ([8a0acd3](https://github.com/niafrond/niafrond.github.io/commit/8a0acd321b8c91ed6e9c8b9afc9b36e67625cef1))
+* **houyi:** scène d'animation des sorts avec lanceur, sort et cible qui clignote ([5673938](https://github.com/niafrond/niafrond.github.io/commit/567393876636731e9fd52fc614fc5123f04fd8be))
+* **houyi:** vrais profils des sprites de compagnons via Pixel Lab ([c75e04d](https://github.com/niafrond/niafrond.github.io/commit/c75e04d7c331dda4f58369a51580d9b172cf6c60))
+* **houyi:** Xiūxiān propre à chaque compagnon, profils des sprites de compagnons repris de la vue de face ([42e3e7c](https://github.com/niafrond/niafrond.github.io/commit/42e3e7ce049d3bc50e6d5bd1d52e1a6ea8a4dc6c))
+* **houyi:** zone de Xiūxiān au clic long et choix du personnage avec barre de vie pour les objets ([96ce8ab](https://github.com/niafrond/niafrond.github.io/commit/96ce8abb398016192b9f092c1076322e65011b17))
+
+### Bug Fixes
+
+* **houyi:** jauges de Xiūxiān toujours visibles sous les barres de vie, texte de Xiūxiān au clic long ([0c781f2](https://github.com/niafrond/niafrond.github.io/commit/0c781f2ee1ab5f84e048e758f17da26410e38133))
+
 ## [3.2.0](https://github.com/niafrond/niafrond.github.io/compare/v3.1.0...v3.2.0) (2026-11-18)
 
 ### Features
