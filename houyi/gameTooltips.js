@@ -12,7 +12,10 @@ import { isWeaknessShown } from "./combatFlow.js";
 import { describeRecharge } from "./items.js";
 import { icon as svgIcon, manaIcon } from "./icons.js";
 import { activeStatuses, statusTooltipHtml, statusLinesHtml } from "./statusBadges.js";
-import { MANA_COLOR_ORDER, MANA_COLOR_META, player, enemy, updateStats } from "./game.js";
+import { MANA_COLOR_ORDER, MANA_COLOR_META, player, enemy, updateStats, gameState } from "./game.js";
+import { isInTranse, TRANSE_EFFECTS } from "./transe.js";
+import { allyEquippedWeapon } from "./allyWeapons.js";
+import { allyWeaponBonus } from "./weapons.js";
 import { shieldStats } from "./gameInventoryTabs.js";
 
 // Infobulle d'un sort / d'une arme / d'un objet : au survol à la souris, au focus clavier, ou par appui long au doigt
@@ -169,20 +172,44 @@ export function showSpellTooltip(button, spell, costHtml = '') {
     placeTooltip(tooltip, button, 260);
 }
 
-// Équipement du joueur (arme, bouclier, stuff) : appui long sur sa carte en combat.
-function getPlayerGearTooltipHtml() {
+// Fiche d'un personnage (appui long sur son bouton de la barre d'action) : son équipement, ses altérations, et l'effet de sa Xiūxiān si elle est en cours.
+// Hou Yi : arme, bouclier, stuff. Compagnon : son arme (et son bonus).
+function getMemberTooltipHtml(classId = 'assassin') {
     const line = (label, text) => `<div class="spell-tooltip-line"><strong>${label} :</strong> ${text}</div>`;
-    const weapon = player.equippedWeapon;
-    const shield = player.equipment?.leftHand?.type === 'shield' ? player.equipment.leftHand : null;
-    let html = `<div class="spell-tooltip-title">${escapeHtml(player.name || 'Hou Yi')}</div>`;
-    html += line('Arme', weapon ? `${weapon.name} (${weapon.damage} ${svgIcon('skull')})` : 'aucune');
-    html += line('Bouclier', shield ? `${shield.name} (${shieldStats(shield)})` : 'aucun');
-    normalizeStuff(player);
-    Object.entries(STUFF_SLOT_LABELS).forEach(([slot, label]) => {
-        const piece = getStuffById(player.stuff[slot]);
-        html += line(label, piece ? piece.name : '—');
-    });
-    return html + statusLinesHtml(player);
+    const hero = classId === 'assassin';
+    const member = hero ? player : gameState.allies?.[classId];
+    if(!member) return '';
+    let html = `<div class="spell-tooltip-title">${escapeHtml(hero ? (player.name || 'Hou Yi') : member.name)}</div>`;
+    if(hero) {
+        const weapon = player.equippedWeapon;
+        const shield = player.equipment?.leftHand?.type === 'shield' ? player.equipment.leftHand : null;
+        html += line('Arme', weapon ? `${weapon.name} (${weapon.damage} ${svgIcon('skull')})` : 'aucune');
+        html += line('Bouclier', shield ? `${shield.name} (${shieldStats(shield)})` : 'aucun');
+        normalizeStuff(player);
+        Object.entries(STUFF_SLOT_LABELS).forEach(([slot, label]) => {
+            const piece = getStuffById(player.stuff[slot]);
+            html += line(label, piece ? piece.name : '—');
+        });
+    } else {
+        const w = allyEquippedWeapon(player, classId);
+        html += line('Arme', w ? `${w.name} (+${allyWeaponBonus(w)})` : 'mains nues');
+    }
+    html += statusLinesHtml(member);
+    if(isInTranse(member)) {
+        const eff = TRANSE_EFFECTS[hero ? (member.transeClass || 'assassin') : classId];
+        const turns = Math.max(1, Math.floor(member.transe || 1));
+        html += `<div class="spell-tooltip-line"><strong>Xiūxiān en cours${eff ? ` · ${escapeHtml(eff.name)}` : ''} :</strong> ${eff ? escapeHtml(eff.text) : ''} (${turns} tour${turns > 1 ? 's' : ''} restant${turns > 1 ? 's' : ''})</div>`;
+    }
+    return html;
+}
+const getPlayerGearTooltipHtml = () => getMemberTooltipHtml('assassin');
+
+export function showMemberTooltip(targetEl, classId) {
+    if(!targetEl) return;
+    const tooltip = ensureSpellTooltip();
+    tooltip.innerHTML = getMemberTooltipHtml(classId);
+    tooltip.classList.add('visible');
+    placeTooltip(tooltip, targetEl, 260);
 }
 
 export function showPlayerGearTooltip(targetEl) {

@@ -9,7 +9,7 @@ import { getEquippedUltimate } from './ultimates.js';
 import { spellCooldownLeft } from './spellCooldown.js';
 import { isMuted } from './alterations.js';
 import { icon as svgIcon } from './icons.js';
-import { bindTooltip, showSpellTooltip, hideSpellTooltip } from './gameTooltips.js';
+import { bindTooltip, showSpellTooltip, showMemberTooltip, hideSpellTooltip } from './gameTooltips.js';
 import { updateSpellsTab } from './gameSpellsTab.js';
 import { allSpells as spellsCatalog, getSpellsByLevel } from './spells.js';
 import { getClassSpells, playerClasses } from './classes.js';
@@ -362,6 +362,7 @@ function renderClassPicker(container){
     if(picker._key === key) return;   // rien n'a changé : on ne redessine pas (l'animation de chargement ne repart pas de zéro)
     picker._key = key;
     picker.innerHTML = html;
+    picker.querySelectorAll('.class-pick').forEach(btn => bindTooltip(btn, () => showMemberTooltip(btn, btn.dataset.class), hideSpellTooltip));   // appui long / survol : équipement, altérations, Xiūxiān en cours
     picker.querySelectorAll('.class-pick').forEach(btn => { btn.onclick = () => { if(setTurnClass(btn.dataset.class)){ createSpellButtons(); updateStats(); document.dispatchEvent(new Event('charge-changed')); } }; });
 }
 
