@@ -39,7 +39,7 @@ describe('compagnons de combat', () => {
         grantClass(h, 'templar'); grantClass(h, 'alchemist');
         const team = buildTeam(h);
         expect(Object.keys(team)).toEqual(['templar', 'alchemist']);
-        expect(team.templar).toMatchObject({ hp: 400, maxHp: 400, ko: false, isAlly: true, name: 'Capitaine Heng' });
+        expect(team.templar).toMatchObject({ hp: 400, maxHp: 400, ko: false, isAlly: true, name: 'Nezha' });
         expect(team.alchemist.maxHp).toBe(220);
     });
     test('hors de combat à 0 PV : le compagnon ne joue plus et ne peut plus être visé', () => {
@@ -150,7 +150,7 @@ describe('armes des compagnons', () => {
     test("chaque compagnon a une arme de mêlée ou de bâton : jamais l'arc de Hou Yi", () => {
         ALLY_IDS.forEach(id => { expect(ALLIES[id].weapon).toBeTruthy(); expect(ALLIES[id].weapon).not.toBe('bow'); });
         expect(new Set(ALLY_IDS.map(id => ALLIES[id].weapon)).size).toBeGreaterThanOrEqual(5);
-        expect(buildAlly(hero(), 'barbarian').weapon).toBe('axe');
+        expect(buildAlly(hero(), 'barbarian').weapon).toBe('staff');
     });
 });
 
@@ -165,7 +165,7 @@ describe('armes de compagnon : variantes, équipement, butin et marchands', () =
     test('équiper : seulement une arme de son type et de niveau permis ; une arme ne sert qu\'à un compagnon', async () => {
         const { companionWeapons, getWeaponById } = await import('../../weapons.js');
         const { equipAllyWeapon, allyEquippedWeapon, weaponsFor } = await import('../../allyWeapons.js');
-        const axe = companionWeapons.find(w => w.type === 'axe' && w.minLevel === 1), sword = companionWeapons.find(w => w.type === 'sword' && w.minLevel === 1);
+        const axe = companionWeapons.find(w => w.type === 'staff' && w.minLevel === 1), sword = companionWeapons.find(w => w.type === 'sword' && w.minLevel === 1);
         const h = Object.assign(hero(), { level: 5, weapons: [axe, sword] });
         expect(weaponsFor(h, 'barbarian').map(w => w.id)).toEqual([axe.id]);
         expect(equipAllyWeapon(h, 'barbarian', sword.id).ok).toBe(false);

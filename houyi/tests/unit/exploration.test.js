@@ -1127,14 +1127,14 @@ describe('histoire complète', () => {
         expect(talk.lines).toEqual(quest('q_sun_1').offer);
         expect(s.data.quests.q_sun_1).toBe('active');
         expect(talkToNpc(s, 'elder_wen').lines).toEqual(quest('q_sun_1').hint);   // pas de suite tant que le soleil vit
-        expect(currentObjectiveText(s)).toContain('Frère Ming');   // le maître de la 1re région : un compagnon avant que le premier soleil n'apparaisse
+        expect(currentObjectiveText(s)).toContain('Fuxi');   // le maître de la 1re région : un compagnon avant que le premier soleil n'apparaisse
 
         // Traversée du village, de la zone sauvage (gate : le gardien de la digue) puis duel d'entraînement : scène de Fengmeng, puis le premier soleil
         travel(s, 'rizieres');
         expect(s.data.defeated).toContain('rizieres_warden');
         let events = markEnemyDefeated(s, 'fengmeng_1');
         expect(events.map(e => e.type)).toEqual(['scene']);
-        playQuest(s, CLASS_TRIAL_GATES.rizieres[1]);   // 1re région : Frère Ming (Moine) rejoint l'équipe avant que le premier soleil n'apparaisse
+        playQuest(s, CLASS_TRIAL_GATES.rizieres[1]);   // 1re région : Fuxi (Moine) rejoint l'équipe avant que le premier soleil n'apparaisse
         events = markEnemyDefeated(s, 'sun_1');
         // victoire, interlude avec Chang'e (scènes), puis la quête suivante
         expect(events.filter(e => e.type !== 'scene').map(e => e.type)).toEqual(['questCompleted', 'questStarted']);
@@ -2200,7 +2200,7 @@ describe('indicateurs de quête : maisons et direction', () => {
         const s = createSession({});
         talkTo(s, 'elder_wen');
         expect(questStatus(s, s.quests.find(q => q.id === 'q_sun_1'))).toBe('active');
-        playQuest(s, 'q_class_monk');   // le premier soleil n'apparaît qu'une fois Frère Ming recruté
+        playQuest(s, 'q_class_monk');   // le premier soleil n'apparaît qu'une fois Fuxi recruté
         const target = s.screens[s.quests.find(q => q.id === 'q_sun_1').objectives[0] && Object.values(s.screens).find(sc => sc.enemies.some(e => e.id === 'sun_1')).id];
         travel(s, START_SCREEN);
         const dir = questDirection(s);
