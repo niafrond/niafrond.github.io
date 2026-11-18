@@ -38,10 +38,10 @@ export function buyPotion(hero, size, regionLevel = 1) {
     const potion = POTIONS[size];
     if (!potion) return { ok: false, message: 'Potion inconnue.' };
     const price = potionPrice(size, regionLevel);
-    if ((hero.gold || 0) < price) return { ok: false, message: `Pas assez d'or ! Coût : ${price}, vous avez ${hero.gold || 0}.` };
+    if ((hero.gold || 0) < price) return { ok: false, message: `Pas assez de zhu ! Coût : ${price}, vous avez ${hero.gold || 0}.` };
     hero.gold -= price;
     addPotions(hero, size, 1);
-    return { ok: true, price, message: `${potion.name} achetée pour ${price} pièces d'or (vous en avez ${hero.potions[size]}).` };
+    return { ok: true, price, message: `${potion.name} achetée pour ${price} zhu (vous en avez ${hero.potions[size]}).` };
 }
 
 /**

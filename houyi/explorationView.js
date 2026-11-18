@@ -479,7 +479,7 @@ export function createExplorationView(cfg) {
                 const stuffText = ev.reward?.stuff ? ` · ${getStuffById(ev.reward.stuff)?.name || 'Stuff'}` : ev.reward?.relic ? ` · ${(allItems.find(i => i.id === ev.reward.relic)?.name) || 'Relique'}` : '';
                 const classText = ev.reward?.class ? ' · Nouvelle classe' : '';
                 const plus = ev.ended ? ' · Nouvelle Partie + débloquée (journal)' : '';
-                toast(`Quête terminée : ${ev.quest.title} — +${ev.gold || 0} or${ev.xp ? ` · +${ev.xp} XP` : ''}${frag}${stuffText}${classText}${plus}`, ev.ended ? 8000 : 5000);
+                toast(`Quête terminée : ${ev.quest.title} — +${ev.gold || 0} zhu${ev.xp ? ` · +${ev.xp} XP` : ''}${frag}${stuffText}${classText}${plus}`, ev.ended ? 8000 : 5000);
             } else if (ev.type === 'chestSealed') {
                 toast(`${ev.chest.label || 'Coffre'} : vous n'avez aucune raison de fouiller ici pour l'instant.`, 3500);
             } else if (ev.type === 'chestOpened') {
@@ -490,7 +490,7 @@ export function createExplorationView(cfg) {
                 const specialText = ev.questItem ? ` · Objet spécial : ${ev.questItem.name}` : '';
                 // Popup qui reste jusqu'au clic : le joueur a le temps de lire la description et le butin.
                 openDialog({ ...NARRATOR, icon: 'chest', title: ev.chest.label || 'Coffre' },
-                    [`${(ev.early && ev.chest.earlyText) || ev.chest.openText || `${ev.chest.label || 'Coffre'} ouvert !`}${ev.gold ? ` +${ev.gold} or` : ''}${lootText}${specialText}`]);
+                    [`${(ev.early && ev.chest.earlyText) || ev.chest.openText || `${ev.chest.label || 'Coffre'} ouvert !`}${ev.gold ? ` +${ev.gold} zhu` : ''}${lootText}${specialText}`]);
             }
         });
         if (gold > 0) cfg.onGold(gold);

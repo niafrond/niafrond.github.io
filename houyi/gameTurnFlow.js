@@ -814,7 +814,7 @@ export function handleEnemyDefeated(){
     const goldEarned = goldBase + goldBonus;
     player.gold = (player.gold || 0) + goldEarned;
     combatRewards.gold = goldEarned;
-    log(`Vous ramassez ${goldEarned} pièce${goldEarned > 1 ? 's' : ''} d'or !`);
+    log(`Vous ramassez ${goldEarned} zhu !`);
 
     // Prime de l'Arène des Mille Flèches (arena.js) : or et XP en plus, croissants avec le cercle et le combat,
     // et grosse prime quand un cercle est terminé pour la première fois (son maître vaincu : `firstClear`).
@@ -824,13 +824,13 @@ export function handleEnemyDefeated(){
         player.gold += bonus.gold;
         combatRewards.gold += bonus.gold;
         queueCombatXP(bonus.xp);
-        log(`Prime d'arène (combat ${wave}/${enemy.arena.waves}) : +${bonus.gold} or, +${bonus.xp} XP !`);
+        log(`Prime d'arène (combat ${wave}/${enemy.arena.waves}) : +${bonus.gold} zhu, +${bonus.xp} XP !`);
         const tier = arenaTier(tierId);
         if(tier && enemy.arena.firstClear) {
             player.gold += tier.clearGold;
             combatRewards.gold += tier.clearGold;
             queueCombatXP(tier.clearXp);
-            log(`${tier.name} terminé pour la première fois : +${tier.clearGold} or, +${tier.clearXp} XP !`);
+            log(`${tier.name} terminé pour la première fois : +${tier.clearGold} zhu, +${tier.clearXp} XP !`);
         }
     }
 
@@ -858,7 +858,7 @@ export function handleEnemyDefeated(){
             // chance d'obtenir un objet (1 - weaponChance)
             const droppedItem = getRandomItem(player.level);
             if(droppedItem && sellDuplicateItem(droppedItem)) {
-                // déjà possédé : converti en or, sans le dire
+                // déjà possédé : converti en zhu, sans le dire
             } else if(droppedItem) {
                 player.inventory.push({...droppedItem, applied: false});
                 normalizeActiveInventoryIndex();
@@ -907,7 +907,7 @@ export function handleEnemyDefeated(){
             updateAvailableWeapons();
             log(`${rarityEmoji} ${enemy.name} était plus fort que vous : vous obtenez ${entry.weapon.name} !`);
         } else if(sellDuplicateItem(entry.item)) {
-            // déjà possédé : converti en or, sans le dire
+            // déjà possédé : converti en zhu, sans le dire
         } else {
             player.inventory.push({...entry.item, applied: false});
             normalizeActiveInventoryIndex();
