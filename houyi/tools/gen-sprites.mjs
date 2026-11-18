@@ -271,6 +271,7 @@ ${renderGroup('Ennemis', categories.enemies)}
 }
 
 function openInBrowser(filePath) {
+  if (args['no-open']) return;   // --no-open : ne pas ouvrir l'aperçu dans le navigateur
   try {
     const winPath = execSync(`wslpath -w "${filePath}"`).toString().trim();
     execSync(`cmd.exe /c start "" "${winPath}"`, { stdio: 'ignore' });
