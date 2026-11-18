@@ -2,6 +2,7 @@
 
 > **Houyi** — jeu autonome dérivé d'un autre projet de match-3 (copie du 2026-11-17, 8547 fichiers). Il évolue désormais séparément. Le service worker déduit son périmètre de l'URL (`/houyi/`), aucun chemin à adapter.
 
+- 2026-11-18 (tour bonus sans scène héros / ennemi) : à la demande de l'utilisateur. L'annonce « TOUR BONUS ! » (match de 4 crânes, épées ou tuiles, `board.js` ; crânes détruits, `classSpellEffects.js`) n'affiche plus la scène lanceur / ennemi de `spellStageHtml` : `showCombatAnimation` (`gameStatsTab.js`) accepte `plain: true`, qui garde l'icône et le texte seuls.
 - 2026-11-18 (appui long Xiūxiān : 3 s) : à la demande de l'utilisateur (« 500 ms trop court »). `XIU_HOLD_MS` passe de 450 ms à 3000 ms (`alliesView.js` pour les compagnons, `gameHud.js` pour Hou Yi) : l'appui maintenu qui affiche la zone Xiūxiān doit durer 3 s.
 - 2026-11-18 (Xiūxiān de Hou Yi plus facile à déclencher) : à la demande de l'utilisateur, comme pour les compagnons. La jauge du héros (`#player-stats .rage-stat`, `style-hud.css`) passe de 9 à 12 px de haut et, prête (`xiu-ready` / `ultimate-ready`), gagne une zone tactile invisible élargie de 12 px au-dessus/en dessous et 6 px sur les côtés (`::before`).
 - 2026-11-18 (Xiūxiān plus facile à déclencher) : à la demande de l'utilisateur. La jauge Xiūxiān des compagnons (`.ally-xiu`, `style-hud.css`) passe de 6 à 10 px de haut avec une zone tactile invisible élargie de 12 px au-dessus/en dessous et 6 px sur les côtés (pseudo-élément `::before`).

@@ -200,7 +200,7 @@ export function spellStageHtml(fxHtml, isPlayerAttack, hit, dodged = false, lung
     return `<div class="spell-stage stage-${dir}${casterHero ? '' : ' stage-foe'}">${left}<div class="stage-mid">${fxHtml}</div>${right}</div>`;
 }
 
-export function showCombatAnimation({ icon, title, damage = null, heal = null, source = null, target = null, projectile = null }, isPlayerAttack = true, options = {}) {
+export function showCombatAnimation({ icon, title, damage = null, heal = null, source = null, target = null, projectile = null, plain = false }, isPlayerAttack = true, options = {}) {
     // Les annonces de critique / blocage / parade restent affichées jusqu'au clic du joueur.
     if(options.requireClick === undefined && options.autoHideMs === undefined && /CRITIQUE|BLOQUÉ|paré/.test(String(damage ?? ''))) options = { ...options, requireClick: true };
     // Coup d'arme ou sort offensif : le combattant joue aussi son animation d'attaque (tir à l'arc, coup d'arme…)
@@ -215,7 +215,7 @@ export function showCombatAnimation({ icon, title, damage = null, heal = null, s
     if(casterAlly?.weapon && !fx && damage !== null && heal === null && !projectile) { icon = casterAlly.weapon; projectile = casterAlly.weapon === 'bow' ? 'arrow' : 'melee'; }
     const midIcon = projectile === 'melee' && typeof icon === 'string' && !icon.includes('<') ? svgIcon(icon) : (svgIcon(icon) || icon);
     const stage = !bigFx ? spellStageHtml(fx || (projectile === 'arrow' ? `<div class="attack-icon stage-arrow">${svgIcon('arrow')}</div>` : `<div class="attack-icon">${svgIcon(icon) || icon}</div>`), isPlayerAttack, damage !== null && heal === null, Boolean(options.blocked), projectile === 'melee') : null;
-    if(stage) html = stage;
+    if(stage && !plain) html = stage;   // `plain` : simple annonce (ex. tour bonus), sans la scène héros / ennemi
     // 2e temps d'un blocage / d'une parade : gros bouclier (plein = bloqué, fendu = paré) et texte qui vibre.
     let caption = `<div class="attack-title">${String(title).toUpperCase()}</div>`;
     if (damage !== null) caption += `<div class="attack-damage">${damage}</div>`;
