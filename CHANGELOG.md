@@ -1,3 +1,19 @@
+## [3.5.0](https://github.com/niafrond/niafrond.github.io/compare/v3.4.2...v3.5.0) (2026-11-18)
+
+### Features
+
+* **houyi:** choisir classe et Xiūxiān à tout moment, sorts de plateau ennemis hors tour, points de repos ([0b8858e](https://github.com/niafrond/niafrond.github.io/commit/0b8858e7f634657623b2b86f23c7b9a9a4e4a058))
+* **houyi:** intégrer les invocations à la liste de sorts du Mage invocateur ([59536af](https://github.com/niafrond/niafrond.github.io/commit/59536af62919bb3056c2172d101f4264084a3f82))
+* **houyi:** placer le bouton Xiūxiān sous les objets avec sa description en infobulle ([f2830e2](https://github.com/niafrond/niafrond.github.io/commit/f2830e23e2d6115a974152403429c0a414c53b1e))
+* **houyi:** séparer Xiūxiān et invocation en deux boutons, invocation réservée au Mage ([af4f8fa](https://github.com/niafrond/niafrond.github.io/commit/af4f8fa057b27b8ffeb74bd01e0995fa91380d0d))
+* **match3-quest:** ajouter des points de récupération des PV (pierres, auberges, fontaines) ([4a3653f](https://github.com/niafrond/niafrond.github.io/commit/4a3653fdf211f9c4bcbf0e842a646af39863187e))
+* **match3-quest:** mettre en file les sorts de plateau, ultimes et objets choisis hors tour ([6fc0f70](https://github.com/niafrond/niafrond.github.io/commit/6fc0f700b0e2e49132f6562b117c4a1461c9c7c8))
+* **match3-quest:** permettre les actions hors tour quand une barre est chargée ([93df273](https://github.com/niafrond/niafrond.github.io/commit/93df273291535e9b07d3320c87f01bdc76717c1d))
+
+### Reverts
+
+* **match3-quest:** annuler les actions hors tour et les points de repos (ils visaient houyi) ([e4da86b](https://github.com/niafrond/niafrond.github.io/commit/e4da86b941be82cfc0dac1d0f3a5463a4821f3d4))
+
 ## [3.4.2](https://github.com/niafrond/niafrond.github.io/compare/v3.4.1...v3.4.2) (2026-11-18)
 
 ### Bug Fixes
