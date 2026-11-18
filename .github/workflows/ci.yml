@@ -47,6 +47,8 @@ jobs:
               - 'reveil-xtrem/**'
             match3-quest:
               - 'match3-quest/**'
+            houyi:
+              - 'houyi/**'
             shared:
               - 'jest.config.js'
               - 'package.json'
@@ -80,6 +82,7 @@ jobs:
           FILTER_MOB_RUSH: ${{ steps.filter.outputs.mob-rush }}
           FILTER_REVEIL_XTREM: ${{ steps.filter.outputs.reveil-xtrem }}
           FILTER_MATCH3_QUEST: ${{ steps.filter.outputs.match3-quest }}
+          FILTER_HOUYI: ${{ steps.filter.outputs.houyi }}
           FILTER_SHARED: ${{ steps.filter.outputs.shared }}
         run: |
           if [ "$FILTER_SHARED" = "true" ]; then
@@ -101,6 +104,7 @@ jobs:
           [ "$FILTER_MOB_RUSH" = "true" ] && PROJECTS+=(mob-rush-node)
           [ "$FILTER_REVEIL_XTREM" = "true" ] && PROJECTS+=(reveil-xtrem-node)
           [ "$FILTER_MATCH3_QUEST" = "true" ] && PROJECTS+=(match3-quest-node)
+          [ "$FILTER_HOUYI" = "true" ] && PROJECTS+=(houyi-node)
 
           # blind-test/, mix-blind-test/ et theme-party/ importent directement des
           # modules de dj-mix/lib (config downloader, trackStore, audioSourceManager...) :

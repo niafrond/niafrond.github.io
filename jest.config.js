@@ -131,6 +131,13 @@ export default {
       testMatch: ['<rootDir>/match3-quest/tests/unit/**/*.test.js'],
       transform: {},
     },
+    // ── Houyi : moteur, combat, exploration, histoire (node, pas de DOM) ─────
+    {
+      displayName: 'houyi-node',
+      testEnvironment: 'node',
+      testMatch: ['<rootDir>/houyi/tests/unit/**/*.test.js'],
+      transform: {},
+    },
     // ── Réveil Xtrem : scheduler, calculs, formatage (node, pas de DOM) ──────
     {
       displayName: 'reveil-xtrem-node',
