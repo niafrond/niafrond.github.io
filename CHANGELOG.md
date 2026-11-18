@@ -1,3 +1,18 @@
+## [3.6.0](https://github.com/niafrond/niafrond.github.io/compare/v3.5.0...v3.6.0) (2026-11-18)
+
+### Features
+
+* **houyi:** barre d'action remplie par les sorts à tour bonus, altérations et PV dans le bouton de chaque personnage ([cebea3c](https://github.com/niafrond/niafrond.github.io/commit/cebea3c2e67983e059d66acd2ca2e6fb9a9099fa))
+* **houyi:** clarifier le menu des compétences (base, origine, activation à tout moment) ([4cf1791](https://github.com/niafrond/niafrond.github.io/commit/4cf1791f29c6df0bf6220d7d4514861223fca45d))
+* **houyi:** ennemi seul en haut, qì sous le plateau, sans niveau ni Att./Déf., sans flèche d'envoi ([fc232fd](https://github.com/niafrond/niafrond.github.io/commit/fc232fde42136021c7f7f2ed47c94b08857c72a9))
+* **houyi:** fiche du personnage au clic long, régénérer l'instantané du monde ([1f6c916](https://github.com/niafrond/niafrond.github.io/commit/1f6c9167fbb320891b7aa427abaa8f320011be69))
+* **houyi:** séparer les compétences en soutien et actions, retirer l'éclair ([26b1a58](https://github.com/niafrond/niafrond.github.io/commit/26b1a589ff6467acc18a33104b5dfe4ce45c19af))
+* **houyi:** un bouton d'action par personnage avec ses données, animation d'attaque plus longue ([233760c](https://github.com/niafrond/niafrond.github.io/commit/233760c0fcae35b07341524890e9c3f462c9cee3))
+
+### Bug Fixes
+
+* **houyi:** retirer l'encadré explicatif du menu des compétences ([d560dd4](https://github.com/niafrond/niafrond.github.io/commit/d560dd42b087cda8958eefc5c15147922b452a6c))
+
 ## [3.5.0](https://github.com/niafrond/niafrond.github.io/compare/v3.4.2...v3.5.0) (2026-11-18)
 
 ### Features
