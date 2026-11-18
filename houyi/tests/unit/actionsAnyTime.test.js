@@ -18,3 +18,12 @@ describe('actions choisies à tout moment (barre chargée), sans lien avec le to
         expect(proactive).not.toMatch(/passent par son tour de plateau/);
     });
 });
+
+describe('invocations : sorts normaux du Mage invocateur', () => {
+    test('elles sont dans la liste de sorts du Mage seulement, sans bouton ni jauge', () => {
+        const list = read('gameSpellList.js');
+        expect(list).toMatch(/cls === ULTIMATE_CLASS \? getSelectableUltimates\(player\)\.map\(sp => \(\{ \.\.\.sp, invocation: true/);
+        expect(read('gameHud.js')).not.toMatch(/castUltimate\(equippedUltimate\.id\)/);
+        expect(read('game.js')).toMatch(/spell\.cinematic\) await playUltimateCinematic\(spell\)/);
+    });
+});

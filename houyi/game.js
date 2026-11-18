@@ -264,7 +264,7 @@ export function transeTooltipHtml(entity, ultimate){
     return `<div class="spell-tooltip-title">XIŪXIĀN · ${isInTranse(entity) ? `${Math.max(1, Math.floor(entity.transe || 1))} tour(s) restant(s)` : `${filled} / 100`}</div>`
         + `<div class="spell-tooltip-line">Jauge du ${CLASS_SHORT[getTurnClass()] || 'héros'} : chaque classe a la sienne. Elle se remplit quand vous subissez des dégâts avec cette classe et se conserve d'un combat à l'autre. Pleine, touchez-la pour déclencher sa Xiūxiān (3 tours).</div>`
         + `<div class="spell-tooltip-line">${describeTranse(isInTranse(entity) ? entity.transeClass : getTurnClass())}</div>`
-        + (ultimate ? `<div class="spell-tooltip-line">Invocation « ${ultimate.name} » : bouton à part, réservé au Mage antique ; seulement pendant la Xiūxiān, avec cette classe choisie pour le tour.</div>` : '');
+        + (ultimate ? `<div class="spell-tooltip-line">Les invocations du Mage sont de simples sorts de sa liste : aucune jauge requise.</div>` : '');
 }
 
 // Fiche de l'ultime (appui long / survol de la jauge) : nom, coût en qì avec le qì possédé, effet.
@@ -2024,6 +2024,7 @@ async function castEffectSpellDecoupled(spell){
         pay();
         chooseAction(() => withCaster('player', async () => {
             announce();
+            if(spell.cinematic) await playUltimateCinematic(spell);   // invocation : scène plein écran avant l'effet
             const ok = await module.applyClassSpellEffect(spell);
             saveUpdate();
             if(ok){ tutorialCallbacks.onSpellCast?.(); endAction(); }
@@ -2032,6 +2033,7 @@ async function castEffectSpellDecoupled(spell){
     }
     const run = (index, config) => () => withCaster('player', async () => {
         announce();
+        if(spell.cinematic) await playUltimateCinematic(spell);   // invocation : scène plein écran avant l'effet
         if(config){ await config.onTileClick(index, board[index]); return; }   // position mémorisée : le sort part sur elle, quelle que soit la tuile qui s'y trouve
         const before = module.snapshotBoard();
         const ok = await module.applyClassSpellEffect(spell);

@@ -1160,3 +1160,5 @@ body.show-xiu-text #xiu-banner { display: block; }
 .xiu-btn.xiu-ready:active { transform: scale(0.97); }
 .xiu-btn.mana-reached .ult-mana-bar { animation: rage-pulse 0.9s ease-in-out infinite; }
 @media (prefers-reduced-motion: reduce) { .xiu-btn.mana-reached .ult-mana-bar { animation: none; } }
+
+.spell-tag { font-size: .8em; font-weight: bold; color: #f2c14e; text-transform: uppercase; letter-spacing: .05em; }

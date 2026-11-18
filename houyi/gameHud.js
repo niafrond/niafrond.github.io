@@ -172,10 +172,9 @@ function bindXiuLongPress(div){
     });
 }
 
-// Deux boutons sous les objets du personnage (colonne de gauche), qui ne sont PAS la même chose :
+// Bouton Xiūxiān sous les objets du personnage (colonne de gauche) :
 //  - Xiūxiān (la transe) : la jauge de rage ; elle se touche quand elle est pleine ;
-//  - Invocation (l'ancien ultime) : réservée à un personnage capable d'en faire (le Mage antique de l'équipe), jamais affichée sinon ; prête pendant
-//    sa Xiūxiān, avec sa classe choisie pour le tour et le qì requis.
+// Les invocations (anciens ultimes) ne sont plus un bouton : ce sont des sorts de la liste du Mage invocateur (gameSpellList.js : combatSpellList).
 // Fiche (effet, règle) : survol, appui long au doigt ou maintien de la souris (400 ms), sans rien déclencher.
 function holdTooltip(btn, html){
     const show = () => { const t = ensureSpellTooltip(); t.innerHTML = html(); t.classList.add('visible'); placeTooltip(t, btn, 260); };
@@ -210,15 +209,6 @@ function renderXiuButton({ equippedUltimate, inTranse, canActivate, ultimateRead
         + `<div class="spell-cost">${label}</div>`;
     holdTooltip(xiu, () => transeTooltipHtml(player, null));
     box.appendChild(xiu);
-    // Invocation : seulement si un personnage de l'équipe en est capable (Mage antique) et qu'une invocation est équipée.
-    const capable = !!equippedUltimate && normalizeRoster(player).loadout.includes(ULTIMATE_CLASS);
-    if(!capable) return;
-    const inv = actionCard(`xiu-invocation${ultimateReady && ultimateManaReached ? ' mana-reached' : ''}`, ultimateReady, () => castUltimate(equippedUltimate.id));
-    inv.innerHTML = `<div class="spell-name">Invocation ${ultimateReady ? '★' : ''}</div>`
-        + `<div class="spell-cost">${escapeHtml(equippedUltimate.name)}</div>`
-        + ultimateManaBarHtml(player, equippedUltimate);
-    holdTooltip(inv, () => getUltimateTooltipHtml(player, equippedUltimate));
-    box.appendChild(inv);
 }
 
 export function updateStats(){
@@ -272,7 +262,7 @@ export function updateStats(){
     // Pendant sa Xiūxiān, la jauge se vide d'un tiers à chaque tour : elle montre ce qu'il reste de la durée.
     const gaugeLevel = inTranse && player.transeClass && player.transeClass === player.gaugeClass ? (Math.floor(player.transe || 0) / TRANSE_TURNS * 100) : (player.rage || 0) / RAGE_MAX * 100;
     const canActivate = !inTranse && isRageFull(player) && gameState.combatState === 'active' && (currentTurn === 'player' || decoupled());   // jauge pleine : on déclenche la Xiūxiān en la touchant
-    const ultimateReady = !!equippedUltimate && (inTranse || allyInXiuxian('sorcerer')) && (player.cheatMaxRage === true || allyInXiuxian('sorcerer')) && classAllowsUltimate(getTurnClass()) && gameState.combatState === 'active';
+    const ultimateReady = false;   // plus d'ultime à jauge : les invocations sont des sorts du Mage (gameSpellList.js)
     const ultimateManaReached = !!equippedUltimate && (player.cheatFreeSpells === true || canCastUltimateMana(player, equippedUltimate));   // clignote seulement si le qì collecté suffit aussi
     renderXiuButton({ equippedUltimate, inTranse, canActivate, ultimateReady, ultimateManaReached, gaugeLevel });
     // Héros avec jauge de rage : sa fiche est déjà bien remplie, la fiche ennemie reçoit plus de largeur (style.css `.has-rage`).

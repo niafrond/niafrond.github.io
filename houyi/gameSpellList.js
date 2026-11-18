@@ -14,6 +14,7 @@ import { updateSpellsTab } from './gameSpellsTab.js';
 import { allSpells as spellsCatalog, getSpellsByLevel } from './spells.js';
 import { getClassSpells, playerClasses } from './classes.js';
 import { usableClasses, restrictedClasses, normalizeRoster, CLASS_SHORT } from './classRoster.js';
+import { ULTIMATE_CLASS, getSelectableUltimates } from './ultimates.js';
 import { actionSpells } from './skills.js';
 import { classProgress, classRemainingMs, classChargeInfo, isClassReady, chargeTick, spendClass, spendEnemy, isEnemyReady, chargeRunning, chargeSpeed, enqueueAction, takeNextDue, upcomingBeads } from './classCharge.js';
 import { renderPotionButtons } from './potionsView.js';
@@ -276,6 +277,7 @@ function chargeTicker(){
 if(typeof setInterval === 'function' && typeof document !== 'undefined') setInterval(chargeTicker, 250);
 
 /** Sorts proposés ce tour : sorts génériques équipés + sorts de la classe du tour (complétés jusqu'à MAX_ACTIVE_SPELLS) + commandes des compétences apprises. */
+export const INVOCATION_COOLDOWN = 3;   // tours de recharge d'une invocation
 export function combatSpellList(){
     const cls = getTurnClass();
     const list = (player.activeSpells || []).filter(sp => !sp.class || sp.class === cls);
@@ -285,7 +287,10 @@ export function combatSpellList(){
             if(!list.some(s => s.id === sp.id) && !(player.archivedSpells || []).includes(sp.id)) list.push(sp);
         }
     }
-    return [...list, ...actionSpells(player).filter(sp => !sp.class || sp.class === cls)];   // les commandes de classe n'existent que pour la classe du tour
+    // Invocations (anciens ultimes) : sorts comme les autres, réservés au Mage invocateur (classe du tour = ULTIMATE_CLASS) ; coût normal en qì,
+    // petit temps de recharge, aucune jauge de Xiūxiān requise.
+    const invocations = cls === ULTIMATE_CLASS ? getSelectableUltimates(player).map(sp => ({ ...sp, invocation: true, cooldown: sp.cooldown ?? INVOCATION_COOLDOWN })) : [];
+    return [...list, ...invocations, ...actionSpells(player).filter(sp => !sp.class || sp.class === cls)];   // les commandes de classe n'existent que pour la classe du tour
 }
 
 
@@ -367,7 +372,7 @@ export function createSpellButtons(){
         const muted = isMuted(player);   // Muet : cadenas, sort inutilisable
         btn.innerHTML = `
             <div class="spell-name">${sp.name} ${muted ? svgIcon('lock') : spellEffectIcon(sp)}</div>
-            <div class="spell-cost">${costHTML}${damageText}${healText}</div>
+            <div class="spell-cost">${sp.invocation ? '<span class="spell-tag">Invocation</span> ' : ''}${costHTML}${damageText}${healText}</div>
         `;
         const coolLeft = spellCooldownLeft(sp.id);
         if(coolLeft > 0) btn.querySelector('.spell-cost').insertAdjacentHTML('beforeend', ` <span class="spell-cooldown">Recharge : ${coolLeft} tour${coolLeft > 1 ? 's' : ''}</span>`);
