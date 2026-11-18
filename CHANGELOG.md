@@ -1,3 +1,11 @@
+## [3.4.0](https://github.com/niafrond/niafrond.github.io/compare/v3.3.0...v3.4.0) (2026-11-18)
+
+### Features
+
+* **houyi:** menu Objet seul à l'écran et potions en quantité ×0 masquées ([f2e26b9](https://github.com/niafrond/niafrond.github.io/commit/f2e26b9f88401af5fa6a1dae60c1c294b3ad0d74))
+* **houyi:** pause du chargement après 500 ms d'inactivité, l'ennemi ne montre plus ses capacités ([877bf1d](https://github.com/niafrond/niafrond.github.io/commit/877bf1db287d404d62e64bdb5d3699d79227073e))
+* **houyi:** remplacer l'or par le zhu (銖) comme monnaie ([cc5b21e](https://github.com/niafrond/niafrond.github.io/commit/cc5b21e9049ce811c4553861bc6125f70012ed78))
+
 ## [3.3.0](https://github.com/niafrond/niafrond.github.io/compare/v3.2.0...v3.3.0) (2026-11-18)
 
 ### Features
