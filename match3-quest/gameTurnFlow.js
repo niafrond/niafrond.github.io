@@ -478,32 +478,36 @@ export function applyAncientTurnPowers(){
 
 
 // Pendant le tour du joueur, l'ennemi peut lui aussi agir sans attendre son tour (arme ou sort simple, si sa barre de PA / de qì le permet).
-// Un seul coup par sondage ; le plateau et les tours ne sont pas touchés.
-const ENEMY_REACTION_POLL_MS = 2200;   // × vitesse des animations (gameOptions.js)
+// Pas de sondage : le déclencheur est la fin du chargement de sa barre (fin de son tour, appelé par finishEnemyTurn). Il attend seulement
+// que les animations et le plateau soient libres, tente une action, puis retente une fois celle-ci terminée tant qu'il peut encore payer.
+const ENEMY_REACTION_WAIT_MS = 150;   // × vitesse des animations (gameOptions.js)
 let enemyReactionToken = 0;
 const currentTurnIsPlayer = () => currentTurn === 'player';
 function enemyCanReact(){
     return gameState.combatState === 'active' && currentTurnIsPlayer() && !turnFlags.foxPlaying && enemy.hp > 0 && player.hp > 0
-        && !((enemy.statusEffects?.stunned || 0) > 0) && !isAsleep(enemy) && !tutorialCallbacks.enemyDecision && !(typeof document !== 'undefined' && document.querySelector('#board .attack-overlay'));
+        && !((enemy.statusEffects?.stunned || 0) > 0) && !isAsleep(enemy) && !tutorialCallbacks.enemyDecision;
 }
+const boardIsBusy = () => isBoardResolving() || (typeof document !== 'undefined' && !!document.querySelector('#board .attack-overlay'));
 export function scheduleEnemyReaction(){
     const token = ++enemyReactionToken;
-    const poll = () => {
-        if(token !== enemyReactionToken || gameState.combatState !== 'active' || !currentTurnIsPlayer()) return;
-        if(enemyCanReact() && !isBoardResolving()){
-            const decision = makeDecision();
-            if(decision.action === 'weapon' && enemy.weapon){
-                enemyStrikeWithWeapon();
-                afterEnemyReaction();
-            } else if(decision.action === 'spell' && !decision.data.spell.boardSpell && !decision.data.spell.effect && canEntityCastSpell(enemy, decision.data.spell)){
-                logActiveAction(`lance le sort ${decision.data.spell.name}`);
-                enemyCastSimpleSpell(decision.data.spell);
-                afterEnemyReaction();
-            }
+    const attempt = () => {
+        if(token !== enemyReactionToken || !enemyCanReact()) return;
+        if(boardIsBusy()){ setTimeout(attempt, ENEMY_REACTION_WAIT_MS * animationFactor()); return; }   // attend la fin de l'animation en cours
+        const decision = makeDecision();
+        let acted = false;
+        if(decision.action === 'weapon' && enemy.weapon){
+            enemyStrikeWithWeapon();
+            acted = true;
+        } else if(decision.action === 'spell' && !decision.data.spell.boardSpell && !decision.data.spell.effect && canEntityCastSpell(enemy, decision.data.spell)){
+            logActiveAction(`lance le sort ${decision.data.spell.name}`);
+            enemyCastSimpleSpell(decision.data.spell);
+            acted = true;
         }
-        setTimeout(poll, ENEMY_REACTION_POLL_MS * animationFactor());
+        if(!acted) return;
+        afterEnemyReaction();
+        setTimeout(attempt, PLAYER_ACTION_PAUSE_MS * animationFactor());   // sa barre peut encore suffire : nouvelle tentative après l'animation
     };
-    setTimeout(poll, ENEMY_REACTION_POLL_MS * animationFactor());
+    setTimeout(attempt, ENEMY_REACTION_WAIT_MS * animationFactor());
 }
 function afterEnemyReaction(){
     updateStats();
