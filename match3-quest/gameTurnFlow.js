@@ -3,7 +3,7 @@
 import { boardSize } from './constants.js';
 import { tutorialCallbacks } from './tutorial.js';
 import { getAvailableWeapons } from './weapons.js';
-import { enemyMakeMove, enemyMakeRandomMove, foxMakeRandomMove, restartSuggestionTimer, getTrappedCells, setTrappedCells, advanceBiomeTurn, announceBurningCells, convertRandomColorToArrows, checkMatches, scrambleTiles, board } from './board.js';
+import { enemyMakeMove, enemyMakeRandomMove, foxMakeRandomMove, restartSuggestionTimer, getTrappedCells, setTrappedCells, advanceBiomeTurn, announceBurningCells, convertRandomColorToArrows, checkMatches, scrambleTiles, board, isBoardResolving } from './board.js';
 import { stuffTotals, inflictPoison, isVenomous, POISON_CHANCE } from './stuff.js';
 import { rollEnemyStuffDrops } from './enemyStuff.js';
 import { recordVictory } from './bossTips.js';
@@ -32,7 +32,7 @@ import { companionIconHtml, foxIconHtml, showCombatAnimation, showStrikeAnimatio
 import { finishCombatRecord, recordEnemyTurn, recordPlayerTurn, saveCombatRecord } from './combatBalance.js';
 import { showAttributeMenu } from './gameLevelUp.js';
 import { updateAvailableSpells } from './gameSpellList.js';
-import { activeCompanionIds, addBonusTurn, addManaForColor, applyCombatXPAtEnd, applyDamage, applyStandardSpellEffects, canEntityCastSpell, combatHooks, combatRewards, consumeSpellMana, enemy, gameState, getWeaponIcon, grantStuffPiece, handlePlayerDeath, normalizeActiveInventoryIndex, sellDuplicateItem, normalizeBonusTurnValue, player, queueCombatXP, showEndCombatAnimation, turnFlags, setCurrentTurn } from './game.js';
+import { activeCompanionIds, addBonusTurn, addManaForColor, applyCombatXPAtEnd, applyDamage, applyStandardSpellEffects, canEntityCastSpell, combatHooks, combatRewards, consumeSpellMana, enemy, gameState, getWeaponIcon, grantStuffPiece, handlePlayerDeath, normalizeActiveInventoryIndex, sellDuplicateItem, normalizeBonusTurnValue, player, queueCombatXP, showEndCombatAnimation, turnFlags, setCurrentTurn, currentTurn } from './game.js';
 
 // Applique les pouvoirs de fin de tour des compagnons présents (soin, jet d'eau, qì, mirage). Renvoie { skipEnemy, enemyDown }.
 export const COMPANION_NAMES = { zhi: 'Zhi', dawa: 'Dawa', yu: 'Yu', etincelle: 'Leigong', braise: 'Braise', jian: 'Jian', tou: 'Tou' };
@@ -240,6 +240,42 @@ export function applyDuelRulesAtCombatStart(){
     }
 }
 
+// Sort « simple » (dégâts, soin, altération : aucun effet sur le plateau) de l'ennemi, sans fin de tour.
+function enemyCastSimpleSpell(spell){
+    consumeSpellMana(enemy, spell);
+    playSfx('spellCast', { isPlayer: false, spellId: spell.id });
+    applyStandardSpellEffects(enemy, player, spell, false);
+}
+
+// Coup d'arme de l'ennemi (PA dépensés, critique, blocage, poison), sans fin de tour.
+function enemyStrikeWithWeapon(){
+    logActiveAction(`utilise l'arme ${enemy.weapon.name}`);
+    enemy.combatPoints -= enemy.weapon.actionPoints;
+    const weakenedAmount = Math.max(0, Math.floor(enemy.statusEffects?.weakenedAmount || 0));
+    // Attaque de l'ennemi = chance de critique ; défense du joueur = chance de blocage
+    if(confusedSelfHit(enemy)) {   // Confus : l'ennemi se frappe lui-même
+        const selfStrike = resolveStrike(enemy.weapon.damage + (enemy.weaponPower || 0), enemy, enemy, { weakened: weakenedAmount });
+        applyDamage(enemy, selfStrike.damage);
+        playSfx('weaponHit', { isPlayer: false, rarity: enemy.weapon.rarity });
+        log(`${enemy.name} est confus et se frappe avec ${enemy.weapon.name} : ${selfStrike.damage} dégâts !`);
+        return;
+    }
+    const strike = resolveStrike(enemy.weapon.damage + (enemy.weaponPower || 0), enemy, player, { weakened: weakenedAmount });
+    let dmg = strike.damage;
+    if(dmg > 0 && player.damageReduction > 0) {
+        dmg = Math.max(1, Math.floor(dmg * (1 - player.damageReduction)));
+    }
+    applyDamage(player, dmg);
+    if(dmg > 0 && isVenomous(enemy.templateId) && Math.random() < POISON_CHANCE){
+        const poison = inflictPoison(player, Math.max(1, Math.round((enemy.attack || 10) * 0.2)));
+        log(poison > 0 ? `${enemy.name} vous empoisonne : ${poison} dégâts par tour.` : `${enemy.name} tente de vous empoisonner, mais votre équipement vous protège.`);
+    }
+    playSfx('weaponHit', { isPlayer: false, rarity: enemy.weapon.rarity });
+    const icon = getWeaponIcon(enemy.weapon.type);
+    showStrikeAnimation({ icon, title: enemy.weapon.name, source: enemy.name, target: '→ Vous' }, strike, false, dmg);
+    log(`${icon} ${enemy.name} utilise ${enemy.weapon.name} ! ${dmg} dégâts.${strike.crit ? ' Coup critique !' : ''}${strike.unblockable ? ' Coup inblocable !' : ''}${strike.block === 'total' ? ' Vous bloquez entièrement le coup.' : strike.block === 'partial' ? ' Vous parez le coup.' : ''}`);
+}
+
 export function enemyTurn(){
     if(gameState.combatState !== 'active'){
         return;
@@ -392,44 +428,19 @@ export function enemyTurn(){
                 return;
             }
 
-            consumeSpellMana(enemy, spell);
-            playSfx('spellCast', { isPlayer: false, spellId: spell.id });
             if(spell.boardSpell) {   // sort de plateau : lignes et colonnes tirées au hasard ; checkMatches rend la main une fois le plateau stabilisé
+                consumeSpellMana(enemy, spell);
+                playSfx('spellCast', { isPlayer: false, spellId: spell.id });
                 castEnemyBoardSpell(spell);
                 return;
             }
-            applyStandardSpellEffects(enemy, player, spell, false);
+            enemyCastSimpleSpell(spell);
             
             // Vérifier l'état après l'action
             finishEnemyTurn();
             
         } else if(decision.action === 'weapon'){
-            logActiveAction(`utilise l'arme ${enemy.weapon.name}`);
-            enemy.combatPoints -= enemy.weapon.actionPoints;
-            const weakenedAmount = Math.max(0, Math.floor(enemy.statusEffects?.weakenedAmount || 0));
-            // Attaque de l'ennemi = chance de critique ; défense du joueur = chance de blocage
-            if(confusedSelfHit(enemy)) {   // Confus : l'ennemi se frappe lui-même
-                const selfStrike = resolveStrike(enemy.weapon.damage + (enemy.weaponPower || 0), enemy, enemy, { weakened: weakenedAmount });
-                applyDamage(enemy, selfStrike.damage);
-                playSfx('weaponHit', { isPlayer: false, rarity: enemy.weapon.rarity });
-                log(`${enemy.name} est confus et se frappe avec ${enemy.weapon.name} : ${selfStrike.damage} dégâts !`);
-                finishEnemyTurn();
-                return;
-            }
-            const strike = resolveStrike(enemy.weapon.damage + (enemy.weaponPower || 0), enemy, player, { weakened: weakenedAmount });
-            let dmg = strike.damage;
-            if(dmg > 0 && player.damageReduction > 0) {
-                dmg = Math.max(1, Math.floor(dmg * (1 - player.damageReduction)));
-            }
-            applyDamage(player, dmg);
-            if(dmg > 0 && isVenomous(enemy.templateId) && Math.random() < POISON_CHANCE){
-                const poison = inflictPoison(player, Math.max(1, Math.round((enemy.attack || 10) * 0.2)));
-                log(poison > 0 ? `${enemy.name} vous empoisonne : ${poison} dégâts par tour.` : `${enemy.name} tente de vous empoisonner, mais votre équipement vous protège.`);
-            }
-            playSfx('weaponHit', { isPlayer: false, rarity: enemy.weapon.rarity });
-            const icon = getWeaponIcon(enemy.weapon.type);
-            showStrikeAnimation({ icon, title: enemy.weapon.name, source: enemy.name, target: '→ Vous' }, strike, false, dmg);
-            log(`${icon} ${enemy.name} utilise ${enemy.weapon.name} ! ${dmg} dégâts.${strike.crit ? ' Coup critique !' : ''}${strike.unblockable ? ' Coup inblocable !' : ''}${strike.block === 'total' ? ' Vous bloquez entièrement le coup.' : strike.block === 'partial' ? ' Vous parez le coup.' : ''}`);
+            enemyStrikeWithWeapon();
             
             // Vérifier l'état après l'action
             finishEnemyTurn();
@@ -463,6 +474,42 @@ export function applyAncientTurnPowers(){
         player.combatPoints = (player.combatPoints || 0) + gain;
         log(`Brassard antique : +${gain} flèche${gain > 1 ? 's' : ''}.`);
     }
+}
+
+
+// Pendant le tour du joueur, l'ennemi peut lui aussi agir sans attendre son tour (arme ou sort simple, si sa barre de PA / de qì le permet).
+// Un seul coup par sondage ; le plateau et les tours ne sont pas touchés.
+const ENEMY_REACTION_POLL_MS = 2200;   // × vitesse des animations (gameOptions.js)
+let enemyReactionToken = 0;
+const currentTurnIsPlayer = () => currentTurn === 'player';
+function enemyCanReact(){
+    return gameState.combatState === 'active' && currentTurnIsPlayer() && !turnFlags.foxPlaying && enemy.hp > 0 && player.hp > 0
+        && !((enemy.statusEffects?.stunned || 0) > 0) && !isAsleep(enemy) && !tutorialCallbacks.enemyDecision && !(typeof document !== 'undefined' && document.querySelector('#board .attack-overlay'));
+}
+export function scheduleEnemyReaction(){
+    const token = ++enemyReactionToken;
+    const poll = () => {
+        if(token !== enemyReactionToken || gameState.combatState !== 'active' || !currentTurnIsPlayer()) return;
+        if(enemyCanReact() && !isBoardResolving()){
+            const decision = makeDecision();
+            if(decision.action === 'weapon' && enemy.weapon){
+                enemyStrikeWithWeapon();
+                afterEnemyReaction();
+            } else if(decision.action === 'spell' && !decision.data.spell.boardSpell && !decision.data.spell.effect && canEntityCastSpell(enemy, decision.data.spell)){
+                logActiveAction(`lance le sort ${decision.data.spell.name}`);
+                enemyCastSimpleSpell(decision.data.spell);
+                afterEnemyReaction();
+            }
+        }
+        setTimeout(poll, ENEMY_REACTION_POLL_MS * animationFactor());
+    };
+    setTimeout(poll, ENEMY_REACTION_POLL_MS * animationFactor());
+}
+function afterEnemyReaction(){
+    updateStats();
+    saveUpdate();
+    if(player.hp <= 0) handlePlayerDeath();
+    else if(enemy.hp <= 0) handleEnemyDefeated();
 }
 
 // Fonction pour terminer le tour de l'ennemi
@@ -683,6 +730,7 @@ export function finishEnemyTurn(){
         saveUpdate();
         updateStats(); // Pour mettre à jour le liseré
         restartSuggestionTimer();
+        if(!playerSleeps) scheduleEnemyReaction();
         if(playerSleeps){
             log(playerStunned ? 'Vous êtes étourdi et perdez ce tour.' : 'Vous dormez et ne pouvez pas agir ce tour-ci.');
             setTimeout(() => { if(gameState.combatState === 'active' && player.hp > 0) enemyTurn(); }, 900);

@@ -44,7 +44,7 @@ import { raiseEnemyHpAboveHero } from "./enemyGrowth.js";
 import { gearManaBonus } from "./manaGear.js";
 
 
-import { ENVIRONMENT_STATUSES, environmentDamage, clearEnvironmentStatuses, cureStatuses, alterationOfSpell, inflictAlteration, setAlterationHooks, cursedDamage, wakeIfAsleep, healEntity, isMuted, confusedSelfHit } from "./alterations.js";
+import { ENVIRONMENT_STATUSES, environmentDamage, clearEnvironmentStatuses, cureStatuses, alterationOfSpell, inflictAlteration, setAlterationHooks, cursedDamage, wakeIfAsleep, healEntity, isMuted, isAsleep, confusedSelfHit } from "./alterations.js";
 import { rawAttack, rawDefense, setStrikeHooks, describeLevelEdge, resolveStrike, blockLabel, addStatBuff, describeStatBuff, clearStatBuffs } from "./combatStats.js";
 import { animationFactor, getOption, vibrate } from "./gameOptions.js";
 import { PLAY_STYLES, styleDamageDealt, styleDamageTaken, styleSpellCost, styleManaGain } from "./playStyles.js";
@@ -64,7 +64,7 @@ export * from './gameStatsTab.js';
 import { showAttributeMenu, updateLevelHud } from './gameLevelUp.js';
 export * from './gameLevelUp.js';
 import { updateAvailableSpells } from './gameSpellList.js';
-import { applyDuelRulesAtCombatStart, enemyTurn, finishPlayerTurn, handleEnemyDefeated } from './gameTurnFlow.js';
+import { applyDuelRulesAtCombatStart, enemyTurn, finishPlayerTurn, handleEnemyDefeated, scheduleEnemyReaction } from './gameTurnFlow.js';
 export * from './gameTurnFlow.js';
 export * from './gameSpellList.js';
 
@@ -1572,7 +1572,24 @@ clampManaToCaps(player);
 // Anti-bourrinage : arme / objet / sort refusés pendant la résolution du plateau, juste après une action plateau,
 // ou dans le court délai qui suit une autre action du joueur (voir actionGuard.js).
 export function isPlayerActionBlocked(){
+    if(canActOutOfTurn()) return actionGuard.blockReason({ outOfTurn: true }) !== null;
     return currentTurn !== 'player' || turnFlags.foxPlaying || isBoardResolving() || actionGuard.blockReason() !== null;
+}
+
+// Pendant le coup de l'adversaire sur le plateau, le héros peut quand même choisir une arme ou un sort « simple » (barre chargée :
+// PA ou qì suffisants, vérifiés par useWeapon / castSpell). Pas pendant l'introduction, les animations de renard/compagnons ni quand il dort.
+export function canActOutOfTurn(){
+    return gameState.combatState === 'active' && currentTurn === 'enemy' && !turnFlags.foxPlaying
+        && player.hp > 0 && enemy.hp > 0 && !isAsleep(player) && !((player.statusEffects?.stunned || 0) > 0);
+}
+
+// Après une action hors tour : le tour de l'adversaire continue, on vérifie seulement que personne n'est tombé.
+function settleOutOfTurnAction(){
+    updateStats();
+    saveUpdate();
+    if(gameState.combatState !== 'active') return;
+    if(enemy.hp <= 0) handleEnemyDefeated();
+    else if(player.hp <= 0) handlePlayerDeath();
 }
 
 // Dès que le joueur ne joue plus (tour adverse, écran de début de combat), TOUS ses boutons sont désactivés :
@@ -1581,11 +1598,12 @@ export function isPlayerActionBlocked(){
 export function syncPlayerControlsLock(){
     const locked = gameState.combatState === 'active' && (currentTurn !== 'player' || turnFlags.foxPlaying);
     actionGuard.setTurnLocked(locked);
+    const actionsOpen = canActOutOfTurn();   // tour adverse : armes et sorts restent cliquables (le refus se fait sur les ressources)
     if(typeof document === 'undefined') return locked;
     const column = document.getElementById('player-spells');
     if(column){
-        column.classList.toggle('turn-locked', locked);
-        column.setAttribute('aria-disabled', String(locked));
+        column.classList.toggle('turn-locked', locked && !actionsOpen);
+        column.setAttribute('aria-disabled', String(locked && !actionsOpen));
         column.removeAttribute('inert');   // la colonne reste interactive : appui long / survol des sorts à tout moment
     }
     const abandonBtn = document.getElementById('abandon-combat-btn');
@@ -1603,7 +1621,8 @@ export function rejectRushedAction(){
 // Combat avec arme
 export function useWeapon(hand = 'right'){
     if(gameState.combatState !== 'active'){ log("Aucun combat en cours."); return; }
-    if(currentTurn !== 'player'){ log("Seul le joueur actif peut utiliser une attaque."); return; }
+    const outOfTurn = currentTurn !== 'player' && canActOutOfTurn();
+    if(currentTurn !== 'player' && !outOfTurn){ log("Seul le joueur actif peut utiliser une attaque."); return; }
     if(rejectRushedAction()) return;
     if(tutorialCallbacks.allowWeapon && !tutorialCallbacks.allowWeapon()) return;   // tutoriel : l'arme n'est acceptée qu'à l'étape prévue
     const weapon = hand === 'left' ? getLeftHandWeapon() : player.equippedWeapon;
@@ -1624,6 +1643,7 @@ export function useWeapon(hand = 'right'){
     logActiveAction(`utilise l'arme ${weapon.name} (cout ${weapon.actionPoints} PA)`);
     strikeWithWeapon(weapon);
     tutorialCallbacks.onWeaponUsed?.();
+    if(outOfTurn){ settleOutOfTurnAction(); return; }   // le tour de l'adversaire se poursuit
     finishPlayerTurn();
 }
 
@@ -1672,10 +1692,12 @@ function strikeWithWeapon(weapon, { free = false } = {}){
 
 export function castSpell(spellId){
     if(gameState.combatState !== 'active'){ log("Aucun combat en cours."); return; }
-    if(currentTurn !== 'player'){ log("Seul le joueur actif peut lancer un sort."); return; }
+    const outOfTurn = currentTurn !== 'player' && canActOutOfTurn();
+    if(currentTurn !== 'player' && !outOfTurn){ log("Seul le joueur actif peut lancer un sort."); return; }
     if(rejectRushedAction()) return;
     const spell=player.activeSpells.find(s=>s.id===spellId);
     if(!spell){ log("Sort indisponible !"); return; }
+    if(outOfTurn && (spell.effect || spell.boardSpell)){ log(`${spell.name} agit sur le plateau : attendez votre tour.`); return; }
     if(tutorialCallbacks.allowSpell && !tutorialCallbacks.allowSpell(spell)) return;
     if(player.level<spell.minLevel){ log(`Nécessite niveau ${spell.minLevel}`); return; }
     
@@ -1719,6 +1741,7 @@ export function castSpell(spellId){
     // Notifier le tutoriel qu'un sort a été lancé
     tutorialCallbacks.onSpellCast?.();
 
+    if(outOfTurn){ settleOutOfTurnAction(); return; }   // le tour de l'adversaire se poursuit
     finishPlayerTurn();
 }
 
@@ -2148,6 +2171,9 @@ export function decideFirstTurn(){
             else setTimeout(() => enemyTurn(), OPENING_LEAD_MS);
         } else if(strikes){
             runOpeningStrikes(strikes, OPENING_LEAD_MS, () => {});
+            scheduleEnemyReaction();
+        } else {
+            scheduleEnemyReaction();
         }
     });
 }

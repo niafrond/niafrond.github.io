@@ -36,10 +36,13 @@ export function createActionGuard(now = () => Date.now()) {
         setTurnLocked(locked) { turnLocked = Boolean(locked); },
         isTurnLocked() { return turnLocked; },
         /** @returns {null|'turn'|'board'|'settling'|'cooldown'} raison du blocage, null si l'action est permise */
-        blockReason() {
-            if (turnLocked) return 'turn';
-            if (isBoardBusy()) return 'board';
-            if (now() - lastBoardActionAt < BOARD_SETTLE_MS) return 'settling';
+        blockReason({ outOfTurn = false } = {}) {
+            // Hors tour (action choisie pendant le coup de l'adversaire) : le plateau n'est pas touché, seul le délai anti-martelage s'applique.
+            if (!outOfTurn) {
+                if (turnLocked) return 'turn';
+                if (isBoardBusy()) return 'board';
+                if (now() - lastBoardActionAt < BOARD_SETTLE_MS) return 'settling';
+            }
             if (now() - lastPlayerActionAt < ACTION_COOLDOWN_MS) return 'cooldown';
             return null;
         },
