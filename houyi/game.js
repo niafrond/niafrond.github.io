@@ -21,6 +21,8 @@ import { POTIONS, normalizePotions, potionHeal, drinkPotion, drinkBlockReason } 
 import { normalizeSkills, skillBonus, actionSpells } from "./skills.js";
 import { normalizeRoster, usableClasses, grantClass, CLASS_SHORT } from "./classRoster.js";
 import { newCharge, newActionQueue, initCharge } from "./classCharge.js";
+import { buildTeam, damageAlly, ALLIES } from "./allies.js";
+import { prepareAllyPortraits } from "./alliesView.js";
 import { boostedDamageDealt, resistedDamageTaken, parryQiGain } from "./gearEffects.js";
 
 
@@ -378,6 +380,15 @@ export function lastSpellDamage(fallback){
 
 export function applyDamage(target, damage, options = {}){
     if(!target) return 0;
+    // Action ennemie qui vise un compagnon : il encaisse à la place de Hou Yi (barre de vie propre ; hors de combat à 0 PV).
+    if(target === player && gameState.allyShield && !gameState.allyShield.ko){
+        const ally = gameState.allyShield;
+        const result = damageAlly(ally, Math.max(0, Math.floor(damage || 0)));
+        log(`${ally.name} encaisse ${result.damage} dégâts (${ally.hp}/${ally.maxHp} PV).`);
+        if(result.ko) log(`${ally.name} est hors de combat !`);
+        updateStats();
+        return result.damage;
+    }
     let normalizedDamage = Math.max(0, Math.floor(damage || 0));
     // Fureur du Tigre Blanc (Xiūxiān du Guerrier) : les dégâts de l'arme et des crânes sont multipliés.
     if(target === enemy && (options.damageSource === 'weapon' || options.damageSource === 'skull')) normalizedDamage *= xiuEffect().physMult || 1;
@@ -917,6 +928,8 @@ export const gameState = {
     charge: newCharge(),  // temps de chargement des classes et de l'ennemi (classCharge.js)
     actionQueue: newActionQueue(),   // actions (sort, compétence, objet, arme) en attente de chargement ; l'ordre n'est jamais montré
     enemyPending: null,   // (ancien) sort de plateau de l'ennemi en attente
+    allies: {},           // compagnons de l'équipe de combat : { classId: entité avec PV } (allies.js), reconstruits à chaque combat
+    allyShield: null,     // compagnon visé par l'action ennemie en cours : il reçoit les dégâts à la place de Hou Yi
     boundaryResume: null, // fin de tour à relancer si l'action de plateau en cours ne le fait pas
     boundaryToken: 0,
     casterOverride: null  // 'player' | 'enemy' : lanceur d'un sort de la file quand ce n'est pas le camp du tour de plateau en cours
@@ -944,7 +957,8 @@ export function setTurnClass(classId){
 export function grantClassReward(classId, origin = 'Récompense de quête'){
     const res = grantClass(player, classId);
     if(!res.added) return null;
-    log(`✦ ${origin} : nouvelle classe « ${CLASS_SHORT[classId]} »${res.inLoadout ? ' (ajoutée à vos classes de combat)' : ' (vos 4 classes de combat sont pleines : échangez-les dans l\'onglet Compétences)'} !`);
+    const ally = ALLIES[classId];
+    log(`✦ ${origin} : ${ally ? ally.name : CLASS_SHORT[classId]} rejoint votre équipe${res.inLoadout ? ' de combat' : ' (l\'équipe de combat est pleine : changez de compagnons dans l\'onglet Compétences)'} !`);
     saveUpdate();
     return classId;
 }
@@ -1398,6 +1412,8 @@ export function restartCombat({ keepHp = true } = {}){
     gameState.turnClass = null;   // la classe du tour revient à celle du héros
     gameState.charge = newCharge();   // les barres sont initialisées plus bas (initCharge), une fois l'ennemi en place
     gameState.actionQueue = newActionQueue(); gameState.enemyPending = null;
+    gameState.allies = buildTeam(player); gameState.allyShield = null;   // équipe de combat en pleine forme
+    prepareAllyPortraits();               // dessins des compagnons puis barres de vie
     gameState.playedClasses = new Set();   // classes jouées ce combat (PA de classe)
     gameState.forcedClass = enemy?.training || null;   // entraînement : une seule classe, imposée par le maître
     if(gameState.forcedClass) log(`Entraînement : ce combat se mène uniquement en ${CLASS_SHORT[gameState.forcedClass] || gameState.forcedClass}.`);

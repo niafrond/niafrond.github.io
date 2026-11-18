@@ -2,6 +2,7 @@
 // Extrait de game.js.
 import { MAX_ACTIVE_SPELLS } from './constants.js';
 import { actionGuard } from './actionGuard.js';
+import { isAllyKnockedOut, ALLIES, memberName } from './allies.js';
 import { isBoardResolving } from './board.js';
 import { preloadUltimateCinematic } from './ultimateCinematics.js';
 import { getEquippedUltimate } from './ultimates.js';
@@ -122,7 +123,7 @@ export function getTurnClass(){
 }
 
 /** Classes de combat utilisables maintenant (biome, entraînement). */
-export const usableNow = () => usableClasses(player, combatBiome(), gameState.forcedClass);
+export const usableNow = () => usableClasses(player, combatBiome(), gameState.forcedClass).filter(id => !isAllyKnockedOut(gameState.allies, id));   // un compagnon hors de combat ne joue plus
 
 // ── Temps de chargement des actions ─────────────────────────────────────────
 // Les actions (sort, compétence de classe, objet, arme) sont INDÉPENDANTES du plateau : elles ne prennent pas le tour, partent dès que leur classe
@@ -320,7 +321,7 @@ function renderClassPicker(container){
     const restricted = restrictedClasses(player, combatBiome());
     const forced = gameState.forcedClass;
     picker.innerHTML = loadout.map(id => {
-        const reason = forced && id !== forced ? 'Entraînement : classe imposée' : (restricted[id] ? `Bridée ici : ${restricted[id]}` : playerClasses[id]?.name || id);
+        const reason = isAllyKnockedOut(gameState.allies, id) ? 'Hors de combat' : forced && id !== forced ? 'Entraînement : classe imposée' : (restricted[id] ? `Bridée ici : ${restricted[id]}` : `${ALLIES[id] ? ALLIES[id].name + ' · ' : ''}${playerClasses[id]?.name || id}`);
         // Barre de chargement : se remplit en temps réel jusqu'à ce que la classe soit prête (animation CSS pour le temps restant).
         const prog = Math.round(classProgress(gameState.charge, player, id, chargeFactor()) * 100);
         const remaining = classRemainingMs(gameState.charge, id);
@@ -328,8 +329,9 @@ function renderClassPicker(container){
         const animStyle = remaining > 0 ? `--from:${prog}%;--to:100%;--dur:${Math.round(remaining / Math.max(0.05, speed))}ms;${speed <= 0 ? '--play:paused;' : ''}` : '';
         const info = classChargeInfo(player, id);
         const chargeText = prog >= 100 ? `Prête (chargement ${info.time})` : `Se recharge : ${Math.ceil(remaining / 1000)} s (temps ${info.time} : Agilité/Moral -${Math.round(info.pct.agility)} %, attribut -${Math.round(info.pct.attribute)} %, qì -${Math.round(info.pct.qi)} %, compétences -${info.pct.skills} %)`;
-        const off = !mine || (forced && id !== forced) || restricted[id];   // choisir une classe reste libre : seules ses ACTIONS attendent son chargement
-        return `<button type="button" class="class-pick${id === current ? ' on' : ''}${restricted[id] ? ' limited' : ''}${prog >= 100 ? ' ready-pulse' : ' charging'}${animStyle ? ' charging-anim' : ''}" data-class="${id}" aria-pressed="${id === current}"${off ? ' disabled' : ''} style="--charge:${prog}%;${animStyle}" title="${reason} · ${chargeText}"><span>${CLASS_SHORT[id] || id}</span></button>`;
+        const ko = isAllyKnockedOut(gameState.allies, id);   // compagnon hors de combat : il ne joue plus
+        const off = !mine || (forced && id !== forced) || restricted[id] || ko;   // choisir un compagnon reste libre : seules ses ACTIONS attendent son chargement
+        return `<button type="button" class="class-pick${id === current ? ' on' : ''}${restricted[id] ? ' limited' : ''}${ko ? ' ko' : ''}${prog >= 100 && !ko ? ' ready-pulse' : ' charging'}${animStyle ? ' charging-anim' : ''}" data-class="${id}" aria-pressed="${id === current}"${off ? ' disabled' : ''} style="--charge:${prog}%;${animStyle}" title="${reason} · ${chargeText}"><span>${memberName(id)}</span></button>`;
     }).join('');
     picker.querySelectorAll('.class-pick').forEach(btn => { btn.onclick = () => { if(setTurnClass(btn.dataset.class)) createSpellButtons(); }; });
 }

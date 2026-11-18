@@ -3,7 +3,8 @@
 // (gemme pleine = activée, gemme creuse = apprise mais éteinte, gemme grise = pas encore apprise), coût en Fulu à droite, fiche d'information.
 import { visibleSkills, markSeen, getSkill, isSupport, skillsTaughtBy, normalizeSkills, isLearned, progressOf, magikolithCapacity, usedMagikoliths } from './skills.js';
 import { TRANSE_TURNS, TRANSE_EFFECTS } from './transe.js';
-import { CLASS_IDS, CLASS_SHORT, MAX_USABLE_CLASSES, BIOME_CLASS_LIMITS, normalizeRoster } from './classRoster.js';
+import { CLASS_IDS, CLASS_SHORT, MAX_USABLE_CLASSES, START_CLASS, BIOME_CLASS_LIMITS, normalizeRoster } from './classRoster.js';
+import { ALLIES, memberName, allyMaxHp } from './allies.js';
 
 const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
@@ -63,24 +64,26 @@ function infoPanel(hero, skill, taught, canToggle) {
 
 const BIOME_NAMES = { volcano: 'Volcan', gobi: 'Gobi', riverbed: 'Fleuve', bamboo: 'Bambous', storm: 'Tonnerre', savanna: 'Fauves', coast: 'Côte', tides: 'Hautes-Eaux', fusang: 'Fusang', moon: 'Lune', paddy: 'Rizières' };
 
-/** Classes de combat : celles que Hou Yi connaît, dont 4 au plus sont utilisables en combat ; classes à rencontrer ; biomes qui en brident. */
+/** Équipe de combat : Hou Yi (Chasseur) et les compagnons recrutés (3 au plus en combat) ; biomes qui brident des classes. Aucun spoil : seuls les compagnons déjà recrutés figurent. */
 export function classesHtml(hero, canToggle = true) {
     const roster = normalizeRoster(hero);
-    // Aucun spoil : une classe pas encore rencontrée n'apparaît nulle part (ni case, ni biome, ni Xiūxiān).
     const rows = CLASS_IDS.filter(id => roster.owned.includes(id)).map(id => {
         const on = roster.loadout.includes(id);
-        // Une seule classe connue : rien à échanger (le retrait est de toute façon refusé), donc pas de bouton.
-        const action = roster.owned.length <= 1 ? '' : `<button type="button" class="cl-toggle" data-toggle-class="${id}"${canToggle ? '' : ' disabled'}>${on ? 'Retirer' : 'Utiliser'}</button>`;
-        return `<div class="cl-row${on ? ' on' : ''}"><span class="cl-name">${esc(CLASS_SHORT[id])}</span>${action}</div>`;
+        const isHero = id === START_CLASS;
+        const ally = ALLIES[id];
+        // Hou Yi est toujours de l'équipe ; un compagnon seul recruté n'a rien à échanger tant que l'équipe a de la place.
+        const action = isHero || roster.owned.length <= 1 ? '' : `<button type="button" class="cl-toggle" data-toggle-class="${id}"${canToggle ? '' : ' disabled'}>${on ? 'Retirer' : 'Appeler'}</button>`;
+        const detail = isHero ? 'Hou Yi' : `${esc(ally.name)} · ${allyMaxHp(hero, id)} PV`;
+        return `<div class="cl-row${on ? ' on' : ''}" title="${esc(detail)}"><span class="cl-name">${esc(memberName(id))} <small>${esc(CLASS_SHORT[id])}</small></span>${action}</div>`;
     }).join('');
     const limits = Object.entries(BIOME_CLASS_LIMITS).map(([biome, l]) => {
         const known = l.classes.filter(c => roster.owned.includes(c));
-        return known.length ? `<li><strong>${esc(BIOME_NAMES[biome] || biome)}</strong> : ${known.map(c => esc(CLASS_SHORT[c])).join(', ')} bridé${known.length > 1 ? 's' : ''} (${esc(l.reason)})</li>` : '';
+        return known.length ? `<li><strong>${esc(BIOME_NAMES[biome] || biome)}</strong> : ${known.map(c => esc(memberName(c))).join(', ')} bridé${known.length > 1 ? 's' : ''} (${esc(l.reason)})</li>` : '';
     }).join('');
-    return `<div class="cl-panel"><div class="cl-head"><strong>Classes de combat</strong><span>${roster.loadout.length} / ${MAX_USABLE_CLASSES}</span></div>
+    return `<div class="cl-panel"><div class="cl-head"><strong>Équipe de combat</strong><span>${roster.loadout.length} / ${MAX_USABLE_CLASSES}</span></div>
         <div class="cl-grid">${rows}</div>
-        <details class="cl-limits"><summary>Biomes qui brident des classes</summary><ul>${limits}</ul>
-        <p>Il reste toujours une classe utilisable : mêlez-les pour tirer parti de chaque région.</p></details></div>`;
+        <details class="cl-limits"><summary>Biomes qui brident des compagnons</summary><ul>${limits}</ul>
+        <p>Il reste toujours un membre utilisable : mêlez les compagnons pour tirer parti de chaque région. Ils partagent le qì de Hou Yi, mais chacun a sa barre de vie : à 0 PV, un compagnon est hors de combat jusqu'à la fin.</p></details></div>`;
 }
 
 /**

@@ -4,6 +4,8 @@
   "index.html",
   "a11y.js",
   "actionGuard.js",
+  "allies.js",
+  "alliesView.js",
   "alterations.js",
   "arena.js",
   "attributes.js",
@@ -518,6 +520,36 @@
    "p": "sprites/gba/alchemist_dan.7686e9f1.js",
    "s": 1548,
    "h": "7686e9f12a"
+  },
+  {
+   "p": "sprites/gba/ally_alchemist.f8e94121.js",
+   "s": 8645,
+   "h": "f8e9412129"
+  },
+  {
+   "p": "sprites/gba/ally_barbarian.62a3a4f7.js",
+   "s": 10733,
+   "h": "62a3a4f7f0"
+  },
+  {
+   "p": "sprites/gba/ally_monk.98da7662.js",
+   "s": 8133,
+   "h": "98da7662a8"
+  },
+  {
+   "p": "sprites/gba/ally_shaman.34b1a515.js",
+   "s": 7689,
+   "h": "34b1a51512"
+  },
+  {
+   "p": "sprites/gba/ally_sorcerer.f16c5d50.js",
+   "s": 10349,
+   "h": "f16c5d5004"
+  },
+  {
+   "p": "sprites/gba/ally_templar.d05f5ff5.js",
+   "s": 9553,
+   "h": "d05f5ff5f6"
   },
   {
    "p": "sprites/gba/ao.fea61db0.js",

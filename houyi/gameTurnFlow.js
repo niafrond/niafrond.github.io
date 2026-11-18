@@ -35,6 +35,7 @@ import { finishCombatRecord, recordEnemyTurn, recordPlayerTurn, saveCombatRecord
 import { showAttributeMenu } from './gameLevelUp.js';
 import { updateAvailableSpells, enemyActionReady, spendEnemyAction, getTurnClass, chooseEnemyAction, runBoundaryAction, resumeAfterBoundary, withCaster } from './gameSpellList.js';
 import { CLASS_SHORT } from './classRoster.js';
+import { pickEnemyTarget } from './allies.js';
 import { currentTurn, activeCompanionIds, addBonusTurn, addManaForColor, applyCombatXPAtEnd, applyDamage, applyStandardSpellEffects, canEntityCastSpell, combatHooks, combatRewards, consumeSpellMana, enemy, gameState, getWeaponIcon, grantStuffPiece, handlePlayerDeath, normalizeActiveInventoryIndex, sellDuplicateItem, normalizeBonusTurnValue, player, queueCombatXP, showEndCombatAnimation, turnFlags, setCurrentTurn, resetTranseTurn, applyTranseClassEffect, syncGauge, endXiuxianAtCombatEnd, xiuEffect } from './game.js';
 
 // Applique les pouvoirs de fin de tour des compagnons présents (soin, jet d'eau, qì, mirage). Renvoie { skipEnemy, enemyDown }.
@@ -284,6 +285,12 @@ function payEnemyAction(decision){
 
 /** Effet d'une action de l'ennemi déjà choisie et payée. Renvoie true si terminée, false si la suite dépend du plateau (sort de plateau). */
 function applyEnemyAction(decision){
+    // Une action ennemie sur quatre vise un compagnon vivant (allies.js) : il encaisse à la place de Hou Yi (voir applyDamage, game.js).
+    gameState.allyShield = enemy.isTutorialEnemy ? null : pickEnemyTarget(gameState.allies);
+    try { return applyEnemyActionNow(decision); } finally { gameState.allyShield = null; }
+}
+
+function applyEnemyActionNow(decision){
     if(decision.action === 'spell'){
         const spell = decision.data.spell;
         playSfx('spellCast', { isPlayer: false, spellId: spell.id });

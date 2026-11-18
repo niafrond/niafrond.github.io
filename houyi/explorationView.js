@@ -536,7 +536,7 @@ export function createExplorationView(cfg) {
     // les adversaires sont plus coriaces. Confirmation demandée, puis export de la sauvegarde, puis départ.
     function confirmNewGamePlus() {
         const ok = window.confirm('Commencer une Nouvelle Partie + ?\n\nVotre sauvegarde sera d\'abord exportée dans un fichier. L\'histoire repart du prologue, aux Rizières Desséchées : '
-            + 'quêtes, soleils, coffres, pierres de voyage et compagnons sont remis à zéro, mais votre niveau et votre équipement sont conservés, et l\'arène est ouverte dès le début. Les ennemis seront plus puissants.');
+            + 'quêtes, soleils, coffres, pierres de voyage et esprits gardiens sont remis à zéro, mais votre niveau et votre équipement sont conservés, et l\'arène est ouverte dès le début. Les ennemis seront plus puissants.');
         if (ok) launchNewGamePlus();
     }
 

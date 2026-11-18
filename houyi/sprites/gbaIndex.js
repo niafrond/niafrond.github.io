@@ -3,6 +3,12 @@
 export const GBA_FILES = {
     acolyte_ri: 'acolyte_ri.b6143f90.js',
     alchemist_dan: 'alchemist_dan.7686e9f1.js',
+    ally_alchemist: 'ally_alchemist.f8e94121.js',
+    ally_barbarian: 'ally_barbarian.62a3a4f7.js',
+    ally_monk: 'ally_monk.98da7662.js',
+    ally_shaman: 'ally_shaman.34b1a515.js',
+    ally_sorcerer: 'ally_sorcerer.f16c5d50.js',
+    ally_templar: 'ally_templar.d05f5ff5.js',
     ao: 'ao.fea61db0.js',
     apprentice_zhu: 'apprentice_zhu.02d72f66.js',
     archer: 'archer.225395ce.js',
