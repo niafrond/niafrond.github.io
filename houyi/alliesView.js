@@ -3,7 +3,20 @@
 import { gbaSprite, loadGbaSprites } from './sprites/index.js';
 import { escapeHtml } from './escapeHtml.js';
 import { CLASS_SHORT } from './classRoster.js';
-import { gameState } from './game.js';
+import { gameState, currentTurn, activateXiuxian } from './game.js';
+import { TRANSE_EFFECTS, TRANSE_TURNS } from './transe.js';
+import { RAGE_MAX } from './ultimates.js';
+
+// Zone Xiūxiān d'un compagnon : cachée, elle s'affiche au clic long (appui maintenu) sur sa carte ; la jauge pleine se touche pour la déclencher.
+const XIU_HOLD_MS = 450, XIU_SHOW_MS = 6000, XIU_MOVE_PX = 10;
+let bound = false;
+let textTimer = null;
+/** Texte de la Xiūxiān (bandeau « effet, tours restants ») : caché, il s'affiche quelques secondes après un clic long sur un personnage. Les jauges, elles, sont toujours visibles. */
+export function showXiuText(on) {
+    clearTimeout(textTimer);
+    document.body.classList.toggle('show-xiu-text', !!on);
+    if (on) textTimer = setTimeout(() => document.body.classList.remove('show-xiu-text'), XIU_SHOW_MS);
+}
 
 const portrait = key => {
     try { return gbaSprite(key, 'front') || ''; } catch { return ''; }
@@ -16,13 +29,19 @@ export function renderAllyBar() {
     const allies = Object.values(gameState.allies || {});
     box.hidden = gameState.combatState !== 'active' || !allies.length;
     if (box.hidden) { box.innerHTML = ''; return; }
+    bindXiu(box);
     box.innerHTML = allies.map(a => {
         const pct = Math.max(0, Math.min(100, Math.round(a.hp / a.maxHp * 100)));
         const src = portrait(a.sprite);
-        return `<div class="ally-card${a.ko ? ' ko' : ''}" title="${escapeHtml(`${a.name} · ${CLASS_SHORT[a.classId]} · ${a.hp}/${a.maxHp} PV${a.ko ? ' (hors de combat)' : ''}`)}">`
+        const inXiu = Math.floor(a.transe || 0) > 0, full = Math.floor(a.rage || 0) >= RAGE_MAX;
+        const ready = !a.ko && !inXiu && full && gameState.combatState === 'active' && currentTurn === 'player';
+        const gauge = inXiu ? Math.floor(a.transe) / TRANSE_TURNS * 100 : Math.min(100, a.rage || 0);
+        const eff = TRANSE_EFFECTS[a.classId];
+        const xiu = `<button type="button" class="ally-xiu${inXiu ? ' in-xiu' : ''}${ready ? ' ready' : ''}" data-xiu="${a.classId}" ${ready ? '' : 'disabled'} aria-label="${escapeHtml(`Xiūxiān de ${a.name} : ${Math.floor(a.rage || 0)} sur 100${eff ? ` (${eff.name})` : ''}`)}" title="${escapeHtml(eff ? `${eff.name} : ${eff.text}` : 'Xiūxiān')}"><i style="width:${gauge}%"></i></button>`;
+        return `<div class="ally-card${a.ko ? ' ko' : ''}${inXiu ? ' xiu-on' : ''}" data-ally="${a.classId}" tabindex="0" title="${escapeHtml(`${a.name} · ${CLASS_SHORT[a.classId]} · ${a.hp}/${a.maxHp} PV${a.ko ? ' (hors de combat)' : ''}`)}">`
             + `${src ? `<img class="ally-portrait" src="${src}" alt="" width="30" height="30">` : '<span class="ally-portrait"></span>'}`
             + `<span class="ally-name">${escapeHtml(a.short)}</span>`
-            + `<span class="ally-hp" role="progressbar" aria-label="PV de ${escapeHtml(a.name)}" aria-valuemin="0" aria-valuemax="${a.maxHp}" aria-valuenow="${a.hp}"><i style="width:${pct}%"></i></span></div>`;
+            + `<span class="ally-hp" role="progressbar" aria-label="PV de ${escapeHtml(a.name)}" aria-valuemin="0" aria-valuemax="${a.maxHp}" aria-valuenow="${a.hp}"><i style="width:${pct}%"></i></span>${xiu}</div>`;
     }).join('');
 }
 
@@ -31,4 +50,30 @@ export function prepareAllyPortraits() {
     const keys = Object.values(gameState.allies || {}).map(a => a.sprite);
     if (!keys.length) { renderAllyBar(); return Promise.resolve(); }
     return Promise.resolve(loadGbaSprites(keys)).catch(() => {}).then(renderAllyBar);
+}
+
+
+/** Clic long (appui maintenu) sur la carte d'un compagnon : sa zone Xiūxiān s'affiche ; toucher la jauge pleine déclenche sa Xiūxiān. */
+function bindXiu(box) {
+    if (bound || box.dataset.xiuBound) return;
+    bound = true; box.dataset.xiuBound = '1';
+    let timer = null, sx = 0, sy = 0;
+    const cancel = () => { clearTimeout(timer); timer = null; };
+    box.addEventListener('pointerdown', ev => {
+        const card = ev.target.closest?.('.ally-card');
+        if (!card || ev.target.closest('.ally-xiu')) return;
+        sx = ev.clientX; sy = ev.clientY; cancel();
+        timer = setTimeout(() => { timer = null; showXiuText(!document.body.classList.contains('show-xiu-text')); }, XIU_HOLD_MS);
+    });
+    box.addEventListener('pointermove', ev => { if (timer && Math.hypot(ev.clientX - sx, ev.clientY - sy) > XIU_MOVE_PX) cancel(); });
+    ['pointerup', 'pointercancel'].forEach(t => box.addEventListener(t, cancel));   // pas pointerleave : la barre est redessinée souvent, ce qui le déclenche
+    box.addEventListener('contextmenu', ev => ev.preventDefault());
+    box.addEventListener('click', ev => {
+        const btn = ev.target.closest?.('.ally-xiu');
+        if (btn && !btn.disabled) { activateXiuxian(btn.dataset.xiu); renderAllyBar(); }
+    });
+    box.addEventListener('keydown', ev => {
+        const card = ev.target.closest?.('.ally-card');
+        if (card && ev.target === card && (ev.key === 'Enter' || ev.key === ' ')) { ev.preventDefault(); showXiuText(!document.body.classList.contains('show-xiu-text')); }
+    });
 }

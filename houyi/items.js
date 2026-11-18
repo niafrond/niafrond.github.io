@@ -339,7 +339,9 @@ export function useItem(itemId, player, enemy, preferredIndex = null, opts = {})
     
     // Appliquer l'effet de l'objet
     let message = allyMessage;
-    if(item.effect.heal) {
+    if(item.effect.heal && opts.healAlly) {   // soin d'un compagnon choisi (« sur qui ? ») : Hou Yi ne récupère rien
+        message += opts.healAlly(item.effect.heal);
+    } else if(item.effect.heal) {
         const potion = healEntity(player, item.effect.heal);   // Corrompu : la potion blesse
         if(potion.harmed > 0){
             message += `Corrompu : la potion vous inflige ${potion.harmed} dégâts ! `;

@@ -5,7 +5,9 @@ import { describeEffects } from './gearEffects.js';
 
 // Types d'armes
 export const WeaponType = {
-    BOW: 'bow'
+    BOW: 'bow',
+    // Armes de compagnon (jamais équipables par Hou Yi, qui ne tire qu'à l'arc)
+    SWORD: 'sword', AXE: 'axe', MACE: 'mace', DAGGER: 'dagger', STAFF: 'staff', FAN: 'fan'
 };
 
 // Rareté des armes
@@ -660,7 +662,7 @@ export function getAvailableWeapons(playerLevel) {
 
 // Fonction pour obtenir une arme par son ID
 export function getWeaponById(id) {
-    const weapon = allWeapons.find(weapon => weapon.id === (LEGACY_WEAPON_IDS[id] || id));
+    const weapon = allWeapons.find(weapon => weapon.id === (LEGACY_WEAPON_IDS[id] || id)) || companionWeapons.find(weapon => weapon.id === id);
     return weapon ? normalizeWeapon(weapon) : null;
 }
 
@@ -673,3 +675,90 @@ export function getWeaponsByType(type) {
 export function weaponRarity(weapon) {
     return weapon.rarity || 'common';
 }
+
+
+// === ARMES DE COMPAGNON ===
+// Chaque compagnon porte un type d'arme (voir `ALLIES[...].weapon`) : butin, marchands et coffres en donnent des variantes.
+// `damage` est la puissance de l'arme : le compagnon ajoute `allyWeaponBonus(weapon)` aux dégâts de ses sorts.
+export const COMPANION_WEAPON_TYPES = ['sword', 'axe', 'mace', 'dagger', 'staff', 'fan'];
+
+// [niveau, rareté, nom, description] ; 8 variantes par type, du village à la Lune.
+const COMPANION_WEAPON_TABLE = {
+    sword: [
+        [1, 'common', 'Jian de Bronze', 'Une lame droite de bronze, bien équilibrée'],
+        [8, 'common', 'Épée du Garde Rizicole', 'Forgée pour les gardes des digues'],
+        [16, 'uncommon', 'Jian du Pavillon Brisé', 'Sa garde porte l\'ancien sceau d\'un pavillon'],
+        [26, 'uncommon', 'Épée de Jade Vert', 'Un fil de jade court le long de la lame'],
+        [36, 'rare', 'Lame des Mille Plis', 'Acier replié mille fois, il chante à chaque coup'],
+        [46, 'rare', 'Jian du Dragon Dormant', 'Un dragon gravé s\'éveille quand le sang coule'],
+        [58, 'legendary', 'Épée des Neuf Soleils', 'Un éclat de soleil abattu est serti dans la garde'],
+        [70, 'legendary', 'Lame de la Lune Pâle', 'Elle tranche l\'ombre autant que la chair']
+    ],
+    axe: [
+        [1, 'common', 'Hache de Bûcheron', 'Elle fendait le bambou avant de fendre des crânes'],
+        [9, 'common', 'Hache de Basalte', 'Un tranchant de pierre volcanique'],
+        [17, 'uncommon', 'Fu des Remparts', 'Lourde hache des gardes des murailles'],
+        [27, 'uncommon', 'Hache du Buffle Rouge', 'Ornée de cornes de buffle'],
+        [37, 'rare', 'Fendeuse de Tonnerre', 'Elle claque comme l\'orage à chaque impact'],
+        [47, 'rare', 'Hache du Mont Brisé', 'Taillée dans un éclat de falaise'],
+        [59, 'legendary', 'Fu du Géant Pangu', 'On dit qu\'elle a séparé le ciel de la terre'],
+        [71, 'legendary', 'Hache des Quatre Vents', 'Elle tranche tout ce qu\'elle frôle']
+    ],
+    mace: [
+        [1, 'common', 'Masse de Chêne', 'Un gourdin cerclé de fer'],
+        [10, 'common', 'Masse du Moine Errant', 'Sa tête est polie par les pèlerinages'],
+        [18, 'uncommon', 'Marteau du Temple', 'Frappé aux cloches du temple'],
+        [28, 'uncommon', 'Masse de Cendre Sainte', 'Chargée de braises bénies'],
+        [38, 'rare', 'Marteau de la Cloche Ardente', 'Chaque coup sonne comme un glas'],
+        [48, 'rare', 'Masse du Gardien de Pierre', 'Taillée dans une statue de gardien'],
+        [60, 'legendary', 'Marteau du Mont Kunlun', 'Il pèse comme une montagne sacrée'],
+        [72, 'legendary', 'Masse du Tonnerre Sourd', 'Chaque impact fait trembler le sol']
+    ],
+    dagger: [
+        [1, 'common', 'Couteau de Cuisine Aiguisé', 'Pas fait pour ça, mais il coupe'],
+        [8, 'common', 'Dague des Marais', 'Une lame fine, discrète et sale'],
+        [16, 'uncommon', 'Bishou de Cuivre', 'Légère, elle part avant d\'être vue'],
+        [25, 'uncommon', 'Dague du Serpent Jaune', 'Sa lame ondule comme un serpent'],
+        [35, 'rare', 'Épingle de Poison', 'Un fiel d\'alchimiste enduit la pointe'],
+        [45, 'rare', 'Dague de l\'Éclair Noir', 'Elle disparaît dans la main qui frappe'],
+        [57, 'legendary', 'Bishou des Mille Fioles', 'Chaque entaille porte un philtre différent'],
+        [69, 'legendary', 'Dague du Dernier Soupir', 'On ne sent pas la lame ; on sent le froid']
+    ],
+    staff: [
+        [1, 'common', 'Bâton de Bambou', 'Un bâton de voyage, léger et droit'],
+        [9, 'common', 'Bâton de Saule', 'Souple, il plie sans rompre'],
+        [17, 'uncommon', 'Bâton du Lettré', 'Les sceaux gravés guident le qì'],
+        [27, 'uncommon', 'Gun de Jade', 'Une perle de jade au sommet'],
+        [37, 'rare', 'Bâton des Neuf Anneaux', 'Il tinte à chaque mouvement'],
+        [47, 'rare', 'Sceptre de l\'Aïeule', 'Orné de plumes et d\'os de grue'],
+        [59, 'legendary', 'Bâton du Roi Singe', 'Il grandit ou rétrécit selon l\'envie'],
+        [71, 'legendary', 'Sceptre des Cinq Éléments', 'Cinq pierres, cinq forces, un seul geste']
+    ],
+    fan: [
+        [1, 'common', 'Éventail de Papier', 'Léger, mais le vent s\'y plie'],
+        [9, 'common', 'Éventail de Bambou', 'Ses baleines claquent comme des lames'],
+        [17, 'uncommon', 'Éventail de la Brise', 'Il attire les vents favorables'],
+        [27, 'uncommon', 'Shan des Cendres', 'Des plumes noircies par un feu ancien'],
+        [37, 'rare', 'Éventail de Plume de Grue', 'Chaque coup lève un tourbillon'],
+        [47, 'rare', 'Éventail des Esprits', 'Peint d\'ancêtres qui murmurent'],
+        [59, 'legendary', 'Éventail de Feuille de Bananier', 'Il éteint les flammes et attise les tempêtes'],
+        [71, 'legendary', 'Éventail du Vent des Morts', 'Les âmes l\'accompagnent en tourbillon']
+    ]
+};
+const COMPANION_WEAPON_SLUG = s => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '');
+
+export const companionWeapons = Object.entries(COMPANION_WEAPON_TABLE).flatMap(([type, rows]) =>
+    rows.map(([minLevel, rarity, name, description]) => normalizeWeapon({
+        id: `${type}_${COMPANION_WEAPON_SLUG(name)}`, name, type, companion: true,
+        damage: Math.round(8 + minLevel * 5 * ({ common: 0.9, uncommon: 1, rare: 1.08, legendary: 1.18 }[rarity] || 1)),
+        actionPoints: 0, minLevel, rarity, twoHanded: false, description
+    })));
+
+/** Arme de compagnon (butin, marchands) : jamais équipable par Hou Yi. */
+export const isCompanionWeapon = w => !!w?.companion;
+/** Armes d'une liste que Hou Yi peut manier (sans les armes de compagnon). */
+export const heroWeapons = list => (list || []).filter(w => !isCompanionWeapon(w));
+/** Bonus de dégâts qu'une arme donne aux sorts de son compagnon. */
+export const allyWeaponBonus = w => (w ? Math.round((w.damage || 0) * 0.25) : 0);
+/** Toutes les armes pouvant tomber en butin ou se vendre : les arcs de Hou Yi et les armes de compagnon. */
+export const lootableWeapons = () => [...allWeapons, ...companionWeapons];

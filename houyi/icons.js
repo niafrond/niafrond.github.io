@@ -25,6 +25,7 @@ const PATHS = {
     dagger: `<path d="M11.6 2 L13.6 4 L8.2 9.4 L6.6 7.8Z" fill="#cfd6de" ${S}/><path d="M5 7.2 L8.8 11 M6.8 9.2 L3.2 12.8" fill="none" stroke="${K}" stroke-width="1.8" stroke-linecap="round"/>`,
     mace: `<path d="M3.4 13.6 L8.4 8.6" fill="none" stroke="#8a5a33" stroke-width="2" stroke-linecap="round"/><circle cx="10.4" cy="5.6" r="3.4" fill="#8a8f99" ${S}/><path d="M10.4 1 L10.4 2.2 M15 5.6 L13.8 5.6 M13.6 2.4 L12.8 3.2" fill="none" ${S}/>`,
     bow: `<path d="M4 2 Q14 4 12 14" fill="none" stroke="#8a5a33" stroke-width="2" stroke-linecap="round"/><path d="M4 2 L12 14" fill="none" stroke="#f4ecd8" stroke-width="1"/><path d="M2.4 10.8 L11 5.2" fill="none" ${S}/>`,
+    fan: `<path d="M8 14 L2 5 Q8 0.6 14 5Z" fill="#e8d7a8" ${S}/><path d="M8 14 L4.4 4.4 M8 14 L8 2.6 M8 14 L11.6 4.4" fill="none" stroke="#a8553a" stroke-width="0.9"/><path d="M7 14.6 L9 14.6" stroke="#8a5a33" stroke-width="1.6" stroke-linecap="round"/>`,
     staff: `<path d="M4 14.4 L10.4 4.8" fill="none" stroke="#8a5a33" stroke-width="2" stroke-linecap="round"/><circle cx="11.2" cy="3.8" r="2.4" fill="#7fc8e0" ${S}/>`,
     fire: `<path d="M8 1.6 Q10 4.6 11.6 5 Q13.6 8 12.6 10.8 Q11.4 14.2 8 14.2 Q4.6 14.2 3.4 10.8 Q2.6 7.8 4.8 5.6 Q5.4 7.4 6.4 7 Q6 4 8 1.6Z" fill="#f2702e" ${S}/><path d="M8 7.4 Q10.2 9.6 9.8 11.6 Q9.2 13 8 13 Q6.8 13 6.2 11.6 Q6 9.6 8 7.4Z" fill="#fbe08a"/>`,
     leaf: `<path d="M2.6 13.4 Q2 4 13.4 2.6 Q13.6 13 2.6 13.4Z" fill="#6ab04c" ${S}/><path d="M2.6 13.4 L10 6" fill="none" stroke="#dff0c8" stroke-width="1"/>`,

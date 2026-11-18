@@ -1,7 +1,7 @@
 import { describe, test, expect } from '@jest/globals';
 import './fixtures/xhrFromDisk.js';
 import { FUSIONS, fusionOffers, fuseWeapons, fusionFee, isForge } from '../../fusion.js';
-import { getWeaponById, allWeapons } from '../../weapons.js';
+import { getWeaponById, allWeapons, companionWeapons } from '../../weapons.js';
 import { MERCHANTS, merchantStock } from '../../merchants.js';
 
 const hero = (ids, extra = {}) => ({ level: 40, gold: 10000, weapons: ids.map(id => ({ id })), equippedWeapon: null, ...extra });
@@ -20,7 +20,7 @@ test('chaque recette relie deux armes et un résultat existants, réservé à la
 test('les armes de fusion ne sont jamais en boutique', () => {
     MERCHANTS.forEach(m => {
         const weapons = merchantStock(m.id, 0, 99).filter(o => o.kind === 'weapon');
-        weapons.forEach(o => expect(allWeapons.find(w => w.id === o.id).fusionOnly).toBeFalsy());
+        weapons.forEach(o => expect([...allWeapons, ...companionWeapons].find(w => w.id === o.id).fusionOnly).toBeFalsy());
     });
 });
 

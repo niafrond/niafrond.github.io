@@ -1,7 +1,7 @@
 // Onglet Stats détaillées du joueur et animations d'annonce (sorts, attaques) du combat.
 // Extrait de game.js.
 import { escapeHtml } from "./escapeHtml.js";
-import { spriteUri } from './sprites/index.js';
+import { spriteUri, gbaSprite, heroSprite, enemySprite } from './sprites/index.js';
 import { spellFxHtml, spellFxDurationMs, preloadSpellFx } from './spellFx.js';
 import { icon as svgIcon, manaIcon } from './icons.js';
 import { npcSprite } from './sprites/index.js';
@@ -184,7 +184,23 @@ export function foxIconHtml(){
     return uri ? `<img class="fox-portrait" src="${uri}" alt="Xiao Gui" style="width:96px;height:96px;max-width:40vw;max-height:40vw;object-fit:contain;image-rendering:pixelated">` : svgIcon('star');
 }
 
-export function showCombatAnimation({ icon, title, damage = null, heal = null, source = null, target = null }, isPlayerAttack = true, options = {}) {
+/** Scène de l'annonce d'un sort : lanceur à gauche, sort au milieu, cible à droite (Hou Yi / son équipier à gauche, l'ennemi à droite).
+ *  Le sort file vers la cible, qui clignote quand il la touche ; les sorts lancés par l'ennemi font le trajet inverse. `hit` : le sort inflige des dégâts. */
+export function spellStageHtml(fxHtml, isPlayerAttack, hit, dodged = false, lunge = false) {
+    const ally = gameState.allies?.[gameState.turnClass];
+    const heroSrc = (ally && gbaSprite(ally.sprite, 'right')) || gbaSprite(player.class, 'right') || heroSprite(player.class) || heroSprite('assassin');
+    const key = enemy.spriteKey || enemy.id;
+    const foeSrc = gbaSprite(key, 'left') || gbaSprite(enemy.templateId, 'left') || enemySprite(key, enemy.templateId, enemy.biome);
+    if(!heroSrc || !foeSrc) return null;
+    const img = (src, cls) => `<img class="stage-fighter ${cls}" src="${spriteUri(src)}" alt="" aria-hidden="true">`;
+    const casterHero = isPlayerAttack;
+    const left = img(heroSrc, 'stage-left' + (lunge && casterHero ? ' stage-lunge' : '') + (!hit && casterHero ? ' stage-cast' : '') + (hit && !casterHero ? (dodged ? ' stage-dodge' : ' stage-hurt') : ''));
+    const right = img(foeSrc, 'stage-right' + (lunge && !casterHero ? ' stage-lunge' : '') + (!hit && !casterHero ? ' stage-cast' : '') + (hit && casterHero ? (dodged ? ' stage-dodge' : ' stage-hurt') : ''));
+    const dir = !hit ? 'self' : casterHero ? 'ltr' : 'rtl';
+    return `<div class="spell-stage stage-${dir}${casterHero ? '' : ' stage-foe'}">${left}<div class="stage-mid">${fxHtml}</div>${right}</div>`;
+}
+
+export function showCombatAnimation({ icon, title, damage = null, heal = null, source = null, target = null, projectile = null }, isPlayerAttack = true, options = {}) {
     // Les annonces de critique / blocage / parade restent affichées jusqu'au clic du joueur.
     if(options.requireClick === undefined && options.autoHideMs === undefined && /CRITIQUE|BLOQUÉ|paré/.test(String(damage ?? ''))) options = { ...options, requireClick: true };
     // Coup d'arme ou sort offensif : le combattant joue aussi son animation d'attaque (tir à l'arc, coup d'arme…)
@@ -195,8 +211,12 @@ export function showCombatAnimation({ icon, title, damage = null, heal = null, s
     if(fx && options.requireClick === undefined && options.autoHideMs === undefined) options = { ...options, autoHideMs: Math.max(1000 * animationFactor(), spellFxDurationMs(title) * 2 + 500) };   // l'animation tourne en boucle : au moins deux passages
     const bigFx = Boolean(fx && fx.includes('spellfx-big'));
     let html = `<div class="attack-icon${fx ? ' has-spellfx' : ''}${bigFx ? ' has-spellfx-big' : ''}">${fx || svgIcon(icon) || icon}</div>`;
+    const casterAlly = isPlayerAttack ? gameState.allies?.[gameState.turnClass] : null;   // un compagnon frappe avec son arme (jamais l'arc de Hou Yi)
+    if(casterAlly?.weapon && !fx && damage !== null && heal === null && !projectile) { icon = casterAlly.weapon; projectile = casterAlly.weapon === 'bow' ? 'arrow' : 'melee'; }
+    const midIcon = projectile === 'melee' && typeof icon === 'string' && !icon.includes('<') ? svgIcon(icon) : (svgIcon(icon) || icon);
+    const stage = !bigFx ? spellStageHtml(fx || (projectile === 'arrow' ? `<div class="attack-icon stage-arrow">${svgIcon('arrow')}</div>` : `<div class="attack-icon">${svgIcon(icon) || icon}</div>`), isPlayerAttack, damage !== null && heal === null, Boolean(options.blocked), projectile === 'melee') : null;
+    if(stage) html = stage;
     // 2e temps d'un blocage / d'une parade : gros bouclier (plein = bloqué, fendu = paré) et texte qui vibre.
-    if(options.blocked) html = `<div class="block-shield block-${options.blocked}">${svgIcon('wickershield')}</div>` + html;
     let caption = `<div class="attack-title">${String(title).toUpperCase()}</div>`;
     if (damage !== null) caption += `<div class="attack-damage">${damage}</div>`;
     if (heal   !== null) caption += `<div class="attack-heal">${heal}</div>`;
@@ -224,14 +244,10 @@ export function showStrikeAnimation(params, strike, isPlayerAttack = true, final
         showCombatAnimation({ ...params, damage: `-${real} dégâts${crit}` }, isPlayerAttack, options);
         return;
     }
-    const label = strike.block === 'total' ? 'BLOQUÉ ! ' : 'PARÉ ! ';
-    const shield = strike.block;
-    showCombatAnimation({ ...params, damage: `-${intended} dégâts${crit}` }, isPlayerAttack, {
-        ...options, requireClick: false, autoHideMs: strikeHoldMs(strike, isPlayerAttack, intended, 1000),
-        onContinue: () => showCombatAnimation(
-            { ...params, damage: `${label}${real > 0 ? `-${real} dégâts` : 'aucun dégât'}`, title: params.title },
-            isPlayerAttack, { ...options, blocked: shield, requireClick: true, onContinue: options.onContinue })
-    });
+    // Blocage / parade : un seul écran (bouclier) qui montre les dégâts subis et ce que la défense a retenu.
+    const stopped = Math.max(0, intended - real);
+    showCombatAnimation({ ...params, damage: `${real} dégât${real > 1 ? 's' : ''}${crit}<br><span class="stopped">${stopped} dégât${stopped > 1 ? 's' : ''} ${strike.block === 'total' ? (stopped > 1 ? 'bloqués' : 'bloqué') : (stopped > 1 ? 'parés' : 'paré')}</span>` }, isPlayerAttack, {
+        ...options, blocked: strike.block, requireClick: true, onContinue: options.onContinue });
 }
 
 // Mécanisme DOM bas niveau pour afficher un overlay d'animation sur la grille

@@ -4,6 +4,7 @@ import { wornStuff } from './stuff.js';
 import { teachers, toggleSupport } from './skills.js';
 import { skillsTabHtml } from './skillsMarkup.js';
 import { toggleLoadout } from './classRoster.js';
+import { equipAllyWeapon } from './allyWeapons.js';
 
 let selectedId = null;
 
@@ -40,5 +41,13 @@ function init() {
     document.addEventListener('skills-tab-open', renderSkillsTab);
     document.addEventListener('stuff-changed', renderSkillsTab);
     document.getElementById('skills-view')?.addEventListener('click', onClick);
+    document.getElementById('skills-view')?.addEventListener('change', ev => {   // arme d'un compagnon (hors combat)
+        const sel = ev.target.closest?.('[data-ally-weapon]');
+        if (!sel || gameState.combatState === 'active') return;
+        const res = equipAllyWeapon(player, sel.dataset.allyWeapon, sel.value || null);
+        log(res.message);
+        if (res.ok) saveUpdate();
+        renderSkillsTab();
+    });
 }
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();

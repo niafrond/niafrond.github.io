@@ -5,6 +5,8 @@ import { visibleSkills, markSeen, getSkill, isSupport, skillsTaughtBy, normalize
 import { TRANSE_TURNS, TRANSE_EFFECTS } from './transe.js';
 import { CLASS_IDS, CLASS_SHORT, MAX_USABLE_CLASSES, START_CLASS, BIOME_CLASS_LIMITS, normalizeRoster } from './classRoster.js';
 import { ALLIES, memberName, allyMaxHp } from './allies.js';
+import { weaponsFor, allyEquippedWeapon } from './allyWeapons.js';
+import { allyWeaponBonus } from './weapons.js';
 
 const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
@@ -74,7 +76,14 @@ export function classesHtml(hero, canToggle = true) {
         // Hou Yi est toujours de l'équipe ; un compagnon seul recruté n'a rien à échanger tant que l'équipe a de la place.
         const action = isHero || roster.owned.length <= 1 ? '' : `<button type="button" class="cl-toggle" data-toggle-class="${id}"${canToggle ? '' : ' disabled'}>${on ? 'Retirer' : 'Appeler'}</button>`;
         const detail = isHero ? 'Hou Yi' : `${esc(ally.name)} · ${allyMaxHp(hero, id)} PV`;
-        return `<div class="cl-row${on ? ' on' : ''}" title="${esc(detail)}"><span class="cl-name">${esc(memberName(id))} <small>${esc(CLASS_SHORT[id])}</small></span>${action}</div>`;
+        // Arme du compagnon (réglée hors combat) : choisie parmi les armes de son type que Hou Yi a trouvées ou achetées.
+        let weapon = '';
+        if (!isHero) {
+            const eq = allyEquippedWeapon(hero, id), choices = weaponsFor(hero, id);
+            const opts = ['<option value="">Mains nues</option>', ...choices.map(w => `<option value="${esc(w.id)}"${eq?.id === w.id ? ' selected' : ''}>${esc(w.name)} (+${allyWeaponBonus(w)})</option>`)].join('');
+            weapon = `<label class="cl-weapon">Arme <select data-ally-weapon="${id}"${canToggle ? '' : ' disabled'}>${opts}</select></label>`;
+        }
+        return `<div class="cl-row${on ? ' on' : ''}" title="${esc(detail)}"><span class="cl-name">${esc(memberName(id))} <small>${esc(CLASS_SHORT[id])}</small></span>${weapon}${action}</div>`;
     }).join('');
     const limits = Object.entries(BIOME_CLASS_LIMITS).map(([biome, l]) => {
         const known = l.classes.filter(c => roster.owned.includes(c));

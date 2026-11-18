@@ -25,6 +25,8 @@ import '../puzzle/modes.js';
 import { spriteDefs } from '../puzzle/art.js';
 import { ANTIQUE_ARMORS } from '../stuff.js';
 import { allItems } from '../items.js';
+import { companionWeapons, allyWeaponBonus } from '../weapons.js';
+import { TRANSE_EFFECTS } from '../transe.js';
 import { LEGENDS } from '../world/legends.js';
 import { playerClasses } from '../classes.js';
 import { RAGE_MAX, ULTIMATE_COST_FACTOR, ultimateCostEntries } from '../ultimates.js';
@@ -455,20 +457,36 @@ ${qs.map(questHtml).join('\n')}`
 function buildAllies() {
     const quests = Object.fromEntries(CLASS_TRIAL_QUESTS.map(q => [q.reward.class, q]));
     const heroMax = 400;   // exemple : PV max de Hou Yi
+    const WEAPON_NAMES = { sword: 'épée', axe: 'hache', mace: 'masse', dagger: 'dague', staff: 'bâton', fan: 'éventail' };
+    const RARITY = { common: 'commune', uncommon: 'peu commune', rare: 'rare', legendary: 'légendaire' };
     const cards = ALLY_IDS.map(id => `<a class="card" href="equipe.html#${id}"><b>${esc(ALLIES[id].name)}</b><span>${esc(CLASS_SHORT[id])} · ${esc(ALLIES[id].title)}</span></a>`).join('');
     const rows = ALLY_IDS.map(id => {
-        const a = ALLIES[id], q = quests[id];
-        return `<tr id="${id}"><td><b>${esc(a.name)}</b><br><small>${esc(a.title)}</small></td><td>${esc(CLASS_SHORT[id])}</td><td>${esc(regionName(a.region))}</td><td>${q ? `<a href="${regionSlug(a.region)}#${questAnchor(q.id)}">${esc(q.title)}</a>` : '—'}</td><td>${allyMaxHp({ maxHp: heroMax }, id)} PV pour 400 PV à Hou Yi</td></tr>`;
+        const a = ALLIES[id], q = quests[id], x = TRANSE_EFFECTS[id];
+        return `<tr id="${id}"><td><b>${esc(a.name)}</b><br><small>${esc(a.title)}</small></td><td>${esc(CLASS_SHORT[id])}</td><td>${esc(regionName(a.region))}</td><td>${q ? `<a href="${regionSlug(a.region)}#${questAnchor(q.id)}">${esc(q.title)}</a>` : '—'}</td><td>${allyMaxHp({ maxHp: heroMax }, id)} PV pour 400 PV à Hou Yi</td><td>${esc(WEAPON_NAMES[a.weapon] || a.weapon)}</td><td><b>${esc(x.name)}</b><br><small>${esc(x.text.charAt(0).toUpperCase() + x.text.slice(1))}</small></td></tr>`;
     }).join('');
+    const weaponTables = ALLY_IDS.map(id => {
+        const type = ALLIES[id].weapon;
+        const list = companionWeapons.filter(w => w.type === type).sort((a, b) => a.minLevel - b.minLevel);
+        return `<h3>${esc(ALLIES[id].name)} — ${esc(WEAPON_NAMES[type])}</h3><div class="scroll"><table><tr><th>Arme</th><th>Niveau</th><th>Rareté</th><th>Bonus aux sorts</th><th>Description</th></tr>${list.map(w => `<tr><td>${esc(w.name)}</td><td>${w.minLevel}</td><td>${esc(RARITY[w.rarity] || w.rarity)}</td><td>+${allyWeaponBonus(w)}</td><td>${esc(w.description)}</td></tr>`).join('')}</table></div>`;
+    }).join('');
+    const teamItems = ['crane_feather', 'xuanwu_balm', 'white_tiger_claw', 'azure_dragon_scale', 'qilin_hair', 'qilin_horn'].map(id => allItems.find(i => i.id === id)).filter(Boolean);
+    const itemRows = teamItems.map(i => `<tr><td><b>${esc(i.name)}</b></td><td>${i.minLevel}</td><td>${esc(RARITY[i.rarity] || i.rarity)}</td><td>${esc(i.description)}</td></tr>`).join('');
     write('equipe.html', page({
         file: 'equipe.html', title: 'Compagnons de combat', active: 'equipe.html',
-        desc: 'Les six compagnons de combat : comment les recruter et ce que chacun apporte.',
+        desc: 'Les six compagnons de combat : comment les recruter, leur arme, leur Xiūxiān et les objets pour les soigner.',
         crumbs: [['soluce.html', 'Accueil'], [null, 'Compagnons de combat']],
         body: `<h2>Les ${ALLY_IDS.length} compagnons de combat</h2>
-<p class="lead">Hou Yi est le Chasseur. Les six autres classes sont portées par des compagnons que vous recrutez en terminant l’entraînement de leur maître, un par région du Volcan aux Fauves. Votre équipe de combat compte Hou Yi et ${MAX_ALLIES} compagnons au plus, choisis hors combat dans l’onglet Compétences.</p>
+<p class="lead">Hou Yi est le Chasseur. Les six autres classes sont portées par des figures de la mythologie chinoise que vous recrutez en terminant leur épreuve : un dans les Rizières, deux dans le Volcan, puis un par région (Gobi, Fleuve, Bambous). Votre équipe de combat compte Hou Yi et ${MAX_ALLIES} compagnons au plus, choisis hors combat dans l’onglet Compétences, où chacun équipe aussi son arme.</p>
 <div class="grid">${cards}</div>
-<div class="scroll"><table><tr><th>Compagnon</th><th>Classe</th><th>Région</th><th>Quête</th><th>Barre de vie</th></tr>${rows}</table></div>
-<div class="box tip"><b class="t">Conseil</b>Les compagnons partagent le qì de Hou Yi mais chacun a sa propre barre de vie et sa propre barre de chargement. Une action ennemie sur quatre vise un compagnon vivant ; à 0 PV il est hors de combat jusqu’à la fin du combat, puis il est de nouveau en pleine forme au suivant. Si Hou Yi tombe, le combat est perdu.</div>`
+<div class="scroll"><table><tr><th>Compagnon</th><th>Classe</th><th>Région</th><th>Quête</th><th>Barre de vie</th><th>Arme</th><th>Xiūxiān</th></tr>${rows}</table></div>
+<div class="box tip"><b class="t">Conseil</b>Les compagnons partagent le qì de Hou Yi mais chacun a sa propre barre de vie, sa barre de chargement et sa jauge de Xiūxiān, juste sous sa barre de vie. Elle se remplit quand il encaisse des coups ; pleine, touchez-la à votre tour pour déclencher sa Xiūxiān, dont l’effet profite à toute l’équipe pendant trois tours. Un clic long sur un personnage affiche le détail de la Xiūxiān en cours. Une action ennemie sur quatre vise un compagnon vivant ; à 0 PV il est hors de combat jusqu’à la fin du combat, puis il est de nouveau en pleine forme au suivant.</div>
+<div class="box tip"><b class="t">Si Hou Yi tombe</b>Le combat continue tant qu’un compagnon tient debout : les coups visent alors les compagnons. La défaite n’arrive que quand toute l’équipe est à terre.</div>
+<h2>Objets pour l’équipe</h2>
+<p class="lead">Choisissez l’équipier visé dans la fenêtre « sur qui ? », qui montre la barre de vie de chacun. Les objets de ranimation relèvent un équipier hors de combat, Hou Yi compris, même au milieu d’un combat. Les objets à usage unique disparaissent après emploi.</p>
+<div class="scroll"><table><tr><th>Objet</th><th>Niveau</th><th>Rareté</th><th>Effet</th></tr>${itemRows}</table></div>
+<h2>Armes de compagnon</h2>
+<p class="lead">Chaque compagnon porte une arme de son type, que vous trouvez dans les coffres, sur les ennemis vaincus ou chez les marchands. Hou Yi ne peut pas les manier. L’arme équipée ajoute des dégâts à tous les sorts du compagnon.</p>
+${weaponTables}`
     }));
 }
 

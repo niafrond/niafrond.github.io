@@ -39,7 +39,7 @@ describe('compagnons de combat', () => {
         grantClass(h, 'templar'); grantClass(h, 'alchemist');
         const team = buildTeam(h);
         expect(Object.keys(team)).toEqual(['templar', 'alchemist']);
-        expect(team.templar).toMatchObject({ hp: 400, maxHp: 400, ko: false, isAlly: true, name: 'Capitaine Heng' });
+        expect(team.templar).toMatchObject({ hp: 400, maxHp: 400, ko: false, isAlly: true, name: 'Nezha' });
         expect(team.alchemist.maxHp).toBe(220);
     });
     test('hors de combat à 0 PV : le compagnon ne joue plus et ne peut plus être visé', () => {
@@ -143,5 +143,89 @@ describe('équipe : ranimer, soigner et renforcer', () => {
         damageAlly(t.monk, 9999);
         expect(pickAnyAlly(t)).toBeNull();
         expect(livingAllies(t)).toHaveLength(0);
+    });
+});
+
+describe('armes des compagnons', () => {
+    test("chaque compagnon a une arme de mêlée ou de bâton : jamais l'arc de Hou Yi", () => {
+        ALLY_IDS.forEach(id => { expect(ALLIES[id].weapon).toBeTruthy(); expect(ALLIES[id].weapon).not.toBe('bow'); });
+        expect(new Set(ALLY_IDS.map(id => ALLIES[id].weapon)).size).toBeGreaterThanOrEqual(5);
+        expect(buildAlly(hero(), 'barbarian').weapon).toBe('staff');
+    });
+});
+
+describe('armes de compagnon : variantes, équipement, butin et marchands', () => {
+    test('48 armes de compagnon (6 types × 8), identifiants uniques, jamais des arcs, chaque compagnon a un type distinct', async () => {
+        const { companionWeapons, COMPANION_WEAPON_TYPES } = await import('../../weapons.js');
+        expect(companionWeapons).toHaveLength(48);
+        expect(new Set(companionWeapons.map(w => w.id)).size).toBe(48);
+        COMPANION_WEAPON_TYPES.forEach(t => expect(companionWeapons.filter(w => w.type === t)).toHaveLength(8));
+        expect(new Set(ALLY_IDS.map(id => ALLIES[id].weapon)).size).toBe(6);
+    });
+    test('équiper : seulement une arme de son type et de niveau permis ; une arme ne sert qu\'à un compagnon', async () => {
+        const { companionWeapons, getWeaponById } = await import('../../weapons.js');
+        const { equipAllyWeapon, allyEquippedWeapon, weaponsFor } = await import('../../allyWeapons.js');
+        const axe = companionWeapons.find(w => w.type === 'staff' && w.minLevel === 1), sword = companionWeapons.find(w => w.type === 'sword' && w.minLevel === 1);
+        const h = Object.assign(hero(), { level: 5, weapons: [axe, sword] });
+        expect(weaponsFor(h, 'barbarian').map(w => w.id)).toEqual([axe.id]);
+        expect(equipAllyWeapon(h, 'barbarian', sword.id).ok).toBe(false);
+        expect(equipAllyWeapon(h, 'barbarian', axe.id).ok).toBe(true);
+        expect(allyEquippedWeapon(h, 'barbarian').id).toBe(axe.id);
+        expect(equipAllyWeapon(h, 'barbarian', null).ok).toBe(true);
+        expect(allyEquippedWeapon(h, 'barbarian')).toBeNull();
+        expect(getWeaponById(axe.id)?.id).toBe(axe.id);   // la sauvegarde recharge les armes par identifiant
+    });
+    test('Hou Yi ne manie pas les armes de compagnon ; butin et marchands en proposent', async () => {
+        const { heroWeapons, lootableWeapons } = await import('../../weapons.js');
+        const { companionWeapons } = await import('../../weapons.js');
+        expect(heroWeapons([companionWeapons[0], { id: 'arc', type: 'bow' }]).map(w => w.id)).toEqual(['arc']);
+        expect(lootableWeapons().length).toBeGreaterThan(companionWeapons.length);
+        const { rollChestLoot } = await import('../../chestLoot.js');
+        let found = false;
+        for (let i = 0; i < 400 && !found; i++) {
+            const r = rollChestLoot({ gold: 1, lootTier: 4 }, { region: 'lune' }, { level: 40, weapons: [], inventory: [] }, (() => { let n = i; return () => (n = (n * 9301 + 49297) % 233280) / 233280; })());
+            found = r.loot.some(l => l.kind === 'weapon' && l.weapon.companion);
+        }
+        expect(found).toBe(true);
+        const { merchantStock, MERCHANTS } = await import('../../merchants.js');
+        const offers = MERCHANTS.flatMap(m => merchantStock(m.id, 0, 99)).filter(o => o.kind === 'weapon');
+        expect(offers.some(o => companionWeapons.some(w => w.id === o.id))).toBe(true);
+    });
+});
+
+describe('Xiūxiān propre à chaque compagnon', () => {
+    test('chaque compagnon a sa jauge (reprise de hero.rages), qui se remplit quand il encaisse', () => {
+        const h = Object.assign(hero(), { rages: { monk: 40 } });
+        const a = buildAlly(h, 'monk');
+        expect(a.rage).toBe(40);
+        expect(a.gaugeClass).toBe('monk');
+        const b = buildAlly(h, 'barbarian');
+        expect(b.rage).toBe(0);
+        damageAlly(b, Math.round(b.maxHp * 0.2));
+        expect(b.rage).toBeGreaterThan(0);
+        expect(a.rage).toBe(40);   // la jauge d'un compagnon n'est pas celle d'un autre
+    });
+    test('la Xiūxiān se déclenche et décompte par compagnon ; tomber hors de combat l\'éteint', async () => {
+        const { startTranse, tickTranse, isInTranse, TRANSE_TURNS } = await import('../../transe.js');
+        const a = buildAlly(hero(), 'templar'), b = buildAlly(hero(), 'shaman');
+        a.rage = 100;
+        expect(startTranse(a)).toBe(true);
+        expect(a.transeClass).toBe('templar');
+        expect(isInTranse(b)).toBe(false);
+        for (let i = 1; i < TRANSE_TURNS; i++) tickTranse(a);
+        expect(isInTranse(a)).toBe(true);
+        damageAlly(a, 9999);
+        expect(isInTranse(a)).toBe(false);
+        expect(a.rage).toBe(0);
+    });
+    test('les effets de plusieurs Xiūxiān se cumulent ; chaque compagnon a un nom propre', async () => {
+        const { mergeTranseEffects, TRANSE_EFFECTS } = await import('../../transe.js');
+        const m = mergeTranseEffects(['shaman', 'templar', 'barbarian', 'barbarian']);
+        expect(m.defense).toBe(35);
+        expect(m.reflectPct).toBe(30);
+        expect(m.physMult).toBe(4);
+        expect(m.paMult).toBe(2);
+        expect(mergeTranseEffects([])).toEqual({});
+        expect(new Set(ALLY_IDS.map(id => TRANSE_EFFECTS[id].name)).size).toBe(6);
     });
 });

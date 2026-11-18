@@ -1115,3 +1115,27 @@ body.a11y-colorblind .action-beads .bead-foe { background: #e08a1e; }
 .ally-card.ko .ally-hp i { background: #777; }
 .class-picker .class-pick.ko { opacity: 0.4; text-decoration: line-through; }
 #player-stats.hero-ko { opacity: 0.5; filter: grayscale(1); }
+
+/* Jauge de Xiūxiān de Hou Yi : toujours visible, en barre horizontale sous sa barre de vie (les compagnons gardent la leur au clic long) */
+#player-stats:has(.rage-stat) { display: block; }
+#player-stats .rage-stat { display: flex; flex-direction: row; align-items: center; gap: 4px; margin: 2px 0; height: 14px; }
+#player-stats .rage-stat .rage-bar-container { width: auto; flex: 1; min-width: 0; height: 100%; }
+#player-stats .rage-stat .rage-bar { width: 100%; height: 100%; display: block; position: relative; overflow: hidden; border-radius: 6px; background: rgba(0,0,0,.35); }
+#player-stats .rage-stat .rage-fill { height: 100%; width: var(--g, 0%); transition: width .3s ease; }
+
+/* Xiūxiān d'un compagnon : zone cachée, visible au clic long sur sa carte (ou pendant sa Xiūxiān) */
+.ally-card { position: relative; }
+.ally-card .ally-portrait { grid-row: 1 / 4; }
+.ally-card .ally-xiu { grid-column: 2; display: block; position: relative; overflow: hidden; margin-top: 2px; height: 6px; padding: 0; background: rgba(0,0,0,.35); border: 1px solid rgba(255,255,255,.25); border-radius: 3px; }
+.ally-xiu i { position: absolute; inset: 0 auto 0 0; background: #6a4bd8; opacity: .8; }
+.ally-xiu.ready { border-color: #ffd54a; animation: xiu-ready-pulse 1s ease-in-out infinite; cursor: pointer; }
+.ally-xiu.in-xiu i { background: #d8a24b; }
+.ally-card.xiu-on { box-shadow: 0 0 6px #d8a24b; }
+@keyframes xiu-ready-pulse { 50% { box-shadow: 0 0 6px #ffd54a; } }
+@media (prefers-reduced-motion: reduce) { .ally-xiu.ready { animation: none; } }
+
+/* Texte de la Xiūxiān (effet, tours restants) : caché, visible quelques secondes après un clic long sur un personnage ; plus de texte dans les jauges */
+#xiu-banner { display: none; }
+body.show-xiu-text #xiu-banner { display: block; }
+#player-stats .rage-stat .rage-text { display: none; }
+#player-stats .rage-stat { height: 9px; }

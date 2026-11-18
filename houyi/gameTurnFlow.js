@@ -98,9 +98,12 @@ function playCompanionAnnouncements(list, done){
 function endOfPlayerTurnTranse(){
     resetTranseTurn();
     if(tickTranse(player)){   // la jauge de la classe de la Xiūxiān est consommée
-        log('La Xiūxiān s\'achève.');
+        log('La Xiūxiān de Hou Yi s\'achève.');
         updateStats();
     }
+    Object.values(gameState.allies || {}).forEach(a => {   // chaque compagnon a sa propre Xiūxiān, qui décompte aussi
+        if(tickTranse(a)){ log(`La Xiūxiān de ${a.name} s'achève.`); updateStats(); }
+    });
 }
 
 export function finishPlayerTurn(){
@@ -338,7 +341,7 @@ function applyEnemyActionNow(decision){
     }
     playSfx('weaponHit', { isPlayer: false, rarity: enemy.weapon.rarity });
     const icon = getWeaponIcon(enemy.weapon.type);
-    showStrikeAnimation({ icon, title: enemy.weapon.name, source: enemy.name, target: '→ Vous' }, strike, false, dmg);
+    showStrikeAnimation({ icon, title: enemy.weapon.name, source: enemy.name, target: '→ Vous', projectile: enemy.weapon.type === 'bow' ? 'arrow' : 'melee' }, strike, false, dmg);
     log(`${icon} ${enemy.name} utilise ${enemy.weapon.name} ! ${dmg} dégâts.${strike.crit ? ' Coup critique !' : ''}${strike.unblockable ? ' Coup inblocable !' : ''}${strike.block === 'total' ? ' Vous bloquez entièrement le coup.' : strike.block === 'partial' ? ' Vous parez le coup.' : ''}`);
     return true;
 }

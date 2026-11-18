@@ -455,3 +455,21 @@ body.casual-mode .tab-btn[onclick*="'spells'"] { display: none; }
 #potion-buttons.potion-menu .potion-btn { white-space: normal; height: auto; }
 #potion-buttons.potion-menu .potion-back { grid-column: 1 / -1; }
 #potion-buttons .potion-ask { grid-column: 1 / -1; font-weight: 700; font-size: 0.8rem; padding: 2px 4px; }
+.cl-row { flex-wrap: wrap; }
+.cl-weapon { display: flex; align-items: center; gap: 4px; font-size: 0.75em; min-width: 0; flex: 1 0 100%; order: 3; }
+.cl-weapon select { font: inherit; flex: 1; min-width: 0; padding: 1px 2px; }
+
+/* « Sur qui ? » : choix du personnage avec sa barre de vie (potions, objets) */
+.target-picker-overlay { position: fixed; inset: 0; z-index: 5000; display: flex; align-items: center; justify-content: center; background: rgba(10, 10, 18, 0.6); padding: 16px; }
+.target-picker { width: min(100%, 360px); display: flex; flex-direction: column; gap: 6px; padding: 12px; border-radius: 10px; background: #23232f; color: #f3efe4; border: 1px solid #6b6f7a; }
+.target-title { font-weight: 700; padding-bottom: 2px; }
+.target-row { display: grid; grid-template-columns: 1fr auto; grid-template-areas: 'name text' 'bar bar'; gap: 3px 8px; text-align: left; font: inherit; padding: 6px 8px; border-radius: 6px; border: 1px solid #8b9097; background: #34343f; color: inherit; cursor: pointer; }
+.target-row:disabled { opacity: .5; cursor: default; }
+.target-row.ko { filter: grayscale(1); }
+.target-row:not(:disabled):hover, .target-row:not(:disabled):focus-visible { border-color: #7fe3f2; outline: none; }
+.target-name { grid-area: name; font-weight: 600; }
+.target-hp-text { grid-area: text; font-size: .8em; opacity: .9; }
+.target-hp { grid-area: bar; display: block; height: 8px; border-radius: 4px; background: #14141c; overflow: hidden; }
+.target-hp-fill { display: block; height: 100%; background: #4cc26b; }
+.target-hp-fill.low { background: #d9534f; }
+.target-cancel { font: inherit; padding: 6px; border-radius: 6px; border: 1px solid #8b9097; background: transparent; color: inherit; cursor: pointer; }

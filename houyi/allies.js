@@ -7,16 +7,18 @@
 //  - L'ennemi peut les viser (une action ennemie sur quatre vise un compagnon vivant, au hasard) ; à 0 PV un compagnon est hors de combat jusqu'à la fin :
 //    sa classe ne charge plus et ne peut plus agir. Ils sont de nouveau en pleine forme au combat suivant. Hou Yi à terre = défaite.
 //  - Recrutement : l'entraînement du maître de classe (world/classTrials.js) ; le maître rejoint l'équipe à la fin de la quête. Un compagnon dans la 1re
-//    région (Rizières : Frère Ming), deux dans la 2e (Volcan : Tu le Briseur et Dame Dan), puis un par région (Gobi : Heng, Fleuve : Xuan, Bambous : Wu Po).
+//    région (Rizières : Fuxi), deux dans la 2e (Volcan : Sun Wukong et Shennong), puis un par région (Gobi : Nezha, Fleuve : Longwang, Bambous : Jingwei).
 import { START_CLASS, normalizeRoster } from './classRoster.js';
+import { rageFromDamage, addRage, RAGE_MAX } from './ultimates.js';
+import { endTranse } from './transe.js';
 
 export const ALLIES = {
-    barbarian: { id: 'barbarian', name: 'Tu le Briseur', short: 'Tu', title: 'Maître des poings de roche', npc: 'trainer_barbarian', sprite: 'ally_barbarian', region: 'volcan', hpPct: 0.9, defensePct: 0.8 },
-    templar: { id: 'templar', name: 'Capitaine Heng', short: 'Heng', title: 'Maître de la garde', npc: 'trainer_templar', sprite: 'ally_templar', region: 'gobi', hpPct: 1, defensePct: 1 },
-    sorcerer: { id: 'sorcerer', name: 'Maître Xuan', short: 'Xuan', title: 'Taoïste du gué', npc: 'trainer_sorcerer', sprite: 'ally_sorcerer', region: 'fleuve', hpPct: 0.5, defensePct: 0.3 },
-    monk: { id: 'monk', name: 'Frère Ming', short: 'Ming', title: 'Moine des cendres', npc: 'trainer_monk', sprite: 'ally_monk', region: 'rizieres', hpPct: 0.7, defensePct: 0.6 },
-    alchemist: { id: 'alchemist', name: 'Dame Dan', short: 'Dan', title: 'Alchimiste des orages', npc: 'trainer_alchemist', sprite: 'ally_alchemist', region: 'volcan', hpPct: 0.55, defensePct: 0.4 },
-    shaman: { id: 'shaman', name: 'Aïeule Wu Po', short: 'Wu Po', title: 'Chamane de la plaine', npc: 'trainer_shaman', sprite: 'ally_shaman', region: 'bambous', hpPct: 0.6, defensePct: 0.5 }
+    barbarian: { id: 'barbarian', name: 'Sun Wukong', short: 'Wukong', title: "Roi Singe, égal au Ciel", npc: 'trainer_barbarian', sprite: 'ally_barbarian', weapon: 'staff', region: 'volcan', hpPct: 0.9, defensePct: 0.8 },
+    templar: { id: 'templar', name: 'Nezha', short: 'Nezha', title: "Prince aux roues de feu", npc: 'trainer_templar', sprite: 'ally_templar', weapon: 'sword', region: 'gobi', hpPct: 1, defensePct: 1 },
+    sorcerer: { id: 'sorcerer', name: 'Longwang', short: 'Longwang', title: "Roi Dragon des eaux", npc: 'trainer_sorcerer', sprite: 'ally_sorcerer', weapon: 'axe', region: 'fleuve', hpPct: 0.5, defensePct: 0.3 },
+    monk: { id: 'monk', name: 'Fuxi', short: 'Fuxi', title: "Sage des huit trigrammes", npc: 'trainer_monk', sprite: 'ally_monk', weapon: 'mace', region: 'rizieres', hpPct: 0.7, defensePct: 0.6 },
+    alchemist: { id: 'alchemist', name: 'Shennong', short: 'Shennong', title: "Paysan divin, goûteur d'herbes", npc: 'trainer_alchemist', sprite: 'ally_alchemist', weapon: 'dagger', region: 'volcan', hpPct: 0.55, defensePct: 0.4 },
+    shaman: { id: 'shaman', name: 'Jingwei', short: 'Jingwei', title: "Oiseau des flots", npc: 'trainer_shaman', sprite: 'ally_shaman', weapon: 'fan', region: 'bambous', hpPct: 0.6, defensePct: 0.5 }
 };
 export const ALLY_IDS = Object.keys(ALLIES);
 export const MAX_ALLIES = 3;
@@ -44,10 +46,12 @@ export function buildAlly(hero, classId) {
     const a = ALLIES[classId];
     const maxHp = allyMaxHp(hero, classId);
     return {
-        isAlly: true, classId, name: a.name, short: a.short, title: a.title, sprite: a.sprite,
+        isAlly: true, classId, name: a.name, short: a.short, title: a.title, sprite: a.sprite, weapon: a.weapon,
         level: hero?.level || 1, hp: maxHp, maxHp, ko: false,
         defense: Math.round((hero?.defense || 0) * a.defensePct), attack: Math.round((hero?.attack || 0) * 0.5),
-        attributes: {}, statusEffects: {}
+        attributes: {}, statusEffects: {},
+        // Xiūxiān propre au compagnon : sa jauge (conservée d'un combat à l'autre dans hero.rages), sa durée en cours
+        rage: Math.max(0, Math.min(RAGE_MAX, Math.floor(hero?.rages?.[classId] || 0))), gaugeClass: classId, transe: 0, transeClass: null
     };
 }
 
@@ -80,7 +84,8 @@ export function damageAlly(ally, damage) {
     if (!ally || ally.ko) return { damage: 0, ko: false };
     const dealt = Math.min(ally.hp, Math.max(0, Math.floor(damage || 0)));
     ally.hp -= dealt;
-    if (ally.hp <= 0) { ally.hp = 0; ally.ko = true; return { damage: dealt, ko: true }; }
+    if (dealt > 0) addRage(ally, rageFromDamage(dealt, ally.maxHp));   // subir des dégâts remplit sa propre jauge de Xiūxiān
+    if (ally.hp <= 0) { ally.hp = 0; ally.ko = true; endTranse(ally); return { damage: dealt, ko: true }; }
     return { damage: dealt, ko: false };
 }
 

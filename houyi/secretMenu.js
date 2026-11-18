@@ -2,7 +2,7 @@
 // Permet de s'attribuer tous les stuffs, tous les sorts, toutes les armes et n'importe quel niveau.
 import { player, saveUpdate, log, updateStats, updateAvailableSpells, updateAvailableWeapons, createSpellButtons, createWeaponButton, updatePlayerStatsTab, grantStuffPiece, setCheatAllSpells, setCheatOneShot, isCheatOneShot, setCheatFreeSpells, isCheatFreeSpells, setCheatMaxRage, isCheatMaxRage } from "./game.js";
 import { allStuff } from "./stuff.js";
-import { allWeapons } from "./weapons.js";
+import { allWeapons, companionWeapons } from "./weapons.js";
 import { MAX_LEVEL } from "./experience.js";
 import { createClickCounter, setHeroLevel } from "./secretLogic.js";
 
@@ -15,7 +15,7 @@ export function giveAllStuff(hero = player) {
 export function giveAllWeapons(hero = player) {
     if(!Array.isArray(hero.weapons)) hero.weapons = [];
     let added = 0;
-    allWeapons.forEach(w => { if(!hero.weapons.some(o => o.id === w.id)) { hero.weapons.push(w); added++; } });
+    [...allWeapons, ...companionWeapons].forEach(w => { if(!hero.weapons.some(o => o.id === w.id)) { hero.weapons.push(w); added++; } });
     return added;
 }
 

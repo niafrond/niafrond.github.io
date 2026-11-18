@@ -6,6 +6,7 @@
   "actionGuard.js",
   "allies.js",
   "alliesView.js",
+  "allyWeapons.js",
   "alterations.js",
   "arena.js",
   "attributes.js",
@@ -104,6 +105,7 @@
   "icon.svg",
   "icons.js",
   "itemReuse.js",
+  "itemTargetPicker.js",
   "items.js",
   "joker.js",
   "loader.js",
@@ -522,34 +524,34 @@
    "h": "7686e9f12a"
   },
   {
-   "p": "sprites/gba/ally_alchemist.ab1fc813.js",
-   "s": 32889,
-   "h": "ab1fc81380"
+   "p": "sprites/gba/ally_alchemist.4d665085.js",
+   "s": 24813,
+   "h": "4d6650852c"
   },
   {
-   "p": "sprites/gba/ally_barbarian.b3e31003.js",
-   "s": 31033,
-   "h": "b3e31003ed"
+   "p": "sprites/gba/ally_barbarian.67504160.js",
+   "s": 29881,
+   "h": "6750416009"
   },
   {
-   "p": "sprites/gba/ally_monk.d143c927.js",
-   "s": 27689,
-   "h": "d143c92783"
+   "p": "sprites/gba/ally_monk.52e4b511.js",
+   "s": 24985,
+   "h": "52e4b51146"
   },
   {
-   "p": "sprites/gba/ally_shaman.6f9604dd.js",
-   "s": 28161,
-   "h": "6f9604dd2e"
+   "p": "sprites/gba/ally_shaman.4fb86990.js",
+   "s": 28293,
+   "h": "4fb86990bc"
   },
   {
-   "p": "sprites/gba/ally_sorcerer.b3832abe.js",
-   "s": 29849,
-   "h": "b3832abef6"
+   "p": "sprites/gba/ally_sorcerer.3a236492.js",
+   "s": 29257,
+   "h": "3a236492bb"
   },
   {
-   "p": "sprites/gba/ally_templar.109181c2.js",
-   "s": 34113,
-   "h": "109181c26a"
+   "p": "sprites/gba/ally_templar.9ff7e244.js",
+   "s": 33597,
+   "h": "9ff7e244de"
   },
   {
    "p": "sprites/gba/ao.fea61db0.js",

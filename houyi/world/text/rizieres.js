@@ -13,8 +13,8 @@ export default {
     rizieres_h_etable: { name: 'Étable de Dahei', arrival: ['Une odeur de paille chaude et de sagesse bovine vous accueille.'] }
   },
   npcs: {
-    trainer_monk: { name: "Frère Ming", title: "Moine des cendres",
-      idle: ["Le riz plie sans casser. Je n'ai jamais appris autre chose.", "La cendre est douce quand on cesse de la balayer."],
+    trainer_monk: { name: "Fuxi", title: "Sage des huit trigrammes",
+      idle: ["Le riz plie sans casser. Trois traits pleins, trois traits brisés : tout le monde tient là-dedans.", "J'ai appris aux hommes à nouer le filet. J'aurais dû leur apprendre à attendre."],
       talk: [{ whenDone: 'q_class_monk', lines: ["Je marche avec toi, maintenant. Appelle-moi quand il faudra durer : je tiendrai pour deux."] }] },
     houyi_mirror: { name: 'Le miroir', title: 'Miroir de la maison',
       idle: ['Le bronze garde le reflet des villages que Chang\'e a soignés. Y regarder, c\'est y retourner.'] },

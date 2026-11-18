@@ -19,9 +19,9 @@ import { createWeaponButton, statValueHtml } from './gameInventoryTabs.js';
 import { updatePlayerStatsTab } from './gameStatsTab.js';
 import { updateLevelHud } from './gameLevelUp.js';
 import { createSpellButtons, getTurnClass } from './gameSpellList.js';
-import { renderAllyBar } from './alliesView.js';
+import { renderAllyBar, showXiuText } from './alliesView.js';
 import { isInTranse, classAllowsUltimate, storeGauge, TRANSE_TURNS } from './transe.js';
-import { bonusTurnBadge, canEntityCastSpell, castUltimate, activateXiuxian, syncGauge, clampManaToCaps, classIcon, currentTurn, enemy, gameState, getUltimateTooltipHtml, transeTooltipHtml, getWeaponIcon, markMultiManaSpell, player, spellCostHtml, spellEffectIcon, syncPlayerControlsLock, ultimateManaBarHtml } from './game.js';
+import { bonusTurnBadge, canEntityCastSpell, castUltimate, activateXiuxian, allyInXiuxian, syncGauge, clampManaToCaps, classIcon, currentTurn, enemy, gameState, getUltimateTooltipHtml, transeTooltipHtml, getWeaponIcon, markMultiManaSpell, player, spellCostHtml, spellEffectIcon, syncPlayerControlsLock, ultimateManaBarHtml } from './game.js';
 
 // Nom de l'ennemi dans la barre de stats : caractères chinois simplifiés par défaut (bestiaryNames.js), pinyin après un clic sur l'ennemi (et inversement).
 // Le choix est gardé pour toute la session de jeu ; sans entrée pour le gabarit, le nom du gabarit reste affiché.
@@ -144,6 +144,33 @@ function updateFighterPortraits(){
     set('enemy-stats', terrainSprite || enemySprite(eKey, enemy.templateId, enemy.biome));
 }
 
+// La zone de Xiūxiān (jauge de transe + barre de qì de l'ultime) est cachée : elle n'apparaît qu'après un clic long (appui maintenu)
+// sur la fiche du personnage, ou au clavier (Entrée / Espace quand la fiche est ciblée), et se referme seule après quelques secondes.
+const XIU_HOLD_MS = 450, XIU_SHOW_MS = 6000, XIU_MOVE_PX = 10;
+let xiuLongPressed = false, xiuHideTimer = null;
+export function setXiuZoneVisible(div, on){
+    showXiuText(on);
+}
+function bindXiuLongPress(div){
+    let timer = null, startX = 0, startY = 0;
+    const cancel = () => { clearTimeout(timer); timer = null; };
+    div.addEventListener('pointerdown', (ev) => {
+        if(ev.target.closest?.('.rage-bar-container')) return;   // un appui sur la jauge visible garde son rôle (déclencher)
+        startX = ev.clientX; startY = ev.clientY; cancel();
+        timer = setTimeout(() => { timer = null; xiuLongPressed = true; setXiuZoneVisible(div, !document.body.classList.contains('show-xiu-text')); }, XIU_HOLD_MS);
+    });
+    div.addEventListener('pointermove', (ev) => { if(timer && Math.hypot(ev.clientX - startX, ev.clientY - startY) > XIU_MOVE_PX) cancel(); });
+    ['pointerup', 'pointercancel', 'pointerleave'].forEach(t => div.addEventListener(t, cancel));
+    div.addEventListener('contextmenu', (ev) => { ev.preventDefault(); });   // le menu contextuel du long appui tactile ne doit pas s'ouvrir
+    div.tabIndex = 0;
+    div.setAttribute('aria-label', 'Hou Yi : Entrée pour afficher ou cacher la Xiūxiān');
+    div.addEventListener('keydown', (ev) => {
+        if(ev.target !== div || (ev.key !== 'Enter' && ev.key !== ' ')) return;
+        ev.preventDefault();
+        setXiuZoneVisible(div, !document.body.classList.contains('show-xiu-text'));
+    });
+}
+
 export function updateStats(){
     syncPlayerControlsLock();
     updateLevelHud();
@@ -181,8 +208,10 @@ export function updateStats(){
         bindTooltip(playerDiv, () => showPlayerGearTooltip(playerDiv), hideSpellTooltip);
         // Un clic / toucher sur le joueur affiche aussi son équipement et ses bonus/malus, quelques secondes.
         playerDiv.addEventListener('click', () => {
+            if(xiuLongPressed){ xiuLongPressed = false; return; }   // le clic qui suit un clic long ne rouvre pas la fiche d'équipement
             showPlayerGearTooltipBriefly(playerDiv);
         });
+        bindXiuLongPress(playerDiv);
     }
     // Pas de jauge de rage sans ultime débloqué (classe sans ultime ou niveau minimum non atteint).
     // Jauge pleine : le texte devient « ULTIME » et la barre se lance l'ultime choisi (compte comme un tour).
@@ -193,7 +222,7 @@ export function updateStats(){
     // Pendant sa Xiūxiān, la jauge se vide d'un tiers à chaque tour : elle montre ce qu'il reste de la durée.
     const gaugeLevel = inTranse && player.transeClass && player.transeClass === player.gaugeClass ? (Math.floor(player.transe || 0) / TRANSE_TURNS * 100) : (player.rage || 0) / RAGE_MAX * 100;
     const canActivate = !inTranse && isRageFull(player) && gameState.combatState === 'active' && currentTurn === 'player';   // jauge pleine : on déclenche la Xiūxiān en la touchant
-    const ultimateReady = !!equippedUltimate && inTranse && (player.cheatMaxRage === true || player.transeClass === 'sorcerer') && classAllowsUltimate(getTurnClass()) && gameState.combatState === 'active';
+    const ultimateReady = !!equippedUltimate && (inTranse || allyInXiuxian('sorcerer')) && (player.cheatMaxRage === true || allyInXiuxian('sorcerer')) && classAllowsUltimate(getTurnClass()) && gameState.combatState === 'active';
     const ultimateManaReached = !!equippedUltimate && (player.cheatFreeSpells === true || canCastUltimateMana(player, equippedUltimate));   // clignote seulement si le qì collecté suffit aussi
     // Héros avec jauge de rage : sa fiche est déjà bien remplie, la fiche ennemie reçoit plus de largeur (style.css `.has-rage`).
     document.querySelector('.stats-container')?.classList.toggle('has-rage', true);
@@ -211,7 +240,7 @@ export function updateStats(){
             ${true ? `
             <div class="stat rage-stat row-rage">
                 <div class="rage-bar-container${isRageFull(player) ? ' full' : ''}${inTranse ? ' in-transe' : ''}${canActivate ? ' xiu-ready' : ''}${ultimateReady ? ' ultimate-ready' : ''}${ultimateReady && ultimateManaReached ? ' mana-reached' : ''}"${ultimateReady || canActivate ? ' role="button" tabindex="0"' : ''}>
-                    <div class="rage-bar" role="progressbar" aria-valuemin="0" aria-valuemax="${RAGE_MAX}" aria-valuenow="${Math.floor(player.rage || 0)}"><div class="rage-fill" style="height:${Math.min(100, Math.max(0, gaugeLevel))}%"></div></div>
+                    <div class="rage-bar" role="progressbar" aria-valuemin="0" aria-valuemax="${RAGE_MAX}" aria-valuenow="${Math.floor(player.rage || 0)}"><div class="rage-fill" style="--g:${Math.min(100, Math.max(0, gaugeLevel))}%"></div></div>
                     <span class="rage-text" title="${ultimateReady ? 'ULTIME' : canActivate ? 'DÉCLENCHER LA XIŪXIĀN' : inTranse ? 'XIŪXIĀN' : `XIŪXIĀN ${Math.floor(player.rage || 0)}`}">${ultimateReady ? '★' : canActivate ? '!' : inTranse ? `T${Math.max(1, Math.floor(player.transe || 1))}` : Math.floor(player.rage || 0)}</span>
                 </div>
                 ${equippedUltimate ? ultimateManaBarHtml(player, equippedUltimate) : ''}

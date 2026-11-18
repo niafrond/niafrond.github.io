@@ -18,7 +18,8 @@ import { actionSpells } from './skills.js';
 import { classProgress, classRemainingMs, classChargeInfo, isClassReady, chargeTick, spendClass, spendEnemy, isEnemyReady, chargeRunning, chargeSpeed, enqueueAction, takeNextDue, upcomingBeads } from './classCharge.js';
 import { renderPotionButtons } from './potionsView.js';
 import { isInTranse, describeTranse, transeEffectFor, TRANSE_TURNS } from './transe.js';
-import { canEntityCastSpell, castSpell, enemy, gameState, currentTurn, markMultiManaSpell, player, setTurnClass, spellColorsOf, spellCostHtml, spellEffectIcon, log, updateStats } from './game.js';
+import { escapeHtml } from './escapeHtml.js';
+import { xiuMembers, canEntityCastSpell, castSpell, enemy, gameState, currentTurn, markMultiManaSpell, player, setTurnClass, spellColorsOf, spellCostHtml, spellEffectIcon, log, updateStats } from './game.js';
 
 // sorts
 const HIGH_SPELL_FROM_LEVEL = 15;
@@ -298,13 +299,15 @@ function renderXiuBanner(zone){
         banner.setAttribute('role', 'status');
         zone.parentElement.insertBefore(banner, zone);
     }
-    const on = gameState.combatState === 'active' && isInTranse(player) && !!player.transeClass;
-    banner.hidden = !on;
-    if(!on){ banner.innerHTML = ''; return; }
-    const cls = player.transeClass, effect = transeEffectFor(cls);
-    const left = player.cheatMaxRage === true ? null : Math.max(1, Math.min(TRANSE_TURNS, Math.floor(player.transe || 0)));
-    banner.innerHTML = `<strong>Xiūxiān · ${CLASS_SHORT[cls] || cls}${effect.name ? ` : ${effect.name}` : ''}</strong>`
-        + `<span>${effect.text ? `Effet : ${effect.text}.` : ''}${left ? ` ${left} tour${left > 1 ? 's' : ''} restant${left > 1 ? 's' : ''}.` : ''}</span>`;
+    const members = gameState.combatState === 'active' ? xiuMembers() : [];
+    banner.hidden = !members.length;
+    if(!members.length){ banner.innerHTML = ''; return; }
+    banner.innerHTML = members.map(({ entity, classId: cls }) => {   // une Xiūxiān par membre : nom du porteur, effet, tours restants
+        const effect = transeEffectFor(cls);
+        const left = Math.max(1, Math.min(TRANSE_TURNS, Math.floor(entity.transe || 0)));
+        return `<div><strong>Xiūxiān · ${escapeHtml(entity === player ? 'Hou Yi' : entity.name)}${effect.name ? ` : ${escapeHtml(effect.name)}` : ''}</strong>`
+            + `<span>${effect.text ? ` Effet : ${escapeHtml(effect.text)}.` : ''} ${left} tour${left > 1 ? 's' : ''} restant${left > 1 ? 's' : ''}.</span></div>`;
+    }).join('');
 }
 
 function renderClassPicker(container){
