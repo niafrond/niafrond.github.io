@@ -20,7 +20,7 @@ export function renderAllyBar() {
         const pct = Math.max(0, Math.min(100, Math.round(a.hp / a.maxHp * 100)));
         const src = portrait(a.sprite);
         return `<div class="ally-card${a.ko ? ' ko' : ''}" title="${escapeHtml(`${a.name} · ${CLASS_SHORT[a.classId]} · ${a.hp}/${a.maxHp} PV${a.ko ? ' (hors de combat)' : ''}`)}">`
-            + `${src ? `<img class="ally-portrait" src="${src}" alt="" width="22" height="22">` : '<span class="ally-portrait"></span>'}`
+            + `${src ? `<img class="ally-portrait" src="${src}" alt="" width="30" height="30">` : '<span class="ally-portrait"></span>'}`
             + `<span class="ally-name">${escapeHtml(a.short)}</span>`
             + `<span class="ally-hp" role="progressbar" aria-label="PV de ${escapeHtml(a.name)}" aria-valuemin="0" aria-valuemax="${a.maxHp}" aria-valuenow="${a.hp}"><i style="width:${pct}%"></i></span></div>`;
     }).join('');
