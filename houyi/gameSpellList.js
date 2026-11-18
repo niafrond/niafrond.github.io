@@ -275,7 +275,8 @@ function chargeTicker(){
     const heroSpeed = memberSpeeds(), foeSpeed = chargeSpeed(enemy);
     chargeTick(gameState.charge, dt, heroSpeed, foeSpeed);
     pumpActions();   // les actions en file partent dès que possible, sans lien avec le plateau
-    aiModule().then(m => m && m.enemyProactiveAction());   // l'ennemi choisit lui aussi ses actions dès qu'il est chargé
+    aiModule().then(m => m && m.enemyProactiveAction());
+    import('./foeTurns.js').then(m => m.tickFoeCharges(dt)).catch(() => {});   // chaque autre ennemi du groupe a sa barre de chargement (foeTurns.js)   // l'ennemi choisit lui aussi ses actions dès qu'il est chargé
     const key = usableNow().map(id => isClassReady(gameState.charge, id) ? 1 : 0).join('') + (isEnemyReady(gameState.charge) ? 'e' : '') + `|${Object.values(heroSpeed).join(',')}`;   // la vitesse (altérations) redessine les barres
     if(key !== _chargeKey){
         _chargeKey = key;

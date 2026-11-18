@@ -21,6 +21,7 @@ import { updatePlayerStatsTab } from './gameStatsTab.js';
 import { updateLevelHud } from './gameLevelUp.js';
 import { createSpellButtons, getTurnClass, decoupled, memberGauge, refreshClassPicker } from './gameSpellList.js';
 import { renderAllyBar, showXiuText } from './alliesView.js';
+import { renderFoeBar } from './foesView.js';
 import { isInTranse, classAllowsUltimate, storeGauge, TRANSE_TURNS } from './transe.js';
 import { bonusTurnBadge, canEntityCastSpell, castUltimate, activateXiuxian, allyInXiuxian, syncGauge, clampManaToCaps, classIcon, currentTurn, enemy, gameState, getUltimateTooltipHtml, transeTooltipHtml, getWeaponIcon, markMultiManaSpell, player, spellCostHtml, spellEffectIcon, syncPlayerControlsLock, ultimateManaBarHtml } from './game.js';
 
@@ -330,6 +331,7 @@ export function updateStats(){
         });
     }
     
+    renderFoeBar();   // ennemis du combat (foesView.js), masquée contre un seul ennemi
     renderAllyBar();   // (masquée : plus de doublon des compagnons en haut)
     refreshClassPicker();   // PV, Xiūxiān et chargement de chaque personnage, dans sa barre d'action
     document.getElementById('player-stats')?.classList.toggle('hero-ko', !!gameState.heroKo);   // Hou Yi à terre

@@ -83,6 +83,7 @@ export const allWeapons = [
     },
     {
         id: "arc_des_dix_soleils",
+        target: "area",   // volée : touche tous les ennemis (targeting.js)
         name: "Arc des Dix Soleils",
         type: WeaponType.BOW,
         damage: 100,

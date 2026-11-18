@@ -36,6 +36,8 @@ import { showAttributeMenu } from './gameLevelUp.js';
 import { updateAvailableSpells, enemyActionReady, spendEnemyAction, getTurnClass, chooseEnemyAction, decoupled, runBoundaryAction, resumeAfterBoundary, withCaster } from './gameSpellList.js';
 import { CLASS_SHORT } from './classRoster.js';
 import { pickEnemyTarget } from './allies.js';
+import { advanceAfterFoeDefeat } from './foes.js';
+import { runFoePhase } from './foeTurns.js';
 import { partyWiped, currentTurn, activeCompanionIds, addBonusTurn, addManaForColor, applyCombatXPAtEnd, applyDamage, applyStandardSpellEffects, canEntityCastSpell, combatHooks, combatRewards, consumeSpellMana, enemy, gameState, getWeaponIcon, grantStuffPiece, handlePlayerDeath, normalizeActiveInventoryIndex, sellDuplicateItem, normalizeBonusTurnValue, player, queueCombatXP, showEndCombatAnimation, turnFlags, setCurrentTurn, resetTranseTurn, applyTranseClassEffect, syncGauge, endXiuxianAtCombatEnd, xiuEffect } from './game.js';
 
 // Applique les pouvoirs de fin de tour des compagnons présents (soin, jet d'eau, qì, mirage). Renvoie { skipEnemy, enemyDown }.
@@ -270,7 +272,7 @@ function performEnemyAction(decision){
 }
 
 /** Choix d'une action de l'ennemi : validation et paiement (qì d'un sort, PA d'une arme). Renvoie false s'il ne peut pas la payer. */
-function payEnemyAction(decision){
+export function payEnemyAction(decision){
     if(decision.action === 'spell'){
         const spell = decision.data.spell;
         logActiveAction(`lance le sort ${spell.name}`);
@@ -307,13 +309,13 @@ export function enemyProactiveAction(){
     chooseEnemyAction(() => runEnemyActionOutOfTurn(decision));
 }
 
-function applyEnemyAction(decision){
+export function applyEnemyAction(decision){
     // Une action ennemie sur quatre vise un compagnon vivant (allies.js) : il encaisse à la place de Hou Yi (voir applyDamage, game.js).
     gameState.allyShield = enemy.isTutorialEnemy ? null : pickEnemyTarget(gameState.allies, Math.random, (player.hp || 0) / Math.max(1, player.maxHp || 1));
     try { return applyEnemyActionNow(decision); } finally { gameState.allyShield = null; }
 }
 
-function applyEnemyActionNow(decision){
+export function applyEnemyActionNow(decision){
     if(decision.action === 'spell'){
         const spell = decision.data.spell;
         playSfx('spellCast', { isPlayer: false, spellId: spell.id });
@@ -367,7 +369,7 @@ export function enemyTurn(){
     }
 
     recordEnemyTurn();
-    if(enemy.hp<=0){ handleEnemyDefeated(); return; }
+    if(enemy.hp<=0){ if(handleEnemyDefeated()) finishEnemyTurn(); return; }
 
     if((enemy.statusEffects?.poisoned || 0) > 0) {
         // le stuff de l'ennemi peut le protéger du poison (comme celui du héros)
@@ -381,7 +383,7 @@ export function enemyTurn(){
             log(`Le poison sur ${enemy.name} se dissipe.`);
         }
         if(enemy.hp <= 0) {
-            handleEnemyDefeated();
+            if(handleEnemyDefeated()) finishEnemyTurn();
             return;
         }
     }
@@ -568,6 +570,8 @@ export function finishEnemyTurn(){
     if(gameState.combatState !== 'active'){
         return;
     }
+
+    runFoePhase();   // les autres ennemis du groupe frappent ou invoquent (foeTurns.js)
 
     if(partyWiped()){
         handlePlayerDeath();
@@ -790,7 +794,9 @@ export function finishEnemyTurn(){
 
 // -------------------------------------
 // progression
+/** Un ennemi est tombé. Renvoie true si le combat continue (d'autres ennemis tiennent debout), false s'il est gagné. */
 export function handleEnemyDefeated(){
+    if(advanceAfterFoeDefeat()){ updateStats(); saveUpdate(); return true; }
     const levelGap = (enemy.level || 0) - (player.level || 0);   // avant le gain de niveau de fin de combat
     log(`${enemy.name} est vaincu !`);
     const xiuPaMult = xiuEffect().paMult || 1;   // Offrande aux Ancêtres (Xiūxiān du Chamane) : PA doublés

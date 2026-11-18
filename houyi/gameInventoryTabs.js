@@ -19,7 +19,7 @@ import { itemGroupKey, toggleSellTag, allShieldsTagged } from "./merchants.js";
 import { displayAttack, rawDefense, statModifier } from "./combatStats.js";
 import { showCombatAnimation } from "./gameStatsTab.js";
 import { bindTooltip, bindCardTips, showWeaponTooltip, showItemTooltip, hideSpellTooltip } from "./gameTooltips.js";
-import { escapeHtml, rowCardHtml, emptyRowHtml, badgeHtml, cardTipHtml, shortText, WEAPON_SORTS, sortChoice, bindSortSelect, sortedEntries } from "./gameCardUi.js";
+import { escapeHtml, rowCardHtml, emptyRowHtml, badgeHtml, cardTipHtml, weaponTargetBadge, weaponTargetLine, shortText, WEAPON_SORTS, sortChoice, bindSortSelect, sortedEntries } from "./gameCardUi.js";
 import { getWeaponIcon, player, currentTurn, gameState, enemy, normalizeActiveInventoryIndex, getActiveInventoryItem, getSecondActiveInventoryItem, log, logActiveAction, saveUpdate, rejectRushedAction, useWeapon, finishPlayerTurn, endAction, applyAllyItemEffect } from "./game.js";
 
 // -------------------------------------
@@ -179,11 +179,12 @@ function weaponCardHtml(weapon, { hand, count = 1 } = {}){
     const bonuses = describeStatBonuses(weapon);
     // Écarts avec la main droite et, pour une arme à une main, avec ce qui est en main gauche (arme, bouclier ou rien).
     const deltas = hand ? '' : equipDeltaGroupsHtml(player, 'weapon', weapon);
-    const stats = `<span class="rc-stats">${weapon.damage} ${svgIcon('skull')} · ${weapon.actionPoints} ${svgIcon('arrow')}</span>`;
+    const stats = `<span class="rc-stats">${weapon.damage} ${svgIcon('skull')} · ${weapon.actionPoints} ${svgIcon('arrow')}</span> ${weaponTargetBadge(weapon)}`;
     const tip = cardTipHtml(escapeHtml(weapon.name), [
         `${weapon.damage} ${svgIcon('skull')} • ${weapon.actionPoints} ${svgIcon('arrow')} • Niv. ${weapon.minLevel}${weapon.twoHanded ? ' • Deux mains' : ''}`,
         bonuses ? escapeHtml(bonuses) : '',
         weapon.biome ? `Bonus de dégâts : ${escapeHtml(BIOME_LABELS[weapon.biome])}` : '',
+        weaponTargetLine(weapon),
         count > 1 ? `Exemplaires : ${count}` : ''
     ], escapeHtml(weapon.description || ''));
     let primary, more = '';

@@ -74,6 +74,9 @@ export * from './gameStatsTab.js';
 import { showAttributeMenu, updateLevelHud } from './gameLevelUp.js';
 export * from './gameLevelUp.js';
 import { updateAvailableSpells, combatSpellList, getTurnClass, chooseAction, classCanAct, spendActionCharge, chargeFactor, decoupled, withCaster, resumeAfterBoundary, refillActionBar } from './gameSpellList.js';
+import { setupFoeGroup, targetGate, snapshotFoe, spreadAreaEffects } from './foes.js';
+import { isAreaSpell, isAreaWeapon, spellNeedsTarget } from './targeting.js';
+import { livingFoes } from './enemyGroup.js';
 import { applyDuelRulesAtCombatStart, enemyTurn, finishPlayerTurn, handleEnemyDefeated } from './gameTurnFlow.js';
 export * from './gameTurnFlow.js';
 export * from './gameSpellList.js';
@@ -390,7 +393,30 @@ export function lastSpellDamage(fallback){
     return lastSpellStrike ? lastSpellStrike.damage : fallback;
 }
 
+/**
+ * Dégâts à `target`. Un sort ou une arme DE ZONE (targeting.js) qui touche l'ennemi ciblé touche aussi tous les autres ennemis vivants
+ * (chacun avec sa propre défense et ses résistances) ; un coup ciblé ne touche que l'ennemi visé.
+ */
+const isAreaHit = options => Boolean(options.area) || Boolean(options.sourceSpell && isAreaSpell(options.sourceSpell));
+
 export function applyDamage(target, damage, options = {}){
+    const others = (target === enemy && !options.splash && damage > 0 && isAreaHit(options)) ? livingFoes(gameState.foes).filter(f => f !== enemy) : [];
+    const focus = enemy;
+    let dealt = applyDamageCore(target, damage, options);
+    if(others.length && gameState.combatState === 'active'){
+        log(`Zone : ${others.length > 1 ? 'les autres ennemis sont touchés' : `${others[0].name} est touché`} aussi.`);
+        for(const foe of others){
+            if(gameState.combatState !== 'active' || foe.hp <= 0) continue;
+            enemy = foe;   // le temps du coup : les règles « ennemi » (résistances, comportement, récompenses) visent ce combattant
+            dealt += applyDamageCore(foe, damage, { ...options, splash: true });
+        }
+        if(gameState.combatState === 'active' && focus.hp > 0) enemy = focus;   // la cible choisie reste la cible (sauf si elle est tombée)
+        else if(gameState.combatState === 'active' && enemy.hp <= 0){ const next = livingFoes(gameState.foes)[0]; if(next) enemy = next; }
+    }
+    return dealt;
+}
+
+function applyDamageCore(target, damage, options = {}){
     if(!target) return 0;
     // Action ennemie qui vise un compagnon, ou Hou Yi à terre : un compagnon vivant encaisse à la place (barre de vie propre ; hors de combat à 0 PV).
     let shield = gameState.allyShield && !gameState.allyShield.ko ? gameState.allyShield : null;
@@ -952,6 +978,8 @@ export const gameState = {
     charge: newCharge(),  // temps de chargement des classes et de l'ennemi (classCharge.js)
     actionQueue: newActionQueue(),   // actions (sort, compétence, objet, arme) en attente de chargement ; l'ordre n'est jamais montré
     enemyPending: null,   // (ancien) sort de plateau de l'ennemi en attente
+    foePool: null,        // qì et PA mutualisés des ennemis (foes.js)
+    foes: [],             // ennemis du combat (foes.js) : jusqu'à MAX_ENEMIES ; `enemy` est celui qui est ciblé
     allies: {},           // compagnons de l'équipe de combat : { classId: entité avec PV } (allies.js), reconstruits à chaque combat
     heroKo: false,        // Hou Yi est à terre mais un compagnon tient encore : le combat continue (défaite quand toute l'équipe est à terre)
     allyShield: null,     // compagnon visé par l'action ennemie en cours : il reçoit les dégâts à la place de Hou Yi
@@ -1489,6 +1517,7 @@ export function restartCombat({ keepHp = true } = {}){
     // La jauge de Xiūxiān est conservée d'un combat à l'autre ; seul son état actif (3 tours) ne l'est pas. Les points de Bataille la remontent au moins à leur niveau.
     player.transe = 0; player.transeClass = null;
     gameState.turnClass = null;   // la classe du tour revient à celle du héros
+    gameState.foes = [];   // groupe d'ennemis reconstruit par newEnemy (foes.js)
     gameState.charge = newCharge();   // les barres sont initialisées plus bas (initCharge), une fois l'ennemi en place
     gameState.actionQueue = newActionQueue(); gameState.enemyPending = null;
     gameState.allies = buildTeam(player); gameState.allyShield = null; gameState.heroKo = false;   // équipe de combat en pleine forme
@@ -1966,6 +1995,7 @@ export function useWeapon(hand = 'right'){
         return; 
     }
     
+    if(targetGate(isAreaWeapon(weapon), () => useWeapon(hand))) return;   // plusieurs ennemis : on touche l'ennemi visé après avoir choisi l'attaque (foes.js)
     actionGuard.markPlayerAction();
     player.combatPoints -= weapon.actionPoints;   // payé au choix
     logActiveAction(`utilise l'arme ${weapon.name} (cout ${weapon.actionPoints} PA)`);
@@ -2002,7 +2032,7 @@ function strikeWithWeapon(weapon, { free = false } = {}){
     dmg = strike.damage;
 
     if(selfHit) log(`Vous êtes confus : ${weapon.name} se retourne contre vous !`);
-    applyDamage(selfHit ? player : enemy, dmg, { damageSource: 'weapon' });
+    applyDamage(selfHit ? player : enemy, dmg, { damageSource: 'weapon', area: !selfHit && isAreaWeapon(weapon) });
     playSfx('weaponHit', { isPlayer: true, rarity: weapon.rarity });
 
     // Vol de vie
@@ -2033,7 +2063,9 @@ async function castEffectSpellDecoupled(spell){
         chooseAction(() => withCaster('player', async () => {
             announce();
             if(spell.cinematic) await playUltimateCinematic(spell);   // invocation : scène plein écran avant l'effet
+            const foeBefore = snapshotFoe(enemy), foeFocus = enemy;
             const ok = await module.applyClassSpellEffect(spell);
+            spreadAreaEffects(spell, foeFocus, foeBefore);   // sort de zone : altérations et pertes de qì aussi chez les autres ennemis
             saveUpdate();
             if(ok){ tutorialCallbacks.onSpellCast?.(); endAction(); }
         }));
@@ -2044,7 +2076,9 @@ async function castEffectSpellDecoupled(spell){
         if(spell.cinematic) await playUltimateCinematic(spell);   // invocation : scène plein écran avant l'effet
         if(config){ await config.onTileClick(index, board[index]); return; }   // position mémorisée : le sort part sur elle, quelle que soit la tuile qui s'y trouve
         const before = module.snapshotBoard();
+        const foeBefore = snapshotFoe(enemy), foeFocus = enemy;
         const ok = await module.applyClassSpellEffect(spell);
+        spreadAreaEffects(spell, foeFocus, foeBefore);   // sort de zone : altérations et pertes de qì aussi chez les autres ennemis
         saveUpdate();
         if(ok) module.endPlayerSpellTurn(before); else resumeAfterBoundary();
     });
@@ -2077,6 +2111,7 @@ export function castSpell(spellId){
         log(missingColor ? `Pas assez de qì ${missingColor} !` : "Pas assez de qì !");
         return;
     }
+    if(spellNeedsTarget(spell) && targetGate(isAreaSpell(spell), () => castSpell(spellId))) return;   // plusieurs ennemis : on touche l'ennemi visé après avoir choisi le sort (foes.js)
     if(decoupled() && spell.effect){ castEffectSpellDecoupled(spell); return; }   // sorts à effet : soutiens tout de suite, sorts de plateau en fin de tour de plateau
     actionGuard.markPlayerAction();
     consumeSpellMana(player, spell);   // coût payé au choix
@@ -2095,7 +2130,10 @@ export function castSpell(spellId){
             // Import dynamique pour éviter les dépendances circulaires
             import('./classSpellEffects.js').then(async module => {
                 const boardBefore = module.snapshotBoard();
-                if(await module.applyClassSpellEffect(spell)) {
+                const foeBefore = snapshotFoe(enemy), foeFocus = enemy;
+                const applied = await module.applyClassSpellEffect(spell);
+                spreadAreaEffects(spell, foeFocus, foeBefore);   // sort de zone : altérations et pertes de qì aussi chez les autres ennemis
+                if(applied) {
                     saveUpdate();
                     tutorialCallbacks.onSpellCast?.();
                     // Plateau modifié : on attend la régénération, les combos qui suivent profitent au lanceur.
@@ -2108,7 +2146,9 @@ export function castSpell(spellId){
         }
         // Sorts standards (dégâts ou soins)
         logActiveAction(`lance le sort ${spell.name}`);
+        const foeBefore = snapshotFoe(enemy), foeFocus = enemy;
         applyStandardSpellEffects(player, enemy, spell, true);
+        spreadAreaEffects(spell, foeFocus, foeBefore);   // sort de zone : altérations et pertes de qì aussi chez les autres ennemis
         updateStats();
         saveUpdate();
         // Notifier le tutoriel qu'un sort a été lancé
@@ -2155,7 +2195,9 @@ export async function castUltimate(spellId){
             await playUltimateCinematic(spell);
             const module = await import('./classSpellEffects.js');
             const boardBefore = module.snapshotBoard();
+            const foeBefore = snapshotFoe(enemy), foeFocus = enemy;
             const ok = await module.applyClassSpellEffect(spell);
+            spreadAreaEffects(spell, foeFocus, foeBefore);
             saveUpdate();
             if(ok) module.endPlayerSpellTurn(boardBefore); else resumeAfterBoundary();
         }), { turnBound: true });
@@ -2381,6 +2423,38 @@ function bakeEnemyDamage(target, mult){
     target.skullMult = m;
 }
 
+/** Change l'ennemi ciblé (foes.js) : `enemy` est un binding exporté, il ne peut être réassigné que d'ici. */
+export function setActiveEnemy(next){ if(next) enemy = next; }
+
+/**
+ * Prépare un ennemi supplémentaire du groupe (renfort ou créature invoquée) comme newEnemy le fait pour le meneur, sans annonce :
+ * copie propre, limites de sorts, calibrage, tempérament, qì de départ. Les PV d'un renfort sont réduits (enemyGroup.js).
+ */
+export function prepareFoe(raw, { hpMult = 1, biome = null } = {}){
+    const foe = { ...raw };
+    foe.statusEffects = { ...(foe.statusEffects || {}) };
+    foe.spells = (Array.isArray(foe.spells) ? foe.spells : []).slice(0, MAX_ACTIVE_SPELLS);
+    if(Array.isArray(foe.weapon)) foe.weapon = foe.weapon.slice(0, MAX_WEAPONS)[0] || null;
+    if(biome) foe.biome = biome;
+    calibrateEnemyForCombat(foe);
+    if(hpMult !== 1){ foe.maxHp = Math.max(1, Math.round(foe.maxHp * hpMult)); foe.hp = foe.maxHp; }
+    foe.levelEdge = Math.max(0, (foe.level || 0) - (player.level || 0));
+    if(!enemyPersonalities[foe.personality]) foe.personality = assignPersonality(foe.templateId || foe.name);
+    foe.mana = { ...EMPTY_MANA_POOL };
+    Object.keys(foe.mana).forEach(color => {
+        const bonus = getAttributeManaBonus(foe, color, "initial");
+        if(bonus > 0) addManaForColor(foe, color, bonus, { applyGainBonus: false });
+    });
+    (foe.abilities || []).forEach(abilityId => {
+        const ability = allAbilities.find(a => a.id === abilityId);
+        Object.keys(ability?.startMana || {}).forEach(color => addManaForColor(foe, color, ability.startMana[color], { applyGainBonus: false }));
+    });
+    foe.combatPoints = 0;
+    foe.bonusTurn = 0;
+    foe.summonsMade = 0;
+    return foe;
+}
+
 export function newEnemy(selectedEnemy = null){
     enemy = selectedEnemy ? { ...selectedEnemy } : generateRandomEnemy(player.level, spellsCatalog, allWeapons);
     // Copie propre des statuts (étourdi, affaibli, poison…) : les ennemis générés n'en ont pas, et les sorts écrivent dedans sans vérifier.
@@ -2434,6 +2508,7 @@ export function newEnemy(selectedEnemy = null){
         log(`L'ennemi dispose de sorts : ${enemy.spells.map(s => s.name).join(", ")}`);
     }
     updateEnemySpells();
+    setupFoeGroup(enemy);   // parfois 2 ou 3 ennemis (foes.js)
     // déterminer au hasard qui commence
     decideFirstTurn();
 }

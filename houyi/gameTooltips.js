@@ -1,5 +1,6 @@
 // Infobulles du combat (sorts, armes, objets, équipement du joueur, ennemi) et pastilles de statut.
 // Extrait de game.js pour alléger ce fichier ; game.js ré-exporte ce qui était public.
+import { spellTargetLine, weaponTargetLine } from './gameCardUi.js';
 import { reuseLabel, isSingleUse } from './itemReuse.js';
 import { literalTranslation } from './bestiaryNames.js';
 import { escapeHtml } from "./escapeHtml.js";
@@ -89,12 +90,14 @@ export function getSpellTooltipHtml(spell) {
         effectText = spell.description;
     }
 
-    return `<div class="spell-tooltip-line">${effectText}</div>`;
+    const targetLine = spellTargetLine(spell);
+    return `<div class="spell-tooltip-line">${effectText}</div>${targetLine ? `<div class="spell-tooltip-line">${targetLine}</div>` : ''}`;
 }
 
 function getWeaponTooltipHtml(weapon) {
     let html = `<div class="spell-tooltip-title">${weapon.name}</div>`;
     html += `<div class="spell-tooltip-line">${weapon.damage} ${svgIcon('skull')} • ${weapon.actionPoints} ${svgIcon('arrow')}</div>`;
+    html += `<div class="spell-tooltip-line">${weaponTargetLine(weapon)}</div>`;
     if(weapon.description) html += `<div class="spell-tooltip-line">${weapon.description}</div>`;
     if(weapon.biome) html += `<div class="spell-tooltip-line">Bonus de dégâts en ${BIOME_LABELS[weapon.biome]}${enemy?.biome === weapon.biome ? ' (actif)' : ''}</div>`;
     return html;

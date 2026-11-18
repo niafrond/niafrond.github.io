@@ -5,7 +5,7 @@ import { compareAttrs } from "./compareView.js";
 import { icon as svgIcon } from "./icons.js";
 import { getSelectableUltimates, getEquippedUltimate, getQuestUltimates, isUltimateUnlocked, withUltimateCost } from "./ultimates.js";
 import { bindTooltip, showSpellTooltip, hideSpellTooltip } from "./gameTooltips.js";
-import { cardActionsHtml, sortChoice, bindSortSelect } from "./gameCardUi.js";
+import { cardActionsHtml, sortChoice, bindSortSelect, spellTargetBadge } from "./gameCardUi.js";
 import { spellEffectIcon, spellColorsOf, spellCostHtml, markMultiManaSpell, player, gameState, log, saveUpdate } from "./game.js";
 
 // ── Tri de la liste des sorts disponibles (menu déroulant de l'onglet Sorts) ──
@@ -31,7 +31,7 @@ function spellCard(sp, actionHtml, extraClass){
     const effectText = sp.effect ? ` • ${sp.description}` : '';
     div.innerHTML = `
         <div class="spell-content">
-            <div class="spell-name">${sp.name} ${spellEffectIcon(sp)}</div>
+            <div class="spell-name">${sp.name} ${spellEffectIcon(sp)} ${spellTargetBadge(sp)}</div>
             <div class="spell-cost">${spellCostHtml(sp)}${damageText}${healText}${effectText}</div>
         </div>
         ${cardActionsHtml('', actionHtml)}`;
@@ -136,7 +136,7 @@ export function updateUltimatePicker(){
     div.dataset.cmpId = sp.id;
         div.innerHTML = `
             <div class="spell-content">
-                <div class="spell-name">${sp.name}</div>
+                <div class="spell-name">${sp.name} ${spellTargetBadge(sp)}</div>
                 <div class="spell-cost">${spellCostHtml(withUltimateCost(sp))} • ${sp.dmg} ${svgIcon('skull')}${sp.description ? ` • ${sp.description}` : ''}</div>
             </div>
             ${cardActionsHtml('', action)}`;
