@@ -1194,3 +1194,13 @@ body.show-xiu-text #xiu-banner { display: block; }
 .class-picker .class-pick { height: 42px; }
 .class-pick .cp-bars i.cp-hp { position: relative; height: 12px; }
 .class-pick .cp-hp em { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font: 700 .58rem/1 Inter, system-ui, sans-serif; font-style: normal; color: #fff; text-shadow: 0 0 2px #000; }
+
+/* Ennemis du combat (foesView.js) : une pastille par ennemi, la cible est cerclée. */
+.foe-bar { display: flex; gap: 4px; margin: 0 0 4px; }
+.foe-bar[hidden] { display: none; }
+.foe-chip { flex: 1 1 0; min-width: 0; padding: 4px 6px; border: 2px solid var(--team-enemy-edge, #7a2a22); border-radius: 6px; background: var(--team-enemy-bg, #3a1612); color: inherit; font: inherit; font-size: .85em; text-align: left; cursor: pointer; }
+.foe-chip.targeted { border-color: #f2c14e; box-shadow: 0 0 0 1px #f2c14e; }
+.foe-chip.down { opacity: .4; filter: grayscale(1); cursor: default; }
+.foe-chip .foe-name { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.foe-chip .foe-hp { display: block; height: 6px; margin-top: 3px; background: rgba(0,0,0,.45); border-radius: 3px; overflow: hidden; }
+.foe-chip .foe-hp > span { display: block; height: 100%; background: #d9452e; transition: width .3s; }

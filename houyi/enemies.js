@@ -407,6 +407,8 @@ function buildEnemyFromTemplate(template, enemyLevel, allWeaponsArg = allWeapons
         dropProfile: template.dropProfile ? { ...template.dropProfile } : null,
         isBoss: false,
         bossTier: null,
+        // Pouvoir « Invocation » (enemyGroup.js) : l'ennemi appelle un renfort, précis (`templateId`) ou au hasard.
+        summon: template.summon ? { ...template.summon } : null,
     };
 }
 
@@ -515,6 +517,15 @@ export function generateRandomEnemy(playerLevel, _allSpells, allWeaponsArg = all
 
     const enemyLevel = Math.max(1, playerLevel + (template.levelBias || 0) + delta);
     return buildEnemyFromTemplate(template, enemyLevel, allWeaponsArg);
+}
+
+/**
+ * Renfort ou créature invoquée d'un combat à plusieurs ennemis (enemyGroup.js) : `templateId` précis, sinon un gabarit au hasard
+ * (ni boss ni copie de boss).
+ */
+export function createReinforcement(level, template, allWeaponsArg = allWeapons){
+    const chosen = template || pickRandom(loadEnemyCatalogSync());
+    return buildEnemyFromTemplate(chosen, Math.max(1, Math.floor(level || 1)), allWeaponsArg);
 }
 
 export function generateEnemyChoices(playerLevel, count = 4, allWeaponsArg = allWeapons, playerMaxHp = null, allowedTemplateIds = null){

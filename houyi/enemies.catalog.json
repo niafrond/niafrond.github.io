@@ -199,6 +199,7 @@
   },
   {
     "id": "lettre_sorcier",
+    "summon": { "chance": 0.3, "maxCalls": 2 },
     "name": "Lettré-Sorcier",
     "race": "Humain",
     "battleMusic": "wav/musicgen-11-humain-1773193878854.wav",
@@ -2683,6 +2684,7 @@
   },
   {
     "id": "gui_po",
+    "summon": { "templateId": "petit_gui", "chance": 0.35, "maxCalls": 2 },
     "name": "Gui Po",
     "race": "Gui",
 
@@ -2755,6 +2757,7 @@
   },
   {
     "id": "heibai_wuchang",
+    "summon": { "templateId": "gui_esprit", "chance": 0.3, "maxCalls": 1 },
     "name": "Heibai Wuchang",
     "race": "Esprit",
 
