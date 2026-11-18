@@ -1142,3 +1142,6 @@ body.show-xiu-text #xiu-banner { display: block; }
 
 /* L'ennemi ne montre ni arme, ni objet, ni sorts */
 #enemy-spells { display: none; }
+
+/* Menu Objet ouvert : seuls les objets (et « Retour ») restent affichés */
+#player-spells.object-menu > #weapon-button, #player-spells.object-menu > #item-button, #player-spells.object-menu > #spell-buttons { display: none; }
