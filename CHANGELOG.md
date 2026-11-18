@@ -1,3 +1,12 @@
+## [3.2.0](https://github.com/niafrond/niafrond.github.io/compare/v3.1.0...v3.2.0) (2026-11-18)
+
+### Features
+
+* **houyi:** compagnons de combat à la place des classes, anciens compagnons renommés esprits gardiens ([854bfa7](https://github.com/niafrond/niafrond.github.io/commit/854bfa7a496ff1eb445437bd37962ab418e1b9eb))
+* **houyi:** objets d'équipe (ranimer, soigner, renforcer), Hou Yi à terre sans fin de combat, IA de l'ennemi proactive et ciblage affiné, équilibrage du chargement ennemi ([f918feb](https://github.com/niafrond/niafrond.github.io/commit/f918feb38e2d0c8b83f8ae6a7ecdf5b36b96ff20))
+* **houyi:** recrutement des compagnons 1 / 2 / 1 / 1 / 1 par région, préparation Pixel Lab pour les sprites ([bcc9ab9](https://github.com/niafrond/niafrond.github.io/commit/bcc9ab9e1a8d757433d60f874581c41ed663b6c7))
+* **houyi:** sprites des compagnons en 64x64, plus détaillés, générés en local ([8048377](https://github.com/niafrond/niafrond.github.io/commit/8048377aa93bcf9b3045a32544458abde6167ae9))
+
 ## [3.1.0](https://github.com/niafrond/niafrond.github.io/compare/v3.0.0...v3.1.0) (2026-11-17)
 
 ### Features
