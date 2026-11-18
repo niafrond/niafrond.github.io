@@ -47,3 +47,7 @@ export function targetLabel(kind) {
 
 /** Part des dégâts subie par les ennemis NON ciblés d'un sort de zone (la cible visée prend le plein). */
 export const AREA_SPLASH_SHARE = 1;
+
+/** Ce sort frappe-t-il un ennemi ? (dégâts, poison, étourdissement, ponction de qì…) Les soutiens et soins n'ont pas à choisir de cible. */
+export const spellNeedsTarget = spell => Boolean(spell && (spell.dmg || spell.dmgPerTile || spell.baseDmg || spell.dmgPerGem || spell.dmgPerRage || spell.shots
+    || spell.poisonDmg || spell.stunTurns || spell.weakenAmount || spell.manaDrain || spell.manaSteal || spell.cpSteal || spell.cursePct || spell.alteration));

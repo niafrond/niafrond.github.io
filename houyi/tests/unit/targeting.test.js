@@ -1,5 +1,5 @@
 import { describe, it, expect } from '@jest/globals';
-import { spellTarget, weaponTarget, isAreaSpell, TARGET } from '../../targeting.js';
+import { spellTarget, weaponTarget, isAreaSpell, spellNeedsTarget, TARGET } from '../../targeting.js';
 
 describe('ciblage des sorts et des armes', () => {
     it('un sort ciblé par défaut, de zone si listé ou si son texte l\'indique', () => {
@@ -17,5 +17,11 @@ describe('ciblage des sorts et des armes', () => {
         expect(weaponTarget({ type: 'bow' })).toBe(TARGET.SINGLE);
         expect(weaponTarget({ type: 'fan' })).toBe(TARGET.AREA);
         expect(weaponTarget({ type: 'bow', target: 'area' })).toBe(TARGET.AREA);
+    });
+    it('seuls les sorts offensifs demandent une cible', () => {
+        expect(spellNeedsTarget({ dmg: 10 })).toBe(true);
+        expect(spellNeedsTarget({ stunTurns: 1 })).toBe(true);
+        expect(spellNeedsTarget({ heal: 20 })).toBe(false);
+        expect(spellNeedsTarget({ atkBuff: 3 })).toBe(false);
     });
 });

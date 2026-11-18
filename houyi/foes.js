@@ -15,6 +15,7 @@ export const allFoes = () => (gameState.foes?.length ? gameState.foes : [enemy])
 
 /** Compose le groupe de départ autour du meneur (parfois 2 ou 3 ennemis). Appelée par newEnemy une fois le meneur prêt. */
 export function setupFoeGroup(lead){
+    pending = null; document.body?.classList.remove('picking-target');
     gameState.foes = [lead];
     const size = rollGroupSize(lead);
     for(let i = 1; i < size; i++){
@@ -76,5 +77,44 @@ export function advanceAfterFoeDefeat(){
     log(`Vous gagnez ${xp} XP et ${gold} zhu ; ${remaining.length} ennemi${remaining.length > 1 ? 's' : ''} restant${remaining.length > 1 ? 's' : ''}.`);
     focusFoe(remaining[0]);
     log(`${enemy.name} prend la relève.`);
+    return true;
+}
+
+// ── Choix de la cible : après avoir choisi l'attaque, on touche l'ennemi voulu ; la cible n'est jamais mémorisée d'une attaque à l'autre. ──
+let pending = null;   // attaque en attente d'une cible : fonction qui la relance une fois la cible prise
+
+/** Annule le choix de cible en cours (autre action, fin de combat). */
+export function cancelTargetPick(){
+    if(!pending) return;
+    pending = null;
+    document.body?.classList.remove('picking-target');
+    log('Choix de la cible annulé.');
+    updateStats();
+}
+export const isPickingTarget = () => Boolean(pending);
+
+/**
+ * À appeler juste avant de payer une attaque. Renvoie true si l'attaque est suspendue : le joueur doit toucher un ennemi, puis `rerun` la relance
+ * avec cette cible. Renvoie false (l'attaque part) s'il n'y a qu'un ennemi vivant, si l'attaque est de zone, ou si la cible vient d'être choisie.
+ */
+export function targetGate(isArea, rerun){
+    if(gameState.targetPicked){ gameState.targetPicked = false; return false; }
+    if(isArea || livingFoes(gameState.foes).length < 2) return false;
+    pending = rerun;
+    document.body?.classList.add('picking-target');
+    log('Choisissez l\'ennemi à viser.');
+    updateStats();
+    return true;
+}
+
+/** L'ennemi touché devient la cible de l'attaque en attente, qui part aussitôt. */
+export function pickTarget(foe){
+    if(!pending || !focusFoe(foe) && foe !== enemy) return false;
+    const run = pending;
+    pending = null;
+    document.body?.classList.remove('picking-target');
+    gameState.targetPicked = true;
+    run();
+    gameState.targetPicked = false;   // si l'attaque a été refusée en route, le drapeau ne traîne pas
     return true;
 }

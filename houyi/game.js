@@ -74,8 +74,8 @@ export * from './gameStatsTab.js';
 import { showAttributeMenu, updateLevelHud } from './gameLevelUp.js';
 export * from './gameLevelUp.js';
 import { updateAvailableSpells, combatSpellList, getTurnClass, chooseAction, classCanAct, spendActionCharge, chargeFactor, decoupled, withCaster, resumeAfterBoundary, refillActionBar } from './gameSpellList.js';
-import { setupFoeGroup } from './foes.js';
-import { isAreaSpell, isAreaWeapon } from './targeting.js';
+import { setupFoeGroup, targetGate } from './foes.js';
+import { isAreaSpell, isAreaWeapon, spellNeedsTarget } from './targeting.js';
 import { livingFoes } from './enemyGroup.js';
 import { applyDuelRulesAtCombatStart, enemyTurn, finishPlayerTurn, handleEnemyDefeated } from './gameTurnFlow.js';
 export * from './gameTurnFlow.js';
@@ -1994,6 +1994,7 @@ export function useWeapon(hand = 'right'){
         return; 
     }
     
+    if(targetGate(isAreaWeapon(weapon), () => useWeapon(hand))) return;   // plusieurs ennemis : on touche l'ennemi visé après avoir choisi l'attaque (foes.js)
     actionGuard.markPlayerAction();
     player.combatPoints -= weapon.actionPoints;   // payé au choix
     logActiveAction(`utilise l'arme ${weapon.name} (cout ${weapon.actionPoints} PA)`);
@@ -2105,6 +2106,7 @@ export function castSpell(spellId){
         log(missingColor ? `Pas assez de qì ${missingColor} !` : "Pas assez de qì !");
         return;
     }
+    if(spellNeedsTarget(spell) && targetGate(isAreaSpell(spell), () => castSpell(spellId))) return;   // plusieurs ennemis : on touche l'ennemi visé après avoir choisi le sort (foes.js)
     if(decoupled() && spell.effect){ castEffectSpellDecoupled(spell); return; }   // sorts à effet : soutiens tout de suite, sorts de plateau en fin de tour de plateau
     actionGuard.markPlayerAction();
     consumeSpellMana(player, spell);   // coût payé au choix
