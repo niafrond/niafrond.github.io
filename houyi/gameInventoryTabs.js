@@ -6,7 +6,10 @@ import { actionGuard } from "./actionGuard.js";
 import { compareAttrs, deltaBadgesHtml, equipDeltaGroupsHtml } from "./compareView.js";
 import { isSingleUse, reuseLabel } from "./itemReuse.js";
 import { heroWeapons } from "./weapons.js";
+import { openTargetPicker, teamMembers, hasLivingAlly } from "./itemTargetPicker.js";
+import { healAlly } from "./allies.js";
 import { getItemIcon, getRarityColor, useItem, isTeamItem, teamItemKind, describeRecharge, shiftActiveItemIndexes } from "./items.js";
+import { updateStats } from "./gameHud.js";
 import { afflictionsOf } from "./alterations.js";
 import { playSfx } from "./sound.js";
 import { icon as svgIcon } from "./icons.js";
@@ -475,7 +478,7 @@ function buildItemButton(item, index){
 
     const pa = item.actionPoints || 2;
     const exhausted = item.type === 'reusable' && !isSingleUse(item) && (item.chargesLeft ?? item.chargesPerCycle) <= 0;
-    const healUseless = isUselessHeal(item);
+    const healUseless = item.effect?.heal && !isTeamItem(item) && hasLivingAlly() ? !eligibleTargets(item).length : isUselessHeal(item);
     const sealed = (player.statusEffects?.sealed || 0) > 0;   // Talisman de Scellement : cadenas, objet inutilisable
     const canUse = gameState.combatState === 'active' && (currentTurn === 'player' || decoupled()) && classCanAct() && player.combatPoints >= pa && !exhausted && !healUseless && !sealed;
 
@@ -495,11 +498,11 @@ function buildItemButton(item, index){
         btn.tabIndex = -1;
         btn.onclick = null;
     } else {
-        btn.onclick = () => useInventoryItem(item.id, index);
+        btn.onclick = () => useItemChoosingTarget(item, index);
         btn.onkeydown = (event) => {
             if(event.key === 'Enter' || event.key === ' ') {
                 event.preventDefault();
-                useInventoryItem(item.id, index);
+                useItemChoosingTarget(item, index);
             }
         };
     }
@@ -557,14 +560,41 @@ function isUselessHeal(item){
 }
 
 /** Un objet de l'inventaire est-il utilisable maintenant en combat ? { ok, reason } (menu « Objet »). */
-/** Membres de l'équipe qu'un objet d'équipe peut viser : [{ classId, name, hp, maxHp, ko }] (Hou Yi d'abord). */
+/** Soigne un compagnon (objet de soin donné à un équipier) : renvoie le message de journal. */
+function healAllyMessage(classId, amount){
+    const ally = gameState.allies?.[classId];
+    const healed = healAlly(ally, amount);
+    if(ally) log(`${ally.name} récupère ${healed} PV.`);
+    updateStats();
+    return ally ? `${ally.name} récupère ${healed} PV. ` : '';
+}
+
+/** Sorte de cible d'un objet : 'revive' | 'heal' | 'buff' (objets d'équipe), 'heal' pour une simple potion de soin, sinon null. */
+export const itemTargetKind = item => teamItemKind(item) || (item?.effect?.heal ? 'heal' : null);
+
+/** Faut-il demander « sur qui ? » : objet d'équipe, ou soin quand un compagnon peut le recevoir. */
+export const itemNeedsTarget = item => isTeamItem(item) || (!!item?.effect?.heal && hasLivingAlly());
+
+/** Membres de l'équipe qu'un objet peut viser : [{ classId, name, hp, maxHp, ko }] (Hou Yi d'abord). */
 export function eligibleTargets(item){
-    const kind = teamItemKind(item);
+    const kind = itemTargetKind(item);
     if(!kind) return [];
-    const members = [{ classId: 'assassin', name: 'Hou Yi', hp: player.hp, maxHp: player.maxHp, ko: !!gameState.heroKo },
-        ...Object.values(gameState.allies || {}).map(a => ({ classId: a.classId, name: a.short, hp: a.hp, maxHp: a.maxHp, ko: !!a.ko }))];
+    const members = teamMembers();
     if(kind === 'revive') return members.filter(m => m.ko);
     return members.filter(m => !m.ko && (kind === 'buff' || m.hp < m.maxHp));
+}
+
+/** Utilise un objet du sac : demande d'abord « sur qui ? » (barres de vie de l'équipe) quand il faut, puis applique l'effet au personnage choisi. */
+export function useItemChoosingTarget(item, index){
+    if(!itemNeedsTarget(item)) { useInventoryItem(item.id, index); return; }
+    const kind = itemTargetKind(item);
+    const ok = new Set(eligibleTargets(item).map(m => m.classId));
+    if(!ok.size){ log(kind === 'revive' ? 'Personne à ranimer.' : 'Aucun équipier à aider.'); return; }
+    openTargetPicker({
+        title: `${item.name} : sur qui ?`,
+        blockReason: m => ok.has(m.classId) ? null : (kind === 'revive' ? 'debout' : m.ko ? 'à ranimer d\'abord' : kind === 'heal' ? 'en pleine forme' : 'indisponible'),
+        onPick: classId => useInventoryItem(item.id, index, classId)
+    });
 }
 
 export function itemUsability(item){
@@ -575,7 +605,8 @@ export function itemUsability(item){
     if(item.type === 'reusable' && !isSingleUse(item) && (item.chargesLeft ?? item.chargesPerCycle) <= 0) return { ok: false, reason: describeRecharge(item) };
     if(!classCanAct()) return { ok: false, reason: 'En chargement' };
     if(isTeamItem(item) && !eligibleTargets(item).length) return { ok: false, reason: teamItemKind(item) === 'revive' ? 'Personne à ranimer' : 'Aucun équipier à aider' };
-    if(isUselessHeal(item)) return { ok: false, reason: 'Sans effet maintenant' };
+    if(item.effect?.heal && !isTeamItem(item) && hasLivingAlly()){ if(!eligibleTargets(item).length) return { ok: false, reason: 'Sans effet maintenant' }; }
+    else if(isUselessHeal(item)) return { ok: false, reason: 'Sans effet maintenant' };
     if(player.combatPoints < pa) return { ok: false, reason: `${pa} PA requis` };
     return { ok: true, reason: '' };
 }
@@ -596,12 +627,16 @@ export function useInventoryItem(itemId, index, targetClass = null){
 
     const item = player.inventory[resolvedIndex];
     if(item.id !== itemId){
-    if(gameState.heroKo && !isTeamItem(item)){ log("Hou Yi est à terre : seuls les objets d'équipe (ranimer, soigner un équipier) servent."); return; }
         log("L'objet actif a changé, réessayez.");
         return;
     }
     if(!item){ log("Objet introuvable."); return; }
-    if(isUselessHeal(item)){ log(item.effect?.cure ? "Vous ne souffrez d'aucune altération que cet objet guérit." : "Vos PV sont déjà au maximum."); return; }
+    const healsAlly = !!targetClass && targetClass !== 'assassin' && !!item.effect?.heal;   // potion de soin donnée à un compagnon
+    if(gameState.heroKo && !isTeamItem(item) && !healsAlly){ log("Hou Yi est à terre : seuls les objets d'équipe (ranimer, soigner un équipier) servent."); return; }
+    if(healsAlly){
+        const ally = gameState.allies?.[targetClass];
+        if(!ally || ally.ko || ally.hp >= ally.maxHp){ log(!ally || ally.ko ? "Ce compagnon ne peut pas être soigné." : `${ally.name} est en pleine forme.`); return; }
+    } else if(isUselessHeal(item)){ log(item.effect?.cure ? "Vous ne souffrez d'aucune altération que cet objet guérit." : "Vos PV sont déjà au maximum."); return; }
 
     const pa = item.actionPoints || 2;
     if(player.combatPoints < pa){
@@ -614,7 +649,7 @@ export function useInventoryItem(itemId, index, targetClass = null){
     // Effet : tout de suite ou en sortant de la file (la classe est consommée dès le choix) ; si l'objet n'est plus utilisable à ce moment, les PA sont rendus.
     const effect = () => {
         const at = player.inventory[resolvedIndex]?.id === itemId ? resolvedIndex : player.inventory.findIndex(i => i.id === itemId);
-        const result = at === -1 ? { success: false, message: 'Objet introuvable' } : useItem(itemId, player, enemy, at, { allyEffect: eff => applyAllyItemEffect(eff, targetClass) });
+        const result = at === -1 ? { success: false, message: 'Objet introuvable' } : useItem(itemId, player, enemy, at, { allyEffect: eff => applyAllyItemEffect(eff, targetClass), healAlly: healsAlly ? (amount => healAllyMessage(targetClass, amount)) : null });
         if(result.success){
             if(item.effect?.cure) playSfx('cure');
             logActiveAction(`utilise l'objet ${item.name} (cout ${pa} PA)`);

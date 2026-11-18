@@ -1115,3 +1115,8 @@ body.a11y-colorblind .action-beads .bead-foe { background: #e08a1e; }
 .ally-card.ko .ally-hp i { background: #777; }
 .class-picker .class-pick.ko { opacity: 0.4; text-decoration: line-through; }
 #player-stats.hero-ko { opacity: 0.5; filter: grayscale(1); }
+
+/* Zone de Xiūxiān : cachée, visible après un clic long sur la fiche de Hou Yi (classe .show-xiu) */
+#player-stats:not(.show-xiu) .rage-stat { display: none; }
+#player-stats:has(.rage-stat):not(.show-xiu) { display: block; }
+#player-stats.show-xiu { outline: 1px solid #f2c14e; outline-offset: -1px; }

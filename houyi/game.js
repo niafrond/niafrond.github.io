@@ -1026,7 +1026,35 @@ export function endXiuxianAtCombatEnd(){
 }
 
 // ── Potions (potions.js) : à usage unique, 1 / 2 / 3 PA en combat selon la taille ──
-export function drinkPotionAction(size){
+/** Potion donnée à un compagnon (choisi dans « sur qui ? ») : elle rend une part des PV max du compagnon. */
+function drinkPotionForAlly(size, classId){
+    const ally = gameState.allies?.[classId];
+    if(gameState.combatState !== 'active' || !ally) return false;
+    if(!decoupled() && currentTurn !== 'player'){ log("Ce n'est pas votre tour."); return false; }
+    if(rejectRushedAction()) return false;
+    if((player.statusEffects?.sealed || 0) > 0){ log("Vous êtes scellé : impossible d'utiliser un objet."); return false; }
+    if(!classCanAct()) return false;
+    if(ally.ko){ log(`${ally.name} est hors de combat : une potion ne le relève pas.`); return false; }
+    if(ally.hp >= ally.maxHp){ log(`${ally.name} est en pleine forme.`); return false; }
+    const potion = POTIONS[size];
+    if(!potion || (player.potions?.[size] || 0) <= 0){ log(`Aucune ${potion ? potion.name.toLowerCase() : 'potion'}.`); return false; }
+    player.potions[size] -= 1;
+    actionGuard.markPlayerAction();
+    const effect = () => {
+        const healed = healAlly(ally, potionHeal(ally, size));
+        log(`${potion.name} : ${ally.name} récupère ${healed} PV.`);
+        logActiveAction(`donne une ${potion.name.toLowerCase()} à ${ally.name}`);
+        showCombatAnimation({ icon: 'potion', title: potion.name, heal: `+${healed} PV`, target: `→ ${ally.name}` }, true);
+        document.dispatchEvent(new Event('potions-changed'));
+        updateStats();
+        endAction();
+    };
+    if(decoupled()) chooseAction(effect); else { spendActionCharge(); effect(); }
+    return true;
+}
+
+export function drinkPotionAction(size, targetClass = null){
+    if(targetClass && targetClass !== 'assassin') return drinkPotionForAlly(size, targetClass);
     const inCombat = gameState.combatState === 'active';
     if(inCombat){
         if(!decoupled() && currentTurn !== 'player'){ log("Ce n'est pas votre tour."); return false; }
