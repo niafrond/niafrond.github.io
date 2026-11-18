@@ -186,7 +186,7 @@ export function foxIconHtml(){
 
 /** Scène de l'annonce d'un sort : lanceur à gauche, sort au milieu, cible à droite (Hou Yi / son équipier à gauche, l'ennemi à droite).
  *  Le sort file vers la cible, qui clignote quand il la touche ; les sorts lancés par l'ennemi font le trajet inverse. `hit` : le sort inflige des dégâts. */
-export function spellStageHtml(fxHtml, isPlayerAttack, hit, dodged = false) {
+export function spellStageHtml(fxHtml, isPlayerAttack, hit, dodged = false, lunge = false) {
     const ally = gameState.allies?.[gameState.turnClass];
     const heroSrc = (ally && gbaSprite(ally.sprite, 'right')) || gbaSprite(player.class, 'right') || heroSprite(player.class) || heroSprite('assassin');
     const key = enemy.spriteKey || enemy.id;
@@ -194,8 +194,8 @@ export function spellStageHtml(fxHtml, isPlayerAttack, hit, dodged = false) {
     if(!heroSrc || !foeSrc) return null;
     const img = (src, cls) => `<img class="stage-fighter ${cls}" src="${spriteUri(src)}" alt="" aria-hidden="true">`;
     const casterHero = isPlayerAttack;
-    const left = img(heroSrc, 'stage-left' + (!hit && casterHero ? ' stage-cast' : '') + (hit && !casterHero ? (dodged ? ' stage-dodge' : ' stage-hurt') : ''));
-    const right = img(foeSrc, 'stage-right' + (!hit && !casterHero ? ' stage-cast' : '') + (hit && casterHero ? (dodged ? ' stage-dodge' : ' stage-hurt') : ''));
+    const left = img(heroSrc, 'stage-left' + (lunge && casterHero ? ' stage-lunge' : '') + (!hit && casterHero ? ' stage-cast' : '') + (hit && !casterHero ? (dodged ? ' stage-dodge' : ' stage-hurt') : ''));
+    const right = img(foeSrc, 'stage-right' + (lunge && !casterHero ? ' stage-lunge' : '') + (!hit && !casterHero ? ' stage-cast' : '') + (hit && casterHero ? (dodged ? ' stage-dodge' : ' stage-hurt') : ''));
     const dir = !hit ? 'self' : casterHero ? 'ltr' : 'rtl';
     return `<div class="spell-stage stage-${dir}${casterHero ? '' : ' stage-foe'}">${left}<div class="stage-mid">${fxHtml}</div>${right}</div>`;
 }
@@ -211,7 +211,10 @@ export function showCombatAnimation({ icon, title, damage = null, heal = null, s
     if(fx && options.requireClick === undefined && options.autoHideMs === undefined) options = { ...options, autoHideMs: Math.max(1000 * animationFactor(), spellFxDurationMs(title) * 2 + 500) };   // l'animation tourne en boucle : au moins deux passages
     const bigFx = Boolean(fx && fx.includes('spellfx-big'));
     let html = `<div class="attack-icon${fx ? ' has-spellfx' : ''}${bigFx ? ' has-spellfx-big' : ''}">${fx || svgIcon(icon) || icon}</div>`;
-    const stage = !bigFx ? spellStageHtml(fx || (projectile === 'arrow' ? `<div class="attack-icon stage-arrow">${svgIcon('arrow')}</div>` : `<div class="attack-icon">${svgIcon(icon) || icon}</div>`), isPlayerAttack, damage !== null && heal === null, Boolean(options.blocked)) : null;
+    const casterAlly = isPlayerAttack ? gameState.allies?.[gameState.turnClass] : null;   // un compagnon frappe avec son arme (jamais l'arc de Hou Yi)
+    if(casterAlly?.weapon && !fx && damage !== null && heal === null && !projectile) { icon = casterAlly.weapon; projectile = casterAlly.weapon === 'bow' ? 'arrow' : 'melee'; }
+    const midIcon = projectile === 'melee' && typeof icon === 'string' && !icon.includes('<') ? svgIcon(icon) : (svgIcon(icon) || icon);
+    const stage = !bigFx ? spellStageHtml(fx || (projectile === 'arrow' ? `<div class="attack-icon stage-arrow">${svgIcon('arrow')}</div>` : `<div class="attack-icon">${svgIcon(icon) || icon}</div>`), isPlayerAttack, damage !== null && heal === null, Boolean(options.blocked), projectile === 'melee') : null;
     if(stage) html = stage;
     // 2e temps d'un blocage / d'une parade : gros bouclier (plein = bloqué, fendu = paré) et texte qui vibre.
     let caption = `<div class="attack-title">${String(title).toUpperCase()}</div>`;

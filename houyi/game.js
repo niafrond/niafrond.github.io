@@ -1946,7 +1946,7 @@ function strikeWithWeapon(weapon, { free = false } = {}){
 
     const icon = getWeaponIcon(weapon.type);
 
-    showStrikeAnimation({ icon, title: weapon.name, target: `→ ${enemy.name}`, projectile: weapon.type === 'bow' ? 'arrow' : null }, strike, true, dmg);
+    showStrikeAnimation({ icon, title: weapon.name, target: `→ ${enemy.name}`, projectile: weapon.type === 'bow' ? 'arrow' : 'melee' }, strike, true, dmg);
     log(`${icon} Vous utilisez ${weapon.name}${free ? ' gratuitement' : ''} et infligez ${dmg} dégâts.${isCrit ? ' Coup critique !' : ''}${strike.unblockable ? ' Coup inblocable !' : ''}${blockText ? ` L'ennemi ${blockText === 'BLOQUÉ !' ? 'bloque le coup' : 'pare le coup'}.` : ''}`);
 }
 

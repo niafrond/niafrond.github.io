@@ -1617,3 +1617,9 @@ body.no-anim .stage-mid, body.no-anim .stage-fighter { animation: none !importan
 .stage-rtl .stage-arrow { transform: rotate(-135deg); }
 .stage-ltr .stage-mid:has(.stage-arrow) { animation-duration: .35s; }
 .stage-rtl .stage-mid:has(.stage-arrow) { animation-duration: .35s; }
+/* Attaque de mêlée : le lanceur fonce sur la cible (l'arme file en même temps) puis revient */
+.stage-ltr .stage-left.stage-lunge { animation: stage-lunge-r .45s ease-in-out .15s both; }
+.stage-rtl .stage-right.stage-lunge { animation: stage-lunge-l .45s ease-in-out .15s both; }
+@keyframes stage-lunge-r { 0%, 100% { transform: translateX(0); } 45% { transform: translateX(120%); } }
+@keyframes stage-lunge-l { 0%, 100% { transform: translateX(0); } 45% { transform: translateX(-120%); } }
+@media (prefers-reduced-motion: reduce) { .stage-lunge { animation: none !important; } }

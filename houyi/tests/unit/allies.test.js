@@ -145,3 +145,11 @@ describe('équipe : ranimer, soigner et renforcer', () => {
         expect(livingAllies(t)).toHaveLength(0);
     });
 });
+
+describe('armes des compagnons', () => {
+    test("chaque compagnon a une arme de mêlée ou de bâton : jamais l'arc de Hou Yi", () => {
+        ALLY_IDS.forEach(id => { expect(ALLIES[id].weapon).toBeTruthy(); expect(ALLIES[id].weapon).not.toBe('bow'); });
+        expect(new Set(ALLY_IDS.map(id => ALLIES[id].weapon)).size).toBeGreaterThanOrEqual(5);
+        expect(buildAlly(hero(), 'barbarian').weapon).toBe('axe');
+    });
+});

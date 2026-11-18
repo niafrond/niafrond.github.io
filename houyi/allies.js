@@ -11,12 +11,12 @@
 import { START_CLASS, normalizeRoster } from './classRoster.js';
 
 export const ALLIES = {
-    barbarian: { id: 'barbarian', name: 'Tu le Briseur', short: 'Tu', title: 'Maître des poings de roche', npc: 'trainer_barbarian', sprite: 'ally_barbarian', region: 'volcan', hpPct: 0.9, defensePct: 0.8 },
-    templar: { id: 'templar', name: 'Capitaine Heng', short: 'Heng', title: 'Maître de la garde', npc: 'trainer_templar', sprite: 'ally_templar', region: 'gobi', hpPct: 1, defensePct: 1 },
-    sorcerer: { id: 'sorcerer', name: 'Maître Xuan', short: 'Xuan', title: 'Taoïste du gué', npc: 'trainer_sorcerer', sprite: 'ally_sorcerer', region: 'fleuve', hpPct: 0.5, defensePct: 0.3 },
-    monk: { id: 'monk', name: 'Frère Ming', short: 'Ming', title: 'Moine des cendres', npc: 'trainer_monk', sprite: 'ally_monk', region: 'rizieres', hpPct: 0.7, defensePct: 0.6 },
-    alchemist: { id: 'alchemist', name: 'Dame Dan', short: 'Dan', title: 'Alchimiste des orages', npc: 'trainer_alchemist', sprite: 'ally_alchemist', region: 'volcan', hpPct: 0.55, defensePct: 0.4 },
-    shaman: { id: 'shaman', name: 'Aïeule Wu Po', short: 'Wu Po', title: 'Chamane de la plaine', npc: 'trainer_shaman', sprite: 'ally_shaman', region: 'bambous', hpPct: 0.6, defensePct: 0.5 }
+    barbarian: { id: 'barbarian', name: 'Tu le Briseur', short: 'Tu', title: 'Maître des poings de roche', npc: 'trainer_barbarian', sprite: 'ally_barbarian', weapon: 'axe', region: 'volcan', hpPct: 0.9, defensePct: 0.8 },
+    templar: { id: 'templar', name: 'Capitaine Heng', short: 'Heng', title: 'Maître de la garde', npc: 'trainer_templar', sprite: 'ally_templar', weapon: 'sword', region: 'gobi', hpPct: 1, defensePct: 1 },
+    sorcerer: { id: 'sorcerer', name: 'Maître Xuan', short: 'Xuan', title: 'Taoïste du gué', npc: 'trainer_sorcerer', sprite: 'ally_sorcerer', weapon: 'staff', region: 'fleuve', hpPct: 0.5, defensePct: 0.3 },
+    monk: { id: 'monk', name: 'Frère Ming', short: 'Ming', title: 'Moine des cendres', npc: 'trainer_monk', sprite: 'ally_monk', weapon: 'mace', region: 'rizieres', hpPct: 0.7, defensePct: 0.6 },
+    alchemist: { id: 'alchemist', name: 'Dame Dan', short: 'Dan', title: 'Alchimiste des orages', npc: 'trainer_alchemist', sprite: 'ally_alchemist', weapon: 'dagger', region: 'volcan', hpPct: 0.55, defensePct: 0.4 },
+    shaman: { id: 'shaman', name: 'Aïeule Wu Po', short: 'Wu Po', title: 'Chamane de la plaine', npc: 'trainer_shaman', sprite: 'ally_shaman', weapon: 'staff', region: 'bambous', hpPct: 0.6, defensePct: 0.5 }
 };
 export const ALLY_IDS = Object.keys(ALLIES);
 export const MAX_ALLIES = 3;
@@ -44,7 +44,7 @@ export function buildAlly(hero, classId) {
     const a = ALLIES[classId];
     const maxHp = allyMaxHp(hero, classId);
     return {
-        isAlly: true, classId, name: a.name, short: a.short, title: a.title, sprite: a.sprite,
+        isAlly: true, classId, name: a.name, short: a.short, title: a.title, sprite: a.sprite, weapon: a.weapon,
         level: hero?.level || 1, hp: maxHp, maxHp, ko: false,
         defense: Math.round((hero?.defense || 0) * a.defensePct), attack: Math.round((hero?.attack || 0) * 0.5),
         attributes: {}, statusEffects: {}
