@@ -1,3 +1,9 @@
+## [3.4.2](https://github.com/niafrond/niafrond.github.io/compare/v3.4.1...v3.4.2) (2026-11-18)
+
+### Bug Fixes
+
+* **houyi:** porter la pause du chargement à 5 s ([809ea5e](https://github.com/niafrond/niafrond.github.io/commit/809ea5ecea7e653feb40fea0b0012e8344e9b69d))
+
 ## [3.4.1](https://github.com/niafrond/niafrond.github.io/compare/v3.4.0...v3.4.1) (2026-11-18)
 
 ### Bug Fixes
