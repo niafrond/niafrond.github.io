@@ -8,7 +8,7 @@ import { TRANSE_EFFECTS, TRANSE_TURNS } from './transe.js';
 import { RAGE_MAX } from './ultimates.js';
 
 // Zone Xiūxiān d'un compagnon : cachée, elle s'affiche au clic long (appui maintenu) sur sa carte ; la jauge pleine se touche pour la déclencher.
-const XIU_HOLD_MS = 3000, XIU_SHOW_MS = 6000, XIU_MOVE_PX = 10;
+const XIU_HOLD_MS = 450, XIU_SHOW_MS = 6000, XIU_MOVE_PX = 10;
 let bound = false;
 let textTimer = null;
 /** Texte de la Xiūxiān (bandeau « effet, tours restants ») : caché, il s'affiche quelques secondes après un clic long sur un personnage. Les jauges, elles, sont toujours visibles. */

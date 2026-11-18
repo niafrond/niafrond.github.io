@@ -146,7 +146,7 @@ function updateFighterPortraits(){
 
 // La zone de Xiūxiān (jauge de transe + barre de qì de l'ultime) est cachée : elle n'apparaît qu'après un clic long (appui maintenu)
 // sur la fiche du personnage, ou au clavier (Entrée / Espace quand la fiche est ciblée), et se referme seule après quelques secondes.
-const XIU_HOLD_MS = 3000, XIU_SHOW_MS = 6000, XIU_MOVE_PX = 10;
+const XIU_HOLD_MS = 450, XIU_SHOW_MS = 6000, XIU_MOVE_PX = 10;
 let xiuLongPressed = false, xiuHideTimer = null;
 export function setXiuZoneVisible(div, on){
     showXiuText(on);
