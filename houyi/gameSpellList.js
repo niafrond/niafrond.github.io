@@ -2,7 +2,7 @@
 // Extrait de game.js.
 import { MAX_ACTIVE_SPELLS } from './constants.js';
 import { actionGuard } from './actionGuard.js';
-import { isAllyKnockedOut, ALLIES, memberName } from './allies.js';
+import { isAllyKnockedOut, isMemberKO, ALLIES, memberName } from './allies.js';
 import { isBoardResolving } from './board.js';
 import { preloadUltimateCinematic } from './ultimateCinematics.js';
 import { getEquippedUltimate } from './ultimates.js';
@@ -123,7 +123,7 @@ export function getTurnClass(){
 }
 
 /** Classes de combat utilisables maintenant (biome, entraînement). */
-export const usableNow = () => usableClasses(player, combatBiome(), gameState.forcedClass).filter(id => !isAllyKnockedOut(gameState.allies, id));   // un compagnon hors de combat ne joue plus
+export const usableNow = () => usableClasses(player, combatBiome(), gameState.forcedClass).filter(id => !isMemberKO(gameState.allies, gameState.heroKo, id));   // un membre hors de combat (Hou Yi compris) ne joue plus
 
 // ── Temps de chargement des actions ─────────────────────────────────────────
 // Les actions (sort, compétence de classe, objet, arme) sont INDÉPENDANTES du plateau : elles ne prennent pas le tour, partent dès que leur classe
@@ -243,7 +243,12 @@ export function renderActionBeads(){
 let _beadKey = '';
 
 // Le temps de combat avance en temps réel, fenêtre visible ; quand une classe (ou l'ennemi) devient prête, boutons et barres se rafraîchissent.
+/** Vitesse de chargement de chaque membre de l'équipe selon ses altérations (Hou Yi : celles du héros ; un compagnon : les siennes). */
+const memberSpeeds = () => Object.fromEntries(usableNow().map(id => [id, chargeSpeed(id === 'assassin' ? player : gameState.allies?.[id])]));
+
 let _chargeLast = 0, _chargeKey = '';
+let _aiModule = null;
+const aiModule = () => (_aiModule ||= import('./gameTurnFlow.js').catch(() => null));   // import différé : gameTurnFlow.js dépend de ce module
 function chargeTicker(){
     renderActionBeads();
     const now = Date.now();
@@ -255,10 +260,11 @@ function chargeTicker(){
     const running = chargeRunning(now, actionGuard.lastComboAt());
     if(typeof document !== 'undefined') document.body?.classList.toggle('charge-paused', !running);
     if(!running) return;
-    const heroSpeed = chargeSpeed(player), foeSpeed = chargeSpeed(enemy);
+    const heroSpeed = memberSpeeds(), foeSpeed = chargeSpeed(enemy);
     chargeTick(gameState.charge, dt, heroSpeed, foeSpeed);
     pumpActions();   // les actions en file partent dès que possible, sans lien avec le plateau
-    const key = usableNow().map(id => isClassReady(gameState.charge, id) ? 1 : 0).join('') + (isEnemyReady(gameState.charge) ? 'e' : '') + `|${heroSpeed}`;   // la vitesse (altérations) redessine les barres
+    aiModule().then(m => m && m.enemyProactiveAction());   // l'ennemi choisit lui aussi ses actions dès qu'il est chargé
+    const key = usableNow().map(id => isClassReady(gameState.charge, id) ? 1 : 0).join('') + (isEnemyReady(gameState.charge) ? 'e' : '') + `|${Object.values(heroSpeed).join(',')}`;   // la vitesse (altérations) redessine les barres
     if(key !== _chargeKey){
         _chargeKey = key;
         createSpellButtons();
@@ -321,15 +327,15 @@ function renderClassPicker(container){
     const restricted = restrictedClasses(player, combatBiome());
     const forced = gameState.forcedClass;
     picker.innerHTML = loadout.map(id => {
-        const reason = isAllyKnockedOut(gameState.allies, id) ? 'Hors de combat' : forced && id !== forced ? 'Entraînement : classe imposée' : (restricted[id] ? `Bridée ici : ${restricted[id]}` : `${ALLIES[id] ? ALLIES[id].name + ' · ' : ''}${playerClasses[id]?.name || id}`);
+        const reason = isMemberKO(gameState.allies, gameState.heroKo, id) ? 'Hors de combat' : forced && id !== forced ? 'Entraînement : classe imposée' : (restricted[id] ? `Bridée ici : ${restricted[id]}` : `${ALLIES[id] ? ALLIES[id].name + ' · ' : ''}${playerClasses[id]?.name || id}`);
         // Barre de chargement : se remplit en temps réel jusqu'à ce que la classe soit prête (animation CSS pour le temps restant).
         const prog = Math.round(classProgress(gameState.charge, player, id, chargeFactor()) * 100);
         const remaining = classRemainingMs(gameState.charge, id);
-        const speed = chargeSpeed(player);   // altérations : le chargement ralentit ou s'arrête
+        const speed = memberSpeeds()[id] ?? 1;   // altérations (propres à chaque membre) : le chargement ralentit, s'accélère ou s'arrête
         const animStyle = remaining > 0 ? `--from:${prog}%;--to:100%;--dur:${Math.round(remaining / Math.max(0.05, speed))}ms;${speed <= 0 ? '--play:paused;' : ''}` : '';
         const info = classChargeInfo(player, id);
         const chargeText = prog >= 100 ? `Prête (chargement ${info.time})` : `Se recharge : ${Math.ceil(remaining / 1000)} s (temps ${info.time} : Agilité/Moral -${Math.round(info.pct.agility)} %, attribut -${Math.round(info.pct.attribute)} %, qì -${Math.round(info.pct.qi)} %, compétences -${info.pct.skills} %)`;
-        const ko = isAllyKnockedOut(gameState.allies, id);   // compagnon hors de combat : il ne joue plus
+        const ko = isMemberKO(gameState.allies, gameState.heroKo, id);   // membre hors de combat : il ne joue plus
         const off = !mine || (forced && id !== forced) || restricted[id] || ko;   // choisir un compagnon reste libre : seules ses ACTIONS attendent son chargement
         return `<button type="button" class="class-pick${id === current ? ' on' : ''}${restricted[id] ? ' limited' : ''}${ko ? ' ko' : ''}${prog >= 100 && !ko ? ' ready-pulse' : ' charging'}${animStyle ? ' charging-anim' : ''}" data-class="${id}" aria-pressed="${id === current}"${off ? ' disabled' : ''} style="--charge:${prog}%;${animStyle}" title="${reason} · ${chargeText}"><span>${memberName(id)}</span></button>`;
     }).join('');

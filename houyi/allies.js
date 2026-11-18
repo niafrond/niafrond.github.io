@@ -59,11 +59,20 @@ export function buildTeam(hero) {
 export const livingAllies = team => Object.values(team || {}).filter(a => a && !a.ko && a.hp > 0);
 export const isAllyKnockedOut = (team, classId) => !!team?.[classId]?.ko;
 
-/** Cible d'une action ennemie : un compagnon vivant (au hasard) avec la probabilité ALLY_TARGET_CHANCE, sinon null (= Hou Yi). */
-export function pickEnemyTarget(team, rng = Math.random) {
+/**
+ * Cible d'une action ennemie : un compagnon vivant, ou null (= Hou Yi). L'ennemi vise un compagnon une fois sur quatre ; il s'acharne sur le plus faible
+ * (60 % du temps le moins en forme, sinon au hasard) et, quand un compagnon est presque à terre, il l'achève plus volontiers ; mais si Hou Yi est en
+ * danger (moins d'un tiers de ses PV), il se concentre sur lui. `heroHpPct` : part des PV de Hou Yi (0..1).
+ */
+export function pickEnemyTarget(team, rng = Math.random, heroHpPct = 1) {
     const alive = livingAllies(team);
-    if (!alive.length || rng() >= ALLY_TARGET_CHANCE) return null;
-    return alive[Math.min(alive.length - 1, Math.floor(rng() * alive.length))];
+    if (!alive.length) return null;
+    const weakest = alive.reduce((a, b) => (b.hp / b.maxHp < a.hp / a.maxHp ? b : a));
+    let chance = ALLY_TARGET_CHANCE;
+    if (heroHpPct < 0.35) chance *= 0.4;                                 // Hou Yi est à portée de coup fatal : on le vise
+    else if (weakest.hp / weakest.maxHp < 0.3) chance *= 1.6;            // un compagnon à achever
+    if (rng() >= Math.min(0.5, chance)) return null;
+    return rng() < 0.6 ? weakest : alive[Math.min(alive.length - 1, Math.floor(rng() * alive.length))];
 }
 
 /** Applique `damage` à un compagnon ; renvoie { damage, ko } (ko : vient de tomber). */
@@ -81,4 +90,23 @@ export function healAlly(ally, amount) {
     const before = ally.hp;
     ally.hp = Math.min(ally.maxHp, ally.hp + Math.max(0, Math.floor(amount || 0)));
     return ally.hp - before;
+}
+
+/** Un membre de l'équipe est-il hors de combat ? Hou Yi (Chasseur) tombe aussi : `heroKo`. */
+export const isMemberKO = (team, heroKo, classId) => (classId === START_CLASS ? !!heroKo : isAllyKnockedOut(team, classId));
+
+/** Un compagnon vivant au hasard (le moins en forme d'abord : 60 %) : reçoit les coups destinés à Hou Yi quand il est à terre. */
+export function pickAnyAlly(team, rng = Math.random) {
+    const alive = livingAllies(team);
+    if (!alive.length) return null;
+    const weakest = alive.reduce((a, b) => (b.hp / b.maxHp < a.hp / a.maxHp ? b : a));
+    return rng() < 0.6 ? weakest : alive[Math.min(alive.length - 1, Math.floor(rng() * alive.length))];
+}
+
+/** Relève un compagnon hors de combat avec `pct` de ses PV max (0..1). Renvoie les PV rendus. */
+export function reviveAlly(ally, pct = 0.5) {
+    if (!ally || !ally.ko) return 0;
+    ally.ko = false;
+    ally.hp = Math.max(1, Math.round(ally.maxHp * Math.max(0, Math.min(1, pct))));
+    return ally.hp;
 }

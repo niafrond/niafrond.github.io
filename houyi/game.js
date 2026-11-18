@@ -21,7 +21,8 @@ import { POTIONS, normalizePotions, potionHeal, drinkPotion, drinkBlockReason } 
 import { normalizeSkills, skillBonus, actionSpells } from "./skills.js";
 import { normalizeRoster, usableClasses, grantClass, CLASS_SHORT } from "./classRoster.js";
 import { newCharge, newActionQueue, initCharge } from "./classCharge.js";
-import { buildTeam, damageAlly, ALLIES } from "./allies.js";
+import { buildTeam, damageAlly, ALLIES, livingAllies, pickAnyAlly, reviveAlly, healAlly } from "./allies.js";
+import { inflictBuff, ALTERATION_LABELS } from "./alterations.js";
 import { prepareAllyPortraits } from "./alliesView.js";
 import { boostedDamageDealt, resistedDamageTaken, parryQiGain } from "./gearEffects.js";
 
@@ -380,12 +381,17 @@ export function lastSpellDamage(fallback){
 
 export function applyDamage(target, damage, options = {}){
     if(!target) return 0;
-    // Action ennemie qui vise un compagnon : il encaisse à la place de Hou Yi (barre de vie propre ; hors de combat à 0 PV).
-    if(target === player && gameState.allyShield && !gameState.allyShield.ko){
-        const ally = gameState.allyShield;
+    // Action ennemie qui vise un compagnon, ou Hou Yi à terre : un compagnon vivant encaisse à la place (barre de vie propre ; hors de combat à 0 PV).
+    let shield = gameState.allyShield && !gameState.allyShield.ko ? gameState.allyShield : null;
+    if(!shield && target === player && gameState.heroKo) shield = pickAnyAlly(gameState.allies);
+    if(target === player && shield){
+        const ally = shield;
         const result = damageAlly(ally, Math.max(0, Math.floor(damage || 0)));
         log(`${ally.name} encaisse ${result.damage} dégâts (${ally.hp}/${ally.maxHp} PV).`);
-        if(result.ko) log(`${ally.name} est hors de combat !`);
+        if(result.ko){
+            log(`${ally.name} est hors de combat !`);
+            if(gameState.heroKo && !livingAllies(gameState.allies).length && gameState.combatState === 'active') handlePlayerDeath();   // toute l'équipe est à terre
+        }
         updateStats();
         return result.damage;
     }
@@ -557,7 +563,9 @@ export function applyDamage(target, damage, options = {}){
     }
 
     if(gameState.combatState === 'active') {
-        if(player.hp <= 0) {
+        if(player.hp <= 0 && !gameState.heroKo) {
+            handlePlayerDeath();   // première chute : Hou Yi à terre (un compagnon tient) ou défaite
+        } else if(partyWiped()) {
             handlePlayerDeath();
         } else if(enemy.hp <= 0) {
             handleEnemyDefeated();
@@ -929,6 +937,7 @@ export const gameState = {
     actionQueue: newActionQueue(),   // actions (sort, compétence, objet, arme) en attente de chargement ; l'ordre n'est jamais montré
     enemyPending: null,   // (ancien) sort de plateau de l'ennemi en attente
     allies: {},           // compagnons de l'équipe de combat : { classId: entité avec PV } (allies.js), reconstruits à chaque combat
+    heroKo: false,        // Hou Yi est à terre mais un compagnon tient encore : le combat continue (défaite quand toute l'équipe est à terre)
     allyShield: null,     // compagnon visé par l'action ennemie en cours : il reçoit les dégâts à la place de Hou Yi
     boundaryResume: null, // fin de tour à relancer si l'action de plateau en cours ne le fait pas
     boundaryToken: 0,
@@ -1020,6 +1029,7 @@ export function drinkPotionAction(size){
         if(rejectRushedAction()) return false;
         if((player.statusEffects?.sealed || 0) > 0){ log("Vous êtes scellé : impossible d'utiliser un objet."); return false; }
         if(!classCanAct()) return false;   // la classe du tour doit être chargée (barre pleine) pour choisir une action
+        if(gameState.heroKo){ log('Hou Yi est à terre : il ne peut pas boire.'); return false; }
     }
     if(inCombat && decoupled()){
         // Actions indépendantes du plateau : la potion est validée et payée au choix, puis son effet part (tout de suite ou depuis la file).
@@ -1412,7 +1422,7 @@ export function restartCombat({ keepHp = true } = {}){
     gameState.turnClass = null;   // la classe du tour revient à celle du héros
     gameState.charge = newCharge();   // les barres sont initialisées plus bas (initCharge), une fois l'ennemi en place
     gameState.actionQueue = newActionQueue(); gameState.enemyPending = null;
-    gameState.allies = buildTeam(player); gameState.allyShield = null;   // équipe de combat en pleine forme
+    gameState.allies = buildTeam(player); gameState.allyShield = null; gameState.heroKo = false;   // équipe de combat en pleine forme
     prepareAllyPortraits();               // dessins des compagnons puis barres de vie
     gameState.playedClasses = new Set();   // classes jouées ce combat (PA de classe)
     gameState.forcedClass = enemy?.training || null;   // entraînement : une seule classe, imposée par le maître
@@ -1462,6 +1472,44 @@ export function restartCombat({ keepHp = true } = {}){
 }
 
 // Gérer la mort du joueur
+/** Toute l'équipe est à terre : Hou Yi à 0 PV et plus aucun compagnon debout (la défaite). Tant qu'un compagnon tient, le combat continue. */
+export function partyWiped(){
+    return (player.hp || 0) <= 0 && !livingAllies(gameState.allies).length;
+}
+
+/** Soin, ranimation ou bonus d'un objet sur un membre de l'équipe (`classId` : le Chasseur est Hou Yi). Renvoie { ok, message }. */
+export function applyAllyItemEffect(effect, classId){
+    const isHero = classId === 'assassin';
+    const ally = isHero ? null : gameState.allies?.[classId];
+    if(!isHero && !ally) return { ok: false, message: 'Choisissez un équipier.' };
+    const name = isHero ? 'Hou Yi' : ally.name;
+    const down = isHero ? gameState.heroKo : ally.ko;
+    if(effect.revive){
+        if(!down) return { ok: false, message: `${name} est encore debout.` };
+        if(isHero){ gameState.heroKo = false; player.hp = Math.max(1, Math.round(player.maxHp * effect.revive.pct)); log(`${name} se relève avec ${player.hp} PV !`); }
+        else { reviveAlly(ally, effect.revive.pct); log(`${name} se relève avec ${ally.hp} PV !`); }
+        updateStats();
+        return { ok: true, message: `${name} est ranimé. ` };
+    }
+    if(down) return { ok: false, message: `${name} est hors de combat : il faut d'abord le ranimer.` };
+    let message = '';
+    if(effect.allyHeal){
+        const target = isHero ? player : ally;
+        const amount = Math.round(target.maxHp * effect.allyHeal.pct);
+        if(target.hp >= target.maxHp) return { ok: false, message: `${name} est en pleine forme.` };
+        const healed = isHero ? healEntity(player, amount).healed : healAlly(ally, amount);
+        log(`${name} récupère ${healed} PV.`);
+        message += `${name} récupère ${healed} PV. `;
+    }
+    if(effect.allyBuff){
+        const { key, turns } = effect.allyBuff;
+        const target = isHero ? player : ally;
+        if(inflictBuff(target, key, turns)){ log(`${name} : ${ALTERATION_LABELS[key].name} pendant ${turns} tours.`); message += `${name} : ${ALTERATION_LABELS[key].name} pendant ${turns} tours. `; }
+    }
+    updateStats();
+    return { ok: true, message };
+}
+
 export function handlePlayerDeath(){
     if(gameState.combatState === 'finished') {
         return;
@@ -1476,6 +1524,18 @@ export function handlePlayerDeath(){
         log(`Vous êtes ressuscité avec ${reviveHp} HP !`);
         updateStats();
         saveUpdate();
+        return;
+    }
+
+    // Des compagnons tiennent encore debout : Hou Yi est à terre, mais le combat continue.
+    if(livingAllies(gameState.allies).length){
+        if(!gameState.heroKo){
+            gameState.heroKo = true;
+            player.hp = 0;
+            log('Hou Yi est à terre ! Ses compagnons continuent le combat.');
+            if(gameState.turnClass === 'assassin') gameState.turnClass = null;
+            updateStats();
+        }
         return;
     }
     saveCombatRecord(finishCombatRecord('defeat'));   // mesure d'équilibrage : les défaites comptent autant que les victoires
@@ -1787,7 +1847,7 @@ export function endAction(){
     saveUpdate();
     if(gameState.combatState !== 'active') return;
     if(enemy.hp <= 0){ handleEnemyDefeated(); return; }
-    if(player.hp <= 0) handlePlayerDeath();
+    if(partyWiped()) handlePlayerDeath();
 }
 
 // Dès que le joueur ne joue plus (tour adverse, écran de début de combat), TOUS ses boutons sont désactivés :
@@ -1822,6 +1882,7 @@ export function useWeapon(hand = 'right'){
     if(rejectRushedAction()) return;
     if(tutorialCallbacks.allowWeapon && !tutorialCallbacks.allowWeapon()) return;   // tutoriel : l'arme n'est acceptée qu'à l'étape prévue
     if(!classCanAct()) return;   // la classe du tour doit être chargée (barre pleine) pour choisir une action
+    if(gameState.heroKo){ log('Hou Yi est à terre : il ne peut plus manier son arme.'); return; }
     const weapon = hand === 'left' ? getLeftHandWeapon() : player.equippedWeapon;
     if(!weapon){ log("Aucune arme équipée !"); return; }
     if((player.statusEffects?.sealed || 0) > 0){ log("Vous êtes scellé : impossible d'utiliser une arme."); return; }
@@ -1829,7 +1890,7 @@ export function useWeapon(hand = 'right'){
         log(`Il faut ${weapon.actionPoints} points d'action pour utiliser ${weapon.name}.`); 
         return; 
     }
-    if(player.hp<=0){ handlePlayerDeath(); return; }
+    if(partyWiped()){ handlePlayerDeath(); return; }
     if(player.level < weapon.minLevel){ 
         log(`Nécessite niveau ${weapon.minLevel} pour utiliser ${weapon.name}`); 
         return; 

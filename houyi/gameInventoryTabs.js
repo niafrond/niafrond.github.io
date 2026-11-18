@@ -5,7 +5,7 @@ import { chooseAction, classCanAct, decoupled } from "./gameSpellList.js";
 import { actionGuard } from "./actionGuard.js";
 import { compareAttrs, deltaBadgesHtml, equipDeltaGroupsHtml } from "./compareView.js";
 import { isSingleUse, reuseLabel } from "./itemReuse.js";
-import { getItemIcon, getRarityColor, useItem, describeRecharge, shiftActiveItemIndexes } from "./items.js";
+import { getItemIcon, getRarityColor, useItem, isTeamItem, teamItemKind, describeRecharge, shiftActiveItemIndexes } from "./items.js";
 import { afflictionsOf } from "./alterations.js";
 import { playSfx } from "./sound.js";
 import { icon as svgIcon } from "./icons.js";
@@ -15,7 +15,7 @@ import { displayAttack, rawDefense, statModifier } from "./combatStats.js";
 import { showCombatAnimation } from "./gameStatsTab.js";
 import { bindTooltip, bindCardTips, showWeaponTooltip, showItemTooltip, hideSpellTooltip } from "./gameTooltips.js";
 import { escapeHtml, rowCardHtml, emptyRowHtml, badgeHtml, cardTipHtml, shortText, WEAPON_SORTS, sortChoice, bindSortSelect, sortedEntries } from "./gameCardUi.js";
-import { getWeaponIcon, player, currentTurn, gameState, enemy, normalizeActiveInventoryIndex, getActiveInventoryItem, getSecondActiveInventoryItem, log, logActiveAction, saveUpdate, rejectRushedAction, useWeapon, finishPlayerTurn, endAction } from "./game.js";
+import { getWeaponIcon, player, currentTurn, gameState, enemy, normalizeActiveInventoryIndex, getActiveInventoryItem, getSecondActiveInventoryItem, log, logActiveAction, saveUpdate, rejectRushedAction, useWeapon, finishPlayerTurn, endAction, applyAllyItemEffect } from "./game.js";
 
 // -------------------------------------
 // Armes
@@ -555,6 +555,16 @@ function isUselessHeal(item){
 }
 
 /** Un objet de l'inventaire est-il utilisable maintenant en combat ? { ok, reason } (menu « Objet »). */
+/** Membres de l'équipe qu'un objet d'équipe peut viser : [{ classId, name, hp, maxHp, ko }] (Hou Yi d'abord). */
+export function eligibleTargets(item){
+    const kind = teamItemKind(item);
+    if(!kind) return [];
+    const members = [{ classId: 'assassin', name: 'Hou Yi', hp: player.hp, maxHp: player.maxHp, ko: !!gameState.heroKo },
+        ...Object.values(gameState.allies || {}).map(a => ({ classId: a.classId, name: a.short, hp: a.hp, maxHp: a.maxHp, ko: !!a.ko }))];
+    if(kind === 'revive') return members.filter(m => m.ko);
+    return members.filter(m => !m.ko && (kind === 'buff' || m.hp < m.maxHp));
+}
+
 export function itemUsability(item){
     const pa = item.actionPoints || 2;
     if(gameState.combatState !== 'active' || (!decoupled() && currentTurn !== 'player')) return { ok: false, reason: "Ce n'est pas votre tour." };
@@ -562,12 +572,13 @@ export function itemUsability(item){
     if((player.statusEffects?.sealed || 0) > 0) return { ok: false, reason: 'Scellé' };
     if(item.type === 'reusable' && !isSingleUse(item) && (item.chargesLeft ?? item.chargesPerCycle) <= 0) return { ok: false, reason: describeRecharge(item) };
     if(!classCanAct()) return { ok: false, reason: 'En chargement' };
+    if(isTeamItem(item) && !eligibleTargets(item).length) return { ok: false, reason: teamItemKind(item) === 'revive' ? 'Personne à ranimer' : 'Aucun équipier à aider' };
     if(isUselessHeal(item)) return { ok: false, reason: 'Sans effet maintenant' };
     if(player.combatPoints < pa) return { ok: false, reason: `${pa} PA requis` };
     return { ok: true, reason: '' };
 }
 
-export function useInventoryItem(itemId, index){
+export function useInventoryItem(itemId, index, targetClass = null){
     if(gameState.combatState !== 'active'){ log("Aucun combat en cours."); return; }
     if(!decoupled() && currentTurn !== 'player'){ log("Ce n'est pas votre tour."); return; }
     if(rejectRushedAction()) return;
@@ -583,6 +594,7 @@ export function useInventoryItem(itemId, index){
 
     const item = player.inventory[resolvedIndex];
     if(item.id !== itemId){
+    if(gameState.heroKo && !isTeamItem(item)){ log("Hou Yi est à terre : seuls les objets d'équipe (ranimer, soigner un équipier) servent."); return; }
         log("L'objet actif a changé, réessayez.");
         return;
     }
@@ -600,7 +612,7 @@ export function useInventoryItem(itemId, index){
     // Effet : tout de suite ou en sortant de la file (la classe est consommée dès le choix) ; si l'objet n'est plus utilisable à ce moment, les PA sont rendus.
     const effect = () => {
         const at = player.inventory[resolvedIndex]?.id === itemId ? resolvedIndex : player.inventory.findIndex(i => i.id === itemId);
-        const result = at === -1 ? { success: false, message: 'Objet introuvable' } : useItem(itemId, player, enemy, at);
+        const result = at === -1 ? { success: false, message: 'Objet introuvable' } : useItem(itemId, player, enemy, at, { allyEffect: eff => applyAllyItemEffect(eff, targetClass) });
         if(result.success){
             if(item.effect?.cure) playSfx('cure');
             logActiveAction(`utilise l'objet ${item.name} (cout ${pa} PA)`);

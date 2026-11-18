@@ -316,6 +316,7 @@ export function updateStats(){
     }
     
     renderAllyBar();   // barres de vie des compagnons
+    document.getElementById('player-stats')?.classList.toggle('hero-ko', !!gameState.heroKo);   // Hou Yi à terre
     updateEnemySpells();
 }
 
