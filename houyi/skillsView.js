@@ -25,8 +25,7 @@ function onClick(ev) {
         return;
     }
     const toggle = ev.target.closest('[data-toggle-skill]');
-    if (toggle) {
-        if (gameState.combatState === 'active') return;
+    if (toggle) {   // les compétences de soutien s'allument et s'éteignent à tout moment, dans la limite des Fulu
         const res = toggleSupport(player, toggle.dataset.toggleSkill);
         log(res.message);
         if (res.ok) saveUpdate();

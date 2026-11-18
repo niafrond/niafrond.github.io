@@ -1,7 +1,7 @@
 // Onglet « Compétences » : balisage (module pur, sans DOM ni accès au jeu : testable et prévisualisable hors du jeu).
 // Présentation inspirée des menus de capacités des jeux de rôle japonais : en-tête du héros avec son compteur de Fulu, grille à deux colonnes
 // (gemme pleine = activée, gemme creuse = apprise mais éteinte, gemme grise = pas encore apprise), coût en Fulu à droite, fiche d'information.
-import { visibleSkills, markSeen, getSkill, isSupport, skillsTaughtBy, normalizeSkills, isLearned, progressOf, magikolithCapacity, usedMagikoliths } from './skills.js';
+import { visibleSkills, markSeen, getSkill, isSupport, skillsTaughtBy, normalizeSkills, isLearned, progressOf, magikolithCapacity, usedMagikoliths, isBaseSkill, victoriesLeft } from './skills.js';
 import { TRANSE_TURNS, TRANSE_EFFECTS } from './transe.js';
 import { CLASS_IDS, CLASS_SHORT, MAX_USABLE_CLASSES, START_CLASS, BIOME_CLASS_LIMITS, normalizeRoster } from './classRoster.js';
 import { ALLIES, memberName, allyMaxHp } from './allies.js';
@@ -11,7 +11,6 @@ import { allyWeaponBonus } from './weapons.js';
 const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
 const GEM = '<svg class="gem-ic" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1 L14 5 L14 11 L8 15 L2 11 L2 5Z"/><path class="gem-facet" d="M2 5 L8 8 L14 5 M8 8 L8 15"/></svg>';
-const BOLT = '<svg class="gem-ic" viewBox="0 0 16 16" aria-hidden="true"><path d="M9 1 L3 9 H7.5 L6.5 15 L13 6.5 H8.5Z"/></svg>';
 
 /** État d'une compétence : active | learned | training (enseignée par l'équipement porté) | locked. */
 export function skillState(hero, skill, taughtNow) {
@@ -20,7 +19,7 @@ export function skillState(hero, skill, taughtNow) {
     return taughtNow.has(skill.id) ? 'training' : 'locked';
 }
 
-const STATE_LABEL = { active: 'Activée', learned: 'Apprise', training: 'En apprentissage', locked: 'Pas encore enseignée' };
+const STATE_LABEL = { active: 'Allumée', learned: 'Apprise (éteinte)', training: 'En apprentissage', locked: 'À débloquer' };
 
 /** Qui enseigne quoi : Map id de compétence → noms des objets portés qui l'enseignent. */
 export function taughtMap(gear, hero = null) {
@@ -34,11 +33,11 @@ const gems = (used, cap) => Array.from({ length: cap }, (_, i) => `<i class="ful
 
 function row(hero, skill, taught, selectedId) {
     const st = skillState(hero, skill, taught);
-    const cost = isSupport(skill) ? skill.cost : '·';
+    const cost = isSupport(skill) ? skill.cost : '';
     return `<button type="button" class="ab-row ab-${st}${skill.id === selectedId ? ' selected' : ''}" data-skill="${skill.id}" aria-pressed="${skill.id === selectedId}">
-        <span class="ab-gem">${isSupport(skill) ? GEM : BOLT}</span>
+        <span class="ab-gem">${GEM}</span>
         <span class="ab-name">${esc(skill.name)}${skill.classId ? ` <small class="ab-class">${esc(CLASS_SHORT[skill.classId])}</small>` : ''}</span>
-        <span class="ab-cost" title="${isSupport(skill) ? 'Coût en Fulu' : 'Commande de combat'}">${cost}</span>
+        <span class="ab-cost" title="Coût en Fulu">${cost}</span>
     </button>`;
 }
 
@@ -47,19 +46,31 @@ function infoPanel(hero, skill, taught, canToggle) {
     const st = skillState(hero, skill, taught);
     const have = progressOf(hero, skill.id);
     const pct = st === 'active' || st === 'learned' ? 100 : Math.round(have / skill.ap * 100);
-    const stars = Math.min(3, Math.floor(pct / 33.4));
-    const star = n => `<span class="ab-star${n < stars || pct >= 100 ? ' on' : ''}">★</span>`;
     const who = taught.get(skill.id);
-    const action = isSupport(skill) && (st === 'active' || st === 'learned')
+    const support = isSupport(skill);
+    const cls = skill.classId ? CLASS_SHORT[skill.classId] : null;
+    const left = magikolithCapacity(hero) - usedMagikoliths(hero);
+    // D'où vient-elle ? / Où en est-on ? : la réponse change selon l'état.
+    let origin;
+    if (isBaseSkill(skill.id)) origin = `Compétence de base de ${esc(cls)} : apprise dès le départ.`;
+    else if (st === 'active' || st === 'learned') origin = `Apprise pour toujours${who ? ` (enseignée aussi par ${esc(who.join(', '))})` : ''}.`;
+    else if (st === 'training') origin = `En cours d'apprentissage grâce à ${esc(who.join(', '))} : <b>${Math.min(have, skill.ap)} / ${skill.ap} PA</b>, encore environ ${victoriesLeft(hero, skill.id)} victoire${victoriesLeft(hero, skill.id) > 1 ? 's' : ''}${cls ? ` (${esc(cls)} doit jouer pendant le combat)` : ''}.`;
+    else origin = `Pas apprise. Portez une arme ou une pièce de stuff qui l'enseigne, puis gagnez des combats : chaque victoire donne des PA (${have} / ${skill.ap}).`;
+    // Comment l'utiliser ?
+    let usage;
+    if (!support) usage = st === 'learned' ? `Pas d'activation : elle apparaît dans la liste de sorts${cls ? ` de ${esc(cls)}` : ''} en combat.` : `Une fois apprise, elle apparaît comme un sort en combat${cls ? ` (avec ${esc(cls)})` : ''}.`;
+    else if (st === 'active') usage = `Allumée : son effet agit${cls ? ` quand ${esc(cls)} joue` : ''}. Éteignez-la pour récupérer ${skill.cost} Fulu.`;
+    else if (st === 'learned') usage = skill.cost > left ? `Il manque ${skill.cost - left} Fulu pour l'allumer (il en reste ${left}) : éteignez une autre compétence.` : `Touchez « Allumer » : elle coûte ${skill.cost} Fulu (il en reste ${left}).`;
+    else usage = `Une fois apprise, vous pourrez l'allumer (${skill.cost} Fulu), à tout moment.`;
+    const action = support && (st === 'active' || st === 'learned')
         ? `<button type="button" class="ab-toggle" data-toggle-skill="${skill.id}"${canToggle ? '' : ' disabled'}>${st === 'active' ? 'Éteindre' : 'Allumer'}</button>` : '';
     return `<div class="ab-info">
         <div class="ab-info-head"><strong>${esc(skill.name)}</strong><span class="ab-state ab-state-${st}">${STATE_LABEL[st]}</span></div>
         <p class="ab-desc">${esc(skill.description)}</p>
-        ${skill.classId ? `<div class="ab-line"><span>Classe</span><span>${esc(CLASS_SHORT[skill.classId])} (effet seulement quand elle joue)</span></div>` : ''}
-        <div class="ab-line"><span>${isSupport(skill) ? 'Soutien' : 'Action'}</span><span>${isSupport(skill) ? `${skill.cost} Fulu` : 'commande de combat'}</span></div>
-        <div class="ab-line"><span>PA</span><span class="ab-stars" aria-label="${pct} %">${star(0)}${star(1)}${star(2)} <em>${st === 'locked' ? skill.ap : `${Math.min(have, skill.ap)} / ${skill.ap}`}</em></span></div>
-        <div class="ab-bar"><div class="ab-bar-fill" style="width:${pct}%"></div></div>
-        <div class="ab-line"><span>Équip.</span><span>${who ? esc(who.join(', ')) : 'aucun objet porté ne l\'enseigne'}</span></div>
+        <div class="ab-line"><span>Type</span><span>${support ? `Soutien · ${skill.cost} Fulu` : 'Action · commande de combat'}${cls ? ` · ${esc(cls)}` : ''}</span></div>
+        <div class="ab-line ab-origin"><span>Origine</span><span>${origin}</span></div>
+        ${st === 'training' || st === 'locked' ? `<div class="ab-bar"><div class="ab-bar-fill" style="width:${pct}%"></div></div>` : ''}
+        <div class="ab-line ab-usage"><span>Utiliser</span><span>${usage}</span></div>
         ${action}
     </div>`;
 }
@@ -119,10 +130,10 @@ export function skillsTabHtml(hero, gear, selectedId, canToggle = true) {
         <div class="fulu-meter" aria-hidden="true">${gems(used, cap)}</div>
         ${classesHtml(hero, canToggle)}
         <div class="ab-body">
-            <div class="ab-grid" role="list">${list.map(s => row(hero, s, taught, selected.id)).join('')}</div>
-            ${infoPanel(hero, selected, taught, canToggle)}
+            <div class="ab-groups">${[['Soutien', list.filter(isSupport)], ['Actions', list.filter(s => !isSupport(s))]].filter(([, items]) => items.length).map(([title, items]) => `<h3 class="ab-group">${title}</h3><div class="ab-grid" role="list">${items.map(s => row(hero, s, taught, selected.id)).join('')}</div>`).join('')}</div>
+            ${infoPanel(hero, selected, taught, true)}
         </div>
-        <p class="ab-legend"><span class="lg lg-active">${GEM}</span> activée <span class="lg lg-learned">${GEM}</span> apprise <span class="lg lg-training">${GEM}</span> en apprentissage <span class="lg lg-locked">${GEM}</span> à débloquer · ${learnedCount} apprise${learnedCount > 1 ? 's' : ''}</p>
+        <p class="ab-legend"><span class="lg lg-active">${GEM}</span> allumée (bonus actif) <span class="lg lg-learned">${GEM}</span> apprise, éteinte <span class="lg lg-training">${GEM}</span> en apprentissage <span class="lg lg-locked">${GEM}</span> à débloquer · ${learnedCount} apprise${learnedCount > 1 ? 's' : ''}</p>
         <details class="ab-xiu"><summary>Xiūxiān</summary>
             <p>Chaque classe a sa jauge, qui se remplit quand vous subissez des dégâts avec cette classe et se conserve d'un combat à l'autre. Pleine, touchez-la pour déclencher la Xiūxiān de cette classe (${TRANSE_TURNS} tours) : son effet s'applique, même si vous changez de classe ensuite.</p>
             <ul>${transe}</ul>${ownedClasses.includes('sorcerer') ? '<p>L\'ultime ne se lance que pendant la Xiūxiān du Mage, avec le Mage choisi pour le tour.</p>' : ''}</details>

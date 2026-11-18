@@ -1162,3 +1162,35 @@ body.show-xiu-text #xiu-banner { display: block; }
 @media (prefers-reduced-motion: reduce) { .xiu-btn.mana-reached .ult-mana-bar { animation: none; } }
 
 .spell-tag { font-size: .8em; font-weight: bold; color: #f2c14e; text-transform: uppercase; letter-spacing: .05em; }
+
+/* Barre d'action : un bouton par personnage, avec ses PV et sa Xiūxiān (plus de barre des compagnons en haut). Seul le personnage choisi montre ses boutons. */
+.ally-bar { display: none !important; }
+.class-picker .class-pick { height: 34px; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; padding: 2px 6px 0; line-height: 1.15; }
+.class-pick .cp-name { position: relative; z-index: 1; max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
+.class-pick .cp-bars { position: absolute; z-index: 1; left: 4px; right: 4px; bottom: 2px; display: grid; gap: 1px; }
+.class-pick .cp-bars i { display: block; height: 4px; border-radius: 2px; background: rgba(255, 255, 255, .22); overflow: hidden; }
+.class-pick .cp-bars b { display: block; height: 100%; transition: width .3s; }
+.class-pick .cp-hp b { background: #3fae6a; }
+.class-pick .cp-xiu b { background: #e0556f; }
+.class-pick .cp-xiu.full b { background: #ffd56a; }
+.class-pick .cp-xiu.on b { background: #b58cff; }
+
+/* Écran de combat simplifié : en haut l'ennemi seul ; sous le plateau le qì accumulé (#player-stats), puis la barre d'action avec une zone par personnage. */
+@media (orientation: portrait) {
+    .stats-container:not([style*="none"]) { grid-template-columns: minmax(0, 1fr); }
+    .stats-container > #enemy-stats { grid-column: 1; }
+}
+#player-stats.qi-strip { display: flex !important; flex-wrap: wrap; align-items: center; justify-content: center; gap: 4px 8px; padding: 4px 6px; margin: 4px 0; }
+#player-stats.qi-strip::after { display: none !important; }
+#player-stats.qi-strip .stat { margin: 0 !important; }
+#player-stats.qi-strip .row-pills, #player-stats.qi-strip .mana-dots { display: flex; align-items: center; gap: 6px; }
+
+/* Altérations d'un personnage : pastilles dans son propre bouton de la barre d'action (en haut à droite). */
+.class-pick .cp-status { position: absolute; z-index: 2; top: 1px; right: 2px; display: flex; gap: 1px; margin: 0; }
+.class-pick .cp-status .status-badge { padding: 0 2px; min-height: 0; font-size: .6rem; line-height: 1; border-radius: 3px; }
+.class-pick .cp-status .status-badge svg { width: 10px; height: 10px; }
+
+/* Barre de PV lisible dans le bouton de chaque personnage (Hou Yi comme les compagnons). */
+.class-picker .class-pick { height: 42px; }
+.class-pick .cp-bars i.cp-hp { position: relative; height: 12px; }
+.class-pick .cp-hp em { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font: 700 .58rem/1 Inter, system-ui, sans-serif; font-style: normal; color: #fff; text-shadow: 0 0 2px #000; }

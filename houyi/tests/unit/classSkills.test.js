@@ -28,7 +28,7 @@ describe('compétences de classe', () => {
         const h = hero({ classes: { owned: ['assassin', 'barbarian'], loadout: ['assassin', 'barbarian'] } });
         awardAp(h, [{ id: 'arc_de_bronze', rarity: 'common' }], 500, ['assassin']);
         expect(h.skills.learned.some(id => id.startsWith('cl_assassin'))).toBe(true);
-        expect(h.skills.learned.some(id => id.startsWith('cl_barbarian'))).toBe(false);
+        expect(h.skills.learned.filter(id => id.startsWith('cl_barbarian'))).toEqual(['cl_barbarian_loup']);   // seulement sa compétence de base
     });
     test('un soutien de classe ne joue que pour sa classe', () => {
         const h = hero({ skills: { learned: ['cl_assassin_oeil'], active: ['cl_assassin_oeil'], progress: {} } });

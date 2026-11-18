@@ -2,7 +2,7 @@
 import { healEntity, inflictTurnLoss } from './alterations.js';
 import { escapeHtml } from "./escapeHtml.js";
 import { flyManaGain, flyHeal } from './manaFlight.js';
-import { player, enemy, currentTurn, gameState, log, saveUpdate, showCombatAnimation, applyDamage, lastSpellDamage, addBonusTurn } from './game.js';
+import { player, enemy, currentTurn, gameState, log, saveUpdate, showCombatAnimation, applyDamage, lastSpellDamage, addBonusTurn, grantActionBonus } from './game.js';
 import { board, renderBoard, setBoardTargetingMode, checkMatches, flashTiles } from './board.js';
 import { colors, boardSize } from './constants.js';
 import { stackStatusEffect, addStatBuff, resolveStrike } from './combatStats.js';
@@ -204,9 +204,9 @@ export function applySecondWind(spell) {
     healEntity(player, heal);   // Corrompu : le soin blesse
     flyHeal(true, heal);
     ['poisoned', 'poisonDamage', 'stunned', 'weakened', 'weakenedAmount', 'confused', 'sealed', 'muted', 'cursed', 'cursePct', 'petrified', 'asleep', 'exhausted', 'exhaustDrain', 'corrupted'].forEach(k => { delete player.statusEffects[k]; });
-    addBonusTurn(player);
-    showCombatAnimation({ icon: 'leaf', title: spell.name.toUpperCase(), heal: `+${heal} PV • statuts purgés`, target: '→ Vous • rejouez !' }, true);
-    log(`${spell.name} soigne ${heal} PV, retire les statuts négatifs et vous laisse rejouer.`);
+    const refilled = grantActionBonus(player, spell);   // la barre d'action se remplit aussitôt
+    showCombatAnimation({ icon: 'leaf', title: spell.name.toUpperCase(), heal: `+${heal} PV • statuts purgés`, target: refilled ? '→ Vous • barre remplie !' : '→ Vous • rejouez !' }, true);
+    log(refilled ? `${spell.name} soigne ${heal} PV, retire les statuts négatifs et remplit aussitôt votre barre d'action.` : `${spell.name} soigne ${heal} PV, retire les statuts négatifs et vous laisse rejouer.`);
     return true;
 }
 

@@ -473,3 +473,11 @@ body.casual-mode .tab-btn[onclick*="'spells'"] { display: none; }
 .target-hp-fill { display: block; height: 100%; background: #4cc26b; }
 .target-hp-fill.low { background: #d9534f; }
 .target-cancel { font: inherit; padding: 6px; border-radius: 6px; border: 1px solid #8b9097; background: transparent; color: inherit; cursor: pointer; }
+
+.ab-how { margin: 6px 0 8px; padding: 8px 10px; background: rgba(0, 0, 0, .25); border: 1px solid var(--ab-edge, #8b9097); border-radius: 8px; font-size: .88em; line-height: 1.35; }
+.ab-how summary { cursor: pointer; font-weight: bold; }
+.ab-how ol { margin: 6px 0 0 1.2em; padding: 0; }
+.ab-how li { margin: 3px 0; }
+.ab-origin span:last-child, .ab-usage span:last-child { text-align: right; }
+
+.ab-group { margin: 8px 0 4px; font-size: .8rem; letter-spacing: .06em; text-transform: uppercase; opacity: .75; }
