@@ -36,7 +36,6 @@ export default {
             '~~~~~~~~~~~~~~.v.~~~~~~~~~~~~~~~'
         ],
         npcs: [
-            { id: 'trainer_alchemist', x: 20, y: 11 },
             { id: 'merchant_tonnerre', x: 17, y: 11 },
             { id: 'kids_leimei', x: 13, y: 16 },
             { id: 'hua_tonnerre', x: 22, y: 12 },
@@ -194,7 +193,6 @@ export default {
             { id: 'tonnerre_wild_rope_box', x: 42, y: 13, gold: 75 }
         ],
         enemies: [
-            { id: 'train_alchemist', x: 13, y: 13, templateId: 'wen_shen', name: "Docteur-démon d'essai", kind: 'sentinel', offset: -1, permanent: true, training: 'alchemist' },
             { id: 'tonnerre_stone_lion', x: 38, y: 10, templateId: 'dafeng', spriteKey: 'dafeng', name: 'Dafeng, le Grand Vent', kind: 'sentinel', offset: 1, permanent: true, boss: { name: 'Dafeng, le Grand Vent', level: 22 } },
             { id: 'tonnerre_crest_general', x: 21, y: 5, templateId: 'lei_gong', name: 'Général de la crête', kind: 'sentinel', offset: 0, permanent: true },
             { id: 'tonnerre_w_wyrm', x: 14, y: 19, templateId: 'yinglong', name: 'Serpent d\'éclairs', kind: 'patrol', patrol: [[14, 19], [21, 19]], offset: 0 },

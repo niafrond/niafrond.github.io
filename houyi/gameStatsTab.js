@@ -17,7 +17,7 @@ import { resetAttributePoints, showAttributeMenu } from './gameLevelUp.js';
 import { COMPANION_NAMES, classIcon, companionMenuHooks, enemy, gameState, getPrimaryAttributeEffect, player } from './game.js';
 
 // mise à jour de l'onglet stats détaillées
-// Section « Compagnon » de l'onglet Stats : un seul compagnon actif à la fois, choisi parmi les recrutés (hors combat).
+// Section « Esprit gardien » (ex-compagnon) de l'onglet Stats : un seul esprit gardien actif à la fois, choisi parmi les recrutés (hors combat).
 function companionSectionHtml(){
     const choices = companionMenuHooks.getChoices?.();
     if(!choices || !choices.companions.length) return '';
@@ -27,7 +27,7 @@ function companionSectionHtml(){
         const on = choices.activeId === c.id;
         return `<div class="stat-line"><button type="button" data-companion="${c.id}" class="${on ? 'active' : 'secondary'}" aria-pressed="${on}"${locked}>${c.name}${on ? ' (actif)' : ''}</button><span class="stat-effect">${c.title}${power ? ` · ${power.name} : ${power.text}` : ''}</span></div>`;
     }).join('');
-    return `<div class="stats-section"><h3>Compagnon actif</h3>${buttons}<div class="stat-line"><span class="stat-effect">Un seul compagnon à la fois ; le changer se fait hors combat.</span></div></div>`;
+    return `<div class="stats-section"><h3>Esprit gardien actif</h3>${buttons}<div class="stat-line"><span class="stat-effect">Un seul esprit gardien à la fois ; le changer se fait hors combat.</span></div></div>`;
 }
 
 // Section « Style de Hou Yi » de l'onglet Stats : cartes au style du jeu (comme le choix de classe), modifiables hors combat.

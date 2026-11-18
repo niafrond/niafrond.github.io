@@ -1,8 +1,10 @@
-// Classes de Hou Yi : il en obtient de nouvelles au fil de l'histoire (maîtres rencontrés dans les villages, qui imposent un entraînement),
-// mais n'en garde que MAX_USABLE_CLASSES utilisables en combat. Certains biomes en brident (voir BIOME_CLASS_LIMITS) pour pousser le joueur à
-// mêler les classes. Module pur (sans DOM).
+// Équipe de Hou Yi. Hou Yi est le Chasseur (`assassin`) ; chaque autre classe est portée par un COMPAGNON (allies.js) que le héros recrute au fil de
+// l'histoire (maîtres de classe rencontrés dans les villages : leur entraînement les convainc de le suivre). L'équipe de combat compte Hou Yi et
+// 3 compagnons au plus (MAX_USABLE_CLASSES = 4). Certains biomes brident des classes (voir BIOME_CLASS_LIMITS) pour pousser le joueur à mêler les
+// compagnons. Module pur (sans DOM).
 //
-// État du héros : `hero.classes = { owned: [id], loadout: [id] }` (loadout ⊂ owned, 1 à 4 classes).
+// État du héros : `hero.classes = { owned: [id], loadout: [id] }` : `owned` = Hou Yi + compagnons recrutés, `loadout` = l'équipe de combat
+// (loadout ⊂ owned, toujours avec Hou Yi, 1 à 4 membres). Le nom `classes` est historique : un membre = une classe = un compagnon.
 
 export const MAX_USABLE_CLASSES = 4;
 export const CLASS_IDS = ['assassin', 'barbarian', 'templar', 'sorcerer', 'monk', 'alchemist', 'shaman'];
@@ -33,13 +35,14 @@ export function normalizeRoster(hero) {
     if (!owned.length) owned.push(START_CLASS);
     let loadout = [...new Set(Array.isArray(raw.loadout) ? raw.loadout : [])].filter(id => owned.includes(id)).slice(0, MAX_USABLE_CLASSES);
     if (!loadout.length) loadout = owned.slice(0, MAX_USABLE_CLASSES);
+    if (!loadout.includes(START_CLASS)) loadout = [START_CLASS, ...loadout].slice(0, MAX_USABLE_CLASSES);   // Hou Yi est toujours de l'équipe
     hero.classes = { owned, loadout };
     return hero.classes;
 }
 
 export const ownsClass = (hero, id) => normalizeRoster(hero).owned.includes(id);
 
-/** Reçoit une nouvelle classe ; elle rejoint les classes de combat s'il reste de la place. Renvoie { ok, added, inLoadout }. */
+/** Recrute un compagnon (sa classe) ; il rejoint l'équipe de combat s'il reste de la place. Renvoie { ok, added, inLoadout }. */
 export function grantClass(hero, id) {
     if (!known(id)) return { ok: false, added: false, inLoadout: false };
     const roster = normalizeRoster(hero);
@@ -50,18 +53,18 @@ export function grantClass(hero, id) {
     return { ok: true, added: true, inLoadout };
 }
 
-/** Ajoute ou retire une classe possédée des classes de combat (hors combat). Renvoie { ok, message }. */
+/** Ajoute ou retire un compagnon recruté de l'équipe de combat (hors combat). Renvoie { ok, message }. */
 export function toggleLoadout(hero, id) {
     const roster = normalizeRoster(hero);
-    if (!roster.owned.includes(id)) return { ok: false, message: 'Vous ne connaissez pas encore cette classe.' };
+    if (!roster.owned.includes(id)) return { ok: false, message: "Ce compagnon ne vous a pas encore rejoint." };
     if (roster.loadout.includes(id)) {
-        if (roster.loadout.length <= 1) return { ok: false, message: 'Il faut garder au moins une classe de combat.' };
+        if (id === START_CLASS) return { ok: false, message: 'Hou Yi est toujours de l\'équipe.' };
         roster.loadout = roster.loadout.filter(c => c !== id);
-        return { ok: true, inLoadout: false, message: `${CLASS_SHORT[id]} quitte vos classes de combat.` };
+        return { ok: true, inLoadout: false, message: `${CLASS_SHORT[id]} quitte l'équipe de combat.` };
     }
-    if (roster.loadout.length >= MAX_USABLE_CLASSES) return { ok: false, message: `Quatre classes au plus : retirez-en une d'abord.` };
+    if (roster.loadout.length >= MAX_USABLE_CLASSES) return { ok: false, message: `Hou Yi et trois compagnons au plus : retirez-en un d'abord.` };
     roster.loadout.push(id);
-    return { ok: true, inLoadout: true, message: `${CLASS_SHORT[id]} rejoint vos classes de combat.` };
+    return { ok: true, inLoadout: true, message: `${CLASS_SHORT[id]} rejoint l'équipe de combat.` };
 }
 
 /**

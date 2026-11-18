@@ -174,6 +174,20 @@ export const allItems = [
      description:"Commence chaque combat avec +1 point d'action", effect:{permStartActionPoints:1}},
     {id:"heaven_seal", name:"Sceau du Ciel", type:"artifact", minLevel:65, rarity:"legendary",
      description:"Augmente HP max de 300, le qì max de 5 et les chances de critique de 1% (permanent)", effect:{permMaxHp:300, permMaxMana:5, permCritChance:1}},
+    // === OBJETS POUR L'ÉQUIPE (compagnons) : ranimer, soigner ou donner un bonus à un équipier (Hou Yi compris), au choix de la cible ===
+    {id:"crane_feather", name:"Plume de Grue Immortelle", type:"reusable", minLevel:6, rarity:"uncommon", actionPoints:1, chargesPerCycle:1, rechargeTurns:6,
+     description:"Soigne un équipier de 40 % de ses PV max (rechargé en 6 tours)", effect:{allyHeal:{pct:0.4}}},
+    {id:"xuanwu_balm", name:"Baume de la Tortue Noire", type:"reusable", minLevel:25, rarity:"rare", actionPoints:2, chargesPerCycle:1, rechargeTurns:8,
+     description:"Soigne un équipier de 75 % de ses PV max (rechargé en 8 tours)", effect:{allyHeal:{pct:0.75}}},
+    {id:"white_tiger_claw", name:"Griffe du Tigre Blanc", type:"reusable", minLevel:12, rarity:"uncommon", actionPoints:1, chargesPerCycle:1, rechargeTurns:6,
+     description:"Un équipier gagne la Hâte 4 tours : chargement de ses actions 50 % plus rapide (rechargé en 6 tours)", effect:{allyBuff:{key:"haste", turns:4}}},
+    {id:"azure_dragon_scale", name:"Écaille du Dragon Azur", type:"reusable", minLevel:30, rarity:"rare", actionPoints:2, chargesPerCycle:1, rechargeTurns:8,
+     description:"Un équipier récupère 20 % de ses PV max et gagne l'Élan 3 tours : chargement deux fois plus rapide (rechargé en 8 tours)", effect:{allyHeal:{pct:0.2}, allyBuff:{key:"surge", turns:3}}},
+    {id:"qilin_hair", name:"Poil de Qilin", type:"reusable", minLevel:15, rarity:"rare", actionPoints:2, chargesPerCycle:1, rechargeTurns:8,
+     description:"Ranime un équipier hors de combat (Hou Yi compris) avec 50 % de ses PV max (rechargé en 8 tours)", effect:{revive:{pct:0.5}}},
+    {id:"qilin_horn", name:"Corne de Qilin", type:"reusable", minLevel:40, rarity:"legendary", actionPoints:3, chargesPerCycle:1, rechargeTurns:9,
+     description:"Ranime un équipier hors de combat (Hou Yi compris) avec tous ses PV (rechargé en 9 tours)", effect:{revive:{pct:1}}},
+
     // Relique de quête (Fusang) : jamais en butin ni en vente. Portée dans un emplacement de relique, elle rend le héros indétectable.
     {id:SHADOW_RELIC_ID, name:"Cháng d'ombre de Fusang", type:"artifact", minLevel:37, rarity:"legendary", quest:true,
      description:"Les ennemis ne vous remarquent plus, sauf les boss ; les hautes herbes, l'eau et la lave n'attirent plus de combat. Augmente HP max de 30 (permanent)", effect:{permMaxHp:30, stealth:true}},
@@ -267,7 +281,12 @@ export function shiftActiveItemIndexes(hero, removed) {
 }
 
 // Utiliser un objet de l'inventaire
-export function useItem(itemId, player, enemy, preferredIndex = null) {
+export const isTeamItem = item => !!(item?.effect && ((item.effect.revive && typeof item.effect.revive === 'object') || item.effect.allyHeal || item.effect.allyBuff));   // `revive` numérique = Plume de Fenghuang (Hou Yi se relève tout seul)
+/** Sorte d'objet d'équipe : 'revive' | 'heal' | 'buff' | null. */
+export const teamItemKind = item => (item?.effect?.revive && typeof item.effect.revive === 'object' ? 'revive' : item?.effect?.allyHeal ? 'heal' : item?.effect?.allyBuff ? 'buff' : null);
+
+export function useItem(itemId, player, enemy, preferredIndex = null, opts = {}) {
+    let allyMessage = '';
     const isPreferredIndexValid = Number.isInteger(preferredIndex)
         && preferredIndex >= 0
         && preferredIndex < player.inventory.length
@@ -282,6 +301,13 @@ export function useItem(itemId, player, enemy, preferredIndex = null) {
     // Les artefacts ne peuvent pas être utilisés (ils sont automatiques)
     if(item.type === "artifact") {
         return {success: false, message: "Les reliques sont déjà portées automatiquement"};
+    }
+
+    // Objets d'équipe (ranimer, soigner, bonus d'un équipier) : la cible est choisie par le joueur ; sans cible valable, l'objet n'est pas consommé.
+    if(isTeamItem(item)) {
+        const res = opts.allyEffect ? opts.allyEffect(item.effect) : { ok: false, message: 'Choisissez un équipier.' };
+        if(!res.ok) return {success: false, message: res.message};
+        allyMessage = res.message;
     }
 
     // Les effets valables « pour ce combat » ne se cumulent pas (sinon un objet infini rendrait invincible) :
@@ -312,7 +338,7 @@ export function useItem(itemId, player, enemy, preferredIndex = null) {
     }
     
     // Appliquer l'effet de l'objet
-    let message = "";
+    let message = allyMessage;
     if(item.effect.heal) {
         const potion = healEntity(player, item.effect.heal);   // Corrompu : la potion blesse
         if(potion.harmed > 0){

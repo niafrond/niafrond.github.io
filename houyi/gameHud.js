@@ -19,6 +19,7 @@ import { createWeaponButton, statValueHtml } from './gameInventoryTabs.js';
 import { updatePlayerStatsTab } from './gameStatsTab.js';
 import { updateLevelHud } from './gameLevelUp.js';
 import { createSpellButtons, getTurnClass } from './gameSpellList.js';
+import { renderAllyBar } from './alliesView.js';
 import { isInTranse, classAllowsUltimate, storeGauge, TRANSE_TURNS } from './transe.js';
 import { bonusTurnBadge, canEntityCastSpell, castUltimate, activateXiuxian, syncGauge, clampManaToCaps, classIcon, currentTurn, enemy, gameState, getUltimateTooltipHtml, transeTooltipHtml, getWeaponIcon, markMultiManaSpell, player, spellCostHtml, spellEffectIcon, syncPlayerControlsLock, ultimateManaBarHtml } from './game.js';
 
@@ -314,6 +315,8 @@ export function updateStats(){
         });
     }
     
+    renderAllyBar();   // barres de vie des compagnons
+    document.getElementById('player-stats')?.classList.toggle('hero-ko', !!gameState.heroKo);   // Hou Yi à terre
     updateEnemySpells();
 }
 

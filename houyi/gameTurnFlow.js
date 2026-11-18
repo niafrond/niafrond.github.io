@@ -33,9 +33,10 @@ import { log, logActiveAction, saveUpdate, updateEnemySpells, updateStats } from
 import { companionIconHtml, foxIconHtml, showCombatAnimation, showStrikeAnimation } from './gameStatsTab.js';
 import { finishCombatRecord, recordEnemyTurn, recordPlayerTurn, saveCombatRecord } from './combatBalance.js';
 import { showAttributeMenu } from './gameLevelUp.js';
-import { updateAvailableSpells, enemyActionReady, spendEnemyAction, getTurnClass, chooseEnemyAction, runBoundaryAction, resumeAfterBoundary, withCaster } from './gameSpellList.js';
+import { updateAvailableSpells, enemyActionReady, spendEnemyAction, getTurnClass, chooseEnemyAction, decoupled, runBoundaryAction, resumeAfterBoundary, withCaster } from './gameSpellList.js';
 import { CLASS_SHORT } from './classRoster.js';
-import { currentTurn, activeCompanionIds, addBonusTurn, addManaForColor, applyCombatXPAtEnd, applyDamage, applyStandardSpellEffects, canEntityCastSpell, combatHooks, combatRewards, consumeSpellMana, enemy, gameState, getWeaponIcon, grantStuffPiece, handlePlayerDeath, normalizeActiveInventoryIndex, sellDuplicateItem, normalizeBonusTurnValue, player, queueCombatXP, showEndCombatAnimation, turnFlags, setCurrentTurn, resetTranseTurn, applyTranseClassEffect, syncGauge, endXiuxianAtCombatEnd, xiuEffect } from './game.js';
+import { pickEnemyTarget } from './allies.js';
+import { partyWiped, currentTurn, activeCompanionIds, addBonusTurn, addManaForColor, applyCombatXPAtEnd, applyDamage, applyStandardSpellEffects, canEntityCastSpell, combatHooks, combatRewards, consumeSpellMana, enemy, gameState, getWeaponIcon, grantStuffPiece, handlePlayerDeath, normalizeActiveInventoryIndex, sellDuplicateItem, normalizeBonusTurnValue, player, queueCombatXP, showEndCombatAnimation, turnFlags, setCurrentTurn, resetTranseTurn, applyTranseClassEffect, syncGauge, endXiuxianAtCombatEnd, xiuEffect } from './game.js';
 
 // Applique les pouvoirs de fin de tour des compagnons présents (soin, jet d'eau, qì, mirage). Renvoie { skipEnemy, enemyDown }.
 export const COMPANION_NAMES = { zhi: 'Zhi', dawa: 'Dawa', yu: 'Yu', etincelle: 'Leigong', braise: 'Braise', jian: 'Jian', tou: 'Tou' };
@@ -113,7 +114,7 @@ export function finishPlayerTurn(){
     endOfPlayerTurnTranse();
 
     // Vérifier si le joueur est mort
-    if(player.hp<=0){
+    if(partyWiped()){
         handlePlayerDeath();
         return;
     }
@@ -177,14 +178,14 @@ export function finishPlayerTurn(){
     updateStats();
     afterPlayerAnimations(() => {
         if(gameState.combatState !== 'active') return;
-        if(player.hp <= 0){ handlePlayerDeath(); return; }
+        if(partyWiped()){ handlePlayerDeath(); return; }
         const burn = advanceBiomeTurn();
         // « Case brûlante - 3 dégâts » s'affiche sur chaque case avant que les dégâts ne tombent.
         const warnMs = announceBurningCells() * animationFactor();
         setTimeout(() => {
             if(gameState.combatState !== 'active') return;
             if(burn > 0){ applyDamage(player, burn); log(`Cases brûlantes : -${burn} PV.`); updateStats(); }
-            if(player.hp <= 0){ handlePlayerDeath(); return; }
+            if(partyWiped()){ handlePlayerDeath(); return; }
             if(!applyDuelRulesBeforeEnemyTurn()) return;
             enemyTurn();
         }, warnMs);
@@ -218,7 +219,7 @@ function applyDuelRulesBeforeEnemyTurn(){
     enemy.duelTrapLaid = false;
     setTrappedCells([]);
     updateStats();
-    if(player.hp <= 0){
+    if(partyWiped()){
         handlePlayerDeath();
         return false;
     }
@@ -283,7 +284,29 @@ function payEnemyAction(decision){
 }
 
 /** Effet d'une action de l'ennemi déjà choisie et payée. Renvoie true si terminée, false si la suite dépend du plateau (sort de plateau). */
+/**
+ * IA de l'ennemi, indépendante du plateau : dès que sa barre est pleine, qu'aucune de ses actions n'attend et qu'il peut agir (ni étourdi, ni endormi),
+ * il choisit son action (même IA que sur le plateau : makeDecision) et, si c'est un sort ou une arme, la paie et la met dans la file. Appelée en continu
+ * par le ticker de chargement : l'ennemi n'attend plus son prochain tour de plateau pour lancer une action.
+ */
+export function enemyProactiveAction(){
+    if(!decoupled() || enemy.isTutorialEnemy || enemy.duel || gameState.combatState !== 'active') return;
+    if(!enemyActionReady() || gameState.actionQueue.some(it => it.owner === 'enemy')) return;
+    if(isAsleep(enemy) || (enemy.statusEffects?.stunned || 0) > 0) return;
+    const decision = makeDecision();
+    if(!(decision.action === 'spell' || decision.action === 'weapon')) return;   // il préfère jouer sur le plateau
+    if(decision.action === 'spell' && decision.data?.spell?.boardSpell) return;   // les sorts de plateau passent par son tour de plateau
+    if(!payEnemyAction(decision)) return;
+    chooseEnemyAction(() => runEnemyActionOutOfTurn(decision));
+}
+
 function applyEnemyAction(decision){
+    // Une action ennemie sur quatre vise un compagnon vivant (allies.js) : il encaisse à la place de Hou Yi (voir applyDamage, game.js).
+    gameState.allyShield = enemy.isTutorialEnemy ? null : pickEnemyTarget(gameState.allies, Math.random, (player.hp || 0) / Math.max(1, player.maxHp || 1));
+    try { return applyEnemyActionNow(decision); } finally { gameState.allyShield = null; }
+}
+
+function applyEnemyActionNow(decision){
     if(decision.action === 'spell'){
         const spell = decision.data.spell;
         playSfx('spellCast', { isPlayer: false, spellId: spell.id });
@@ -327,7 +350,7 @@ function runEnemyActionOutOfTurn(decision){
     updateStats();
     saveUpdate();
     if(gameState.combatState !== 'active') return;
-    if(player.hp <= 0){ handlePlayerDeath(); return; }
+    if(partyWiped()){ handlePlayerDeath(); return; }
     if(enemy.hp <= 0) handleEnemyDefeated();
 }
 
@@ -539,7 +562,7 @@ export function finishEnemyTurn(){
         return;
     }
 
-    if(player.hp<=0){
+    if(partyWiped()){
         handlePlayerDeath();
         return;
     }
@@ -602,7 +625,7 @@ export function finishEnemyTurn(){
                 log('Le poison se dissipe.');
             }
             updateStats();
-            if(player.hp <= 0){ handlePlayerDeath(); return; }
+            if(partyWiped()){ handlePlayerDeath(); return; }
         }
         if((player.statusEffects?.burning || 0) > 0){   // Brûlé (Souffle de braise) : dégâts de feu à chaque tour
             const burnDmg = Math.max(1, Math.floor(player.statusEffects.burnDamage || 1));
@@ -611,7 +634,7 @@ export function finishEnemyTurn(){
             log(`Brûlure : vous subissez ${burnDmg} dégâts.`);
             flashStatusDamage(true, 'burning');
             updateStats();
-            if(player.hp <= 0){ handlePlayerDeath(); return; }
+            if(partyWiped()){ handlePlayerDeath(); return; }
         }
         for(const [key, info] of Object.entries(ENVIRONMENT_STATUSES)){   // Noyade / Enflammé : dégâts réguliers, sans fin avant la fin du combat
             const dmg = Math.floor(player.statusEffects?.[key] || 0);
@@ -621,7 +644,7 @@ export function finishEnemyTurn(){
             log(info.log(dmg));
             flashStatusDamage(true, key);
             updateStats();
-            if(player.hp <= 0){ handlePlayerDeath(); return; }
+            if(partyWiped()){ handlePlayerDeath(); return; }
         }
         applyAncientTurnPowers();
         const skillRegen = skillBonus(player, 'regenPct');   // compétence de soutien « Souffle régénérant »

@@ -69,6 +69,27 @@ export const SPRITE_MANIFEST = {
     },
   },
 
+  // Compagnons de combat (allies.js) : les six maîtres de classe recrutés ; clé `ally_<classe>`.
+  allies: {
+    ally_barbarian: {
+      desc: 'burly Chinese stone-fist martial master, short black beard, black hair in a topknot, scarred cheek, bare muscular arms wrapped in leather straps, sleeveless dark basalt-grey tunic with rust-red trim, heavy stone-knuckle gauntlets, fists raised, fierce grin',
+    },
+    ally_templar: {
+      desc: 'Chinese guard captain, stern face with a thick black mustache, bronze scale armor, bronze helmet with a red plume, one big round bronze shield held in front of the chest, short crimson cape, standing straight',
+    },
+    ally_sorcerer: {
+      desc: 'elderly Chinese Taoist sage, long white beard and eyebrows, tall black Taoist hat with a jade ornament, flowing pale blue and white robe with wide sleeves, horsehair whisk in one hand and a yellow paper talisman strip in the other, serene face',
+    },
+    ally_monk: {
+      desc: 'Chinese Buddhist monk, shaved head, ash-grey robe with a maroon sash and singed hem, wooden prayer beads around the neck, wooden staff, bare feet, peaceful half-closed eyes, gentle smile',
+    },
+    ally_alchemist: {
+      desc: 'Chinese alchemist woman, black hair in a bun held by two bronze hairpins, green and gold robe with rolled-up sleeves, leather apron, small soot smudge on the cheek, glass vials and a gourd hanging from the belt, small bronze cauldron carried on the back, clever smile',
+    },
+    ally_shaman: {
+      desc: 'old Chinese steppe woman shaman, long braided white hair, feather headdress, layered ochre and teal fur-trimmed robe, bone and bead talismans around the neck, small hand drum, walking stick with colored ribbons, wise wrinkled smile',
+    },
+  },
   enemies: {
     huli_jing: {
       desc: 'Huli Jing, small mischievous fox spirit, orange fox in a tattered patchwork vest, pointed ears, sly grin, holding a sizzling round black firecracker, glowing yellow eyes',

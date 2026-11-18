@@ -151,6 +151,7 @@ function playQuest(s, id) {
     try {
         const q = s.quests.find(x => x.id === id);
         q.requires.forEach(r => playQuest(s, r));
+        if (q.startWhen?.quest && !s.data.quests[q.startWhen.quest]) talkTo(s, s.quests.find(x => x.id === q.startWhen.quest).giver);   // le maître de la 1re région n'apparaît qu'après le décret du doyen
         for (let i = 0; i < 8 && q.giver && !s.data.quests[id]; i++) {
             talkTo(s, q.giver);
         }

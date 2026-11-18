@@ -1,5 +1,5 @@
 // Génère la soluce du jeu (houyi/soluce.html + houyi/soluce/*.html) à partir des données réelles du jeu :
-// quêtes (story.js), compagnons (companions.js, companionPowers.js), stuff (stuff.js), bestiaire (enemies.catalog.json).
+// quêtes (story.js), esprits gardiens (companions.js, companionPowers.js), stuff (stuff.js), bestiaire (enemies.catalog.json).
 // Usage : node houyi/tools/build-soluce.mjs
 //
 // La soluce n'est liée depuis aucune page du jeu : on y accède uniquement en connaissant l'adresse (…/houyi/soluce.html).
@@ -11,6 +11,9 @@ import { fileURLToPath } from 'node:url';
 import { QUESTS, SCREENS, REGION_UNLOCK_LEVEL } from '../story.js';
 import { COMPANIONS } from '../companions.js';
 import { COMPANION_POWERS } from '../companionPowers.js';
+import { ALLIES, ALLY_IDS, MAX_ALLIES, allyMaxHp } from '../allies.js';
+import { CLASS_TRIAL_QUESTS } from '../world/classTrials.js';
+import { CLASS_SHORT } from '../classRoster.js';
 import { allStuff, STUFF_SLOT_LABELS, STUFF_SLOTS, BIOME_PROTECTION_TEXT, BIOME_PROTECTION_LABEL, describeStuff, baseStuffPrice, CHEST_STUFF_DROP } from '../stuff.js';
 import { bestiaryEntry, SOURCE_LABELS, familyOf, groupByName, mergeEntries } from '../bestiary.js';
 import { loadGbaSprites, gbaSprite } from '../sprites/index.js';
@@ -213,7 +216,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
 
 const NAV = [
     ['soluce.html', 'Accueil'], ['parcours.html', 'Parcours principal'], ['zones.html', 'Zones et jonctions'], ['bases.html', 'Bases du combat'],
-    ['compagnons.html', 'Compagnons'], ['quetes.html', 'Quêtes'], ['sorts.html', 'Sorts'], ['ultimes.html', 'Ultimes'], ['stuff.html', 'Stuff d’exception'], ['enigmes.html', 'Énigmes et armures'],
+    ['compagnons.html', 'Esprits gardiens'], ['equipe.html', 'Compagnons de combat'], ['quetes.html', 'Quêtes'], ['sorts.html', 'Sorts'], ['ultimes.html', 'Ultimes'], ['stuff.html', 'Stuff d’exception'], ['enigmes.html', 'Énigmes et armures'],
     ['bestiaire.html', 'Bestiaire'],
     ...(EVENT_ON ? [['royaume-des-ames.html', 'Royaume des âmes']] : []),
     ...(WINTER_ON ? [['fete-des-lanternes.html', 'Fête des lanternes']] : []),
@@ -399,7 +402,7 @@ function questHtml(q) {
     else if (r.fragment) rewards.push(`composant de flèche : ${esc(r.fragment)}`);
     const comp = COMPANIONS.find(c => c.joinWhen === q.id);
     if (comp) rewards.push(`<a href="compagnon-${comp.id}.html"><strong>${esc(comp.name)}</strong></a> rejoint le groupe`);
-    const badges = [q.side ? '' : '<span class="badge main">Principale</span>', comp ? '<span class="badge comp">Compagnon</span>' : '', r.stuff ? '<span class="badge stuff">Stuff</span>' : ''].join('');
+    const badges = [q.side ? '' : '<span class="badge main">Principale</span>', comp ? '<span class="badge comp">Esprit gardien</span>' : '', r.stuff ? '<span class="badge stuff">Stuff</span>' : ''].join('');
     const route = giver ? routeText(region, giver.screen.id) : '';
     return `<article class="quest" id="${questAnchor(q.id)}">
   <h3>${esc(q.title)} ${badges}<small>${esc(q.chapter.replace(/^✦ Quête secondaire — /, ''))}</small></h3>
@@ -448,6 +451,27 @@ ${qs.map(questHtml).join('\n')}`
     }
 }
 
+// Compagnons de combat (allies.js) : les six maîtres de classe qui rejoignent l'équipe de Hou Yi.
+function buildAllies() {
+    const quests = Object.fromEntries(CLASS_TRIAL_QUESTS.map(q => [q.reward.class, q]));
+    const heroMax = 400;   // exemple : PV max de Hou Yi
+    const cards = ALLY_IDS.map(id => `<a class="card" href="equipe.html#${id}"><b>${esc(ALLIES[id].name)}</b><span>${esc(CLASS_SHORT[id])} · ${esc(ALLIES[id].title)}</span></a>`).join('');
+    const rows = ALLY_IDS.map(id => {
+        const a = ALLIES[id], q = quests[id];
+        return `<tr id="${id}"><td><b>${esc(a.name)}</b><br><small>${esc(a.title)}</small></td><td>${esc(CLASS_SHORT[id])}</td><td>${esc(regionName(a.region))}</td><td>${q ? `<a href="${regionSlug(a.region)}#${questAnchor(q.id)}">${esc(q.title)}</a>` : '—'}</td><td>${allyMaxHp({ maxHp: heroMax }, id)} PV pour 400 PV à Hou Yi</td></tr>`;
+    }).join('');
+    write('equipe.html', page({
+        file: 'equipe.html', title: 'Compagnons de combat', active: 'equipe.html',
+        desc: 'Les six compagnons de combat : comment les recruter et ce que chacun apporte.',
+        crumbs: [['soluce.html', 'Accueil'], [null, 'Compagnons de combat']],
+        body: `<h2>Les ${ALLY_IDS.length} compagnons de combat</h2>
+<p class="lead">Hou Yi est le Chasseur. Les six autres classes sont portées par des compagnons que vous recrutez en terminant l’entraînement de leur maître, un par région du Volcan aux Fauves. Votre équipe de combat compte Hou Yi et ${MAX_ALLIES} compagnons au plus, choisis hors combat dans l’onglet Compétences.</p>
+<div class="grid">${cards}</div>
+<div class="scroll"><table><tr><th>Compagnon</th><th>Classe</th><th>Région</th><th>Quête</th><th>Barre de vie</th></tr>${rows}</table></div>
+<div class="box tip"><b class="t">Conseil</b>Les compagnons partagent le qì de Hou Yi mais chacun a sa propre barre de vie et sa propre barre de chargement. Une action ennemie sur quatre vise un compagnon vivant ; à 0 PV il est hors de combat jusqu’à la fin du combat, puis il est de nouveau en pleine forme au suivant. Si Hou Yi tombe, le combat est perdu.</div>`
+    }));
+}
+
 function buildCompanions() {
     const cards = COMPANIONS.map(c => `<a class="card" href="compagnon-${c.id}.html"><b>${esc(c.name)}</b><span>${esc(c.title)}<br>${esc(COMPANION_POWERS[c.id]?.name || '')}</span></a>`).join('');
     const rows = COMPANIONS.map(c => {
@@ -456,23 +480,23 @@ function buildCompanions() {
         return `<tr><td><a href="compagnon-${c.id}.html">${esc(c.name)}</a></td><td>${esc(regionName(q?._region))}</td><td>${q ? `<a href="${regionSlug(q._region)}#${questAnchor(q.id)}">${esc(q.title)}</a>` : '—'}</td><td>${esc(p?.name)} — ${esc(p?.text)}</td></tr>`;
     }).join('');
     write('compagnons.html', page({
-        file: 'compagnons.html', title: 'Compagnons', active: 'compagnons.html',
-        desc: 'Comment recruter chaque compagnon et ce que fait son pouvoir.',
-        crumbs: [['soluce.html', 'Accueil'], [null, 'Compagnons']],
-        body: `<h2>Les ${COMPANIONS.length} compagnons</h2>
-<p class="lead">Chaque compagnon rejoint le groupe à la fin d’une quête secondaire et déclenche un pouvoir en fin de tour du joueur (un seul pouvoir par compagnon et par tour).</p>
+        file: 'compagnons.html', title: 'Esprits gardiens', active: 'compagnons.html',
+        desc: 'Comment recruter chaque esprit gardien et ce que fait son pouvoir.',
+        crumbs: [['soluce.html', 'Accueil'], [null, 'Esprits gardiens']],
+        body: `<h2>Les ${COMPANIONS.length} esprits gardiens</h2>
+<p class="lead">Chaque esprit gardien rejoint le groupe à la fin d’une quête secondaire et déclenche un pouvoir en fin de tour du joueur (un seul pouvoir par esprit gardien et par tour).</p>
 <div class="grid">${cards}</div>
-<div class="scroll"><table><tr><th>Compagnon</th><th>Région</th><th>Quête</th><th>Pouvoir</th></tr>${rows}</table></div>
-<div class="box tip"><b class="t">Conseil</b>Tous les compagnons sont facultatifs mais leurs pouvoirs se cumulent. Recruter Xiao Gui (région 1) dès le début donne un coup supplémentaire sur le plateau une fois sur trois environ : c’est le plus rentable à court terme.</div>`
+<div class="scroll"><table><tr><th>Esprit gardien</th><th>Région</th><th>Quête</th><th>Pouvoir</th></tr>${rows}</table></div>
+<div class="box tip"><b class="t">Conseil</b>Tous les esprits gardiens sont facultatifs mais leurs pouvoirs se cumulent. Recruter Xiao Gui (région 1) dès le début donne un coup supplémentaire sur le plateau une fois sur trois environ : c’est le plus rentable à court terme.</div>`
     }));
     for (const c of COMPANIONS) {
         const q = questById[c.joinWhen];
         const p = COMPANION_POWERS[c.id];
         const reqQ = q && asArray(q.requires).map(reqText);
         write(`compagnon-${c.id}.html`, page({
-            file: `compagnon-${c.id}.html`, title: `Compagnon : ${c.name}`, active: 'compagnons.html',
+            file: `compagnon-${c.id}.html`, title: `Esprit gardien : ${c.name}`, active: 'compagnons.html',
             desc: `Comment recruter ${c.name} et son pouvoir.`,
-            crumbs: [['soluce.html', 'Accueil'], ['compagnons.html', 'Compagnons'], [null, c.name]],
+            crumbs: [['soluce.html', 'Accueil'], ['compagnons.html', 'Esprits gardiens'], [null, c.name]],
             body: `<h2>${esc(c.name)} <small>— ${esc(c.title)}</small></h2>
 <div class="box info"><b class="t">Pouvoir : ${esc(p?.name)}</b>${esc(p?.text)}</div>
 <h3>Comment le recruter</h3>
@@ -630,15 +654,15 @@ function buildBases() {
     const bio = allStuff.filter(s => s.biomeProtect).map(s => `<tr><td><a href="stuff-${s.id}.html">${esc(s.name)}</a></td><td>${esc(s.biomeProtect ? BIOME_PROTECTION_LABEL[s.biomeProtect] : 'Fusang')}</td><td>${esc(BIOME_PROTECTION_TEXT[s.biomeProtect])}</td></tr>`).join('') + `<tr><td><b>Cháng d’ombre de Fusang</b> (relique)</td><td>Fusang</td><td>Les ennemis ne vous détectent plus</td></tr>`;
     write('bases.html', page({
         file: 'bases.html', title: 'Bases du combat', active: 'bases.html',
-        desc: 'Faiblesses élémentaires, pouvoirs des compagnons et protections de biome.',
+        desc: 'Faiblesses élémentaires, pouvoirs des esprits gardiens et protections de biome.',
         crumbs: [['soluce.html', 'Accueil'], [null, 'Bases du combat']],
         body: `<h2>Bases du combat</h2>
 <h3>Faiblesses élémentaires</h3>
 <p>Les ennemis sont faibles à la couleur de qì qui contre leur élément. Faire des combinaisons de la couleur faible inflige davantage de dégâts. Les éléments forment un cycle : Feu → Eau → Terre → Air → Feu, l’Arcane étant faible à la Terre.</p>
 <div class="scroll"><table><tr><th>Ennemi de couleur</th><th>Faible à</th></tr>${rows}</table></div>
 <div class="box tip"><b class="t">Astuce</b>Observez l’ennemi sur la carte avant d’engager : le carnet note sa faiblesse. Les fiches de quête de cette soluce l’indiquent déjà pour chaque cible.</div>
-<h3>Pouvoirs des compagnons</h3>
-<div class="scroll"><table><tr><th>Compagnon</th><th>Pouvoir</th><th>Effet</th></tr>${pw}</table></div>
+<h3>Pouvoirs des esprits gardiens</h3>
+<div class="scroll"><table><tr><th>Esprit gardien</th><th>Pouvoir</th><th>Effet</th></tr>${pw}</table></div>
 <h3>Protections de biome</h3>
 <div class="scroll"><table><tr><th>Collier</th><th>Biome</th><th>Effet</th></tr>${bio}</table></div>`
     }));
@@ -706,7 +730,7 @@ function buildUltimes() {
 <p class="lead">Un ultime est une attaque très puissante, lancée quand la jauge de rage est pleine. Il ne compte pas parmi les 4 sorts équipés.</p>
 <h3>Comment ça marche</h3>
 <ol class="steps">
-<li><b>La rage monte quand vous encaissez.</b> Chaque coup reçu remplit la jauge (0 à ${RAGE_MAX}) en proportion des PV perdus : perdre les deux tiers de vos PV max suffit à la remplir. Le compagnon Braise l’accélère.</li>
+<li><b>La rage monte quand vous encaissez.</b> Chaque coup reçu remplit la jauge (0 à ${RAGE_MAX}) en proportion des PV perdus : perdre les deux tiers de vos PV max suffit à la remplir. Le esprit gardien Braise l’accélère.</li>
 <li><b>Il faut aussi du qì.</b> Le coût de l’ultime, multiplié par ${String(ULTIMATE_COST_FACTOR).replace('.', ',')}, se mesure sur le qì <i>collecté</i> pendant le combat, même s’il a déjà été dépensé en sorts. Lancer l’ultime retire ce coût de ce compteur seulement, pas de votre réserve pour les sorts ; le surplus reste pour l’ultime suivant.</li>
 <li><b>Un seul ultime à la fois.</b> Choisissez-le dans l’onglet Sorts ; à défaut, le premier débloqué est utilisé. Une cinématique plein écran précède l’effet.</li>
 <li><b>Après le lancer, la rage retombe à zéro</b> : elle doit se recharger pour le coup suivant.</li>
@@ -741,7 +765,7 @@ ${wardens.length ? `<div class="box info"><b class="t">Gardes du sanctuaire</b>D
 <h3>À faire dans la région avant de repartir</h3>
 <ul>
 <li><a href="${regionSlug(reg)}">${qs.length} ${plural(qs.length, 'quête secondaire', 'quêtes secondaires')}</a></li>
-${comps.length ? `<li>Compagnon${comps.length > 1 ? 's' : ''} : ${comps.map(c => `<a href="compagnon-${c.id}.html">${esc(c.name)}</a>`).join(', ')}</li>` : ''}
+${comps.length ? `<li>Esprit gardien${comps.length > 1 ? 's' : ''} : ${comps.map(c => `<a href="compagnon-${c.id}.html">${esc(c.name)}</a>`).join(', ')}</li>` : ''}
 ${collarQ ? `<li>Stuff d’exception : <a href="stuff-${collarQ.reward.stuff}.html">${esc(allStuff.find(s => s.id === collarQ.reward.stuff)?.name)}</a></li>` : ''}
 </ul>`;
     }).join('\n');
@@ -1176,7 +1200,7 @@ function buildHub() {
     const index = [
         ...QUESTS.map(q => ({ t: q.title, k: `${q.chapter} ${q.giver}`, h: `soluce/${regionSlug(q._region)}#${questAnchor(q.id)}`, c: q.side ? 'Quête' : 'Quête principale' })),
         ...[...zoneScreens(), ...interiorScreens()].map(id => ({ t: SCREENS[id].name, k: 'zone entrée sortie passage jonction porte carte', h: `soluce/zones.html#zone-${id}`, c: 'Zone' })),
-        ...COMPANIONS.map(c => ({ t: c.name, k: `${c.title} compagnon`, h: `soluce/compagnon-${c.id}.html`, c: 'Compagnon' })),
+        ...COMPANIONS.map(c => ({ t: c.name, k: `${c.title} esprit gardien`, h: `soluce/compagnon-${c.id}.html`, c: 'Esprit gardien' })),
         ...Object.entries(PUZZLES).map(([id, p]) => WINTER_PUZZLES.some(w => w.id === id)
             ? { t: p.title, k: `énigme ${p.mode} fête des lanternes hiver neige`, h: 'soluce/fete-des-lanternes.html', c: 'Énigme' }
             : EVENT_PUZZLE_IDS.has(id)
@@ -1191,17 +1215,17 @@ function buildHub() {
     ];
     write('soluce.html', page({
         file: 'soluce.html', title: 'Accueil', active: 'soluce.html',
-        desc: 'Soluce complète : parcours, compagnons, quêtes et stuff d’exception.',
+        desc: 'Soluce complète : parcours, esprits gardiens, quêtes et stuff d’exception.',
         body: `<h2>Soluce complète de La Légende de Hou Yi</h2>
-<p class="lead">Tout ce qu’il faut pour finir le jeu à 100 % : le parcours principal, les ${COMPANIONS.length} compagnons, les ${total} quêtes et le stuff d’exception.</p>
+<p class="lead">Tout ce qu’il faut pour finir le jeu à 100 % : le parcours principal, les ${COMPANIONS.length} esprits gardiens, les ${total} quêtes et le stuff d’exception.</p>
 <div class="box warn"><b class="t">Spoilers</b>Cette soluce révèle l’intrigue, les boss et les récompenses.</div>
-<input class="search" id="q" type="search" placeholder="Rechercher une quête, un compagnon, un objet…" autocomplete="off" aria-label="Recherche">
+<input class="search" id="q" type="search" placeholder="Rechercher une quête, un esprit gardien, un objet…" autocomplete="off" aria-label="Recherche">
 <div id="results"></div>
 <div class="grid">
 <a class="card" href="soluce/parcours.html"><b>Parcours principal</b><span>${QUESTS.filter(q => !q.side).length} chapitres de l’histoire</span></a>
 <a class="card" href="soluce/zones.html"><b>Zones et jonctions</b><span>Entrées, sorties et passages entre zones</span></a>
 <a class="card" href="soluce/bases.html"><b>Bases du combat</b><span>Éléments, pouvoirs, biomes</span></a>
-<a class="card" href="soluce/compagnons.html"><b>Compagnons</b><span>${COMPANIONS.length} recrues et leurs pouvoirs</span></a>
+<a class="card" href="soluce/compagnons.html"><b>Esprits gardiens</b><span>${COMPANIONS.length} recrues et leurs pouvoirs</span></a>
 <a class="card" href="soluce/quetes.html"><b>Quêtes</b><span>${total} quêtes par région</span></a>
 <a class="card" href="soluce/enigmes.html"><b>Énigmes et armures</b><span>${Object.keys(PUZZLES).filter(id => !EVENT_PUZZLE_IDS.has(id)).length} énigmes, 3 armures antiques</span></a>
 ${EVENT_ON ? `<a class="card" href="soluce/royaume-des-ames.html"><b>Royaume des âmes</b><span>Événement : ${QUESTS.filter(q => q.event === WS.ID).length} quêtes, ${EVENT_PUZZLES.length} énigmes, 7 cartes</span></a>` : ''}
@@ -1215,7 +1239,7 @@ ${WINTER_ON ? `<a class="card" href="soluce/fete-des-lanternes.html"><b>Fête de
 <h3>Par où commencer ?</h3>
 <ol class="steps">
 <li>Suivez le <a href="soluce/parcours.html">parcours principal</a> région par région.</li>
-<li>Dans chaque région, faites les quêtes secondaires avant le soleil : elles rapportent de l’expérience, des compagnons et du stuff.</li>
+<li>Dans chaque région, faites les quêtes secondaires avant le soleil : elles rapportent de l’expérience, des esprits gardiens et du stuff.</li>
 <li>Faites <a href="soluce/quetes-${REGION_ORDER[0]}.html#${questAnchor('sq_rice_thief')}">le chapardeur des rizières</a> pour recruter <a href="soluce/compagnon-xiao_gui.html">Xiao Gui</a> dès le début.</li>
 </ol>
 <script>
@@ -1240,6 +1264,7 @@ mkdirSync(IMG, { recursive: true });
 for (const f of readdirSync(OUT)) if (f.endsWith('.html')) rmSync(join(OUT, f));
 buildQuests();
 buildCompanions();
+buildAllies();
 buildStuff();
 buildBases();
 buildPuzzles();
@@ -1253,4 +1278,4 @@ await loadGbaSprites(BESTIARY_LIST.map(t => t.id));   // dessins des créatures 
 buildBestiary();
 buildChange();
 buildHub();
-console.log('Soluce générée :', QUESTS.length, 'quêtes,', COMPANIONS.length, 'compagnons,', allStuff.length, 'pièces de stuff');
+console.log('Soluce générée :', QUESTS.length, 'quêtes,', COMPANIONS.length, 'esprits gardiens,', allStuff.length, 'pièces de stuff');

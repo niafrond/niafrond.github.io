@@ -13,6 +13,7 @@ export const CHARGE_MIN = 40;            // plancher : jamais plus de 60 % de r�
 const AGILITY_PCT = 0.5;                 // % de réduction par point d'Agilité + Moral (toutes les classes)
 const CLASS_ATTR_PCT = 0.4;              // % par point de l'attribut propre à la classe
 const QI_PCT = 0.3;                      // % par qì de la couleur de la classe
+export const ENEMY_CHARGE_FACTOR = 1.8;  // l'ennemi se recharge 1,8 fois plus lentement que le héros à bonus égal : il joue déjà sur le plateau à chaque tour (équilibrage)
 const ENEMY_LEVEL_PCT = 0.4;             // % par niveau de l'ennemi (en plus de son agilité)
 
 /** Attribut qui rend une classe rapide (sa couleur de qì accélère aussi son chargement). */
@@ -41,7 +42,7 @@ export const classChargeTime = (hero, classId) => classChargeInfo(hero, classId)
 
 /** Temps de chargement de l'ennemi : son niveau et son agilité (il n'a pas de classe). */
 export function enemyChargeTime(enemy) {
-    return clampTime((enemy?.level || 0) * ENEMY_LEVEL_PCT + agilityScore(enemy) * AGILITY_PCT);
+    return Math.round(clampTime((enemy?.level || 0) * ENEMY_LEVEL_PCT + agilityScore(enemy) * AGILITY_PCT) * ENEMY_CHARGE_FACTOR);
 }
 
 /** Nouveau combat : tout le monde est prêt. `now` est le temps de combat écoulé (ms) ; `ready` : date de « prêt » par classe. */
@@ -64,8 +65,12 @@ export function chargeTick(charge, dtMs, heroSpeed = 1, enemySpeed = 1) {
     const before = charge.now;
     charge.now += dt;
     const shift = speed => dt * (1 - Math.max(0, Math.min(3, speed)));   // > 0 : retard (ralenti), < 0 : avance (accéléré)
-    const heroShift = shift(heroSpeed);
-    if (heroShift !== 0) Object.keys(charge.ready).forEach(id => { if (charge.ready[id] > before) charge.ready[id] = Math.max(charge.now, charge.ready[id] + heroShift); });
+    // heroSpeed : un nombre pour toute l'équipe, ou { classId: vitesse } (chaque compagnon a ses propres altérations)
+    Object.keys(charge.ready).forEach(id => {
+        const sp = typeof heroSpeed === 'object' && heroSpeed ? (heroSpeed[id] ?? 1) : heroSpeed;
+        const d = shift(sp);
+        if (d !== 0 && charge.ready[id] > before) charge.ready[id] = Math.max(charge.now, charge.ready[id] + d);
+    });
     const foeShift = shift(enemySpeed);
     if (foeShift !== 0 && charge.enemyReady > before) charge.enemyReady = Math.max(charge.now, charge.enemyReady + foeShift);
 }

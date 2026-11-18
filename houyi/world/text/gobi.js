@@ -18,7 +18,7 @@ export default {
   npcs: {
     trainer_templar: { name: "Capitaine Heng", title: "Maître de la garde",
       idle: ["Une ligne tient parce que chaque homme sait qu'on tient pour lui. C'est tout le secret.", "Le sable avale les armées en désordre. Moi, je ne perds pas de soldats : je perds du temps à les rassembler."],
-      talk: [{ whenDone: 'q_class_templar', lines: ["Ta voie de Commandant est la tienne maintenant. Sers-t'en, et mêle-la aux autres : aucune classe ne suffit partout."] }] },
+      talk: [{ whenDone: 'q_class_templar', lines: ["Mon bouclier est à toi, archer. Mets-moi devant et le sable passera sur nous deux."] }] },
     keeper_nur: { name: 'Quan', title: 'Gardienne de la citerne', 
       idle: ['L\'eau est sacrée ici. Ne la gaspillez pas, ne la comptez pas, et surtout ne la bénissez pas à voix haute : elle rougit.', 'Chaque goutte a un nom. La dernière s\'appelle Espoir. Je ne lui parle jamais, de peur qu\'elle s\'évapore.'],
       talk: [{ whenDone: 'sun_4', lines: ['Le troisième soleil n\'est plus. L\'eau de la citerne paraît plus douce. Je jure qu\'elle a souri.'] }] },

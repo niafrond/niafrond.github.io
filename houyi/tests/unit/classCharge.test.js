@@ -1,12 +1,12 @@
 import { describe, test, expect } from '@jest/globals';
-import { CHARGE_BASE, CHARGE_MIN, classChargeTime, enemyChargeTime, newCharge, classChargeMs, enemyChargeMs, chargeTick, isClassReady, classProgress, classRemainingMs, spendClass, spendEnemy, isEnemyReady, chargeRunning, chargeSpeed, BOARD_IDLE_PAUSE_MS, initCharge, startChargePctOf, newActionQueue, enqueueAction, takeNextDue, hasQueuedAction, upcomingBeads } from '../../classCharge.js';
+import { ENEMY_CHARGE_FACTOR, CHARGE_BASE, CHARGE_MIN, classChargeTime, enemyChargeTime, newCharge, classChargeMs, enemyChargeMs, chargeTick, isClassReady, classProgress, classRemainingMs, spendClass, spendEnemy, isEnemyReady, chargeRunning, chargeSpeed, BOARD_IDLE_PAUSE_MS, initCharge, startChargePctOf, newActionQueue, enqueueAction, takeNextDue, hasQueuedAction, upcomingBeads } from '../../classCharge.js';
 
 const hero = (extra = {}) => ({ attributes: {}, mana: {}, skills: {}, ...extra });
 
 describe('classCharge : temps de chargement des classes', () => {
     test('sans bonus : temps de base', () => {
         expect(classChargeTime(hero(), 'assassin')).toBe(CHARGE_BASE);
-        expect(enemyChargeTime({ level: 0 })).toBe(CHARGE_BASE);
+        expect(enemyChargeTime({ level: 0 })).toBe(Math.round(CHARGE_BASE * ENEMY_CHARGE_FACTOR));   // l'ennemi est plus lent à bonus égal
     });
     test('agilité, moral, attribut propre et qì réduisent le chargement', () => {
         const slow = classChargeTime(hero(), 'assassin');
