@@ -253,7 +253,10 @@ for (const entry of todo) {
       if (!best.q.ok) throw new Error(`${view} : contrôle qualité échoué (${whys.join(', ')})`);
       made[view] = toSprite(toCells(best.img));
     }
-    if (frontProfile) made.left = made.front;
+    if (frontProfile) {   // --profiledir=<dossier> : profils déjà produits (ex. Pixel Lab /rotate, fichiers pl_<classe>_left.png) ; sinon la vue de face
+      const f = args.profiledir && join(String(args.profiledir), `pl_${id.replace(/^ally_/, '')}_left.png`);
+      made.left = f && existsSync(f) ? PNG.sync.read(readFileSync(f)) : made.front;
+    }
     if (!FRONT_ONLY) made.right = flip(made.left);
     const outDirs = FRONT_ONLY ? ['front'] : DIRS;
     sprites[id] = Object.fromEntries(outDirs.map(d => [d, uriOf(made[d])]));
