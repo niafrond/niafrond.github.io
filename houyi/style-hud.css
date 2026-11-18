@@ -1126,8 +1126,9 @@ body.a11y-colorblind .action-beads .bead-foe { background: #e08a1e; }
 /* Xiūxiān d'un compagnon : zone cachée, visible au clic long sur sa carte (ou pendant sa Xiūxiān) */
 .ally-card { position: relative; }
 .ally-card .ally-portrait { grid-row: 1 / 4; }
-.ally-card .ally-xiu { grid-column: 2; display: block; position: relative; overflow: hidden; margin-top: 2px; height: 6px; padding: 0; background: rgba(0,0,0,.35); border: 1px solid rgba(255,255,255,.25); border-radius: 3px; }
-.ally-xiu i { position: absolute; inset: 0 auto 0 0; background: #6a4bd8; opacity: .8; }
+.ally-card .ally-xiu { grid-column: 2; display: block; position: relative; overflow: visible; margin-top: 4px; height: 10px; padding: 0; background: rgba(0,0,0,.35); border: 1px solid rgba(255,255,255,.25); border-radius: 3px; }
+.ally-xiu::before { content: ''; position: absolute; inset: -12px -6px; }   /* zone tactile élargie, invisible */
+.ally-xiu i { position: absolute; inset: 0 auto 0 0; border-radius: 2px; background: #6a4bd8; opacity: .8; }
 .ally-xiu.ready { border-color: #ffd54a; animation: xiu-ready-pulse 1s ease-in-out infinite; cursor: pointer; }
 .ally-xiu.in-xiu i { background: #d8a24b; }
 .ally-card.xiu-on { box-shadow: 0 0 6px #d8a24b; }
@@ -1145,3 +1146,7 @@ body.show-xiu-text #xiu-banner { display: block; }
 
 /* Menu Objet ouvert : seuls les objets (et « Retour ») restent affichés */
 #player-spells.object-menu > #weapon-button, #player-spells.object-menu > #item-button, #player-spells.object-menu > #spell-buttons { display: none; }
+
+/* Jauge de Xiūxiān / d'ultime de Hou Yi : plus épaisse et zone tactile élargie (invisible) pour être facile à déclencher. */
+#player-stats .rage-stat { height: 12px; }
+#player-stats .rage-bar-container.xiu-ready::before, #player-stats .rage-bar-container.ultimate-ready::before { content: ''; position: absolute; inset: -12px -6px; }

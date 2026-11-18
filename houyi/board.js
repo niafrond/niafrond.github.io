@@ -901,7 +901,7 @@ export function checkMatches(forceFullBoard = false){
                 // Afficher une animation de tour bonus
                 const isPlayer = currentTurn === 'player';
                 showCombatAnimation(
-                    { icon: 'gift', title: 'TOUR BONUS !', damage: `Match de ${info.len} tuiles`, target: isPlayer ? 'Vous rejouez !' : "L'ennemi rejoue !" },
+                    { icon: 'gift', title: 'TOUR BONUS !', plain: true, damage: `Match de ${info.len} tuiles`, target: isPlayer ? 'Vous rejouez !' : "L'ennemi rejoue !" },
                     isPlayer
                 );
             }
@@ -918,7 +918,7 @@ export function checkMatches(forceFullBoard = false){
                 log(`Match de ${info.len} : tour bonus gagné par ${currentTurn === 'player' ? 'le joueur' : 'l\'ennemi'}`);
                 const isPlayer = currentTurn === 'player';
                 showCombatAnimation(
-                    { icon: 'gift', title: 'TOUR BONUS !', damage: `Match de ${info.len} épées`, target: isPlayer ? 'Vous rejouez !' : "L'ennemi rejoue !" },
+                    { icon: 'gift', title: 'TOUR BONUS !', plain: true, damage: `Match de ${info.len} épées`, target: isPlayer ? 'Vous rejouez !' : "L'ennemi rejoue !" },
                     isPlayer
                 );
             }
@@ -957,7 +957,7 @@ export function checkMatches(forceFullBoard = false){
                 log(`Match de ${info.len} crânes : tour bonus gagné par ${currentTurn === 'player' ? 'le joueur' : 'l\'ennemi'}`);
                 const isPlayer = currentTurn === 'player';
                 showCombatAnimation(
-                    { icon: 'gift', title: 'TOUR BONUS !', damage: `Match de ${info.len} crânes`, target: isPlayer ? 'Vous rejouez !' : "L'ennemi rejoue !" },
+                    { icon: 'gift', title: 'TOUR BONUS !', plain: true, damage: `Match de ${info.len} crânes`, target: isPlayer ? 'Vous rejouez !' : "L'ennemi rejoue !" },
                     isPlayer
                 );
             }
