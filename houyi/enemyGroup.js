@@ -56,7 +56,7 @@ export function summonSettings(e) {
  */
 export function shouldSummon(e, foes, rng = Math.random) {
     const s = summonSettings(e);
-    if (!s || !isAlive(e) || !hasRoom(foes)) return false;
+    if (!s || !isAlive(e) || e.isBoss || !hasRoom(foes)) return false;   // un boss reste seul à invoquer rien : ses combats sont en tête à tête
     if ((e.summonsMade || 0) >= s.maxCalls || e.summonedLastTurn) return false;
     if ((e.statusEffects?.stunned || 0) > 0 || (e.statusEffects?.asleep || 0) > 0) return false;
     return rng() < s.chance;

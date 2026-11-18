@@ -2993,6 +2993,7 @@
   },
   {
     "id": "sun_4",
+    "summon": {"chance": 0.3, "maxCalls": 2},
     "name": "Soleil des Mirages",
     "race": "Soleil",
     "title": "Mille Reflets du Gobi",
@@ -3873,6 +3874,7 @@
   },
   {
     "id": "grue_lige",
+    "summon": {"chance": 0.3, "maxCalls": 2},
     "name": "Grue-lige du Fusang",
     "race": "Oiseau",
     "title": "Messagère des Branches Hautes",
