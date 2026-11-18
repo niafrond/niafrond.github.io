@@ -264,7 +264,7 @@ export function transeTooltipHtml(entity, ultimate){
     return `<div class="spell-tooltip-title">XIŪXIĀN · ${isInTranse(entity) ? `${Math.max(1, Math.floor(entity.transe || 1))} tour(s) restant(s)` : `${filled} / 100`}</div>`
         + `<div class="spell-tooltip-line">Jauge du ${CLASS_SHORT[getTurnClass()] || 'héros'} : chaque classe a la sienne. Elle se remplit quand vous subissez des dégâts avec cette classe et se conserve d'un combat à l'autre. Pleine, touchez-la pour déclencher sa Xiūxiān (3 tours).</div>`
         + `<div class="spell-tooltip-line">${describeTranse(isInTranse(entity) ? entity.transeClass : getTurnClass())}</div>`
-        + (ultimate ? `<div class="spell-tooltip-line">Ultime « ${ultimate.name} » : seulement pendant la Xiūxiān, avec la classe Mage antique choisie pour le tour.</div>` : '');
+        + (ultimate ? `<div class="spell-tooltip-line">Invocation « ${ultimate.name} » : bouton à part, réservé au Mage antique ; seulement pendant la Xiūxiān, avec cette classe choisie pour le tour.</div>` : '');
 }
 
 // Fiche de l'ultime (appui long / survol de la jauge) : nom, coût en qì avec le qì possédé, effet.
@@ -273,7 +273,7 @@ export function getUltimateTooltipHtml(entity, spell){
         const have = entity?.cheatFreeSpells === true ? need : collectedUltimateMana(entity, color);
         return `<span class="ult-cost${have >= need ? '' : ' missing'}">${costBadge(color, `${Math.min(have, need)}/${need}`)}</span>`;
     }).join(' ');
-    return `<div class="spell-tooltip-title">ULTIME · ${spell.name}</div>`
+    return `<div class="spell-tooltip-title">INVOCATION · ${spell.name}</div>`
         + `<div class="spell-tooltip-line">Qì : ${cost}</div>`
         + getSpellTooltipHtml(spell);
 }
@@ -2140,7 +2140,7 @@ export async function castUltimate(spellId){
         spendUltimateXiu();
         chooseAction(() => withCaster('player', async () => {
             playSfx('spellCast', { isPlayer: true, spellId: spell.id });
-            logActiveAction(`lance l'ultime ${spell.name}`);
+            logActiveAction(`invoque ${spell.name}`);
             updateStats();
             await playUltimateCinematic(spell);
             const module = await import('./classSpellEffects.js');
@@ -2155,7 +2155,7 @@ export async function castUltimate(spellId){
     if(player.cheatFreeSpells !== true) spendUltimateMana(player, spell);
     spendUltimateXiu();
     playSfx('spellCast', { isPlayer: true, spellId: spell.id });
-    logActiveAction(`lance l'ultime ${spell.name}`);
+    logActiveAction(`invoque ${spell.name}`);
     updateStats();
     await playUltimateCinematic(spell);
     const module = await import('./classSpellEffects.js');
