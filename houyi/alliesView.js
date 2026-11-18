@@ -4,6 +4,7 @@ import { gbaSprite, loadGbaSprites } from './sprites/index.js';
 import { escapeHtml } from './escapeHtml.js';
 import { CLASS_SHORT } from './classRoster.js';
 import { gameState, currentTurn, activateXiuxian } from './game.js';
+import { decoupled } from './gameSpellList.js';
 import { TRANSE_EFFECTS, TRANSE_TURNS } from './transe.js';
 import { RAGE_MAX } from './ultimates.js';
 
@@ -34,7 +35,7 @@ export function renderAllyBar() {
         const pct = Math.max(0, Math.min(100, Math.round(a.hp / a.maxHp * 100)));
         const src = portrait(a.sprite);
         const inXiu = Math.floor(a.transe || 0) > 0, full = Math.floor(a.rage || 0) >= RAGE_MAX;
-        const ready = !a.ko && !inXiu && full && gameState.combatState === 'active' && currentTurn === 'player';
+        const ready = !a.ko && !inXiu && full && gameState.combatState === 'active' && (currentTurn === 'player' || decoupled());
         const gauge = inXiu ? Math.floor(a.transe) / TRANSE_TURNS * 100 : Math.min(100, a.rage || 0);
         const eff = TRANSE_EFFECTS[a.classId];
         const xiu = `<button type="button" class="ally-xiu${inXiu ? ' in-xiu' : ''}${ready ? ' ready' : ''}" data-xiu="${a.classId}" ${ready ? '' : 'disabled'} aria-label="${escapeHtml(`Xiūxiān de ${a.name} : ${Math.floor(a.rage || 0)} sur 100${eff ? ` (${eff.name})` : ''}`)}" title="${escapeHtml(eff ? `${eff.name} : ${eff.text}` : 'Xiūxiān')}"><i style="width:${gauge}%"></i></button>`;

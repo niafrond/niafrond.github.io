@@ -298,8 +298,12 @@ export function enemyProactiveAction(){
     if(isAsleep(enemy) || (enemy.statusEffects?.stunned || 0) > 0) return;
     const decision = makeDecision();
     if(!(decision.action === 'spell' || decision.action === 'weapon')) return;   // il préfère jouer sur le plateau
-    if(decision.action === 'spell' && decision.data?.spell?.boardSpell) return;   // les sorts de plateau passent par son tour de plateau
     if(!payEnemyAction(decision)) return;
+    if(decision.action === 'spell' && decision.data?.spell?.boardSpell){   // sort de plateau : choisi et payé tout de suite, il part avec les autres actions de plateau (fin du tour de plateau en cours)
+        const chosen = decision;
+        chooseEnemyAction(() => withCaster('enemy', async () => { playSfx('spellCast', { isPlayer: false, spellId: chosen.data.spell.id }); await castEnemyBoardSpell(chosen.data.spell); }), true);
+        return;
+    }
     chooseEnemyAction(() => runEnemyActionOutOfTurn(decision));
 }
 

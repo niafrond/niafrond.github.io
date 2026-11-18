@@ -7,7 +7,8 @@ import { heroSprite, enemySprite, spriteUri, gbaSprite, gbaAttackFrames } from '
 import { hpBarTiming, hpShieldSegment } from './combatFlow.js';
 import { setAIDifficulty, getAIDifficulty } from './enemyAI.js';
 import { icon as svgIcon } from './icons.js';
-import { RAGE_MAX, getEquippedUltimate, isRageFull, canCastUltimateMana } from './ultimates.js';
+import { normalizeRoster } from './classRoster.js';
+import { ULTIMATE_CLASS, RAGE_MAX, getEquippedUltimate, isRageFull, canCastUltimateMana } from './ultimates.js';
 import { statusBadgesHtml } from './statusBadges.js';
 import { signatureDamage } from './bossScript.js';
 // Sans altération, la ligne des états reste réservée (vide) : la barre de PV passe toujours sous le portrait, sur toute la largeur de la fiche.
@@ -18,7 +19,7 @@ import { bindStatusBadges, bindTooltip, ensureSpellTooltip, placeTooltip, showSp
 import { createWeaponButton, statValueHtml } from './gameInventoryTabs.js';
 import { updatePlayerStatsTab } from './gameStatsTab.js';
 import { updateLevelHud } from './gameLevelUp.js';
-import { createSpellButtons, getTurnClass } from './gameSpellList.js';
+import { createSpellButtons, getTurnClass, decoupled } from './gameSpellList.js';
 import { renderAllyBar, showXiuText } from './alliesView.js';
 import { isInTranse, classAllowsUltimate, storeGauge, TRANSE_TURNS } from './transe.js';
 import { bonusTurnBadge, canEntityCastSpell, castUltimate, activateXiuxian, allyInXiuxian, syncGauge, clampManaToCaps, classIcon, currentTurn, enemy, gameState, getUltimateTooltipHtml, transeTooltipHtml, getWeaponIcon, markMultiManaSpell, player, spellCostHtml, spellEffectIcon, syncPlayerControlsLock, ultimateManaBarHtml } from './game.js';
@@ -171,6 +172,45 @@ function bindXiuLongPress(div){
     });
 }
 
+// Bouton Xiūxiān sous les objets du personnage (colonne de gauche) :
+//  - Xiūxiān (la transe) : la jauge de rage ; elle se touche quand elle est pleine ;
+// Les invocations (anciens ultimes) ne sont plus un bouton : ce sont des sorts de la liste du Mage invocateur (gameSpellList.js : combatSpellList).
+// Fiche (effet, règle) : survol, appui long au doigt ou maintien de la souris (400 ms), sans rien déclencher.
+function holdTooltip(btn, html){
+    const show = () => { const t = ensureSpellTooltip(); t.innerHTML = html(); t.classList.add('visible'); placeTooltip(t, btn, 260); };
+    bindTooltip(btn, show, () => hideSpellTooltip());
+    let held = null, shown = false;
+    btn.addEventListener('pointerdown', ev => { if(ev.pointerType !== 'mouse') return; held = setTimeout(() => { held = null; shown = true; show(); }, 400); });
+    btn.addEventListener('click', ev => { if(!shown) return; shown = false; ev.preventDefault(); ev.stopImmediatePropagation(); }, true);
+    ['pointerup', 'pointerleave', 'pointercancel'].forEach(t => btn.addEventListener(t, () => { clearTimeout(held); held = null; }));
+}
+function actionCard(className, usable, onFire){
+    const btn = document.createElement('div');
+    btn.className = `enemy-spell-item xiu-btn ${className}${usable ? ' xiu-ready' : ' disabled'}`;
+    btn.tabIndex = usable ? 0 : -1;
+    btn.setAttribute('role', 'button');
+    btn.setAttribute('aria-disabled', String(!usable));
+    if(usable){
+        btn.onclick = onFire;
+        btn.onkeydown = ev => { if(ev.key === 'Enter' || ev.key === ' '){ ev.preventDefault(); onFire(); } };
+    }
+    return btn;
+}
+function renderXiuButton({ equippedUltimate, inTranse, canActivate, ultimateReady, ultimateManaReached, gaugeLevel }){
+    const box = document.getElementById('xiu-button');
+    if(!box) return;
+    box.innerHTML = '';
+    if(gameState.combatState !== 'active') return;
+    // Xiūxiān : jauge de rage, ou tours restants pendant la transe.
+    const xiu = actionCard(`xiu-transe${isRageFull(player) ? ' full' : ''}${inTranse ? ' in-transe' : ''}`, canActivate, () => activateXiuxian());
+    const label = canActivate ? 'Déclencher' : inTranse ? `Transe · ${Math.max(1, Math.floor(player.transe || 1))} t.` : `${Math.floor(player.rage || 0)} / ${RAGE_MAX}`;
+    xiu.innerHTML = `<div class="spell-name">Xiūxiān</div>`
+        + `<div class="xiu-gauge" role="progressbar" aria-valuemin="0" aria-valuemax="${RAGE_MAX}" aria-valuenow="${Math.floor(player.rage || 0)}"><i style="width:${Math.min(100, Math.max(0, gaugeLevel))}%"></i></div>`
+        + `<div class="spell-cost">${label}</div>`;
+    holdTooltip(xiu, () => transeTooltipHtml(player, null));
+    box.appendChild(xiu);
+}
+
 export function updateStats(){
     syncPlayerControlsLock();
     updateLevelHud();
@@ -214,16 +254,17 @@ export function updateStats(){
         bindXiuLongPress(playerDiv);
     }
     // Pas de jauge de rage sans ultime débloqué (classe sans ultime ou niveau minimum non atteint).
-    // Jauge pleine : le texte devient « ULTIME » et la barre se lance l'ultime choisi (compte comme un tour).
+    // Xiūxiān et Invocation (ancien ultime) : deux boutons distincts sous les objets (renderXiuButton).
     syncGauge();   // une jauge de Xiūxiān par classe : celle de la classe du tour
     const equippedUltimate = getEquippedUltimate(player);
     // Xiūxiān : la jauge est toujours visible ; l'ultime se lance pendant la Xiūxiān, si la classe choisie pour le tour est le sorcier.
     const inTranse = isInTranse(player);
     // Pendant sa Xiūxiān, la jauge se vide d'un tiers à chaque tour : elle montre ce qu'il reste de la durée.
     const gaugeLevel = inTranse && player.transeClass && player.transeClass === player.gaugeClass ? (Math.floor(player.transe || 0) / TRANSE_TURNS * 100) : (player.rage || 0) / RAGE_MAX * 100;
-    const canActivate = !inTranse && isRageFull(player) && gameState.combatState === 'active' && currentTurn === 'player';   // jauge pleine : on déclenche la Xiūxiān en la touchant
-    const ultimateReady = !!equippedUltimate && (inTranse || allyInXiuxian('sorcerer')) && (player.cheatMaxRage === true || allyInXiuxian('sorcerer')) && classAllowsUltimate(getTurnClass()) && gameState.combatState === 'active';
+    const canActivate = !inTranse && isRageFull(player) && gameState.combatState === 'active' && (currentTurn === 'player' || decoupled());   // jauge pleine : on déclenche la Xiūxiān en la touchant
+    const ultimateReady = false;   // plus d'ultime à jauge : les invocations sont des sorts du Mage (gameSpellList.js)
     const ultimateManaReached = !!equippedUltimate && (player.cheatFreeSpells === true || canCastUltimateMana(player, equippedUltimate));   // clignote seulement si le qì collecté suffit aussi
+    renderXiuButton({ equippedUltimate, inTranse, canActivate, ultimateReady, ultimateManaReached, gaugeLevel });
     // Héros avec jauge de rage : sa fiche est déjà bien remplie, la fiche ennemie reçoit plus de largeur (style.css `.has-rage`).
     document.querySelector('.stats-container')?.classList.toggle('has-rage', true);
     // Affichage de la classe si définie
@@ -237,15 +278,6 @@ export function updateStats(){
                     <span class="hp-text"><span id="player-hp-current">${targetPlayerHp}</span>/${player.maxHp}${playerShield.text}</span>
                 </div>
             </div>
-            ${true ? `
-            <div class="stat rage-stat row-rage">
-                <div class="rage-bar-container${isRageFull(player) ? ' full' : ''}${inTranse ? ' in-transe' : ''}${canActivate ? ' xiu-ready' : ''}${ultimateReady ? ' ultimate-ready' : ''}${ultimateReady && ultimateManaReached ? ' mana-reached' : ''}"${ultimateReady || canActivate ? ' role="button" tabindex="0"' : ''}>
-                    <div class="rage-bar" role="progressbar" aria-valuemin="0" aria-valuemax="${RAGE_MAX}" aria-valuenow="${Math.floor(player.rage || 0)}"><div class="rage-fill" style="--g:${Math.min(100, Math.max(0, gaugeLevel))}%"></div></div>
-                    <span class="rage-text" title="${ultimateReady ? 'ULTIME' : canActivate ? 'DÉCLENCHER LA XIŪXIĀN' : inTranse ? 'XIŪXIĀN' : `XIŪXIĀN ${Math.floor(player.rage || 0)}`}">${ultimateReady ? '★' : canActivate ? '!' : inTranse ? `T${Math.max(1, Math.floor(player.transe || 1))}` : Math.floor(player.rage || 0)}</span>
-                </div>
-                ${equippedUltimate ? ultimateManaBarHtml(player, equippedUltimate) : ''}
-            </div>
-            ` : ''}
             <div class="stat stat-row row-stats"><span class="level-pill" title="Niveau ${player.level}">${player.level}</span><span class="stat-chip" title="Attaque"><strong>Att.</strong> ${statValueHtml(player, 'attack')}</span><span class="stat-chip" title="Défense"><strong>Déf.</strong> ${statValueHtml(player, 'defense')}</span></div>
             <div class="stat row-pills">
                 <div class="mana-dots">
@@ -258,22 +290,6 @@ export function updateStats(){
                 </div>
             </div>`;
         
-        {
-            const rageBar = playerDiv.querySelector('.rage-bar-container');
-            if(ultimateReady || canActivate){
-                const fire = () => { if(ultimateReady) castUltimate(equippedUltimate.id); else activateXiuxian(); };
-                rageBar.onclick = fire;
-                rageBar.onkeydown = (event) => {
-                    if(event.key === 'Enter' || event.key === ' ') {
-                        event.preventDefault();
-                        fire();
-                    }
-                };
-            }
-            // Fiche (nom, qì requis, effet) : survol, ou appui long au doigt (qui ne lance pas l'ultime).
-            bindTooltip(rageBar, () => { const t = ensureSpellTooltip(); t.innerHTML = ultimateReady ? getUltimateTooltipHtml(player, equippedUltimate) : transeTooltipHtml(player, equippedUltimate); t.classList.add('visible'); placeTooltip(t, rageBar, 260); }, () => hideSpellTooltip());
-        }
-
         // Animer les compteurs si les valeurs ont changé
         const playerProgressEl = playerDiv.querySelector('.hp-bar-container progress');
         syncHpShield(playerProgressEl);
