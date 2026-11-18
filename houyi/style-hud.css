@@ -1150,3 +1150,13 @@ body.show-xiu-text #xiu-banner { display: block; }
 /* Jauge de Xiūxiān / d'ultime de Hou Yi : plus épaisse et zone tactile élargie (invisible) pour être facile à déclencher. */
 #player-stats .rage-stat { height: 12px; }
 #player-stats .rage-bar-container.xiu-ready::before, #player-stats .rage-bar-container.ultimate-ready::before { content: ''; position: absolute; inset: -12px -6px; }
+
+/* Bouton Xiūxiān (sous les objets) : jauge de rage, mini-barre de qì de l'ultime ; touchable quand la jauge est pleine. */
+.xiu-btn { position: relative; display: flex; flex-direction: column; gap: 2px; }
+.xiu-btn .xiu-gauge { height: 8px; border-radius: 4px; background: rgba(0, 0, 0, .35); overflow: hidden; }
+.xiu-btn .xiu-gauge i { display: block; height: 100%; background: linear-gradient(180deg, #e0556f, #a8153a 60%, #6e0c26); transition: width .4s; }
+.xiu-btn.full .xiu-gauge i { background: linear-gradient(180deg, #ffd56a, #f2a61a); }
+.xiu-btn.xiu-ready { cursor: pointer; box-shadow: 0 0 8px #f2c14e; outline: 1px solid #f2c14e; touch-action: manipulation; -webkit-tap-highlight-color: transparent; user-select: none; -webkit-user-select: none; }
+.xiu-btn.xiu-ready:active { transform: scale(0.97); }
+.xiu-btn.mana-reached .xiu-gauge { animation: rage-pulse 0.9s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) { .xiu-btn.mana-reached .xiu-gauge { animation: none; } }

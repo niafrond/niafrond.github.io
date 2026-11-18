@@ -171,6 +171,40 @@ function bindXiuLongPress(div){
     });
 }
 
+// Bouton Xiūxiān : sous les objets du personnage (colonne de gauche). Il porte la jauge (rage, ou tours restants pendant la transe) et, si un ultime est
+// équipé, la mini-barre de qì ; il se touche quand la jauge est pleine (ou, pendant la transe, pour l'ultime prêt). Fiche (effet, règle) : survol, ou
+// appui maintenu au doigt / à la souris, sans déclencher la Xiūxiān.
+function renderXiuButton({ equippedUltimate, inTranse, canActivate, ultimateReady, ultimateManaReached, gaugeLevel }){
+    const box = document.getElementById('xiu-button');
+    if(!box) return;
+    box.innerHTML = '';
+    if(gameState.combatState !== 'active') return;
+    const usable = canActivate || ultimateReady;
+    const btn = document.createElement('div');
+    btn.className = `enemy-spell-item xiu-btn${usable ? ' xiu-ready' : ' disabled'}${isRageFull(player) ? ' full' : ''}${inTranse ? ' in-transe' : ''}${ultimateReady && ultimateManaReached ? ' mana-reached' : ''}`;
+    btn.tabIndex = usable ? 0 : -1;
+    btn.setAttribute('role', 'button');
+    btn.setAttribute('aria-disabled', String(!usable));
+    const label = ultimateReady ? 'Ultime' : canActivate ? 'Déclencher' : inTranse ? `Transe · ${Math.max(1, Math.floor(player.transe || 1))} t.` : `${Math.floor(player.rage || 0)} / ${RAGE_MAX}`;
+    btn.innerHTML = `<div class="spell-name">Xiūxiān${ultimateReady ? ' ★' : ''}</div>`
+        + `<div class="xiu-gauge" role="progressbar" aria-valuemin="0" aria-valuemax="${RAGE_MAX}" aria-valuenow="${Math.floor(player.rage || 0)}"><i style="width:${Math.min(100, Math.max(0, gaugeLevel))}%"></i></div>`
+        + `<div class="spell-cost">${label}</div>`
+        + (equippedUltimate ? ultimateManaBarHtml(player, equippedUltimate) : '');
+    if(usable){
+        const fire = () => { if(ultimateReady) castUltimate(equippedUltimate.id); else activateXiuxian(); };
+        btn.onclick = fire;
+        btn.onkeydown = ev => { if(ev.key === 'Enter' || ev.key === ' '){ ev.preventDefault(); fire(); } };
+    }
+    const show = () => { const t = ensureSpellTooltip(); t.innerHTML = ultimateReady ? getUltimateTooltipHtml(player, equippedUltimate) : transeTooltipHtml(player, equippedUltimate); t.classList.add('visible'); placeTooltip(t, btn, 260); };
+    bindTooltip(btn, show, () => hideSpellTooltip());
+    // Maintien à la souris : la fiche reste affichée tant que le bouton est pressé (le clic qui suit un maintien long ne déclenche rien).
+    let held = null, shown = false;
+    btn.addEventListener('pointerdown', ev => { if(ev.pointerType !== 'mouse') return; held = setTimeout(() => { held = null; shown = true; show(); }, 400); });
+    btn.addEventListener('click', ev => { if(!shown) return; shown = false; ev.preventDefault(); ev.stopImmediatePropagation(); }, true);
+    ['pointerup', 'pointerleave', 'pointercancel'].forEach(t => btn.addEventListener(t, () => { clearTimeout(held); held = null; }));
+    box.appendChild(btn);
+}
+
 export function updateStats(){
     syncPlayerControlsLock();
     updateLevelHud();
@@ -224,6 +258,7 @@ export function updateStats(){
     const canActivate = !inTranse && isRageFull(player) && gameState.combatState === 'active' && (currentTurn === 'player' || decoupled());   // jauge pleine : on déclenche la Xiūxiān en la touchant
     const ultimateReady = !!equippedUltimate && (inTranse || allyInXiuxian('sorcerer')) && (player.cheatMaxRage === true || allyInXiuxian('sorcerer')) && classAllowsUltimate(getTurnClass()) && gameState.combatState === 'active';
     const ultimateManaReached = !!equippedUltimate && (player.cheatFreeSpells === true || canCastUltimateMana(player, equippedUltimate));   // clignote seulement si le qì collecté suffit aussi
+    renderXiuButton({ equippedUltimate, inTranse, canActivate, ultimateReady, ultimateManaReached, gaugeLevel });
     // Héros avec jauge de rage : sa fiche est déjà bien remplie, la fiche ennemie reçoit plus de largeur (style.css `.has-rage`).
     document.querySelector('.stats-container')?.classList.toggle('has-rage', true);
     // Affichage de la classe si définie
@@ -237,15 +272,6 @@ export function updateStats(){
                     <span class="hp-text"><span id="player-hp-current">${targetPlayerHp}</span>/${player.maxHp}${playerShield.text}</span>
                 </div>
             </div>
-            ${true ? `
-            <div class="stat rage-stat row-rage">
-                <div class="rage-bar-container${isRageFull(player) ? ' full' : ''}${inTranse ? ' in-transe' : ''}${canActivate ? ' xiu-ready' : ''}${ultimateReady ? ' ultimate-ready' : ''}${ultimateReady && ultimateManaReached ? ' mana-reached' : ''}"${ultimateReady || canActivate ? ' role="button" tabindex="0"' : ''}>
-                    <div class="rage-bar" role="progressbar" aria-valuemin="0" aria-valuemax="${RAGE_MAX}" aria-valuenow="${Math.floor(player.rage || 0)}"><div class="rage-fill" style="--g:${Math.min(100, Math.max(0, gaugeLevel))}%"></div></div>
-                    <span class="rage-text" title="${ultimateReady ? 'ULTIME' : canActivate ? 'DÉCLENCHER LA XIŪXIĀN' : inTranse ? 'XIŪXIĀN' : `XIŪXIĀN ${Math.floor(player.rage || 0)}`}">${ultimateReady ? '★' : canActivate ? '!' : inTranse ? `T${Math.max(1, Math.floor(player.transe || 1))}` : Math.floor(player.rage || 0)}</span>
-                </div>
-                ${equippedUltimate ? ultimateManaBarHtml(player, equippedUltimate) : ''}
-            </div>
-            ` : ''}
             <div class="stat stat-row row-stats"><span class="level-pill" title="Niveau ${player.level}">${player.level}</span><span class="stat-chip" title="Attaque"><strong>Att.</strong> ${statValueHtml(player, 'attack')}</span><span class="stat-chip" title="Défense"><strong>Déf.</strong> ${statValueHtml(player, 'defense')}</span></div>
             <div class="stat row-pills">
                 <div class="mana-dots">
@@ -258,22 +284,6 @@ export function updateStats(){
                 </div>
             </div>`;
         
-        {
-            const rageBar = playerDiv.querySelector('.rage-bar-container');
-            if(ultimateReady || canActivate){
-                const fire = () => { if(ultimateReady) castUltimate(equippedUltimate.id); else activateXiuxian(); };
-                rageBar.onclick = fire;
-                rageBar.onkeydown = (event) => {
-                    if(event.key === 'Enter' || event.key === ' ') {
-                        event.preventDefault();
-                        fire();
-                    }
-                };
-            }
-            // Fiche (nom, qì requis, effet) : survol, ou appui long au doigt (qui ne lance pas l'ultime).
-            bindTooltip(rageBar, () => { const t = ensureSpellTooltip(); t.innerHTML = ultimateReady ? getUltimateTooltipHtml(player, equippedUltimate) : transeTooltipHtml(player, equippedUltimate); t.classList.add('visible'); placeTooltip(t, rageBar, 260); }, () => hideSpellTooltip());
-        }
-
         // Animer les compteurs si les valeurs ont changé
         const playerProgressEl = playerDiv.querySelector('.hp-bar-container progress');
         syncHpShield(playerProgressEl);
