@@ -23,27 +23,10 @@ const portrait = key => {
     try { return gbaSprite(key, 'front') || ''; } catch { return ''; }
 };
 
-/** (Re)dessine la barre des compagnons ; masquée hors combat ou sans compagnon dans l'équipe. */
+/** La barre des compagnons du haut de l'écran n'existe plus : leurs PV et leur Xiūxiān sont dans leur bouton de la barre d'action (gameSpellList.js : renderClassPicker). */
 export function renderAllyBar() {
     const box = typeof document !== 'undefined' ? document.getElementById('ally-bar') : null;
-    if (!box) return;
-    const allies = Object.values(gameState.allies || {});
-    box.hidden = gameState.combatState !== 'active' || !allies.length;
-    if (box.hidden) { box.innerHTML = ''; return; }
-    bindXiu(box);
-    box.innerHTML = allies.map(a => {
-        const pct = Math.max(0, Math.min(100, Math.round(a.hp / a.maxHp * 100)));
-        const src = portrait(a.sprite);
-        const inXiu = Math.floor(a.transe || 0) > 0, full = Math.floor(a.rage || 0) >= RAGE_MAX;
-        const ready = !a.ko && !inXiu && full && gameState.combatState === 'active' && (currentTurn === 'player' || decoupled());
-        const gauge = inXiu ? Math.floor(a.transe) / TRANSE_TURNS * 100 : Math.min(100, a.rage || 0);
-        const eff = TRANSE_EFFECTS[a.classId];
-        const xiu = `<button type="button" class="ally-xiu${inXiu ? ' in-xiu' : ''}${ready ? ' ready' : ''}" data-xiu="${a.classId}" ${ready ? '' : 'disabled'} aria-label="${escapeHtml(`Xiūxiān de ${a.name} : ${Math.floor(a.rage || 0)} sur 100${eff ? ` (${eff.name})` : ''}`)}" title="${escapeHtml(eff ? `${eff.name} : ${eff.text}` : 'Xiūxiān')}"><i style="width:${gauge}%"></i></button>`;
-        return `<div class="ally-card${a.ko ? ' ko' : ''}${inXiu ? ' xiu-on' : ''}" data-ally="${a.classId}" tabindex="0" title="${escapeHtml(`${a.name} · ${CLASS_SHORT[a.classId]} · ${a.hp}/${a.maxHp} PV${a.ko ? ' (hors de combat)' : ''}`)}">`
-            + `${src ? `<img class="ally-portrait" src="${src}" alt="" width="30" height="30">` : '<span class="ally-portrait"></span>'}`
-            + `<span class="ally-name">${escapeHtml(a.short)}</span>`
-            + `<span class="ally-hp" role="progressbar" aria-label="PV de ${escapeHtml(a.name)}" aria-valuemin="0" aria-valuemax="${a.maxHp}" aria-valuenow="${a.hp}"><i style="width:${pct}%"></i></span>${xiu}</div>`;
-    }).join('');
+    if (box) { box.hidden = true; box.innerHTML = ''; }
 }
 
 /** Charge les dessins des compagnons de l'équipe puis redessine la barre. */

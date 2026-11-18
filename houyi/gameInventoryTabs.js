@@ -1,7 +1,8 @@
 // Onglets Armes, Équipement et Inventaire : armes en main, boutons d'arme/objet, cartes, équiper / vendre / utiliser un objet.
 // Extrait de game.js.
 import { getWeaponById, BIOME_LABELS, describeStatBonuses } from "./weapons.js";
-import { chooseAction, classCanAct, decoupled } from "./gameSpellList.js";
+import { chooseAction, classCanAct, decoupled, getTurnClass } from "./gameSpellList.js";
+import { START_CLASS } from "./classRoster.js";
 import { actionGuard } from "./actionGuard.js";
 import { compareAttrs, deltaBadgesHtml, equipDeltaGroupsHtml } from "./compareView.js";
 import { isSingleUse, reuseLabel } from "./itemReuse.js";
@@ -148,6 +149,7 @@ export function createWeaponButton(){
     const container = document.getElementById('weapon-button');
     if(!container) return;
     container.innerHTML = "";
+    if(gameState.combatState === 'active' && getTurnClass() !== START_CLASS){ updateWeaponsTab(); return; }   // l'arme est celle de Hou Yi : un compagnon choisi n'a pas ce bouton
 
     if(!player.equippedWeapon){
         if(player.availableWeapons && player.availableWeapons.length > 0) {

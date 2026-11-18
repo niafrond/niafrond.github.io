@@ -1942,6 +1942,7 @@ export function useWeapon(hand = 'right'){
     if(gameState.combatState !== 'active'){ log("Aucun combat en cours."); return; }
     if(!decoupled() && currentTurn !== 'player'){ log("Seul le joueur actif peut utiliser une attaque."); return; }
     if(rejectRushedAction()) return;
+    if(getTurnClass() !== 'assassin'){ log("L'arme est celle de Hou Yi : choisissez-le dans la barre d'action."); return; }
     if(tutorialCallbacks.allowWeapon && !tutorialCallbacks.allowWeapon()) return;   // tutoriel : l'arme n'est acceptée qu'à l'étape prévue
     if(!classCanAct()) return;   // la classe du tour doit être chargée (barre pleine) pour choisir une action
     if(gameState.heroKo){ log('Hou Yi est à terre : il ne peut plus manier son arme.'); return; }

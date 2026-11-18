@@ -19,7 +19,7 @@ import { bindStatusBadges, bindTooltip, ensureSpellTooltip, placeTooltip, showSp
 import { createWeaponButton, statValueHtml } from './gameInventoryTabs.js';
 import { updatePlayerStatsTab } from './gameStatsTab.js';
 import { updateLevelHud } from './gameLevelUp.js';
-import { createSpellButtons, getTurnClass, decoupled } from './gameSpellList.js';
+import { createSpellButtons, getTurnClass, decoupled, memberGauge, refreshClassPicker } from './gameSpellList.js';
 import { renderAllyBar, showXiuText } from './alliesView.js';
 import { isInTranse, classAllowsUltimate, storeGauge, TRANSE_TURNS } from './transe.js';
 import { bonusTurnBadge, canEntityCastSpell, castUltimate, activateXiuxian, allyInXiuxian, syncGauge, clampManaToCaps, classIcon, currentTurn, enemy, gameState, getUltimateTooltipHtml, transeTooltipHtml, getWeaponIcon, markMultiManaSpell, player, spellCostHtml, spellEffectIcon, syncPlayerControlsLock, ultimateManaBarHtml } from './game.js';
@@ -196,18 +196,26 @@ function actionCard(className, usable, onFire){
     }
     return btn;
 }
-function renderXiuButton({ equippedUltimate, inTranse, canActivate, ultimateReady, ultimateManaReached, gaugeLevel }){
+function renderXiuButton({ inTranse, canActivate, gaugeLevel }){
     const box = document.getElementById('xiu-button');
     if(!box) return;
     box.innerHTML = '';
     if(gameState.combatState !== 'active') return;
-    // Xiūxiān : jauge de rage, ou tours restants pendant la transe.
-    const xiu = actionCard(`xiu-transe${isRageFull(player) ? ' full' : ''}${inTranse ? ' in-transe' : ''}`, canActivate, () => activateXiuxian());
-    const label = canActivate ? 'Déclencher' : inTranse ? `Transe · ${Math.max(1, Math.floor(player.transe || 1))} t.` : `${Math.floor(player.rage || 0)} / ${RAGE_MAX}`;
+    // La Xiūxiān est celle du PERSONNAGE CHOISI (nom touché dans la barre d'action) : Hou Yi ou un compagnon.
+    const cls = getTurnClass();
+    const g = memberGauge(cls);
+    if(!g) return;
+    const mine = g.hero;
+    const active = mine ? inTranse : g.inXiu;
+    const usable = mine ? canActivate : (!g.ko && !g.inXiu && g.full && (currentTurn === 'player' || decoupled()));
+    const level = mine ? gaugeLevel : g.gauge;
+    const xiu = actionCard(`xiu-transe${g.full ? ' full' : ''}${active ? ' in-transe' : ''}`, usable, () => activateXiuxian(cls));
+    const turns = Math.max(1, Math.floor(g.entity.transe || 1));
+    const label = usable ? 'Déclencher' : active ? `Transe · ${turns} t.` : `${g.rage} / ${RAGE_MAX}`;
     xiu.innerHTML = `<div class="spell-name">Xiūxiān</div>`
-        + `<div class="xiu-gauge" role="progressbar" aria-valuemin="0" aria-valuemax="${RAGE_MAX}" aria-valuenow="${Math.floor(player.rage || 0)}"><i style="width:${Math.min(100, Math.max(0, gaugeLevel))}%"></i></div>`
+        + `<div class="xiu-gauge" role="progressbar" aria-valuemin="0" aria-valuemax="${RAGE_MAX}" aria-valuenow="${g.rage}"><i style="width:${Math.min(100, Math.max(0, level))}%"></i></div>`
         + `<div class="spell-cost">${label}</div>`;
-    holdTooltip(xiu, () => transeTooltipHtml(player, null));
+    holdTooltip(xiu, () => transeTooltipHtml(g.entity, null));
     box.appendChild(xiu);
 }
 
@@ -360,7 +368,8 @@ export function updateStats(){
         });
     }
     
-    renderAllyBar();   // barres de vie des compagnons
+    renderAllyBar();   // (masquée : plus de doublon des compagnons en haut)
+    refreshClassPicker();   // PV, Xiūxiān et chargement de chaque personnage, dans sa barre d'action
     document.getElementById('player-stats')?.classList.toggle('hero-ko', !!gameState.heroKo);   // Hou Yi à terre
     updateEnemySpells();
 }

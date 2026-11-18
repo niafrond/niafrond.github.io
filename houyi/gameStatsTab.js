@@ -208,7 +208,7 @@ export function showCombatAnimation({ icon, title, damage = null, heal = null, s
     const boardEl = document.getElementById('board');   // zone intérieure (l'overlay est dans le padding du plateau)
     const boardPx = boardEl ? Math.min(boardEl.clientWidth, boardEl.clientHeight) || Infinity : Infinity;
     const fx = spellFxHtml(title, Number.isFinite(boardPx) ? boardPx : 0);   // les sorts très chers s'étalent sur le plateau ; mini-animation pixel art du sort (plus riche pour les sorts chers), sinon l'icône
-    if(fx && options.requireClick === undefined && options.autoHideMs === undefined) options = { ...options, autoHideMs: Math.max(1000 * animationFactor(), spellFxDurationMs(title) * 2 + 500) };   // l'animation tourne en boucle : au moins deux passages
+    if(fx && options.requireClick === undefined && options.autoHideMs === undefined) options = { ...options, autoHideMs: Math.max(1600 * animationFactor(), spellFxDurationMs(title) * 2 + 500) };   // l'animation tourne en boucle : au moins deux passages
     const bigFx = Boolean(fx && fx.includes('spellfx-big'));
     let html = `<div class="attack-icon${fx ? ' has-spellfx' : ''}${bigFx ? ' has-spellfx-big' : ''}">${fx || svgIcon(icon) || icon}</div>`;
     const casterAlly = isPlayerAttack ? gameState.allies?.[gameState.turnClass] : null;   // un compagnon frappe avec son arme (jamais l'arc de Hou Yi)
@@ -230,7 +230,9 @@ export function showCombatAnimation({ icon, title, damage = null, heal = null, s
 // Attaque en deux temps quand la cible bloque ou pare : 1) dégâts annoncés, 2) dégâts réellement subis avec bouclier et vibration.
 // `strike` vient de resolveStrike ({ damage, crit, block, intended }) ; `params` = paramètres de showCombatAnimation sans `damage`.
 // Durée d'affichage d'une annonce de coup : plus longue pour un critique et surtout pour un coup très puissant (≥ 30 % des PV max de la cible).
-export function strikeHoldMs(strike, isPlayerAttack, damage, base = 1100) {
+export const ATTACK_HOLD_MS = 1800;   // durée d'affichage d'une annonce d'attaque (avant : 1,1 s)
+export const ATTACK_END_PAUSE_MS = 1000;   // petite pause d'une seconde une fois l'animation partie, avant que le jeu ne continue
+export function strikeHoldMs(strike, isPlayerAttack, damage, base = ATTACK_HOLD_MS) {
     const heavy = strike.heavy || strike.unblockable || isHeavyHit(damage, isPlayerAttack ? enemy : player);
     return (heavy ? base * 2.2 : strike.crit ? base * 1.45 : base) * animationFactor();
 }
@@ -256,7 +258,7 @@ export function showAttackAnimation(text, isPlayerAttack = true, options = {}) {
         requireClick = false,
         continueText = 'Cliquez pour continuer',
         onContinue = null,
-        autoHideMs = 1000 * animationFactor()
+        autoHideMs = 1600 * animationFactor()
     } = options;
 
     const boardDiv = document.getElementById('board');
@@ -305,12 +307,16 @@ export function showAttackAnimation(text, isPlayerAttack = true, options = {}) {
         caption?.remove();   // la légende part en même temps que le clic « pour continuer » (ou la fin du délai)
         overlay.classList.add('fade-out');
         setTimeout(() => {
-            if(overlay.parentNode) {
-                overlay.parentNode.removeChild(overlay);
-            }
-            if(typeof onContinue === 'function') {
-                onContinue();
-            }
+            // Pause d'une seconde : l'overlay reste dans le DOM (invisible) et tout ce qui attend la fin des animations (action suivante, tour de l'ennemi…) patiente encore.
+            overlay.classList.add('attack-pause');
+            setTimeout(() => {
+                if(overlay.parentNode) {
+                    overlay.parentNode.removeChild(overlay);
+                }
+                if(typeof onContinue === 'function') {
+                    onContinue();
+                }
+            }, ATTACK_END_PAUSE_MS * animationFactor());
         }, 500);
     };
 

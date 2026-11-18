@@ -1623,3 +1623,6 @@ body.no-anim .stage-mid, body.no-anim .stage-fighter { animation: none !importan
 @keyframes stage-lunge-r { 0%, 100% { transform: translateX(0); } 45% { transform: translateX(120%); } }
 @keyframes stage-lunge-l { 0%, 100% { transform: translateX(0); } 45% { transform: translateX(-120%); } }
 @media (prefers-reduced-motion: reduce) { .stage-lunge { animation: none !important; } }
+
+/* Pause d'une seconde en fin d'animation d'attaque : l'overlay reste (invisible, sans clic) pour que le jeu patiente. */
+.attack-overlay.attack-pause { visibility: hidden; pointer-events: none; animation: none; background: none; }
