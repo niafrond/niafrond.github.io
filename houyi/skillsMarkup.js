@@ -129,11 +129,6 @@ export function skillsTabHtml(hero, gear, selectedId, canToggle = true) {
             <div class="ab-fulu" role="status" aria-label="Fulu utilisés"><span class="ab-fulu-ic">${GEM}</span><span class="ab-fulu-num"><b>${used}</b> / ${cap}</span><span class="ab-fulu-label">Fulu</span></div>
         </div>
         <div class="fulu-meter" aria-hidden="true">${gems(used, cap)}</div>
-        <details class="ab-how" open><summary>Comment ça marche ?</summary><ol>
-            <li><b>D'où viennent-elles ?</b> Chaque personnage a une compétence de base. Les autres s'apprennent en combattant : tant que vous portez une arme ou une pièce de stuff qui l'enseigne, chaque victoire lui donne des points d'apprentissage (PA). Jauge pleine : apprise pour toujours.</li>
-            <li><b>Comment les utiliser ?</b> Compétence de <b>soutien</b> : touchez-la, puis « Allumer » (à tout moment, même en combat ; les bonus de début de combat jouent au combat suivant). Compétence d'<b>action</b> : une fois apprise, elle apparaît comme un sort en combat.</li>
-            <li><b>Quelle limite ?</b> Les Fulu : le total des compétences allumées ne peut pas dépasser votre réserve (<b>${cap}</b> maintenant, +1 tous les 5 niveaux).</li>
-        </ol></details>
         ${classesHtml(hero, canToggle)}
         <div class="ab-body">
             <div class="ab-grid" role="list">${list.map(s => row(hero, s, taught, selected.id)).join('')}</div>
