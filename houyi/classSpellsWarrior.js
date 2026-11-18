@@ -2,7 +2,7 @@
 import { escapeHtml } from "./escapeHtml.js";
 import { flyManaGain, flyManaSteal, flyHeal } from './manaFlight.js';
 import { healEntity, inflictTurnLoss } from './alterations.js';
-import { player, enemy, log, saveUpdate, showCombatAnimation, applyDamage, lastSpellDamage, addBonusTurn } from './game.js';
+import { player, enemy, log, saveUpdate, showCombatAnimation, applyDamage, lastSpellDamage, addBonusTurn, grantActionBonus } from './game.js';
 import { board, renderBoard, setBoardTargetingMode, checkMatches } from './board.js';
 import { stackStatusEffect, addStatBuff, describeStatBuff } from './combatStats.js';
 import { isJokerTile, skullValue } from './joker.js';
@@ -78,9 +78,9 @@ export function applyManaSiphon(spell) {
 export function applySneakAttack(spell) {
     applyDamage(enemy, spell.dmg, { sourceSpell: spell });
     const sneakDmg = lastSpellDamage(spell.dmg);
-    addBonusTurn(player);
-    showCombatAnimation({ icon: 'sword', title: "TIR FURTIF", damage: `-${sneakDmg} dégâts · TOUR BONUS`, target: `→ ${enemy.name} · vous rejouez !` }, true);
-    log(`Tir Furtif inflige ${sneakDmg} dégâts et vous donne un tour bonus !`);
+    const refilled = grantActionBonus(player, spell);   // actions indépendantes du plateau : la barre d'action se remplit aussitôt
+    showCombatAnimation({ icon: 'sword', title: "TIR FURTIF", damage: `-${sneakDmg} dégâts · ${refilled ? 'BARRE REMPLIE' : 'TOUR BONUS'}`, target: `→ ${enemy.name} · ${refilled ? 'vous pouvez agir de nouveau !' : 'vous rejouez !'}` }, true);
+    log(refilled ? `Tir Furtif inflige ${sneakDmg} dégâts et remplit aussitôt votre barre d'action !` : `Tir Furtif inflige ${sneakDmg} dégâts et vous donne un tour bonus !`);
     return true;
 }
 
@@ -347,7 +347,7 @@ export function applyHeavensWrath(spell) {
 // BARBARIAN SPELLS
 export function applyEnrage(spell) {
     stackStatusEffect(player.statusEffects, 'enraged', 'enragedBonus', spell.duration, spell.atkBonus);
-    addBonusTurn(player);
+    grantActionBonus(player, spell);   // la barre d'action se remplit aussitôt (tour bonus d'avant)
     showCombatAnimation({ icon: 'anger', title: "FUREUR DES STEPPES", damage: `+${spell.atkBonus} dégâts`, target: `→ Vous (${spell.duration} tours)` }, true);
     log(`Fureur des Steppes augmente de ${spell.atkBonus} tous vos dégâts (crânes, armes, sorts) pendant ${spell.duration} tours !`);
     return true;

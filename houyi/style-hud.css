@@ -1184,3 +1184,13 @@ body.show-xiu-text #xiu-banner { display: block; }
 #player-stats.qi-strip::after { display: none !important; }
 #player-stats.qi-strip .stat { margin: 0 !important; }
 #player-stats.qi-strip .row-pills, #player-stats.qi-strip .mana-dots { display: flex; align-items: center; gap: 6px; }
+
+/* Altérations d'un personnage : pastilles dans son propre bouton de la barre d'action (en haut à droite). */
+.class-pick .cp-status { position: absolute; z-index: 2; top: 1px; right: 2px; display: flex; gap: 1px; margin: 0; }
+.class-pick .cp-status .status-badge { padding: 0 2px; min-height: 0; font-size: .6rem; line-height: 1; border-radius: 3px; }
+.class-pick .cp-status .status-badge svg { width: 10px; height: 10px; }
+
+/* Barre de PV lisible dans le bouton de chaque personnage (Hou Yi comme les compagnons). */
+.class-picker .class-pick { height: 42px; }
+.class-pick .cp-bars i.cp-hp { position: relative; height: 12px; }
+.class-pick .cp-hp em { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font: 700 .58rem/1 Inter, system-ui, sans-serif; font-style: normal; color: #fff; text-shadow: 0 0 2px #000; }

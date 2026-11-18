@@ -73,7 +73,7 @@ import { showCombatAnimation, showStrikeAnimation } from './gameStatsTab.js';
 export * from './gameStatsTab.js';
 import { showAttributeMenu, updateLevelHud } from './gameLevelUp.js';
 export * from './gameLevelUp.js';
-import { updateAvailableSpells, combatSpellList, getTurnClass, chooseAction, classCanAct, spendActionCharge, chargeFactor, decoupled, withCaster, resumeAfterBoundary } from './gameSpellList.js';
+import { updateAvailableSpells, combatSpellList, getTurnClass, chooseAction, classCanAct, spendActionCharge, chargeFactor, decoupled, withCaster, resumeAfterBoundary, refillActionBar } from './gameSpellList.js';
 import { applyDuelRulesAtCombatStart, enemyTurn, finishPlayerTurn, handleEnemyDefeated } from './gameTurnFlow.js';
 export * from './gameTurnFlow.js';
 export * from './gameSpellList.js';
@@ -214,6 +214,14 @@ export function normalizeBonusTurnValue(value){
 }
 
 // Pastille « cadeau ×N » affichée à côté du nom tant qu'il reste des tours bonus accumulés.
+/**
+ * Bonus d'un sort qui donnait « un tour bonus » : quand les actions sont indépendantes du plateau (il n'y a plus de tour à gagner), il REMPLIT AUSSITÔT
+ * la barre d'action du lanceur (sa classe, ou l'ennemi) ; tutoriel et duels gardent l'ancien tour bonus. Renvoie true si la barre a été remplie.
+ */
+export function grantActionBonus(caster, spell = null){
+    if(!decoupled()){ addBonusTurn(caster, 1); return false; }
+    return refillActionBar(caster, spell?.class || null);
+}
 export function bonusTurnBadge(entity){
     const n = normalizeBonusTurnValue(entity?.bonusTurn);
     if(n <= 0) return '';
@@ -747,8 +755,7 @@ export function applyStandardSpellEffects(caster, target, spell, isPlayerCaster)
     }
 
     if(spell.effect === 'bonusTurn'){   // Tir Furtif : le lanceur rejoue, quel qu'il soit
-        addBonusTurn(caster, 1);
-        log(`${spell.name} : ${escapeHtml(caster.name)} gagne un tour bonus !`);
+        log(grantActionBonus(caster, spell) ? `${spell.name} : la barre d'action de ${escapeHtml(caster.name)} se remplit aussitôt !` : `${spell.name} : ${escapeHtml(caster.name)} gagne un tour bonus !`);
     }
 
     if(spell.heal){
@@ -769,7 +776,7 @@ export function applyStandardSpellEffects(caster, target, spell, isPlayerCaster)
 
     // Tout sort lancé par l'ennemi (tour bonus, défense, statut…) doit montrer son animation, même sans dégâts ni soin.
     if(!isPlayerCaster && !enemyAnimShown){
-        const detail = spell.effect === 'bonusTurn' ? 'Rejoue !' : (opsText.join(' • ') || null);
+        const detail = spell.effect === 'bonusTurn' ? (decoupled() ? 'Barre remplie !' : 'Rejoue !') : (opsText.join(' • ') || null);
         showCombatAnimation({ icon: 'spark', title: spell.name, heal: detail, source: caster.name, target: `→ ${caster.name}` }, false);
     }
 }

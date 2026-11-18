@@ -258,7 +258,6 @@ export function updateStats(){
     Promise.resolve(classIcon(player.class)).then(emoji => {
         playerDiv.innerHTML = `
             ${bonusTurnBadge(player) ? `<div class="stat row-name">${bonusTurnBadge(player)}</div>` : ''}
-            ${statusBadgesHtml(player)}
             <div class="stat row-pills">
                 <div class="mana-dots">
                     <span id="player-mana-red" class="cost-badge mana-red" title="red">${targetPlayerMana.red}</span>

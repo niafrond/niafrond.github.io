@@ -16,6 +16,7 @@ import { getClassSpells, playerClasses } from './classes.js';
 import { usableClasses, restrictedClasses, normalizeRoster, CLASS_SHORT, START_CLASS } from './classRoster.js';
 import { RAGE_MAX } from './ultimates.js';
 import { ULTIMATE_CLASS, getSelectableUltimates } from './ultimates.js';
+import { statusBadgesHtml } from './statusBadges.js';
 import { actionSpells } from './skills.js';
 import { classProgress, classRemainingMs, classChargeInfo, isClassReady, chargeTick, spendClass, spendEnemy, isEnemyReady, chargeRunning, chargeSpeed, enqueueAction, takeNextDue, upcomingBeads } from './classCharge.js';
 import { renderPotionButtons } from './potionsView.js';
@@ -216,6 +217,14 @@ export function pumpActions(){
     item.run();
     renderActionBeads();
 }
+/** Remplit tout de suite la barre d'action du lanceur (effet des sorts qui donnaient un tour bonus) : classe du sort (ou du tour) pour le héros, barre de l'ennemi pour lui. */
+export function refillActionBar(caster, classId = null){
+    if(!chargeEnabled()) return false;
+    if(caster === enemy) gameState.charge.enemyReady = gameState.charge.now;
+    else { const id = classId || getTurnClass(); if(!id) return false; gameState.charge.ready[id] = gameState.charge.now; }
+    if(typeof document !== 'undefined'){ createSpellButtons(); refreshClassPicker(); }
+    return true;
+}
 /** Une action vient d'être faite avec la classe du tour : elle se recharge. */
 export function spendActionCharge(){
     if(!chargeEnabled()) return;
@@ -376,7 +385,9 @@ function memberBarsHtml(id){
     const g = memberGauge(id);
     if(!g) return '';
     const pct = Math.round(g.hp / g.maxHp * 100);
-    return `<span class="cp-bars" aria-hidden="true"><i class="cp-hp"><b style="width:${pct}%"></b></i><i class="cp-xiu${g.full && !g.inXiu ? ' full' : ''}${g.inXiu ? ' on' : ''}"><b style="width:${Math.round(g.gauge)}%"></b></i></span>`;
+    // Altérations propres à CE personnage (bonus et malus), en pastilles dans son bouton ; rien dans la zone de qì commune.
+    const badges = statusBadgesHtml(g.entity).replace(/ tabindex="0"/g, '').replace(/^<div class="status-badges">/, '<span class="status-badges cp-status">').replace(/<\/div>$/, '</span>');
+    return `${badges}<span class="cp-bars" aria-hidden="true"><i class="cp-hp" title="${g.hp} / ${g.maxHp} PV"><b style="width:${pct}%"></b><em>${g.hp}/${g.maxHp}</em></i><i class="cp-xiu${g.full && !g.inXiu ? ' full' : ''}${g.inXiu ? ' on' : ''}"><b style="width:${Math.round(g.gauge)}%"></b></i></span>`;
 }
 /** Redessine seulement la ligne des personnages (PV, Xiūxiān, chargement) sans toucher aux boutons d'action. */
 export function refreshClassPicker(){
