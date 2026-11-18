@@ -1604,3 +1604,9 @@ progress.enemy-bar::-webkit-progress-value {
 body.no-anim .stage-mid, body.no-anim .stage-fighter { animation: none !important; }
 @media (prefers-reduced-motion: reduce) { .stage-mid, .stage-fighter { animation: none !important; } }
 .attack-damage .stopped { display: block; font-size: .55em; margin-top: 4px; opacity: .95; }
+/* Coup bloqué ou paré : la cible esquive en reculant brusquement (elle ne clignote pas) */
+.stage-ltr .stage-right.stage-dodge { animation: stage-dodge-right .35s cubic-bezier(.1,.9,.2,1) .65s both; }
+.stage-rtl .stage-left.stage-dodge { animation: stage-dodge-left .35s cubic-bezier(.1,.9,.2,1) .65s both; }
+@keyframes stage-dodge-right { from { transform: translateX(0); } to { transform: translateX(34%); } }
+@keyframes stage-dodge-left { from { transform: translateX(0); } to { transform: translateX(-34%); } }
+@media (prefers-reduced-motion: reduce) { .stage-dodge { animation: none !important; } }
