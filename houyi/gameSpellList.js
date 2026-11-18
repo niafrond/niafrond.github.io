@@ -322,7 +322,7 @@ function renderClassPicker(container){
     }
     renderXiuBanner(picker);
     const active = gameState.combatState === 'active';
-    const mine = active && currentTurn === 'player';
+    const mine = active && (currentTurn === 'player' || decoupled());   // choisir un membre à tout moment : seules ses actions attendent son chargement
     const current = getTurnClass();
     const loadout = normalizeRoster(player).loadout;
     picker.hidden = !active;   // toujours là en combat, même avec une seule classe : elle porte la barre de chargement

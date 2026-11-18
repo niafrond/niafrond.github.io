@@ -18,7 +18,7 @@ import { bindStatusBadges, bindTooltip, ensureSpellTooltip, placeTooltip, showSp
 import { createWeaponButton, statValueHtml } from './gameInventoryTabs.js';
 import { updatePlayerStatsTab } from './gameStatsTab.js';
 import { updateLevelHud } from './gameLevelUp.js';
-import { createSpellButtons, getTurnClass } from './gameSpellList.js';
+import { createSpellButtons, getTurnClass, decoupled } from './gameSpellList.js';
 import { renderAllyBar, showXiuText } from './alliesView.js';
 import { isInTranse, classAllowsUltimate, storeGauge, TRANSE_TURNS } from './transe.js';
 import { bonusTurnBadge, canEntityCastSpell, castUltimate, activateXiuxian, allyInXiuxian, syncGauge, clampManaToCaps, classIcon, currentTurn, enemy, gameState, getUltimateTooltipHtml, transeTooltipHtml, getWeaponIcon, markMultiManaSpell, player, spellCostHtml, spellEffectIcon, syncPlayerControlsLock, ultimateManaBarHtml } from './game.js';
@@ -221,7 +221,7 @@ export function updateStats(){
     const inTranse = isInTranse(player);
     // Pendant sa Xiūxiān, la jauge se vide d'un tiers à chaque tour : elle montre ce qu'il reste de la durée.
     const gaugeLevel = inTranse && player.transeClass && player.transeClass === player.gaugeClass ? (Math.floor(player.transe || 0) / TRANSE_TURNS * 100) : (player.rage || 0) / RAGE_MAX * 100;
-    const canActivate = !inTranse && isRageFull(player) && gameState.combatState === 'active' && currentTurn === 'player';   // jauge pleine : on déclenche la Xiūxiān en la touchant
+    const canActivate = !inTranse && isRageFull(player) && gameState.combatState === 'active' && (currentTurn === 'player' || decoupled());   // jauge pleine : on déclenche la Xiūxiān en la touchant
     const ultimateReady = !!equippedUltimate && (inTranse || allyInXiuxian('sorcerer')) && (player.cheatMaxRage === true || allyInXiuxian('sorcerer')) && classAllowsUltimate(getTurnClass()) && gameState.combatState === 'active';
     const ultimateManaReached = !!equippedUltimate && (player.cheatFreeSpells === true || canCastUltimateMana(player, equippedUltimate));   // clignote seulement si le qì collecté suffit aussi
     // Héros avec jauge de rage : sa fiche est déjà bien remplie, la fiche ennemie reçoit plus de largeur (style.css `.has-rage`).

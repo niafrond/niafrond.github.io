@@ -963,7 +963,7 @@ export function syncGauge(){
 }
 
 export function setTurnClass(classId){
-    if(gameState.combatState !== 'active' || currentTurn !== 'player') return false;
+    if(gameState.combatState !== 'active' || (currentTurn !== 'player' && !decoupled())) return false;   // actions indépendantes du plateau : on choisit la classe (dont la barre est chargée) même pendant le tour de plateau adverse
     if(!usableClasses(player, enemy?.biome, gameState.forcedClass).includes(classId)) return false;   // classes de combat, hors biome bridé, ou classe imposée
     gameState.turnClass = classId;
     syncGauge();
@@ -1028,9 +1028,9 @@ export function xiuEffect(){
 /** Xiūxiān du compagnon donné en cours ? (Longwang : l'ultime) */
 export const allyInXiuxian = classId => { const a = gameState.allies?.[classId]; return !!a && !a.ko && Math.floor(a.transe || 0) > 0; };
 
-// Déclenchement VOLONTAIRE de la Xiūxiān : jauge pleine, en combat, au tour du joueur (toucher la jauge). Gratuit : ne prend pas le tour.
+// Déclenchement VOLONTAIRE de la Xiūxiān : jauge pleine, en combat, à tout moment (toucher la jauge). Gratuit : ne prend pas le tour.
 export function activateXiuxian(classId = 'assassin'){
-    if(gameState.combatState !== 'active' || currentTurn !== 'player') return false;
+    if(gameState.combatState !== 'active' || (currentTurn !== 'player' && !decoupled())) return false;   // jauge pleine : à tout moment, même pendant le tour de plateau adverse
     const member = classId === 'assassin' ? player : gameState.allies?.[classId];
     if(!member || (classId !== 'assassin' && member.ko)){ log('Ce compagnon ne peut pas déclencher sa Xiūxiān.'); return false; }
     const name = classId === 'assassin' ? 'Hou Yi' : member.name;
