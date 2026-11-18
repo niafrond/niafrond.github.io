@@ -1,3 +1,13 @@
+## [3.4.1](https://github.com/niafrond/niafrond.github.io/compare/v3.4.0...v3.4.1) (2026-11-18)
+
+### Bug Fixes
+
+* **houyi:** élargir la zone tactile de la jauge Xiūxiān de Hou Yi ([aacc078](https://github.com/niafrond/niafrond.github.io/commit/aacc078cba2e69ea13c0349105dc967444febf99))
+* **houyi:** élargir la zone tactile de la jauge Xiūxiān des compagnons ([1baa1b9](https://github.com/niafrond/niafrond.github.io/commit/1baa1b9ed51433f2f27b85c60bc378d68e6fcf4c))
+* **houyi:** porter l'appui long de la Xiūxiān à 3 s ([231f19c](https://github.com/niafrond/niafrond.github.io/commit/231f19ce105b0db3f8750a28cfc7b53ede3f3d5f))
+* **houyi:** porter la pause du chargement à 3 s et rétablir l'appui long à 450 ms ([92a4c01](https://github.com/niafrond/niafrond.github.io/commit/92a4c0141b8e62917278bb0fb316ca8974c9dcdc))
+* **houyi:** retirer la scène héros / ennemi de l'annonce du tour bonus ([491c511](https://github.com/niafrond/niafrond.github.io/commit/491c5118d8859e3223ccb6ff20070b1fa9bf1940))
+
 ## [3.4.0](https://github.com/niafrond/niafrond.github.io/compare/v3.3.0...v3.4.0) (2026-11-18)
 
 ### Features
