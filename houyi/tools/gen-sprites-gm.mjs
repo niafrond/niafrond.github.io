@@ -39,7 +39,7 @@ const BESTIARY = [...BASE_BESTIARY.filter(b => !OVERRIDES.some(o => o[0] === b[0
 const VIEWS = {
   front: 'front view, facing the viewer',
   back: 'back view, seen from behind, facing away from the viewer',
-  left: 'side profile view, facing left'
+  left: 'strict side profile view, whole body turned sideways to the left, head in profile showing only one eye, nose and body pointing left, walking pose, not facing the viewer'
 };
 const NEGATIVE = '3d render, realistic, photo, blurry, noisy, smooth gradients, antialiased, jpeg artifacts, text, letters, watermark, lowres, ' +
   'multiple characters, multiple views, sprite sheet, character sheet, reference sheet, turnaround, collage, grid, color palette, swatches, ' +
@@ -57,21 +57,36 @@ async function findHost() {
   throw new Error(`ComfyUI injoignable (${cands.join(', ')}:${PORT}) : lancer \`tools/gm up pixel\` (WSL)`);
 }
 
-const workflow = (prompt, seed) => ({
+const workflow = (prompt, seed, init = null) => ({
   1: { class_type: 'CheckpointLoaderSimple', inputs: { ckpt_name: 'sd_xl_base_1.0.safetensors' } },
   2: { class_type: 'LoraLoader', inputs: { model: ['1', 0], clip: ['1', 1], lora_name: 'pixel-art-xl.safetensors', strength_model: LORA, strength_clip: LORA } },
   3: { class_type: 'CLIPTextEncode', inputs: { clip: ['2', 1], text: prompt } },
   4: { class_type: 'CLIPTextEncode', inputs: { clip: ['2', 1], text: /four paws/.test(prompt) ? NEGATIVE + NEG_BIPED : NEGATIVE } },
-  5: { class_type: 'EmptyLatentImage', inputs: { width: SIZE, height: SIZE, batch_size: 1 } },
-  6: { class_type: 'KSampler', inputs: { model: ['2', 0], positive: ['3', 0], negative: ['4', 0], latent_image: ['5', 0], seed, steps: STEPS, cfg: CFG, sampler_name: 'euler', scheduler: 'normal', denoise: 1 } },
+  5: init ? { class_type: 'VAEEncode', inputs: { pixels: ['9', 0], vae: ['1', 2] } } : { class_type: 'EmptyLatentImage', inputs: { width: SIZE, height: SIZE, batch_size: 1 } },
+  6: { class_type: 'KSampler', inputs: { model: ['2', 0], positive: ['3', 0], negative: ['4', 0], latent_image: ['5', 0], seed, steps: STEPS, cfg: CFG, sampler_name: 'euler', scheduler: 'normal', denoise: init ? init.denoise : 1 } },
+  ...(init ? { 9: { class_type: 'LoadImage', inputs: { image: init.name } } } : {}),
   7: { class_type: 'VAEDecode', inputs: { samples: ['6', 0], vae: ['1', 2] } },
   8: { class_type: 'SaveImage', inputs: { images: ['7', 0], filename_prefix: 'houyi-sprites/s' } }
 });
 
 const seedOf = id => ([...id].reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>> 0, 7) + Number(args.seed || 0) * 104729) % 2147483647;
 
-async function render(base, prompt, seed) {
-  const sub = await (await fetch(`${base}/prompt`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ prompt: workflow(prompt, seed) }) })).json();
+// img2img : le sprite de face (agrandi sur fond gris) sert de point de départ, pour que le profil reste le MÊME personnage.
+async function uploadInit(base, sprite) {
+  const S = 512, k = S / sprite.width, img = new PNG({ width: S, height: S });
+  for (let i = 0; i < S * S; i++) { img.data[i * 4] = img.data[i * 4 + 1] = img.data[i * 4 + 2] = 128; img.data[i * 4 + 3] = 255; }
+  for (let y = 0; y < S; y++) for (let x = 0; x < S; x++) {
+    const sx = Math.floor(x / k), sy = Math.floor(y / k), si = (sy * sprite.width + sx) * 4;
+    if (sprite.data[si + 3] >= 128) { const d = (y * S + x) * 4; img.data[d] = sprite.data[si]; img.data[d + 1] = sprite.data[si + 1]; img.data[d + 2] = sprite.data[si + 2]; }
+  }
+  const name = `init-${Date.now()}.png`, form = new FormData();
+  form.append('image', new Blob([PNG.sync.write(img)], { type: 'image/png' }), name);
+  const r = await (await fetch(`${base}/upload/image`, { method: 'POST', body: form })).json();
+  return r.name || name;
+}
+
+async function render(base, prompt, seed, init = null) {
+  const sub = await (await fetch(`${base}/prompt`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ prompt: workflow(prompt, seed, init) }) })).json();
   if (!sub.prompt_id) throw new Error(JSON.stringify(sub).slice(0, 300));
   let entry;
   while (!(entry = (await (await fetch(`${base}/history/${sub.prompt_id}`)).json())[sub.prompt_id])) await sleep(1500);
@@ -112,6 +127,19 @@ function toCells(png) {
   }
   return { cells, n };
 }
+
+// Asymétrie gauche/droite du détourage (0 = parfaitement symétrique : personnage de face ; un vrai profil dépasse ~0,3). Sert à rejeter les
+// « profils » où le modèle a tout de même dessiné le personnage de face.
+function asymmetry(png) {
+  let x0 = png.width, x1 = -1, y0 = png.height, y1 = -1;
+  const solid = (x, y) => png.data[(y * png.width + x) * 4 + 3] >= 128;
+  for (let y = 0; y < png.height; y++) for (let x = 0; x < png.width; x++) if (solid(x, y)) { x0 = Math.min(x0, x); x1 = Math.max(x1, x); y0 = Math.min(y0, y); y1 = Math.max(y1, y); }
+  if (x1 < 0) return 0;
+  let diff = 0, total = 0;
+  for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) { const a = solid(x, y), b = solid(x0 + x1 - x, y); if (a || b) { total++; if (a !== b) diff++; } }
+  return total ? diff / total : 0;
+}
+const SIDE_MIN = Number(process.env.SIDE_MIN || 0.28);
 
 // Recadre la boîte englobante, réduit à ≤ MAX_PX en gardant la couleur majoritaire de chaque bloc, centre en bas d'un canevas 32×32.
 function toSprite({ cells, n }) {
@@ -170,6 +198,7 @@ const flip = png => {
   return o;
 };
 const uriOf = png => 'data:image/png;base64,' + PNG.sync.write(png).toString('base64');
+const decodeUri = uri => PNG.sync.read(Buffer.from(String(uri).split(',')[1], 'base64'));
 
 // ── Lecture / écriture de sprites/generated.js (même format que gen-sprites.mjs, écriture atomique) ────────────────────
 
@@ -206,18 +235,25 @@ for (const entry of todo) {
   try {
     const bg = args.bg ? String(args.bg).replace(/_/g, ' ') : 'flat medium gray (#808080)';
     const seed = seedOf(id) + Number(args.seed || 0), made = {};
-    for (const view of FRONT_ONLY ? ['front'] : ['front', 'back', 'left']) {
+    const keep = args.leftonly && sprites[id]?.front && sprites[id]?.back;   // --leftonly : ne refait que le profil (face et dos conservés)
+    if (keep) { made.front = decodeUri(sprites[id].front); made.back = decodeUri(sprites[id].back); }
+    const initName = keep && args.i2i ? await uploadInit(base, made.front) : null;
+    const frontProfile = keep && args.profile === 'front';   // --profile=front : profil = vue de face (même personnage garanti), droite = miroir ; le modèle ne sait pas dessiner un vrai profil dans ce style
+    for (const view of FRONT_ONLY || frontProfile ? (frontProfile ? [] : ['front']) : keep ? ['left'] : ['front', 'back', 'left']) {
       const prompt = `pixel art, ${desc}, ${VIEWS[view]}, one single creature alone, full body, centered, plain solid flat ${bg} background, ` +
         'video game monster, chibi proportions, clean bold dark outline, flat shading, limited color palette, ancient Chinese mythological style';
       let best = null; const whys = [];
-      for (let attempt = 0; attempt < 6 && !(best && best.q.ok); attempt++) {   // re-tirage avec une autre graine tant que le contrôle échoue
-        const img = cutout(await render(base, prompt, (seed + attempt * 7919) % 2147483647)), q = checkCutout(img);
+      const side = view === 'left';   // le profil doit vraiment être de profil : on garde le tirage le plus asymétrique
+      for (let attempt = 0; attempt < (side ? 14 : 6) && !(best && best.q.ok && (!side || best.asym >= SIDE_MIN)); attempt++) {   // re-tirage avec une autre graine tant que le contrôle échoue
+        const img = cutout(await render(base, prompt, (seed + attempt * 7919) % 2147483647, side && keep && args.i2i ? { name: initName, denoise: Number(args.i2i) } : null)), q = checkCutout(img), asym = side ? asymmetry(img) : 1;
         if (!q.ok) whys.push(q.why);
-        if (!best || q.score > best.q.score) best = { img, q };
+        const better = !best || (side ? (q.ok && !best.q.ok) || (q.ok === best.q.ok && asym > best.asym) : q.score > best.q.score);
+        if (better) best = { img, q, asym };
       }
       if (!best.q.ok) throw new Error(`${view} : contrôle qualité échoué (${whys.join(', ')})`);
       made[view] = toSprite(toCells(best.img));
     }
+    if (frontProfile) made.left = made.front;
     if (!FRONT_ONLY) made.right = flip(made.left);
     const outDirs = FRONT_ONLY ? ['front'] : DIRS;
     sprites[id] = Object.fromEntries(outDirs.map(d => [d, uriOf(made[d])]));

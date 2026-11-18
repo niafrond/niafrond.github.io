@@ -1120,3 +1120,15 @@ body.a11y-colorblind .action-beads .bead-foe { background: #e08a1e; }
 #player-stats:not(.show-xiu) .rage-stat { display: none; }
 #player-stats:has(.rage-stat):not(.show-xiu) { display: block; }
 #player-stats.show-xiu { outline: 1px solid #f2c14e; outline-offset: -1px; }
+
+/* Xiūxiān d'un compagnon : zone cachée, visible au clic long sur sa carte (ou pendant sa Xiūxiān) */
+.ally-card { position: relative; }
+.ally-card .ally-xiu { grid-column: 1 / -1; display: none; position: relative; overflow: hidden; margin-top: 2px; min-height: 16px; padding: 0 4px; font: inherit; font-size: 0.62rem; color: #fff; background: #2a2f3a; border: 1px solid #8b9097; border-radius: 4px; text-align: center; }
+.ally-card.show-xiu .ally-xiu { display: block; }
+.ally-xiu i { position: absolute; inset: 0 auto 0 0; background: #6a4bd8; opacity: .8; }
+.ally-xiu span { position: relative; white-space: nowrap; }
+.ally-xiu.ready { border-color: #ffd54a; animation: xiu-ready-pulse 1s ease-in-out infinite; cursor: pointer; }
+.ally-xiu.in-xiu i { background: #d8a24b; }
+.ally-card.xiu-on { box-shadow: 0 0 6px #d8a24b; }
+@keyframes xiu-ready-pulse { 50% { box-shadow: 0 0 6px #ffd54a; } }
+@media (prefers-reduced-motion: reduce) { .ally-xiu.ready { animation: none; } }

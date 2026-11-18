@@ -192,3 +192,40 @@ describe('armes de compagnon : variantes, équipement, butin et marchands', () =
         expect(offers.some(o => companionWeapons.some(w => w.id === o.id))).toBe(true);
     });
 });
+
+describe('Xiūxiān propre à chaque compagnon', () => {
+    test('chaque compagnon a sa jauge (reprise de hero.rages), qui se remplit quand il encaisse', () => {
+        const h = Object.assign(hero(), { rages: { monk: 40 } });
+        const a = buildAlly(h, 'monk');
+        expect(a.rage).toBe(40);
+        expect(a.gaugeClass).toBe('monk');
+        const b = buildAlly(h, 'barbarian');
+        expect(b.rage).toBe(0);
+        damageAlly(b, Math.round(b.maxHp * 0.2));
+        expect(b.rage).toBeGreaterThan(0);
+        expect(a.rage).toBe(40);   // la jauge d'un compagnon n'est pas celle d'un autre
+    });
+    test('la Xiūxiān se déclenche et décompte par compagnon ; tomber hors de combat l\'éteint', async () => {
+        const { startTranse, tickTranse, isInTranse, TRANSE_TURNS } = await import('../../transe.js');
+        const a = buildAlly(hero(), 'templar'), b = buildAlly(hero(), 'shaman');
+        a.rage = 100;
+        expect(startTranse(a)).toBe(true);
+        expect(a.transeClass).toBe('templar');
+        expect(isInTranse(b)).toBe(false);
+        for (let i = 1; i < TRANSE_TURNS; i++) tickTranse(a);
+        expect(isInTranse(a)).toBe(true);
+        damageAlly(a, 9999);
+        expect(isInTranse(a)).toBe(false);
+        expect(a.rage).toBe(0);
+    });
+    test('les effets de plusieurs Xiūxiān se cumulent ; chaque compagnon a un nom propre', async () => {
+        const { mergeTranseEffects, TRANSE_EFFECTS } = await import('../../transe.js');
+        const m = mergeTranseEffects(['shaman', 'templar', 'barbarian', 'barbarian']);
+        expect(m.defense).toBe(35);
+        expect(m.reflectPct).toBe(30);
+        expect(m.physMult).toBe(4);
+        expect(m.paMult).toBe(2);
+        expect(mergeTranseEffects([])).toEqual({});
+        expect(new Set(ALLY_IDS.map(id => TRANSE_EFFECTS[id].name)).size).toBe(6);
+    });
+});

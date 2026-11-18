@@ -9,6 +9,8 @@
 //  - Recrutement : l'entraînement du maître de classe (world/classTrials.js) ; le maître rejoint l'équipe à la fin de la quête. Un compagnon dans la 1re
 //    région (Rizières : Fuxi), deux dans la 2e (Volcan : Sun Wukong et Shennong), puis un par région (Gobi : Nezha, Fleuve : Longwang, Bambous : Jingwei).
 import { START_CLASS, normalizeRoster } from './classRoster.js';
+import { rageFromDamage, addRage, RAGE_MAX } from './ultimates.js';
+import { endTranse } from './transe.js';
 
 export const ALLIES = {
     barbarian: { id: 'barbarian', name: 'Sun Wukong', short: 'Wukong', title: "Roi Singe, égal au Ciel", npc: 'trainer_barbarian', sprite: 'ally_barbarian', weapon: 'staff', region: 'volcan', hpPct: 0.9, defensePct: 0.8 },
@@ -47,7 +49,9 @@ export function buildAlly(hero, classId) {
         isAlly: true, classId, name: a.name, short: a.short, title: a.title, sprite: a.sprite, weapon: a.weapon,
         level: hero?.level || 1, hp: maxHp, maxHp, ko: false,
         defense: Math.round((hero?.defense || 0) * a.defensePct), attack: Math.round((hero?.attack || 0) * 0.5),
-        attributes: {}, statusEffects: {}
+        attributes: {}, statusEffects: {},
+        // Xiūxiān propre au compagnon : sa jauge (conservée d'un combat à l'autre dans hero.rages), sa durée en cours
+        rage: Math.max(0, Math.min(RAGE_MAX, Math.floor(hero?.rages?.[classId] || 0))), gaugeClass: classId, transe: 0, transeClass: null
     };
 }
 
@@ -80,7 +84,8 @@ export function damageAlly(ally, damage) {
     if (!ally || ally.ko) return { damage: 0, ko: false };
     const dealt = Math.min(ally.hp, Math.max(0, Math.floor(damage || 0)));
     ally.hp -= dealt;
-    if (ally.hp <= 0) { ally.hp = 0; ally.ko = true; return { damage: dealt, ko: true }; }
+    if (dealt > 0) addRage(ally, rageFromDamage(dealt, ally.maxHp));   // subir des dégâts remplit sa propre jauge de Xiūxiān
+    if (ally.hp <= 0) { ally.hp = 0; ally.ko = true; endTranse(ally); return { damage: dealt, ko: true }; }
     return { damage: dealt, ko: false };
 }
 

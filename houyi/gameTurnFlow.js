@@ -98,9 +98,12 @@ function playCompanionAnnouncements(list, done){
 function endOfPlayerTurnTranse(){
     resetTranseTurn();
     if(tickTranse(player)){   // la jauge de la classe de la Xiūxiān est consommée
-        log('La Xiūxiān s\'achève.');
+        log('La Xiūxiān de Hou Yi s\'achève.');
         updateStats();
     }
+    Object.values(gameState.allies || {}).forEach(a => {   // chaque compagnon a sa propre Xiūxiān, qui décompte aussi
+        if(tickTranse(a)){ log(`La Xiūxiān de ${a.name} s'achève.`); updateStats(); }
+    });
 }
 
 export function finishPlayerTurn(){
