@@ -11,7 +11,6 @@ import { allyWeaponBonus } from './weapons.js';
 const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
 const GEM = '<svg class="gem-ic" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1 L14 5 L14 11 L8 15 L2 11 L2 5Z"/><path class="gem-facet" d="M2 5 L8 8 L14 5 M8 8 L8 15"/></svg>';
-const BOLT = '<svg class="gem-ic" viewBox="0 0 16 16" aria-hidden="true"><path d="M9 1 L3 9 H7.5 L6.5 15 L13 6.5 H8.5Z"/></svg>';
 
 /** État d'une compétence : active | learned | training (enseignée par l'équipement porté) | locked. */
 export function skillState(hero, skill, taughtNow) {
@@ -34,11 +33,11 @@ const gems = (used, cap) => Array.from({ length: cap }, (_, i) => `<i class="ful
 
 function row(hero, skill, taught, selectedId) {
     const st = skillState(hero, skill, taught);
-    const cost = isSupport(skill) ? skill.cost : '·';
+    const cost = isSupport(skill) ? skill.cost : '';
     return `<button type="button" class="ab-row ab-${st}${skill.id === selectedId ? ' selected' : ''}" data-skill="${skill.id}" aria-pressed="${skill.id === selectedId}">
-        <span class="ab-gem">${isSupport(skill) ? GEM : BOLT}</span>
+        <span class="ab-gem">${GEM}</span>
         <span class="ab-name">${esc(skill.name)}${skill.classId ? ` <small class="ab-class">${esc(CLASS_SHORT[skill.classId])}</small>` : ''}</span>
-        <span class="ab-cost" title="${isSupport(skill) ? 'Coût en Fulu' : 'Commande de combat'}">${cost}</span>
+        <span class="ab-cost" title="Coût en Fulu">${cost}</span>
     </button>`;
 }
 
@@ -131,7 +130,7 @@ export function skillsTabHtml(hero, gear, selectedId, canToggle = true) {
         <div class="fulu-meter" aria-hidden="true">${gems(used, cap)}</div>
         ${classesHtml(hero, canToggle)}
         <div class="ab-body">
-            <div class="ab-grid" role="list">${list.map(s => row(hero, s, taught, selected.id)).join('')}</div>
+            <div class="ab-groups">${[['Soutien', list.filter(isSupport)], ['Actions', list.filter(s => !isSupport(s))]].filter(([, items]) => items.length).map(([title, items]) => `<h3 class="ab-group">${title}</h3><div class="ab-grid" role="list">${items.map(s => row(hero, s, taught, selected.id)).join('')}</div>`).join('')}</div>
             ${infoPanel(hero, selected, taught, true)}
         </div>
         <p class="ab-legend"><span class="lg lg-active">${GEM}</span> allumée (bonus actif) <span class="lg lg-learned">${GEM}</span> apprise, éteinte <span class="lg lg-training">${GEM}</span> en apprentissage <span class="lg lg-locked">${GEM}</span> à débloquer · ${learnedCount} apprise${learnedCount > 1 ? 's' : ''}</p>

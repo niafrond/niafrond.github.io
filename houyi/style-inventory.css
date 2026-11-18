@@ -479,3 +479,5 @@ body.casual-mode .tab-btn[onclick*="'spells'"] { display: none; }
 .ab-how ol { margin: 6px 0 0 1.2em; padding: 0; }
 .ab-how li { margin: 3px 0; }
 .ab-origin span:last-child, .ab-usage span:last-child { text-align: right; }
+
+.ab-group { margin: 8px 0 4px; font-size: .8rem; letter-spacing: .06em; text-transform: uppercase; opacity: .75; }
