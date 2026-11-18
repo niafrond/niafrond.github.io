@@ -162,8 +162,6 @@ function init() {
         getWeakness: templateId => { const c = weakColorOfTemplate(templateId); return c ? weaknessLabel(c) : null; },
         onEncounter: encounter => startEncounterCombat(encounter),
         onGold: amount => { player.gold = (player.gold || 0) + amount; },
-        // Point de repos (pierre de voyage, fontaine, couche d'hôte) : PV au maximum ; renvoie les PV rendus.
-        onRest: () => { const gained = Math.max(0, (player.maxHp || 0) - (player.hp || 0)); if(gained > 0) player.hp = player.maxHp; return gained; },
         onChestLoot: ev => {
             const roll = rollChestLoot(ev.chest, ev.screen, player);
             const labels = grantChestLoot(roll);

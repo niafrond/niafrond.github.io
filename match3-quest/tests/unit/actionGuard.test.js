@@ -109,14 +109,3 @@ describe('XP bonus des belles combinaisons', () => {
         for (const k of ["'weaponHit'", "'spellHit'", "'spellCast'", "'skullHit'", "'manaGain'"]) expect(snd).toContain(`case ${k}`);
     });
 });
-
-describe('action hors tour', () => {
-    test('hors tour, ni le verrou de tour ni le plateau ne bloquent : seul le délai anti-martelage reste', () => {
-        const c = clock(); const g = createActionGuard(c.now);
-        g.setTurnLocked(true); g.beginBoardAction();
-        expect(g.blockReason()).toBe('turn');
-        expect(g.blockReason({ outOfTurn: true })).toBeNull();
-        g.markPlayerAction();
-        expect(g.blockReason({ outOfTurn: true })).toBe('cooldown');
-    });
-});

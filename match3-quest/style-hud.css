@@ -1050,7 +1050,3 @@ body.rt .rc.compare-picked, [data-cmp-kind].compare-picked { outline: 2px solid 
 
 /* Ennemi de tempérament agressif : « en colère » derrière son nom (gameHud.js). */
 .enemy-mood { display: inline-block; margin-left: 4px; padding: 0 5px; border-radius: 8px; background: #b71c1c; color: #fff; font-size: 11px; font-weight: 700; line-height: 1.5; white-space: nowrap; vertical-align: middle; }
-
-/* Action choisie pendant le tour adverse : en file d'attente, lancée dès que son camp a la main (recliquer la retire). */
-.enemy-spell-item.queued, .rage-bar-container.queued { outline: 2px dashed #f0b400; outline-offset: -2px; }
-.enemy-spell-item.queued .spell-name::after { content: ' …'; }

@@ -13,7 +13,7 @@ import { allWeapons, getWeaponById, weaponBiomeBonus, BIOME_LABELS } from "./wea
 import { weaknessDamage, ruleForBiome, prepBanner } from "./terrain.js";
 
 import { setGameStarted, isBoardResolving, setBiomeRule, boostBoardColor } from "./board.js";
-import { actionGuard, BOARD_SETTLE_MS } from "./actionGuard.js";
+import { actionGuard } from "./actionGuard.js";
 
 import { protectsFromBiome, collarForBiome, stuffTotals, normalizeStuff, grantStuff, inflictPoison } from "./stuff.js";
 import { boostedDamageDealt, resistedDamageTaken, parryQiGain } from "./gearEffects.js";
@@ -44,7 +44,7 @@ import { raiseEnemyHpAboveHero } from "./enemyGrowth.js";
 import { gearManaBonus } from "./manaGear.js";
 
 
-import { ENVIRONMENT_STATUSES, environmentDamage, clearEnvironmentStatuses, cureStatuses, alterationOfSpell, inflictAlteration, setAlterationHooks, cursedDamage, wakeIfAsleep, healEntity, isMuted, isAsleep, confusedSelfHit } from "./alterations.js";
+import { ENVIRONMENT_STATUSES, environmentDamage, clearEnvironmentStatuses, cureStatuses, alterationOfSpell, inflictAlteration, setAlterationHooks, cursedDamage, wakeIfAsleep, healEntity, isMuted, confusedSelfHit } from "./alterations.js";
 import { rawAttack, rawDefense, setStrikeHooks, describeLevelEdge, resolveStrike, blockLabel, addStatBuff, describeStatBuff, clearStatBuffs } from "./combatStats.js";
 import { animationFactor, getOption, vibrate } from "./gameOptions.js";
 import { PLAY_STYLES, styleDamageDealt, styleDamageTaken, styleSpellCost, styleManaGain } from "./playStyles.js";
@@ -64,7 +64,7 @@ export * from './gameStatsTab.js';
 import { showAttributeMenu, updateLevelHud } from './gameLevelUp.js';
 export * from './gameLevelUp.js';
 import { updateAvailableSpells } from './gameSpellList.js';
-import { applyDuelRulesAtCombatStart, enemyTurn, finishPlayerTurn, handleEnemyDefeated, scheduleEnemyReaction } from './gameTurnFlow.js';
+import { applyDuelRulesAtCombatStart, enemyTurn, finishPlayerTurn, handleEnemyDefeated } from './gameTurnFlow.js';
 export * from './gameTurnFlow.js';
 export * from './gameSpellList.js';
 
@@ -1572,52 +1572,7 @@ clampManaToCaps(player);
 // Anti-bourrinage : arme / objet / sort refusés pendant la résolution du plateau, juste après une action plateau,
 // ou dans le court délai qui suit une autre action du joueur (voir actionGuard.js).
 export function isPlayerActionBlocked(){
-    if(canActOutOfTurn()) return actionGuard.blockReason({ outOfTurn: true }) !== null;
     return currentTurn !== 'player' || turnFlags.foxPlaying || isBoardResolving() || actionGuard.blockReason() !== null;
-}
-
-// Pendant le coup de l'adversaire sur le plateau, le héros peut quand même choisir une arme ou un sort « simple » (barre chargée :
-// PA ou qì suffisants, vérifiés par useWeapon / castSpell). Pas pendant l'introduction, les animations de renard/compagnons ni quand il dort.
-export function canActOutOfTurn(){
-    return gameState.combatState === 'active' && currentTurn === 'enemy' && !turnFlags.foxPlaying
-        && player.hp > 0 && enemy.hp > 0 && !isAsleep(player) && !((player.statusEffects?.stunned || 0) > 0);
-}
-
-// File d'attente des actions choisies hors tour mais qui touchent le plateau (sorts de plateau, ultimes, objets) : elles se lancent, avec leurs
-// coûts payés à ce moment-là, quand leur camp a de nouveau la main. Choisir deux fois la même action la retire de la file.
-export const actionQueue = { player: [], enemy: [] };
-export function isQueuedAction(kind, id){ return actionQueue.player.some(a => a.kind === kind && a.id === id); }
-export function clearActionQueues(){ actionQueue.player.length = 0; actionQueue.enemy.length = 0; }
-export function toggleQueuedAction(kind, id, label, extra = {}){
-    const at = actionQueue.player.findIndex(a => a.kind === kind && a.id === id);
-    if(at >= 0){ actionQueue.player.splice(at, 1); log(`${label} : retiré de la file d'attente.`); }
-    else { actionQueue.player.push({ kind, id, ...extra }); log(`${label} : en file d'attente, lancé à votre tour.`); }
-    updateAvailableSpells();   // repeint le marqueur « en file » des cartes
-    updateItemButton();
-    updateStats();
-    saveUpdate();
-}
-// Début du tour du joueur : lance la première action en attente (elle termine le tour comme toute action) ; les autres attendent le tour suivant.
-export function runQueuedPlayerAction(){
-    if(!actionQueue.player.length) return false;
-    setTimeout(() => {
-        if(gameState.combatState !== 'active' || currentTurn !== 'player' || !actionQueue.player.length) return;
-        const a = actionQueue.player.shift();
-        if(a.kind === 'spell') castSpell(a.id);
-        else if(a.kind === 'ultimate') castUltimate(a.id);
-        else if(a.kind === 'item') useInventoryItem(a.id, a.index);
-        updateStats();
-    }, BOARD_SETTLE_MS + 100);
-    return true;
-}
-
-// Après une action hors tour : le tour de l'adversaire continue, on vérifie seulement que personne n'est tombé.
-function settleOutOfTurnAction(){
-    updateStats();
-    saveUpdate();
-    if(gameState.combatState !== 'active') return;
-    if(enemy.hp <= 0) handleEnemyDefeated();
-    else if(player.hp <= 0) handlePlayerDeath();
 }
 
 // Dès que le joueur ne joue plus (tour adverse, écran de début de combat), TOUS ses boutons sont désactivés :
@@ -1626,12 +1581,11 @@ function settleOutOfTurnAction(){
 export function syncPlayerControlsLock(){
     const locked = gameState.combatState === 'active' && (currentTurn !== 'player' || turnFlags.foxPlaying);
     actionGuard.setTurnLocked(locked);
-    const actionsOpen = canActOutOfTurn();   // tour adverse : armes et sorts restent cliquables (le refus se fait sur les ressources)
     if(typeof document === 'undefined') return locked;
     const column = document.getElementById('player-spells');
     if(column){
-        column.classList.toggle('turn-locked', locked && !actionsOpen);
-        column.setAttribute('aria-disabled', String(locked && !actionsOpen));
+        column.classList.toggle('turn-locked', locked);
+        column.setAttribute('aria-disabled', String(locked));
         column.removeAttribute('inert');   // la colonne reste interactive : appui long / survol des sorts à tout moment
     }
     const abandonBtn = document.getElementById('abandon-combat-btn');
@@ -1649,8 +1603,7 @@ export function rejectRushedAction(){
 // Combat avec arme
 export function useWeapon(hand = 'right'){
     if(gameState.combatState !== 'active'){ log("Aucun combat en cours."); return; }
-    const outOfTurn = currentTurn !== 'player' && canActOutOfTurn();
-    if(currentTurn !== 'player' && !outOfTurn){ log("Seul le joueur actif peut utiliser une attaque."); return; }
+    if(currentTurn !== 'player'){ log("Seul le joueur actif peut utiliser une attaque."); return; }
     if(rejectRushedAction()) return;
     if(tutorialCallbacks.allowWeapon && !tutorialCallbacks.allowWeapon()) return;   // tutoriel : l'arme n'est acceptée qu'à l'étape prévue
     const weapon = hand === 'left' ? getLeftHandWeapon() : player.equippedWeapon;
@@ -1671,7 +1624,6 @@ export function useWeapon(hand = 'right'){
     logActiveAction(`utilise l'arme ${weapon.name} (cout ${weapon.actionPoints} PA)`);
     strikeWithWeapon(weapon);
     tutorialCallbacks.onWeaponUsed?.();
-    if(outOfTurn){ settleOutOfTurnAction(); return; }   // le tour de l'adversaire se poursuit
     finishPlayerTurn();
 }
 
@@ -1720,8 +1672,7 @@ function strikeWithWeapon(weapon, { free = false } = {}){
 
 export function castSpell(spellId){
     if(gameState.combatState !== 'active'){ log("Aucun combat en cours."); return; }
-    const outOfTurn = currentTurn !== 'player' && canActOutOfTurn();
-    if(currentTurn !== 'player' && !outOfTurn){ log("Seul le joueur actif peut lancer un sort."); return; }
+    if(currentTurn !== 'player'){ log("Seul le joueur actif peut lancer un sort."); return; }
     if(rejectRushedAction()) return;
     const spell=player.activeSpells.find(s=>s.id===spellId);
     if(!spell){ log("Sort indisponible !"); return; }
@@ -1735,7 +1686,6 @@ export function castSpell(spellId){
         log(missingColor ? `Pas assez de qì ${missingColor} !` : "Pas assez de qì !");
         return;
     }
-    if(outOfTurn && (spell.effect || spell.boardSpell)){ toggleQueuedAction('spell', spell.id, spell.name); return; }   // agit sur le plateau : attend son tour
     actionGuard.markPlayerAction();
     consumeSpellMana(player, spell);
     startSpellCooldown(spell);
@@ -1769,7 +1719,6 @@ export function castSpell(spellId){
     // Notifier le tutoriel qu'un sort a été lancé
     tutorialCallbacks.onSpellCast?.();
 
-    if(outOfTurn){ settleOutOfTurnAction(); return; }   // le tour de l'adversaire se poursuit
     finishPlayerTurn();
 }
 
@@ -1777,8 +1726,7 @@ export function castSpell(spellId){
 // (voir `playUltimateCinematic`) se joue avant l'effet.
 export async function castUltimate(spellId){
     if(gameState.combatState !== 'active'){ log("Aucun combat en cours."); return; }
-    const outOfTurn = currentTurn !== 'player' && canActOutOfTurn();
-    if(currentTurn !== 'player' && !outOfTurn){ log("Seul le joueur actif peut lancer un sort."); return; }
+    if(currentTurn !== 'player'){ log("Seul le joueur actif peut lancer un sort."); return; }
     if(rejectRushedAction()) return;
     const spell = getUltimateById(spellId);
     if(!spell || getEquippedUltimate(player)?.id !== spell.id){ log("Ultime indisponible !"); return; }
@@ -1790,7 +1738,6 @@ export async function castUltimate(spellId){
         log(missing ? `Pas assez de qì ${missing[0]} collecté !` : "Pas assez de qì !");
         return;
     }
-    if(outOfTurn){ toggleQueuedAction('ultimate', spell.id, spell.name); return; }
     actionGuard.markPlayerAction();
     if(player.cheatFreeSpells !== true) spendUltimateMana(player, spell);
     resetRage(player);
@@ -2185,7 +2132,6 @@ export function decideFirstTurn(){
 
     // Personne n'agit pendant l'écran de début : tour « intro », boutons du joueur verrouillés.
     currentTurn = 'intro';
-    clearActionQueues();   // aucune action en attente d'un combat précédent
     updateStats();
     const token = ++introToken;
     showCombatIntro({
@@ -2202,9 +2148,6 @@ export function decideFirstTurn(){
             else setTimeout(() => enemyTurn(), OPENING_LEAD_MS);
         } else if(strikes){
             runOpeningStrikes(strikes, OPENING_LEAD_MS, () => {});
-            scheduleEnemyReaction();
-        } else {
-            scheduleEnemyReaction();
         }
     });
 }

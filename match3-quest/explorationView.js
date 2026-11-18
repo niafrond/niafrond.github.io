@@ -712,17 +712,10 @@ export function createExplorationView(cfg) {
                 if (res.reason === 'quest') toast(`${res.message}`, 4500);
                 else toast(`Une brume magique bloque la route vers ${res.regionName} — niveau ${res.minLevel} requis.`, 4200);
                 break;
-            case 'rest':
-                walk = null;
-                playSfx('uiClick');
-                toast(`${res.name} : ${cfg.onRest?.() > 0 ? res.message : 'vos PV sont déjà au maximum.'}`, 3600);
-                cfg.onSave();
-                refreshHud();
-                break;
             case 'waypoint':
                 walk = null;
                 playSfx('uiClick');
-                { const healed = cfg.onRest?.() || 0; toast(res.isNew ? `${res.name} activée` : `${res.name}`, res.isNew ? 4200 : 2200); if(healed > 0) setTimeout(() => toast(`La pierre vous réchauffe : +${healed} PV.`, 3000), 900); }
+                toast(res.isNew ? `${res.name} activée` : `${res.name}`, res.isNew ? 4200 : 2200);
                 cfg.onSave();
                 refreshHud();
                 if (!journalEl) showJournal('travel');   // la borne ouvre le voyage rapide

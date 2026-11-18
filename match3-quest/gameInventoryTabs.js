@@ -13,7 +13,7 @@ import { displayAttack, rawDefense, statModifier } from "./combatStats.js";
 import { showCombatAnimation } from "./gameStatsTab.js";
 import { bindTooltip, bindCardTips, showWeaponTooltip, showItemTooltip, hideSpellTooltip } from "./gameTooltips.js";
 import { escapeHtml, rowCardHtml, emptyRowHtml, badgeHtml, cardTipHtml, shortText, WEAPON_SORTS, sortChoice, bindSortSelect, sortedEntries } from "./gameCardUi.js";
-import { getWeaponIcon, player, currentTurn, gameState, enemy, normalizeActiveInventoryIndex, getActiveInventoryItem, getSecondActiveInventoryItem, log, logActiveAction, saveUpdate, rejectRushedAction, useWeapon, finishPlayerTurn, canActOutOfTurn, toggleQueuedAction, isQueuedAction } from "./game.js";
+import { getWeaponIcon, player, currentTurn, gameState, enemy, normalizeActiveInventoryIndex, getActiveInventoryItem, getSecondActiveInventoryItem, log, logActiveAction, saveUpdate, rejectRushedAction, useWeapon, finishPlayerTurn } from "./game.js";
 
 // -------------------------------------
 // Armes
@@ -470,10 +470,10 @@ function buildItemButton(item, index){
     const exhausted = item.type === 'reusable' && (item.chargesLeft ?? item.chargesPerCycle) <= 0;
     const healUseless = isUselessHeal(item);
     const sealed = (player.statusEffects?.sealed || 0) > 0;   // Talisman de Scellement : cadenas, objet inutilisable
-    const canUse = gameState.combatState === 'active' && (currentTurn === 'player' || canActOutOfTurn()) && player.combatPoints >= pa && !exhausted && !healUseless && !sealed;
+    const canUse = gameState.combatState === 'active' && currentTurn === 'player' && player.combatPoints >= pa && !exhausted && !healUseless && !sealed;
 
     const btn = document.createElement('div');
-    btn.className = 'enemy-spell-item' + (isQueuedAction('item', item.id) ? ' queued' : '');
+    btn.className = 'enemy-spell-item';
     btn.tabIndex = 0;
     btn.innerHTML = `
         <div class="spell-name">${svgIcon(sealed ? 'lock' : 'bag')} ${item.name}</div>
@@ -551,8 +551,7 @@ function isUselessHeal(item){
 
 export function useInventoryItem(itemId, index){
     if(gameState.combatState !== 'active'){ log("Aucun combat en cours."); return; }
-    const outOfTurn = currentTurn !== 'player' && canActOutOfTurn();
-    if(currentTurn !== 'player' && !outOfTurn){ log("Ce n'est pas votre tour."); return; }
+    if(currentTurn !== 'player'){ log("Ce n'est pas votre tour."); return; }
     if(rejectRushedAction()) return;
     if((player.statusEffects?.sealed || 0) > 0){ log("Vous êtes scellé : impossible d'utiliser un objet."); return; }
 
@@ -576,7 +575,6 @@ export function useInventoryItem(itemId, index){
         log(`Il faut ${pa} points d'action pour utiliser ${item.name}.`);
         return;
     }
-    if(outOfTurn){ toggleQueuedAction('item', item.id, item.name, { index: resolvedIndex }); return; }   // touche au plateau : attend son tour
 
     actionGuard.markPlayerAction();
     player.combatPoints -= pa;

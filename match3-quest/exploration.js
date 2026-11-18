@@ -54,13 +54,11 @@ import { EVENT_MODULES } from './events/registry.js';
 import { ARENA_HALL, ARENA_TIERS, arenaTier, arenaEncounterInfo, normalizeArenaData } from './arena.js';
 import { MIMIC_NAME, MIMIC_SPRITE, clearMarker, isMimicChest, markerOf, reclosePastChests, revealFog } from './explorationSenses.js';
 export * from './explorationSenses.js';
-export { restOf } from './explorationRest.js';
 import { checkAutoQuests, objectiveDone, progressReached, questById, questStatus } from './explorationQuests.js';
 export * from './explorationQuests.js';
 export * from './explorationDialogue.js';
 export * from './explorationGuide.js';
 import { activateWaypoint, discoverVillageWaypoint, recordBestiary } from './explorationTravel.js';
-import { buildRestPoints, restOf, REST_KINDS } from './explorationRest.js';
 export * from './explorationTravel.js';
 export * from './explorationChange.js';
 
@@ -314,7 +312,6 @@ export function createSession(saved, screens = SCREENS, quests = QUESTS) {
         data,
         screens,
         quests,
-        rest: buildRestPoints(screens),   // auberges et fontaines (explorationRest.js) : au plus un point de repos par zone
         // grassSteps / wildSeq / wildDefs / wildIntro* : hautes herbes (volatil, jamais sauvegardé)
         rt: {
             enemies: {}, patrolTimer: 0, grace: GRACE_MOVES, facing: { dx: 0, dy: 1 }, enemyIndex,
@@ -621,8 +618,6 @@ export function entityAt(session, x, y) {
     if (chest) return { type: 'chest', chest, opened: session.data.openedChests.includes(chest.id) };
     const wp = session.rt.changeMode ? null : currentScreen(session).waypoint;
     if (wp && wp.x === x && wp.y === y) return { type: 'waypoint', screenId: session.data.screenId };
-    const rest = restOf(session, currentScreen(session));
-    if (rest && rest.x === x && rest.y === y) return { type: 'rest', rest };
     const enemy = aliveEnemies(session).find(e => e.x === x && e.y === y);
     if (enemy) return { type: 'enemy', enemy };
     return null;
@@ -786,7 +781,6 @@ export function tryMove(session, dx, dy, ctx = {}) {
         if (ent.type === 'npc') return { type: 'talk', npcId: ent.npc.id };
         if (ent.type === 'chest') return ent.opened ? { type: 'blocked' } : { type: 'chest', chestId: ent.chest.id };
         if (ent.type === 'waypoint') return activateWaypoint(session, ent.screenId);
-        if (ent.type === 'rest') return { type: 'rest', kind: ent.rest.kind, name: ent.rest.name, message: REST_KINDS[ent.rest.kind].message };
         return contactEvent(session, ent.enemy.def);
     }
     if (isTerrainBlocked(screen, nx, ny, canWalkOnWater(session))) return { type: 'blocked' };
@@ -956,8 +950,6 @@ export function findPath(session, tx, ty, { avoidLiquid = false } = {}) {
     aliveEnemies(session).forEach(e => occupied.add(key(e.x, e.y)));
     bossWallCells(session).forEach(([wx, wy]) => occupied.add(key(wx, wy)));
     if (screen.waypoint) occupied.add(key(screen.waypoint.x, screen.waypoint.y));
-    const restHere = restOf(session, screen);
-    if (restHere) occupied.add(key(restHere.x, restHere.y));
     const exits = new Set(screen.exits.map(e => key(e.x, e.y)));
     // Passages de bord (connexions) : y poser le pied dans le sens de sortie déclenche la transition, donc jamais un point de passage
     // (sinon, sur l'eau, le plus court chemin longerait la couronne par une case de passage et changerait de carte en route).

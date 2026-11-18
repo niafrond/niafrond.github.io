@@ -278,8 +278,6 @@ export function createDraw(env) {
         (screen.structures || []).forEach(st => items.push({ depth: st.cross ? st.y - 0.4 : st.y + st.h - 0.5, kind: 'structure', st, x: st.x, y: st.y }));   // bâtiments, tours, ponts… à leur échelle (world/structures.js)
         X.bossWallsOf(env.session).forEach(w => items.push({ depth: w.y, kind: w.fire ? 'fire' : 'pillar', x: w.x, y: w.y }));   // piliers (flammes pour un Soleil) qui ferment le passage d'un boss, retirés à sa mort
         if (screen.waypoint) items.push({ depth: screen.waypoint.y + 0.1, kind: 'waypoint', x: screen.waypoint.x, y: screen.waypoint.y });
-        const restHere = X.restOf(env.session, screen);
-        if (restHere) items.push({ depth: restHere.y + 0.1, kind: 'rest', rest: restHere, x: restHere.x, y: restHere.y });
         (screen.spots || []).forEach(sp => items.push({ depth: sp.y + 0.05, kind: 'spot', sp, x: sp.x, y: sp.y }));
         X.visibleNpcs(env.session).forEach(n => {
             const a = vis.npcAnim?.id === n.id ? vis.npcAnim : null;   // PNJ en train d'accourir : position et saut animés
@@ -401,31 +399,6 @@ export function createDraw(env) {
                     ctx.fill();
                     ctx.stroke();
                     env.drawDecor('swirl', c.x, c.y - tile * 0.05 + tile * 0.17, tile * 0.34);
-                    break;
-                }
-                case 'rest': {   // fontaine (vasque d'eau) ou couche d'hôte (natte et oreiller) : halo vert pâle = soin
-                    const feet = c.y + tile * 0.38;
-                    const glow = 0.35 + 0.25 * Math.sin(now / 500);
-                    env.drawShadow(c.x, feet, tile * 0.34, tile * 0.11);
-                    ctx.strokeStyle = '#2b1b17';
-                    ctx.lineWidth = 2;
-                    if (it.rest.kind === 'fountain') {
-                        ctx.fillStyle = '#9aa3ad';
-                        ctx.beginPath(); ctx.ellipse(c.x, feet - tile * 0.08, tile * 0.32, tile * 0.16, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
-                        ctx.fillStyle = `rgba(110,200,240,${(0.7 + glow * 0.3).toFixed(3)})`;
-                        ctx.beginPath(); ctx.ellipse(c.x, feet - tile * 0.1, tile * 0.24, tile * 0.1, 0, 0, Math.PI * 2); ctx.fill();
-                        ctx.fillStyle = '#9aa3ad';
-                        ctx.fillRect(c.x - tile * 0.04, feet - tile * 0.42, tile * 0.08, tile * 0.3);
-                    } else {
-                        ctx.fillStyle = '#b8493a';
-                        ctx.fillRect(c.x - tile * 0.3, feet - tile * 0.2, tile * 0.6, tile * 0.2); ctx.strokeRect(c.x - tile * 0.3, feet - tile * 0.2, tile * 0.6, tile * 0.2);
-                        ctx.fillStyle = '#f1e6cf';
-                        ctx.fillRect(c.x - tile * 0.28, feet - tile * 0.32, tile * 0.18, tile * 0.12); ctx.strokeRect(c.x - tile * 0.28, feet - tile * 0.32, tile * 0.18, tile * 0.12);
-                    }
-                    ctx.beginPath();
-                    ctx.arc(c.x, c.y - tile * 0.52, tile * 0.1, 0, Math.PI * 2);
-                    ctx.fillStyle = `rgba(150,240,170,${glow.toFixed(3)})`;
-                    ctx.fill();
                     break;
                 }
                 case 'fire':
