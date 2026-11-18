@@ -5,9 +5,11 @@
 // `gameState.foes` contient tous les ennemis du combat (vivants et vaincus). Un clic sur la fiche d'un autre ennemi le prend pour cible.
 import { enemy, gameState, player, log, setActiveEnemy, prepareFoe, queueCombatXP, combatRewards } from './game.js';
 import { updateStats, updateEnemySpells } from './gameHud.js';
+import { enemyChargeMs } from './classCharge.js';
 import { createReinforcement, enemyCatalogList } from './enemies.js';
 import { calculateXPGain } from './experience.js';
 import { playSfx } from './sound.js';
+import { isAreaSpell } from './targeting.js';
 import { MAX_ENEMIES, REINFORCEMENT_HP_MULT, rollGroupSize, reinforcementLevel, livingFoes, isAlive, hasRoom, pickSummonTemplate, rewardShare } from './enemyGroup.js';
 
 /** Ennemis du combat (au moins l'ennemi ciblé). */
@@ -23,6 +25,7 @@ export function setupFoeGroup(lead){
         if(!template) break;
         const foe = prepareFoe(createReinforcement(reinforcementLevel(lead.level), template), { hpMult: REINFORCEMENT_HP_MULT, biome: lead.biome });
         foe.isReinforcement = true;
+        foe.readyAt = (gameState.charge?.now || 0) + enemyChargeMs(foe, 1);   // barre de chargement propre
         gameState.foes.push(foe);
     }
     if(gameState.foes.length > 1){
@@ -34,10 +37,9 @@ export function setupFoeGroup(lead){
 export function focusFoe(next){
     if(!next || next === enemy || !isAlive(next) || !allFoes().includes(next)) return false;
     const charge = gameState.charge;
-    if(charge){   // chaque ennemi garde sa propre progression de chargement
-        const left = Math.max(0, charge.enemyReady - charge.now);
-        enemy.chargeLeft = left;
-        charge.enemyReady = charge.now + (next.chargeLeft ?? left);
+    if(charge){   // chaque ennemi garde sa propre barre de chargement (date de « prêt » sur le temps de combat)
+        enemy.readyAt = charge.enemyReady;
+        charge.enemyReady = next.readyAt ?? charge.enemyReady;
     }
     setActiveEnemy(next);
     updateEnemySpells();
@@ -53,6 +55,7 @@ export function addFoe(summoner){
     const foe = prepareFoe(createReinforcement(reinforcementLevel(summoner.level), template), { hpMult: REINFORCEMENT_HP_MULT, biome: summoner.biome });
     foe.isReinforcement = true;
     foe.summonedBy = summoner.name;
+    foe.readyAt = (gameState.charge?.now || 0) + enemyChargeMs(foe, 1);
     gameState.foes = [...livingFoes(gameState.foes), foe].slice(0, MAX_ENEMIES);   // les vaincus libèrent leur place
     return foe;
 }
@@ -117,4 +120,43 @@ export function pickTarget(foe){
     run();
     gameState.targetPicked = false;   // si l'attaque a été refusée en route, le drapeau ne traîne pas
     return true;
+}
+
+// ── Effets secondaires des sorts de zone : poison, étourdissement, ponction de qì… touchent aussi les autres ennemis. ──
+/** Photographie de ce qu'un sort peut modifier chez l'ennemi ciblé (altérations, qì, points d'action). */
+export const snapshotFoe = f => ({ status: JSON.parse(JSON.stringify(f.statusEffects || {})), mana: { ...(f.mana || {}) }, cp: f.combatPoints || 0 });
+
+/** Après un sort de zone lancé sur `focus` : recopie sur les autres ennemis vivants ce qui a changé chez lui (altérations posées, qì et points d'action perdus). */
+export function spreadAreaEffects(spell, focus, before){
+    if(!before || !isAreaSpell(spell)) return;
+    const others = livingFoes(gameState.foes).filter(f => f !== focus);
+    if(!others.length) return;
+    let touched = false;
+    const status = focus.statusEffects || {};
+    for(const f of others){
+        f.statusEffects ||= {};
+        for(const key of Object.keys(status)){
+            if(JSON.stringify(status[key]) === JSON.stringify(before.status[key])) continue;   // inchangé par ce sort
+            const value = JSON.parse(JSON.stringify(status[key]));
+            const had = f.statusEffects[key];
+            f.statusEffects[key] = (typeof value === 'number' && typeof had === 'number') ? Math.max(value, had) : value;
+            touched = true;
+        }
+        for(const color of Object.keys(before.mana)){
+            const lost = (before.mana[color] || 0) - (focus.mana?.[color] || 0);
+            if(lost > 0 && f.mana){ f.mana[color] = Math.max(0, (f.mana[color] || 0) - lost); touched = true; }
+        }
+        const cpLost = before.cp - (focus.combatPoints || 0);
+        if(cpLost > 0){ f.combatPoints = Math.max(0, (f.combatPoints || 0) - cpLost); touched = true; }
+    }
+    if(touched) log(`${spell.name} : les effets touchent aussi ${others.length > 1 ? 'les autres ennemis' : others[0].name}.`);
+}
+
+/** Part de chargement (0..1) de la barre d'un ennemi : la sienne, ou celle du combat pour l'ennemi ciblé. */
+export function foeChargeProgress(foe){
+    const charge = gameState.charge;
+    if(!charge || !isAlive(foe)) return 0;
+    const readyAt = foe === enemy ? charge.enemyReady : (foe.readyAt ?? charge.now);
+    const left = Math.max(0, readyAt - charge.now);
+    return left <= 0 ? 1 : Math.max(0, 1 - left / enemyChargeMs(foe, 1));
 }

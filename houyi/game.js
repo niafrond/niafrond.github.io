@@ -74,7 +74,7 @@ export * from './gameStatsTab.js';
 import { showAttributeMenu, updateLevelHud } from './gameLevelUp.js';
 export * from './gameLevelUp.js';
 import { updateAvailableSpells, combatSpellList, getTurnClass, chooseAction, classCanAct, spendActionCharge, chargeFactor, decoupled, withCaster, resumeAfterBoundary, refillActionBar } from './gameSpellList.js';
-import { setupFoeGroup, targetGate } from './foes.js';
+import { setupFoeGroup, targetGate, snapshotFoe, spreadAreaEffects } from './foes.js';
 import { isAreaSpell, isAreaWeapon, spellNeedsTarget } from './targeting.js';
 import { livingFoes } from './enemyGroup.js';
 import { applyDuelRulesAtCombatStart, enemyTurn, finishPlayerTurn, handleEnemyDefeated } from './gameTurnFlow.js';
@@ -2062,7 +2062,9 @@ async function castEffectSpellDecoupled(spell){
         chooseAction(() => withCaster('player', async () => {
             announce();
             if(spell.cinematic) await playUltimateCinematic(spell);   // invocation : scène plein écran avant l'effet
+            const foeBefore = snapshotFoe(enemy), foeFocus = enemy;
             const ok = await module.applyClassSpellEffect(spell);
+            spreadAreaEffects(spell, foeFocus, foeBefore);   // sort de zone : altérations et pertes de qì aussi chez les autres ennemis
             saveUpdate();
             if(ok){ tutorialCallbacks.onSpellCast?.(); endAction(); }
         }));
@@ -2073,7 +2075,9 @@ async function castEffectSpellDecoupled(spell){
         if(spell.cinematic) await playUltimateCinematic(spell);   // invocation : scène plein écran avant l'effet
         if(config){ await config.onTileClick(index, board[index]); return; }   // position mémorisée : le sort part sur elle, quelle que soit la tuile qui s'y trouve
         const before = module.snapshotBoard();
+        const foeBefore = snapshotFoe(enemy), foeFocus = enemy;
         const ok = await module.applyClassSpellEffect(spell);
+        spreadAreaEffects(spell, foeFocus, foeBefore);   // sort de zone : altérations et pertes de qì aussi chez les autres ennemis
         saveUpdate();
         if(ok) module.endPlayerSpellTurn(before); else resumeAfterBoundary();
     });
@@ -2125,7 +2129,10 @@ export function castSpell(spellId){
             // Import dynamique pour éviter les dépendances circulaires
             import('./classSpellEffects.js').then(async module => {
                 const boardBefore = module.snapshotBoard();
-                if(await module.applyClassSpellEffect(spell)) {
+                const foeBefore = snapshotFoe(enemy), foeFocus = enemy;
+                const applied = await module.applyClassSpellEffect(spell);
+                spreadAreaEffects(spell, foeFocus, foeBefore);   // sort de zone : altérations et pertes de qì aussi chez les autres ennemis
+                if(applied) {
                     saveUpdate();
                     tutorialCallbacks.onSpellCast?.();
                     // Plateau modifié : on attend la régénération, les combos qui suivent profitent au lanceur.
@@ -2138,7 +2145,9 @@ export function castSpell(spellId){
         }
         // Sorts standards (dégâts ou soins)
         logActiveAction(`lance le sort ${spell.name}`);
+        const foeBefore = snapshotFoe(enemy), foeFocus = enemy;
         applyStandardSpellEffects(player, enemy, spell, true);
+        spreadAreaEffects(spell, foeFocus, foeBefore);   // sort de zone : altérations et pertes de qì aussi chez les autres ennemis
         updateStats();
         saveUpdate();
         // Notifier le tutoriel qu'un sort a été lancé
@@ -2185,7 +2194,9 @@ export async function castUltimate(spellId){
             await playUltimateCinematic(spell);
             const module = await import('./classSpellEffects.js');
             const boardBefore = module.snapshotBoard();
+            const foeBefore = snapshotFoe(enemy), foeFocus = enemy;
             const ok = await module.applyClassSpellEffect(spell);
+            spreadAreaEffects(spell, foeFocus, foeBefore);
             saveUpdate();
             if(ok) module.endPlayerSpellTurn(boardBefore); else resumeAfterBoundary();
         }), { turnBound: true });

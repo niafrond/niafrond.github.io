@@ -57,6 +57,15 @@ export function rowCardHtml({ key, cls = '', border = '', name, badges = '', sub
 // Emplacement vide : une seule ligne discrète.
 export const emptyRowHtml = (label, text) => `<div class="rc rc-empty"><span class="rc-name">${label}</span><span class="rc-sub">${text}</span></div>`;
 
+import { spellNeedsTarget, spellTarget, weaponTarget, TARGET, targetLabel } from './targeting.js';
+
+/** Pastille « Zone » ou « Ciblé » d'un sort offensif (vide pour un soutien ou un soin). */
+export const spellTargetBadge = sp => !spellNeedsTarget(sp) ? '' : (spellTarget(sp) === TARGET.AREA ? badgeHtml('Zone', 'rc-badge-area') : badgeHtml('Ciblé', 'rc-badge-single'));
+/** Pastille « Zone » ou « Ciblé » d'une arme. */
+export const weaponTargetBadge = w => (weaponTarget(w) === TARGET.AREA ? badgeHtml('Zone', 'rc-badge-area') : badgeHtml('Ciblé', 'rc-badge-single'));
+/** Ligne d'infobulle expliquant le ciblage d'un sort (vide pour un soutien) et d'une arme. */
+export const spellTargetLine = sp => (spellNeedsTarget(sp) ? targetLabel(spellTarget(sp)) : '');
+export const weaponTargetLine = w => targetLabel(weaponTarget(w));
 export const badgeHtml = (text, cls = '') => `<em class="rc-badge${cls ? ' ' + cls : ''}">${text}</em>`;
 
 // Contenu d'infobulle : titre, lignes de détail, description.

@@ -481,3 +481,6 @@ body.casual-mode .tab-btn[onclick*="'spells'"] { display: none; }
 .ab-origin span:last-child, .ab-usage span:last-child { text-align: right; }
 
 .ab-group { margin: 8px 0 4px; font-size: .8rem; letter-spacing: .06em; text-transform: uppercase; opacity: .75; }
+/* Ciblage : « Zone » touche tous les ennemis, « Ciblé » l'ennemi choisi (targeting.js). */
+.rc-badge-area { background: #2f7fb8; color: #fff; }
+.rc-badge-single { background: transparent; color: inherit; border-color: currentColor; opacity: .8; }

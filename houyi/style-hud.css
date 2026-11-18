@@ -1207,3 +1207,6 @@ body.show-xiu-text #xiu-banner { display: block; }
 .foe-chip.pickable { border-color: #f2c14e; animation: foe-pick 0.9s ease-in-out infinite alternate; }
 @keyframes foe-pick { from { box-shadow: 0 0 0 1px #f2c14e; } to { box-shadow: 0 0 8px 2px #f2c14e; } }
 @media (prefers-reduced-motion: reduce) { .foe-chip.pickable { animation: none; box-shadow: 0 0 0 2px #f2c14e; } }
+/* Barre de chargement propre à chaque ennemi (foesView.js) : fine, sous la barre de vie. */
+.foe-chip .foe-charge { display: block; height: 4px; margin-top: 2px; background: var(--hp-back, rgba(0,0,0,.45)); border-radius: 2px; overflow: hidden; }
+.foe-chip .foe-charge > span { display: block; height: 100%; background: #4aa3d8; }

@@ -3,7 +3,7 @@
 // Cachée quand il n'y a qu'un ennemi. Données : gameState.foes (foes.js).
 import { escapeHtml } from './escapeHtml.js';
 import { gameState } from './game.js';
-import { allFoes, pickTarget, isPickingTarget, cancelTargetPick } from './foes.js';
+import { allFoes, pickTarget, isPickingTarget, cancelTargetPick, foeChargeProgress } from './foes.js';
 import { isAlive } from './enemyGroup.js';
 import { playSfx } from './sound.js';
 
@@ -22,7 +22,8 @@ export function renderFoeBar() {
         const cls = `foe-chip${isAlive(f) ? '' : ' down'}${picking && isAlive(f) ? ' pickable' : ''}`;
         return `<button type="button" class="${cls}" data-foe="${i}" ${isAlive(f) ? '' : 'disabled'} aria-label="${escapeHtml(f.name)}, ${pct} % de vie${picking && isAlive(f) ? ', toucher pour viser' : ''}">`
             + `<span class="foe-name">${escapeHtml(f.name)}${f.summonedBy ? ' ✦' : ''}</span>`
-            + `<span class="foe-hp"><span style="width:${pct}%"></span></span></button>`;
+            + `<span class="foe-hp"><span style="width:${pct}%"></span></span>`
+            + `<span class="foe-charge" title="Chargement"><span style="width:${Math.round(100 * foeChargeProgress(f))}%"></span></span></button>`;
     }).join('');
     if (!bound) {
         bound = true;
@@ -33,4 +34,16 @@ export function renderFoeBar() {
             if (pickTarget(allFoes()[Number(chip.dataset.foe)])) playSfx('uiClick');
         });
     }
+}
+
+/** Rafraîchit seulement les barres de chargement des pastilles (appelé à chaque pas du ticker, sans redessiner la barre). */
+export function refreshFoeCharges() {
+    const box = typeof document !== 'undefined' ? document.getElementById('foe-bar') : null;
+    if (!box || box.hidden) return;
+    const foes = allFoes();
+    box.querySelectorAll('.foe-chip').forEach(chip => {
+        const bar = chip.querySelector('.foe-charge > span');
+        const foe = foes[Number(chip.dataset.foe)];
+        if (bar && foe) bar.style.width = `${Math.round(100 * foeChargeProgress(foe))}%`;
+    });
 }
