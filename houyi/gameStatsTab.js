@@ -211,10 +211,9 @@ export function showCombatAnimation({ icon, title, damage = null, heal = null, s
     if(fx && options.requireClick === undefined && options.autoHideMs === undefined) options = { ...options, autoHideMs: Math.max(1000 * animationFactor(), spellFxDurationMs(title) * 2 + 500) };   // l'animation tourne en boucle : au moins deux passages
     const bigFx = Boolean(fx && fx.includes('spellfx-big'));
     let html = `<div class="attack-icon${fx ? ' has-spellfx' : ''}${bigFx ? ' has-spellfx-big' : ''}">${fx || svgIcon(icon) || icon}</div>`;
-    const stage = !bigFx && !options.blocked ? spellStageHtml(fx || `<div class="attack-icon">${svgIcon(icon) || icon}</div>`, isPlayerAttack, damage !== null && heal === null) : null;
+    const stage = !bigFx ? spellStageHtml(fx || `<div class="attack-icon">${svgIcon(icon) || icon}</div>`, isPlayerAttack, damage !== null && heal === null) : null;
     if(stage) html = stage;
     // 2e temps d'un blocage / d'une parade : gros bouclier (plein = bloqué, fendu = paré) et texte qui vibre.
-    if(options.blocked) html = `<div class="block-shield block-${options.blocked}">${svgIcon('wickershield')}</div>` + html;
     let caption = `<div class="attack-title">${String(title).toUpperCase()}</div>`;
     if (damage !== null) caption += `<div class="attack-damage">${damage}</div>`;
     if (heal   !== null) caption += `<div class="attack-heal">${heal}</div>`;
@@ -242,14 +241,10 @@ export function showStrikeAnimation(params, strike, isPlayerAttack = true, final
         showCombatAnimation({ ...params, damage: `-${real} dégâts${crit}` }, isPlayerAttack, options);
         return;
     }
-    const label = strike.block === 'total' ? 'BLOQUÉ ! ' : 'PARÉ ! ';
-    const shield = strike.block;
-    showCombatAnimation({ ...params, damage: `-${intended} dégâts${crit}` }, isPlayerAttack, {
-        ...options, requireClick: false, autoHideMs: strikeHoldMs(strike, isPlayerAttack, intended, 1000),
-        onContinue: () => showCombatAnimation(
-            { ...params, damage: `${label}${real > 0 ? `-${real} dégâts` : 'aucun dégât'}`, title: params.title },
-            isPlayerAttack, { ...options, blocked: shield, requireClick: true, onContinue: options.onContinue })
-    });
+    // Blocage / parade : un seul écran (bouclier) qui montre les dégâts subis et ce que la défense a retenu.
+    const stopped = Math.max(0, intended - real);
+    showCombatAnimation({ ...params, damage: `${real} dégât${real > 1 ? 's' : ''}${crit}<br><span class="stopped">${stopped} dégât${stopped > 1 ? 's' : ''} ${strike.block === 'total' ? (stopped > 1 ? 'bloqués' : 'bloqué') : (stopped > 1 ? 'parés' : 'paré')}</span>` }, isPlayerAttack, {
+        ...options, blocked: strike.block, requireClick: true, onContinue: options.onContinue });
 }
 
 // Mécanisme DOM bas niveau pour afficher un overlay d'animation sur la grille
