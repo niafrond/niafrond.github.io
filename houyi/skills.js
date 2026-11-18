@@ -101,6 +101,10 @@ export const CLASS_SKILLS = [
     { id: 'cl_shaman_ancetres', classId: 'shaman', kind: ACTION, name: 'Appel des ancêtres', ap: 80, description: 'Les ancêtres referment les blessures : soin.', spell: { cost: { green: 10, purple: 10 }, heal: 50, scales: 1.5 } }
 ];
 
+/** Compétence de base d'une classe : la première de sa liste (soutien), apprise d'office dès que la classe est obtenue. */
+export const baseSkillOf = classId => CLASS_SKILLS.find(s => s.classId === classId) || null;
+export const isBaseSkill = id => CLASS_SKILLS.some(s => baseSkillOf(s.classId)?.id === id);
+
 export const getSkill = id => SKILLS.find(s => s.id === id) || CLASS_SKILLS.find(s => s.id === id) || null;
 /** Compétences affichées au héros : les communes + celles des classes qu'il a obtenues (aucun spoil sur les autres). */
 export const skillsFor = hero => [...SKILLS, ...CLASS_SKILLS.filter(s => normalizeRoster(hero).owned.includes(s.classId))];
@@ -171,7 +175,8 @@ export function normalizeSkills(hero) {
     Object.entries(raw.progress && typeof raw.progress === 'object' ? raw.progress : {}).forEach(([id, n]) => {
         if (getSkill(id) && Number.isFinite(n) && n > 0) progress[id] = Math.floor(n);
     });
-    const learned = [...new Set(Array.isArray(raw.learned) ? raw.learned : [])].filter(id => getSkill(id));
+    const base = normalizeRoster(hero).owned.map(baseSkillOf).filter(Boolean).map(s => s.id);   // chaque personnage obtenu a sa compétence de base, déjà apprise
+    const learned = [...new Set([...(Array.isArray(raw.learned) ? raw.learned : []), ...base])].filter(id => getSkill(id));
     const active = [...new Set(Array.isArray(raw.active) ? raw.active : [])].filter(id => learned.includes(id) && isSupport(getSkill(id)));
     const seen = [...new Set([...(Array.isArray(raw.seen) ? raw.seen : []), ...learned, ...Object.keys(progress)])].filter(id => getSkill(id));   // compétences déjà vues (apprises, en cours ou enseignées un jour par l'équipement porté)
     if (!hero.skills || typeof hero.skills !== 'object') hero.skills = {};
@@ -181,6 +186,8 @@ export function normalizeSkills(hero) {
 }
 
 export const isLearned = (hero, id) => normalizeSkills(hero).learned.includes(id);
+/** Nombre approximatif de victoires encore nécessaires (PA restants ÷ PA d'une victoire au niveau du héros). */
+export const victoriesLeft = (hero, id) => { const s = getSkill(id); return s ? Math.max(0, Math.ceil((s.ap - progressOf(hero, id)) / apForVictory(hero?.level))) : 0; };
 export const progressOf = (hero, id) => (isLearned(hero, id) ? getSkill(id).ap : Math.min(getSkill(id)?.ap || 0, normalizeSkills(hero).progress[id] || 0));
 
 // ── PA ──────────────────────────────────────────────────────────────────────
