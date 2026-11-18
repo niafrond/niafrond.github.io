@@ -13,7 +13,7 @@ import { allWeapons, getWeaponById, weaponBiomeBonus, BIOME_LABELS } from "./wea
 import { weaknessDamage, ruleForBiome, prepBanner } from "./terrain.js";
 
 import { setGameStarted, isBoardResolving, setBiomeRule, boostBoardColor } from "./board.js";
-import { actionGuard } from "./actionGuard.js";
+import { actionGuard, BOARD_SETTLE_MS } from "./actionGuard.js";
 
 import { protectsFromBiome, collarForBiome, stuffTotals, normalizeStuff, grantStuff, inflictPoison } from "./stuff.js";
 import { boostedDamageDealt, resistedDamageTaken, parryQiGain } from "./gearEffects.js";
@@ -1583,6 +1583,34 @@ export function canActOutOfTurn(){
         && player.hp > 0 && enemy.hp > 0 && !isAsleep(player) && !((player.statusEffects?.stunned || 0) > 0);
 }
 
+// File d'attente des actions choisies hors tour mais qui touchent le plateau (sorts de plateau, ultimes, objets) : elles se lancent, avec leurs
+// coûts payés à ce moment-là, quand leur camp a de nouveau la main. Choisir deux fois la même action la retire de la file.
+export const actionQueue = { player: [], enemy: [] };
+export function isQueuedAction(kind, id){ return actionQueue.player.some(a => a.kind === kind && a.id === id); }
+export function clearActionQueues(){ actionQueue.player.length = 0; actionQueue.enemy.length = 0; }
+export function toggleQueuedAction(kind, id, label, extra = {}){
+    const at = actionQueue.player.findIndex(a => a.kind === kind && a.id === id);
+    if(at >= 0){ actionQueue.player.splice(at, 1); log(`${label} : retiré de la file d'attente.`); }
+    else { actionQueue.player.push({ kind, id, ...extra }); log(`${label} : en file d'attente, lancé à votre tour.`); }
+    updateAvailableSpells();   // repeint le marqueur « en file » des cartes
+    updateItemButton();
+    updateStats();
+    saveUpdate();
+}
+// Début du tour du joueur : lance la première action en attente (elle termine le tour comme toute action) ; les autres attendent le tour suivant.
+export function runQueuedPlayerAction(){
+    if(!actionQueue.player.length) return false;
+    setTimeout(() => {
+        if(gameState.combatState !== 'active' || currentTurn !== 'player' || !actionQueue.player.length) return;
+        const a = actionQueue.player.shift();
+        if(a.kind === 'spell') castSpell(a.id);
+        else if(a.kind === 'ultimate') castUltimate(a.id);
+        else if(a.kind === 'item') useInventoryItem(a.id, a.index);
+        updateStats();
+    }, BOARD_SETTLE_MS + 100);
+    return true;
+}
+
 // Après une action hors tour : le tour de l'adversaire continue, on vérifie seulement que personne n'est tombé.
 function settleOutOfTurnAction(){
     updateStats();
@@ -1697,7 +1725,6 @@ export function castSpell(spellId){
     if(rejectRushedAction()) return;
     const spell=player.activeSpells.find(s=>s.id===spellId);
     if(!spell){ log("Sort indisponible !"); return; }
-    if(outOfTurn && (spell.effect || spell.boardSpell)){ log(`${spell.name} agit sur le plateau : attendez votre tour.`); return; }
     if(tutorialCallbacks.allowSpell && !tutorialCallbacks.allowSpell(spell)) return;
     if(player.level<spell.minLevel){ log(`Nécessite niveau ${spell.minLevel}`); return; }
     
@@ -1708,6 +1735,7 @@ export function castSpell(spellId){
         log(missingColor ? `Pas assez de qì ${missingColor} !` : "Pas assez de qì !");
         return;
     }
+    if(outOfTurn && (spell.effect || spell.boardSpell)){ toggleQueuedAction('spell', spell.id, spell.name); return; }   // agit sur le plateau : attend son tour
     actionGuard.markPlayerAction();
     consumeSpellMana(player, spell);
     startSpellCooldown(spell);
@@ -1749,7 +1777,8 @@ export function castSpell(spellId){
 // (voir `playUltimateCinematic`) se joue avant l'effet.
 export async function castUltimate(spellId){
     if(gameState.combatState !== 'active'){ log("Aucun combat en cours."); return; }
-    if(currentTurn !== 'player'){ log("Seul le joueur actif peut lancer un sort."); return; }
+    const outOfTurn = currentTurn !== 'player' && canActOutOfTurn();
+    if(currentTurn !== 'player' && !outOfTurn){ log("Seul le joueur actif peut lancer un sort."); return; }
     if(rejectRushedAction()) return;
     const spell = getUltimateById(spellId);
     if(!spell || getEquippedUltimate(player)?.id !== spell.id){ log("Ultime indisponible !"); return; }
@@ -1761,6 +1790,7 @@ export async function castUltimate(spellId){
         log(missing ? `Pas assez de qì ${missing[0]} collecté !` : "Pas assez de qì !");
         return;
     }
+    if(outOfTurn){ toggleQueuedAction('ultimate', spell.id, spell.name); return; }
     actionGuard.markPlayerAction();
     if(player.cheatFreeSpells !== true) spendUltimateMana(player, spell);
     resetRage(player);
@@ -2155,6 +2185,7 @@ export function decideFirstTurn(){
 
     // Personne n'agit pendant l'écran de début : tour « intro », boutons du joueur verrouillés.
     currentTurn = 'intro';
+    clearActionQueues();   // aucune action en attente d'un combat précédent
     updateStats();
     const token = ++introToken;
     showCombatIntro({

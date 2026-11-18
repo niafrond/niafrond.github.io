@@ -9,7 +9,7 @@ import { icon as svgIcon } from './icons.js';
 import { bindTooltip, showSpellTooltip, hideSpellTooltip } from './gameTooltips.js';
 import { updateSpellsTab } from './gameSpellsTab.js';
 import { allSpells as spellsCatalog, getSpellsByLevel } from './spells.js';
-import { canEntityCastSpell, castSpell, markMultiManaSpell, player, spellColorsOf, spellCostHtml, spellEffectIcon } from './game.js';
+import { canEntityCastSpell, castSpell, isQueuedAction, markMultiManaSpell, player, spellColorsOf, spellCostHtml, spellEffectIcon } from './game.js';
 
 // sorts
 const HIGH_SPELL_FROM_LEVEL = 15;
@@ -133,6 +133,7 @@ export function createSpellButtons(){
             if(player.level >= sp.minLevel && btn.querySelector('.cost-part.met') && btn.querySelector('.cost-part.unmet')) btn.classList.add('spell-partial');
             btn.tabIndex = -1;
         } else {
+            if(isQueuedAction('spell', sp.id)) btn.classList.add('queued');
             btn.onclick=()=>castSpell(sp.id);
             btn.onkeydown=(event)=>{
                 if(event.key === 'Enter' || event.key === ' ') {

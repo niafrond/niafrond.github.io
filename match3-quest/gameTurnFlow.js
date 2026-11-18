@@ -32,7 +32,7 @@ import { companionIconHtml, foxIconHtml, showCombatAnimation, showStrikeAnimatio
 import { finishCombatRecord, recordEnemyTurn, recordPlayerTurn, saveCombatRecord } from './combatBalance.js';
 import { showAttributeMenu } from './gameLevelUp.js';
 import { updateAvailableSpells } from './gameSpellList.js';
-import { activeCompanionIds, addBonusTurn, addManaForColor, applyCombatXPAtEnd, applyDamage, applyStandardSpellEffects, canEntityCastSpell, combatHooks, combatRewards, consumeSpellMana, enemy, gameState, getWeaponIcon, grantStuffPiece, handlePlayerDeath, normalizeActiveInventoryIndex, sellDuplicateItem, normalizeBonusTurnValue, player, queueCombatXP, showEndCombatAnimation, turnFlags, setCurrentTurn, currentTurn } from './game.js';
+import { activeCompanionIds, addBonusTurn, addManaForColor, applyCombatXPAtEnd, applyDamage, applyStandardSpellEffects, canEntityCastSpell, combatHooks, combatRewards, consumeSpellMana, enemy, gameState, getWeaponIcon, grantStuffPiece, handlePlayerDeath, normalizeActiveInventoryIndex, sellDuplicateItem, normalizeBonusTurnValue, player, queueCombatXP, showEndCombatAnimation, turnFlags, setCurrentTurn, currentTurn, actionQueue, runQueuedPlayerAction } from './game.js';
 
 // Applique les pouvoirs de fin de tour des compagnons présents (soin, jet d'eau, qì, mirage). Renvoie { skipEnemy, enemyDown }.
 export const COMPANION_NAMES = { zhi: 'Zhi', dawa: 'Dawa', yu: 'Yu', etincelle: 'Leigong', braise: 'Braise', jian: 'Jian', tou: 'Tou' };
@@ -403,7 +403,9 @@ export function enemyTurn(){
     updateStats();
     
     // Utiliser la nouvelle IA pour prendre une décision
-    const decision = tutorialCallbacks.enemyDecision?.() || makeDecision();   // tutoriel scripté : action imposée à l'adversaire
+    const queuedSpell = actionQueue.enemy.shift();   // sort de plateau préparé pendant le tour du joueur : lancé maintenant
+    const queuedDecision = queuedSpell ? { action: 'spell', data: { spell: queuedSpell, score: 0, reason: 'sort préparé' }, thinkingTime: 400, reason: 'sort préparé' } : null;
+    const decision = queuedDecision || tutorialCallbacks.enemyDecision?.() || makeDecision();   // tutoriel scripté : action imposée à l'adversaire
     
     // Log la décision pour debug
     logDecision(decision);
@@ -495,6 +497,12 @@ export function scheduleEnemyReaction(){
         if(boardIsBusy()){ setTimeout(attempt, ENEMY_REACTION_WAIT_MS * animationFactor()); return; }   // attend la fin de l'animation en cours
         const decision = makeDecision();
         let acted = false;
+        const picked = decision.action === 'spell' ? decision.data.spell : null;
+        if(picked && (picked.boardSpell || picked.effect) && !actionQueue.enemy.length && canEntityCastSpell(enemy, picked)){
+            actionQueue.enemy.push(picked);   // touche au plateau : préparé maintenant, lancé à son tour
+            log(`${enemy.name} prépare ${picked.name}.`);
+            return;
+        }
         if(decision.action === 'weapon' && enemy.weapon){
             enemyStrikeWithWeapon();
             acted = true;
@@ -741,6 +749,7 @@ export function finishEnemyTurn(){
             return;
         }
         tutorialCallbacks.onPlayerTurn?.('turn');   // tutoriel scripté : début du tour du joueur
+        runQueuedPlayerAction();                    // action choisie pendant le tour adverse
     }
 }
 

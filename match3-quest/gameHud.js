@@ -19,7 +19,7 @@ import { createWeaponButton, statValueHtml } from './gameInventoryTabs.js';
 import { updatePlayerStatsTab } from './gameStatsTab.js';
 import { updateLevelHud } from './gameLevelUp.js';
 import { createSpellButtons } from './gameSpellList.js';
-import { bonusTurnBadge, canEntityCastSpell, castUltimate, clampManaToCaps, classIcon, currentTurn, enemy, gameState, getUltimateTooltipHtml, getWeaponIcon, markMultiManaSpell, player, spellCostHtml, spellEffectIcon, syncPlayerControlsLock, ultimateManaBarHtml } from './game.js';
+import { bonusTurnBadge, canEntityCastSpell, castUltimate, clampManaToCaps, classIcon, currentTurn, enemy, gameState, getUltimateTooltipHtml, isQueuedAction, getWeaponIcon, markMultiManaSpell, player, spellCostHtml, spellEffectIcon, syncPlayerControlsLock, ultimateManaBarHtml } from './game.js';
 
 // Nom de l'ennemi dans la barre de stats : caractères chinois simplifiés par défaut (bestiaryNames.js), pinyin après un clic sur l'ennemi (et inversement).
 // Le choix est gardé pour toute la session de jeu ; sans entrée pour le gabarit, le nom du gabarit reste affiché.
@@ -224,6 +224,7 @@ export function updateStats(){
         if(equippedUltimate){
             const rageBar = playerDiv.querySelector('.rage-bar-container');
             if(ultimateReady){
+                rageBar.classList.toggle('queued', isQueuedAction('ultimate', equippedUltimate.id));
                 rageBar.onclick = () => castUltimate(equippedUltimate.id);
                 rageBar.onkeydown = (event) => {
                     if(event.key === 'Enter' || event.key === ' ') {
