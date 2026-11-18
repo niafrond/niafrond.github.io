@@ -455,3 +455,6 @@ body.casual-mode .tab-btn[onclick*="'spells'"] { display: none; }
 #potion-buttons.potion-menu .potion-btn { white-space: normal; height: auto; }
 #potion-buttons.potion-menu .potion-back { grid-column: 1 / -1; }
 #potion-buttons .potion-ask { grid-column: 1 / -1; font-weight: 700; font-size: 0.8rem; padding: 2px 4px; }
+.cl-row { flex-wrap: wrap; }
+.cl-weapon { display: flex; align-items: center; gap: 4px; font-size: 0.75em; min-width: 0; flex: 1 0 100%; order: 3; }
+.cl-weapon select { font: inherit; flex: 1; min-width: 0; padding: 1px 2px; }

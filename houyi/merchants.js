@@ -11,7 +11,7 @@
  * uniques (une fois achetés, plus en rayon) ; les objets rechargeables restent en vente.
  */
 import { allItems, lootableItems, shiftActiveItemIndexes } from './items.js';
-import { allWeapons, weaponRarity } from './weapons.js';
+import { allWeapons, companionWeapons, lootableWeapons, weaponRarity } from './weapons.js';
 import { shopStuff, getStuffById, baseStuffPrice, grantStuff, STUFF_SLOTS } from './stuff.js';
 
 export const REGION_LEVEL = { rizieres: 1, volcan: 4, gobi: 6, fleuve: 11, bambous: 17, tonnerre: 22, fauves: 27, mer: 32, fusang: 37, marees: 38, lune: 40 };
@@ -119,7 +119,7 @@ const offerOf = (kind, obj, section, rarity) => {
 export const STUFF_PER_SLOT = 2;
 export const STUFF_LEVEL_AHEAD = 3;
 export const STUFF_PRICE_MULT = 1.5;
-export const STOCK_SIZE = { stallItems: 5, stallWeapons: 5, rare: 6, exceptional: 2, stuff: 5 };
+export const STOCK_SIZE = { stallItems: 5, stallWeapons: 5, stallCompanionWeapons: 2, rare: 6, exceptional: 2, stuff: 5 };
 
 // Types d'objets que chaque marchand vend en permanence (une pièce « standard » de chacun, toujours rachetable).
 const STANDARD_TYPES = ['reusable', 'shield', 'artifact'];
@@ -154,7 +154,8 @@ export function merchantStock(merchantId, ngPlus = 0, heroLevel = 0) {
     const standardIds = new Set(standards.map(i => i.id));
     const items = lootableItems.filter(i => !standardIds.has(i.id)).map(i => ({ kind: 'item', obj: i, rarity: i.rarity }));
     const weapons = allWeapons.filter(w => !w.fusionOnly).map(w => ({ kind: 'weapon', obj: w, rarity: weaponRarity(w) }));
-    const all = [...items, ...weapons];
+    const companionEntries = companionWeapons.map(w => ({ kind: 'weapon', obj: w, rarity: weaponRarity(w) }));   // armes de compagnon (haches, épées, éventails…)
+    const all = [...items, ...weapons, ...companionEntries];
     const fits = (e, rarities, up, down = 99) => rarities.includes(e.rarity) && e.obj.minLevel <= L + up && e.obj.minLevel >= L - down;
 
     // Étal et pièces rares : nettement plus fournis qu'avant (les prix suivent le barème, il faut choisir ce qu'on achète).
@@ -167,7 +168,8 @@ export function merchantStock(merchantId, ngPlus = 0, heroLevel = 0) {
     if (stallWeapons.length < STOCK_SIZE.stallWeapons) stallWeapons.push(...sample(oldRareWeapons, STOCK_SIZE.stallWeapons - stallWeapons.length, rng));
     const stall = [
         ...sample(items.filter(e => e.obj.type === 'reusable' && fits(e, ['common', 'uncommon'], 1)), STOCK_SIZE.stallItems, rng),
-        ...stallWeapons
+        ...stallWeapons,
+        ...sample(companionEntries.filter(e => fits(e, ['common', 'uncommon'], 2, 12)), STOCK_SIZE.stallCompanionWeapons, rng)
     ];
     const legendary = all.filter(e => fits(e, ['legendary'], 9, 12));
     const exceptional = legendary.length
@@ -211,7 +213,7 @@ export function offerObject(offer) {
     if (offer.kind === 'torch') return TORCH;
     if (offer.kind === 'compass') return COMPASS;
     if (offer.kind === 'stuff') return getStuffById(offer.id);
-    return offer.kind === 'weapon' ? allWeapons.find(w => w.id === offer.id) : allItems.find(i => i.id === offer.id);
+    return offer.kind === 'weapon' ? lootableWeapons().find(w => w.id === offer.id) : allItems.find(i => i.id === offer.id);
 }
 
 // Offres encore en rayon : une pièce unique déjà achetée (ou déjà possédée, pour une arme) disparaît.

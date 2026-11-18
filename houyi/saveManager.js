@@ -278,6 +278,7 @@ function sanitizePlayer(player) {
         rage: player.rage,
         weapons: ids(player.weapons),
         equippedWeapon: player.equippedWeapon?.id,
+        allyWeapons: player.allyWeapons,
         equipment: compact({ leftHand: player.equipment?.leftHand, item: player.equipment?.item }),
         inventory: player.inventory,
         stuffOwned: player.stuffOwned,

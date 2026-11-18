@@ -153,3 +153,42 @@ describe('armes des compagnons', () => {
         expect(buildAlly(hero(), 'barbarian').weapon).toBe('axe');
     });
 });
+
+describe('armes de compagnon : variantes, équipement, butin et marchands', () => {
+    test('48 armes de compagnon (6 types × 8), identifiants uniques, jamais des arcs, chaque compagnon a un type distinct', async () => {
+        const { companionWeapons, COMPANION_WEAPON_TYPES } = await import('../../weapons.js');
+        expect(companionWeapons).toHaveLength(48);
+        expect(new Set(companionWeapons.map(w => w.id)).size).toBe(48);
+        COMPANION_WEAPON_TYPES.forEach(t => expect(companionWeapons.filter(w => w.type === t)).toHaveLength(8));
+        expect(new Set(ALLY_IDS.map(id => ALLIES[id].weapon)).size).toBe(6);
+    });
+    test('équiper : seulement une arme de son type et de niveau permis ; une arme ne sert qu\'à un compagnon', async () => {
+        const { companionWeapons, getWeaponById } = await import('../../weapons.js');
+        const { equipAllyWeapon, allyEquippedWeapon, weaponsFor } = await import('../../allyWeapons.js');
+        const axe = companionWeapons.find(w => w.type === 'axe' && w.minLevel === 1), sword = companionWeapons.find(w => w.type === 'sword' && w.minLevel === 1);
+        const h = Object.assign(hero(), { level: 5, weapons: [axe, sword] });
+        expect(weaponsFor(h, 'barbarian').map(w => w.id)).toEqual([axe.id]);
+        expect(equipAllyWeapon(h, 'barbarian', sword.id).ok).toBe(false);
+        expect(equipAllyWeapon(h, 'barbarian', axe.id).ok).toBe(true);
+        expect(allyEquippedWeapon(h, 'barbarian').id).toBe(axe.id);
+        expect(equipAllyWeapon(h, 'barbarian', null).ok).toBe(true);
+        expect(allyEquippedWeapon(h, 'barbarian')).toBeNull();
+        expect(getWeaponById(axe.id)?.id).toBe(axe.id);   // la sauvegarde recharge les armes par identifiant
+    });
+    test('Hou Yi ne manie pas les armes de compagnon ; butin et marchands en proposent', async () => {
+        const { heroWeapons, lootableWeapons } = await import('../../weapons.js');
+        const { companionWeapons } = await import('../../weapons.js');
+        expect(heroWeapons([companionWeapons[0], { id: 'arc', type: 'bow' }]).map(w => w.id)).toEqual(['arc']);
+        expect(lootableWeapons().length).toBeGreaterThan(companionWeapons.length);
+        const { rollChestLoot } = await import('../../chestLoot.js');
+        let found = false;
+        for (let i = 0; i < 400 && !found; i++) {
+            const r = rollChestLoot({ gold: 1, lootTier: 4 }, { region: 'lune' }, { level: 40, weapons: [], inventory: [] }, (() => { let n = i; return () => (n = (n * 9301 + 49297) % 233280) / 233280; })());
+            found = r.loot.some(l => l.kind === 'weapon' && l.weapon.companion);
+        }
+        expect(found).toBe(true);
+        const { merchantStock, MERCHANTS } = await import('../../merchants.js');
+        const offers = MERCHANTS.flatMap(m => merchantStock(m.id, 0, 99)).filter(o => o.kind === 'weapon');
+        expect(offers.some(o => companionWeapons.some(w => w.id === o.id))).toBe(true);
+    });
+});

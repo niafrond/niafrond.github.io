@@ -1,7 +1,7 @@
 // Butin des coffres : potions / reliques / armes, plus rares quand le coffre est difficile à trouver.
 import { SCREENS } from '../../story.js';
 import { chestTier, rollChestLoot, weaponRarity, LOOT_TIERS } from '../../chestLoot.js';
-import { allWeapons } from '../../weapons.js';
+import { allWeapons, companionWeapons } from '../../weapons.js';
 
 // Générateur pseudo-aléatoire reproductible.
 function seeded(seed) {
@@ -72,7 +72,7 @@ describe('chestLoot', () => {
     });
 
     test('ni arme déjà possédée ni relique déjà portée', () => {
-        const owner = { level: 20, weapons: allWeapons.slice(), inventory: [] };
+        const owner = { level: 20, weapons: [...allWeapons, ...companionWeapons], inventory: [] };
         const rng = seeded(3);
         for (let i = 0; i < 200; i++) {
             const { loot } = rollChestLoot({ gold: 1, lootTier: 4 }, { region: 'lune' }, owner, rng);

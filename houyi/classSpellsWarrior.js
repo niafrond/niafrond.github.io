@@ -146,7 +146,7 @@ export function applyShadowStrike(spell) {
 }
 
 export function applyDualShot(spell) {
-    const weapons = Array.isArray(player.weapons) ? player.weapons : [];
+    const weapons = Array.isArray(player.weapons) ? player.weapons.filter(w => !w.companion) : [];
     if(weapons.length < 2) {
         log(`Flèches Jumelles nécessite au moins 2 armes dans l'inventaire.`);
         return false;

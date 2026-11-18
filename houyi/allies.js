@@ -16,7 +16,7 @@ export const ALLIES = {
     sorcerer: { id: 'sorcerer', name: 'Maître Xuan', short: 'Xuan', title: 'Taoïste du gué', npc: 'trainer_sorcerer', sprite: 'ally_sorcerer', weapon: 'staff', region: 'fleuve', hpPct: 0.5, defensePct: 0.3 },
     monk: { id: 'monk', name: 'Frère Ming', short: 'Ming', title: 'Moine des cendres', npc: 'trainer_monk', sprite: 'ally_monk', weapon: 'mace', region: 'rizieres', hpPct: 0.7, defensePct: 0.6 },
     alchemist: { id: 'alchemist', name: 'Dame Dan', short: 'Dan', title: 'Alchimiste des orages', npc: 'trainer_alchemist', sprite: 'ally_alchemist', weapon: 'dagger', region: 'volcan', hpPct: 0.55, defensePct: 0.4 },
-    shaman: { id: 'shaman', name: 'Aïeule Wu Po', short: 'Wu Po', title: 'Chamane de la plaine', npc: 'trainer_shaman', sprite: 'ally_shaman', weapon: 'staff', region: 'bambous', hpPct: 0.6, defensePct: 0.5 }
+    shaman: { id: 'shaman', name: 'Aïeule Wu Po', short: 'Wu Po', title: 'Chamane de la plaine', npc: 'trainer_shaman', sprite: 'ally_shaman', weapon: 'fan', region: 'bambous', hpPct: 0.6, defensePct: 0.5 }
 };
 export const ALLY_IDS = Object.keys(ALLIES);
 export const MAX_ALLIES = 3;

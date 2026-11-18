@@ -6,6 +6,7 @@
   "actionGuard.js",
   "allies.js",
   "alliesView.js",
+  "allyWeapons.js",
   "alterations.js",
   "arena.js",
   "attributes.js",

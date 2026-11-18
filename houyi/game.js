@@ -21,6 +21,8 @@ import { POTIONS, normalizePotions, potionHeal, drinkPotion, drinkBlockReason } 
 import { normalizeSkills, skillBonus, actionSpells } from "./skills.js";
 import { normalizeRoster, usableClasses, grantClass, CLASS_SHORT } from "./classRoster.js";
 import { newCharge, newActionQueue, initCharge } from "./classCharge.js";
+import { allyWeaponBonus } from "./weapons.js";
+import { allyEquippedWeapon } from "./allyWeapons.js";
 import { buildTeam, damageAlly, ALLIES, livingAllies, pickAnyAlly, reviveAlly, healAlly } from "./allies.js";
 import { inflictBuff, ALTERATION_LABELS } from "./alterations.js";
 import { prepareAllyPortraits } from "./alliesView.js";
@@ -84,7 +86,8 @@ const WEAPON_ICONS = {
     dagger: 'dagger',
     mace: 'mace',
     bow: 'bow',
-    staff: 'staff'
+    staff: 'staff',
+    fan: 'fan'
 };
 // Icône de la classe (sprites/icons) : affichée devant le nom des combattants et des sorts de classe.
 const CLASS_ICONS = { sorcerer: 'yinyang', assassin: 'bow', templar: 'shield', barbarian: 'axe' };
@@ -703,7 +706,8 @@ export function applyStandardSpellEffects(caster, target, spell, isPlayerCaster)
         const targetResistance = spellColors.length
             ? spellColors.reduce((sum, c) => sum + (target.resistances?.[c] || 0), 0) / spellColors.length   // multi-qì : résistance moyenne
             : (target.resistances?.[spell.color] || 0);
-        let dmg = Math.floor((spell.dmg + intelligenceBonus) * (1 - targetResistance));
+        const allyBonus = isPlayerCaster && gameState.turnClass && gameState.turnClass !== 'assassin' ? allyWeaponBonus(allyEquippedWeapon(player, gameState.turnClass)) : 0;   // arme équipée du compagnon qui lance le sort
+        let dmg = Math.floor((spell.dmg + intelligenceBonus + allyBonus) * (1 - targetResistance));
         if(isPlayerCaster && target.prep?.weaknessRevealed){
             dmg = weaknessDamage(dmg, spellColors.includes(target.weakColor) ? target.weakColor : spell.color, target.weakColor, true);
         }

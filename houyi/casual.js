@@ -97,7 +97,7 @@ export function weaponScore(w, bias = 'balanced', bonuses = {}) {
 /** Armes à tenir : { right, left } (ids ou null). Une arme à deux mains n'est choisie que si elle vaut plus que les deux meilleures à une main. */
 export function planWeapons(hero, bias, bonuses = {}) {
     const level = hero?.level || 1;
-    const usable = (hero?.weapons || []).filter(w => w && w.damage !== undefined && (w.minLevel || 1) <= level);
+    const usable = (hero?.weapons || []).filter(w => w && !w.companion && w.damage !== undefined && (w.minLevel || 1) <= level);
     const ranked = [...usable].sort((a, b) => weaponScore(b, bias, bonuses) - weaponScore(a, bias, bonuses));
     const best = ranked[0];
     if (!best) return { right: null, left: null };

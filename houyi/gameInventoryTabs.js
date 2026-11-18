@@ -5,6 +5,7 @@ import { chooseAction, classCanAct, decoupled } from "./gameSpellList.js";
 import { actionGuard } from "./actionGuard.js";
 import { compareAttrs, deltaBadgesHtml, equipDeltaGroupsHtml } from "./compareView.js";
 import { isSingleUse, reuseLabel } from "./itemReuse.js";
+import { heroWeapons } from "./weapons.js";
 import { getItemIcon, getRarityColor, useItem, isTeamItem, teamItemKind, describeRecharge, shiftActiveItemIndexes } from "./items.js";
 import { afflictionsOf } from "./alterations.js";
 import { playSfx } from "./sound.js";
@@ -25,7 +26,7 @@ export function updateAvailableWeapons(){
         player.weapons = [];
     }
     // Les armes disponibles sont celles que le joueur possède et peut utiliser
-    player.availableWeapons = player.weapons.filter(weapon => weapon.minLevel <= player.level);
+    player.availableWeapons = heroWeapons(player.weapons).filter(weapon => weapon.minLevel <= player.level);
     
     // Si l'arme équipée n'est plus disponible (niveau trop bas), la retirer
     if(player.equippedWeapon && player.level < player.equippedWeapon.minLevel){
@@ -232,7 +233,8 @@ export function updateWeaponsTab(){
     const lockedWasOpen = !!availableList.querySelector('details.locked-group')?.open;
     availableList.innerHTML = '';
     const weaponSort = WEAPON_SORTS[sortChoice('weapons-sort')];
-    const ownedWeapons = weaponSort ? [...(player.weapons || [])].sort(weaponSort) : (player.weapons || []);
+    const heroOwned = heroWeapons(player.weapons);
+    const ownedWeapons = weaponSort ? [...heroOwned].sort(weaponSort) : heroOwned;
     const spare = ownedWeapons.filter(w => w.id !== right?.id && w.id !== left?.id);
     if(spare.length === 0){
         availableList.innerHTML = ownedWeapons.length
