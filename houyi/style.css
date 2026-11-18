@@ -1610,3 +1610,10 @@ body.no-anim .stage-mid, body.no-anim .stage-fighter { animation: none !importan
 @keyframes stage-dodge-right { from { transform: translateX(0); } to { transform: translateX(34%); } }
 @keyframes stage-dodge-left { from { transform: translateX(0); } to { transform: translateX(-34%); } }
 @media (prefers-reduced-motion: reduce) { .stage-dodge { animation: none !important; } }
+/* Attaque à l'arc : une flèche part du tireur vers la cible (pointe dans le sens du trajet) */
+.stage-mid .stage-arrow { font-size: 0; }
+.stage-mid .stage-arrow svg, .stage-mid .stage-arrow .ic { width: 44px; height: 44px; }
+.stage-ltr .stage-arrow { transform: rotate(45deg); }
+.stage-rtl .stage-arrow { transform: rotate(-135deg); }
+.stage-ltr .stage-mid:has(.stage-arrow) { animation-duration: .35s; }
+.stage-rtl .stage-mid:has(.stage-arrow) { animation-duration: .35s; }

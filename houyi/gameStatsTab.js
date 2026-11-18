@@ -200,7 +200,7 @@ export function spellStageHtml(fxHtml, isPlayerAttack, hit, dodged = false) {
     return `<div class="spell-stage stage-${dir}${casterHero ? '' : ' stage-foe'}">${left}<div class="stage-mid">${fxHtml}</div>${right}</div>`;
 }
 
-export function showCombatAnimation({ icon, title, damage = null, heal = null, source = null, target = null }, isPlayerAttack = true, options = {}) {
+export function showCombatAnimation({ icon, title, damage = null, heal = null, source = null, target = null, projectile = null }, isPlayerAttack = true, options = {}) {
     // Les annonces de critique / blocage / parade restent affichées jusqu'au clic du joueur.
     if(options.requireClick === undefined && options.autoHideMs === undefined && /CRITIQUE|BLOQUÉ|paré/.test(String(damage ?? ''))) options = { ...options, requireClick: true };
     // Coup d'arme ou sort offensif : le combattant joue aussi son animation d'attaque (tir à l'arc, coup d'arme…)
@@ -211,7 +211,7 @@ export function showCombatAnimation({ icon, title, damage = null, heal = null, s
     if(fx && options.requireClick === undefined && options.autoHideMs === undefined) options = { ...options, autoHideMs: Math.max(1000 * animationFactor(), spellFxDurationMs(title) * 2 + 500) };   // l'animation tourne en boucle : au moins deux passages
     const bigFx = Boolean(fx && fx.includes('spellfx-big'));
     let html = `<div class="attack-icon${fx ? ' has-spellfx' : ''}${bigFx ? ' has-spellfx-big' : ''}">${fx || svgIcon(icon) || icon}</div>`;
-    const stage = !bigFx ? spellStageHtml(fx || `<div class="attack-icon">${svgIcon(icon) || icon}</div>`, isPlayerAttack, damage !== null && heal === null, Boolean(options.blocked)) : null;
+    const stage = !bigFx ? spellStageHtml(fx || (projectile === 'arrow' ? `<div class="attack-icon stage-arrow">${svgIcon('arrow')}</div>` : `<div class="attack-icon">${svgIcon(icon) || icon}</div>`), isPlayerAttack, damage !== null && heal === null, Boolean(options.blocked)) : null;
     if(stage) html = stage;
     // 2e temps d'un blocage / d'une parade : gros bouclier (plein = bloqué, fendu = paré) et texte qui vibre.
     let caption = `<div class="attack-title">${String(title).toUpperCase()}</div>`;
