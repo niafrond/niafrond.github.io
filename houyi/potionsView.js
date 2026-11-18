@@ -24,13 +24,14 @@ const itemTag = item => (item.type === 'reusable' && !isSingleUse(item))
 export function renderPotionButtons() {
     const box = document.getElementById('potion-buttons');
     if (!box) return;
-    if (gameState.combatState !== 'active') { potionMenuOpen = false; box.innerHTML = ''; box.classList.remove('potion-menu'); return; }
+    if (gameState.combatState !== 'active') { potionMenuOpen = false; box.innerHTML = ''; box.classList.remove('potion-menu'); document.getElementById('player-spells')?.classList.remove('object-menu'); return; }
     const mine = currentTurn === 'player';
     const potions = POTION_SIZES.reduce((n, size) => n + potionCount(player, size), 0);
     const items = usableItems();
     const total = potions + items.length;
     if (!mine || !total) potionMenuOpen = false;
     box.classList.toggle('potion-menu', potionMenuOpen);   // menu déplié : sur toute la largeur
+    document.getElementById('player-spells')?.classList.toggle('object-menu', potionMenuOpen);   // menu Objet ouvert : les autres boutons d'action sont cachés
     if (!potionMenuOpen) {
         const off = !mine || !total;
         box.innerHTML = `<button type="button" class="enemy-spell-item potion-btn${off ? ' disabled' : ''}" data-open-potions${off ? ' disabled' : ''} title="${total ? 'Choisir une potion ou un objet' : 'Aucun objet : achetez-en chez les marchands'}">
@@ -39,7 +40,7 @@ export function renderPotionButtons() {
         return;
     }
     const free = !!xiuEffect().freePotions;   // Souffle du Lotus d'Or : potions sans point d'action
-    const potionTiles = POTION_SIZES.map(size => {
+    const potionTiles = POTION_SIZES.filter(size => potionCount(player, size) > 0).map(size => {   // une potion en quantité ×0 n'est pas affichée
         const p = POTIONS[size];
         const blocked = drinkBlockReason(player, size, true, free) || !classCanAct();
         return `<button type="button" class="enemy-spell-item potion-btn${blocked ? ' disabled' : ''}" data-potion="${size}"${blocked ? ' disabled' : ''} title="${escapeHtml(label(size))}">
