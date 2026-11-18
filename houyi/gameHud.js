@@ -365,7 +365,12 @@ export function enemySpellAsShown(sp){
     return shown;
 }
 
+const ENEMY_LISTS_VISIBLE = false;   // faux : aucune ligne sur les capacités de l'ennemi
+
 export function updateEnemySpells(){
+    // L'ennemi ne montre rien de ce qu'il peut faire (arme, objet, sorts) : le joueur le découvre en combattant.
+    ['enemy-weapon-button', 'enemy-spell-list'].forEach(id => { const el = document.getElementById(id); if(el) el.innerHTML = ''; });
+    if(!ENEMY_LISTS_VISIBLE) return;
     // Afficher l'arme ennemie (au-dessus des sorts, comme le joueur)
     const weaponContainer = document.getElementById('enemy-weapon-button');
     if (weaponContainer) {
