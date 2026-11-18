@@ -7,7 +7,7 @@ import { skillBonus } from './skills.js';
 import { wornRelics } from './items.js';
 
 export const CHARGE_MS_PER_UNIT = 200;   // durée réelle d'une unité de chargement : 100 unités = 20 s ; un héros de milieu de partie (≈ 75 unités) met environ 15 s
-export const BOARD_IDLE_PAUSE_MS = 3000;   // plateau inactif depuis ce délai : les chargements se mettent en pause, jusqu'au prochain combo
+export const BOARD_IDLE_PAUSE_MS = 5000;   // plateau inactif depuis ce délai : les chargements se mettent en pause, jusqu'au prochain combo
 export const CHARGE_BASE = 100;          // temps de chargement sans aucun bonus
 export const CHARGE_MIN = 40;            // plancher : jamais plus de 60 % de réduction
 const AGILITY_PCT = 0.5;                 // % de réduction par point d'Agilité + Moral (toutes les classes)

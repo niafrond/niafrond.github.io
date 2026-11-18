@@ -76,13 +76,13 @@ describe('classCharge : temps de chargement des classes', () => {
         expect(takeNextDue(q, ready)).not.toBeNull();
         expect(q).toHaveLength(0);
     });
-    test('tempo : plateau inactif depuis 3 s, les chargements se mettent en pause ; un combo les relance', () => {
-        expect(BOARD_IDLE_PAUSE_MS).toBe(3000);
+    test('tempo : plateau inactif depuis 5 s, les chargements se mettent en pause ; un combo les relance', () => {
+        expect(BOARD_IDLE_PAUSE_MS).toBe(5000);
         expect(chargeRunning(100, 0)).toBe(true);
-        expect(chargeRunning(2999, 0)).toBe(true);
-        expect(chargeRunning(3000, 0)).toBe(false);
+        expect(chargeRunning(4999, 0)).toBe(true);
+        expect(chargeRunning(5000, 0)).toBe(false);
         expect(chargeRunning(9000, 0)).toBe(false);
-        expect(chargeRunning(9000, 6500)).toBe(true);   // un combo vient d'avoir lieu
+        expect(chargeRunning(9000, 4500)).toBe(true);   // un combo vient d'avoir lieu
     });
 
     test('début de combat : toutes les barres (classes et ennemi) sont vides', () => {
