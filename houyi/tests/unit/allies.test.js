@@ -66,3 +66,16 @@ describe('compagnons de combat', () => {
         expect(a.hp).toBe(a.maxHp);
     });
 });
+
+describe('recrutement des compagnons par région', () => {
+    test('1 dans la 1re région, 2 dans la 2e, puis 1 par région', async () => {
+        const { CLASS_TRIAL_QUESTS } = await import('../../world/classTrials.js');
+        const { REGION_ORDER } = await import('../../world/index.js');
+        const perRegion = {};
+        ALLY_IDS.forEach(id => { perRegion[ALLIES[id].region] = (perRegion[ALLIES[id].region] || 0) + 1; });
+        expect(REGION_ORDER.slice(0, 5).map(r => perRegion[r] || 0)).toEqual([1, 2, 1, 1, 1]);
+        expect(Object.values(perRegion).reduce((a, b) => a + b, 0)).toBe(6);
+        expect(CLASS_TRIAL_QUESTS).toHaveLength(6);
+        CLASS_TRIAL_QUESTS.forEach(q => expect(ALLIES[q.reward.class]).toBeTruthy());
+    });
+});

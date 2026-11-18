@@ -30,6 +30,8 @@ export function questStatus(session, quest) {
     if (stored === 'active') return quest.objectives.every(o => objectiveDone(session, o)) ? 'ready' : 'active';
     // `startWhen.puzzleSet` : la quête n'existe qu'une fois une énigme de la famille résolue (première pièce d'armure antique)
     if (quest.startWhen?.puzzleSet && !puzzlesOfSet(quest.startWhen.puzzleSet).some(id => session.data.solvedPuzzles.includes(id))) return 'locked';
+    // `startWhen.quest` : la quête n'existe qu'une fois une autre commencée (ou terminée) : le maître de la 1re région n'apparaît qu'après le décret du doyen Wen
+    if (quest.startWhen?.quest && !session.data.quests[quest.startWhen.quest]) return 'locked';
     const unlocked = (quest.requires || []).every(id => session.data.quests[id] === 'done');
     return unlocked ? 'available' : 'locked';
 }

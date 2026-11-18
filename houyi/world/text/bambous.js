@@ -16,9 +16,9 @@ export default {
     bambous_h_flute: { name: 'Maison du flûtiste', arrival: ['Des flûtes de toutes les tailles pendent aux poutres. Aucune ne joue juste, mais toutes essaient.'] }
   },
   npcs: {
-    trainer_monk: { name: "Frère Ming", title: "Moine des cendres",
-      idle: ["Un bambou plie sans casser. Je n'ai jamais appris autre chose.", "La cendre est douce quand on cesse de la balayer."],
-      talk: [{ whenDone: 'q_class_monk', lines: ["Ta voie de Moine est la tienne maintenant. Sers-t'en, et mêle-la aux autres : aucune classe ne suffit partout."] }] },
+    trainer_shaman: { name: "Aïeule Wu Po", title: "Chamane de la plaine",
+      idle: ["Les ancêtres parlent. Il faut juste se taire assez longtemps pour les entendre.", "Un renard qui te suit n'est pas un ennemi. C'est un professeur qui n'a pas encore décidé s'il te mord."],
+      talk: [{ whenDone: 'q_class_shaman', lines: ["Mes vieilles jambes te suivent, petit archer. Les esprits aussi."] }] },
     lady_lan: { name: 'Dame Lan', title: 'Tenancière de la maison de thé', 
       idle: ['Un thé ? Il est brûlé, mais il l\'était déjà avant le feu, alors on s\'y habitue.', 'Les clients parlent beaucoup, ici. Un disciple jaloux, un archer vertueux, un élixir tentant… Je ne retiens rien, je ressers.'],
       talk: [{ whenDone: 'sun_3', lines: ['Le cinquième soleil est tombé. Les clients disent que l\'air sent moins la cendre. Pour moi, il sent toujours le thé, c\'est déjà ça.'] }] },

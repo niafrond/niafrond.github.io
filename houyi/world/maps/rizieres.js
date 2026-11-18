@@ -38,6 +38,7 @@ export default {
         ],
         npcs: [
             { id: 'merchant_rizieres', x: 19, y: 10 },
+            { id: 'trainer_monk', x: 14, y: 9 },
             { id: 'xiaobao', x: 24, y: 12 },
             { id: 'hua_riz', x: 11, y: 10 },
             { id: 'scarecrow_cao', x: 27, y: 9 },
@@ -157,6 +158,7 @@ export default {
             { id: 'rizieres_wild_chest_shrine', x: 42, y: 20, gold: 45 }
         ],
         enemies: [
+            { id: 'train_monk', x: 10, y: 13, templateId: 'shu_jing', name: "Esprit des diguettes d'épreuve", kind: 'sentinel', offset: -1, permanent: true, training: 'monk' },
             { id: 'rizieres_warden', x: 45, y: 12, templateId: 'shu_jing', name: 'Gardien de la digue', kind: 'sentinel', offset: 1, permanent: true, boss: { name: 'Gardien de la digue', level: 4 } },
             { id: 'rizieres_marsh_imp', x: 28, y: 18, templateId: 'huli_jing', name: 'Démon des roseaux', kind: 'sentinel', offset: 0, permanent: true },
             { id: 'rizieres_w_toad', x: 8, y: 7, templateId: 'crapaud_boue', name: 'Crapaud de boue', kind: 'sentinel', offset: -1 },

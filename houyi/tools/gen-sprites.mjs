@@ -11,10 +11,10 @@
  *   node houyi/tools/gen-sprites.mjs [options]
  *
  * Options :
- *   --only=heroes|npcs|enemies|all   Catégorie à générer (défaut: heroes)
+ *   --only=heroes|npcs|enemies|allies|all   Catégorie à générer (défaut: heroes) ; `allies` : les six compagnons de combat (allies.js)
  *   --dir=front|all                  Directions à générer (défaut: all)
  *   --size=32|64|128                 Taille en pixels (défaut: 32)
- *   --key=<api_key>                  Clé pixel.lab (ou env PIXELLAB_API_KEY)
+ *   --key=<api_key>                  Clé pixel.lab (ou env PIXELLAB_API_KEY, ou PIXELLAB_API_KEY=… dans .env.local)
  *   --concurrency=<n>                Requêtes en parallèle (défaut: 1)
  *   --delay=<ms>                     Délai entre requêtes (défaut: 3000)
  *   --dry-run                        Affiche les prompts sans appeler l'API
@@ -38,6 +38,17 @@ function loadApiKey() {
   if (existsSync(configPath)) {
     const src = readFileSync(configPath, 'utf8');
     const m = src.match(/PIXELLAB_API_KEY\s*=\s*['"]([^'"]+)['"]/);
+    if (m) return m[1];
+  }
+  // Clé locale non versionnée : PIXELLAB_API_KEY=… dans .env.local (racine du dépôt, ou du dépôt principal quand on travaille dans un worktree).
+  const envFiles = [join(ROOT, '.env.local')];
+  try {
+    const common = execSync('git rev-parse --git-common-dir', { cwd: ROOT, stdio: ['ignore', 'pipe', 'ignore'] }).toString().trim();
+    envFiles.push(join(resolve(ROOT, common), '..', '.env.local'));
+  } catch { /* hors dépôt git */ }
+  for (const f of envFiles) {
+    if (!existsSync(f)) continue;
+    const m = readFileSync(f, 'utf8').match(/^\s*PIXELLAB_API_KEY\s*=\s*['"]?([^'"\r\n]+)['"]?\s*$/m);
     if (m) return m[1];
   }
   return null;

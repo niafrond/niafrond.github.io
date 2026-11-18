@@ -16,9 +16,6 @@ export default {
     fauves_h_fromage: { name: 'Fromagerie de Dame Sa', arrival: ['Des meules, des odeurs puissantes, un fumet à faire reculer les loups eux-mêmes.'] }
   },
   npcs: {
-    trainer_shaman: { name: "Aïeule Wu Po", title: "Chamane de la plaine",
-      idle: ["Les ancêtres parlent. Il faut juste se taire assez longtemps pour les entendre.", "Un renard qui te suit n'est pas un ennemi. C'est un professeur qui n'a pas encore décidé s'il te mord."],
-      talk: [{ whenDone: 'q_class_shaman', lines: ["Ta voie de Chamane est la tienne maintenant. Sers-t'en, et mêle-la aux autres : aucune classe ne suffit partout."] }] },
     fauves_road_herder_oyun: { name: 'Qiaoyun', title: 'Convoyeuse de troupeaux',
       idle: ['Je ramène trois cents brebis à Caoyuan, et il m\'en manque deux. Je suis certaine qu\'elles se cachent exprès : elles ont horreur des comptes.', 'Un conseil, archer : la piste est plus longue que l\'herbe, mais l\'herbe est plus longue que la patience du loup. Gardez la piste.', 'Il y a une combe, à l\'ouest, où le vent ne souffle jamais. Les bergers y laissent des offrandes. Les loups, eux, y laissent des empreintes.'],
       talk: [{ whenDone: 'sun_7', lines: ['Plus de meute au soleil, plus de brebis égarées. Elles étaient dans la combe, bien sûr, à brouter mes offrandes.'] }] },
