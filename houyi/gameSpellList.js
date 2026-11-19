@@ -359,7 +359,7 @@ function renderClassPicker(container){
         const off = !mine || (forced && id !== forced) || restricted[id] || ko;   // choisir un compagnon reste libre : seules ses ACTIONS attendent son chargement
         return `<button type="button" class="class-pick${id === current ? ' on' : ''}${restricted[id] ? ' limited' : ''}${ko ? ' ko' : ''}${prog >= 100 && !ko ? ' ready-pulse' : ' charging'}${animStyle ? ' charging-anim' : ''}" data-class="${id}" aria-pressed="${id === current}"${off ? ' disabled' : ''} style="--charge:${prog}%;${animStyle}" title="${reason} · ${chargeText}"><span class="cp-name">${memberName(id)}</span>${memberBarsHtml(id)}</button>`;
     }).join('');
-    const key = html + `|${current}|${off}`;
+    const key = html + `|${current}`;   // `disabled` est déjà dans le html
     if(picker._key === key) return;   // rien n'a changé : on ne redessine pas (l'animation de chargement ne repart pas de zéro)
     picker._key = key;
     picker.innerHTML = html;
