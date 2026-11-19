@@ -1219,3 +1219,11 @@ body.show-xiu-text #xiu-banner { display: block; }
 #player-spells > #xiu-button > .xiu-btn { flex-direction: row; align-items: center; gap: 8px; padding-top: 3px; padding-bottom: 3px; text-align: left; }
 #player-spells > #xiu-button > .xiu-btn .xiu-gauge { flex: 1 1 auto; min-width: 0; }
 #player-spells > #xiu-button > .xiu-btn .spell-name, #player-spells > #xiu-button > .xiu-btn .spell-cost { flex: 0 0 auto; white-space: nowrap; }
+/* Plusieurs ennemis : ligne des pastilles (noms, vies, chargements), puis seulement la ligne de qì et de PA communs ; plus de grande fiche ni de sprite. */
+#enemy-stats.pool-only { min-height: 0; padding-top: 4px; padding-bottom: 4px; }
+#enemy-stats.pool-only::after { display: none; }
+#enemy-stats.pool-only .row-name, #enemy-stats.pool-only .status-badges, #enemy-stats.pool-only .row-hp { display: none; }
+#enemy-stats.pool-only .stat { margin-right: 0 !important; }
+.foe-chip .status-badges { gap: 2px; margin: 2px 0 0; }
+.foe-chip .status-badge { padding: 0 3px; font-size: .75em; }
+.foe-chip .status-badge svg { width: 1em; height: 1em; }
