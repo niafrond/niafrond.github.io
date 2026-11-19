@@ -22,7 +22,7 @@ import { normalizeSkills, skillBonus, actionSpells } from "./skills.js";
 import { normalizeRoster, usableClasses, grantClass, CLASS_SHORT } from "./classRoster.js";
 import { newCharge, newActionQueue, initCharge } from "./classCharge.js";
 import { allyWeaponBonus } from "./weapons.js";
-import { allyEquippedWeapon } from "./allyWeapons.js";
+import { allyEquippedWeapon, ensureAllyWeapon, ensureAllyWeapons } from "./allyWeapons.js";
 import { buildTeam, damageAlly, ALLIES, livingAllies, pickAnyAlly, reviveAlly, healAlly } from "./allies.js";
 import { inflictBuff, ALTERATION_LABELS } from "./alterations.js";
 import { prepareAllyPortraits } from "./alliesView.js";
@@ -1011,6 +1011,8 @@ export function grantClassReward(classId, origin = 'Récompense de quête'){
     if(!res.added) return null;
     const ally = ALLIES[classId];
     log(`✦ ${origin} : ${ally ? ally.name : CLASS_SHORT[classId]} rejoint votre équipe${res.inLoadout ? ' de combat' : ' (l\'équipe de combat est pleine : changez de compagnons dans l\'onglet Compétences)'} !`);
+    const armed = ensureAllyWeapon(player, classId);   // chaque personnage a au moins une arme quand il est obtenu
+    if(ally && (armed.given || armed.equipped)) log(`${ally.name} reçoit ${(armed.given || armed.equipped).name}.`);
     saveUpdate();
     return classId;
 }
@@ -1814,6 +1816,8 @@ export function loadGameData() {
             player.inventory = loaded.inventory ?? player.inventory;
             player.equipment = { rightHand: null, leftHand: null, item: null, ...(loaded.equipment || {}) };
             player.equipment.rightHand = player.equippedWeapon;
+            player.allyWeapons = loaded.allyWeapons && typeof loaded.allyWeapons === 'object' ? { ...loaded.allyWeapons } : {};   // armes portées par les compagnons
+            ensureAllyWeapons(player);   // un compagnon déjà recruté sans arme en reçoit une
             player.stuffOwned = loaded.stuffOwned ?? [];
             player.stuff = loaded.stuff ?? player.stuff;
             migrateShadowCollar(player);   // avant normalizeStuff, qui oublie les ids inconnus
