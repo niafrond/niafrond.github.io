@@ -5,12 +5,14 @@ import { teachers, toggleSupport } from './skills.js';
 import { skillsTabHtml } from './skillsMarkup.js';
 import { toggleLoadout } from './classRoster.js';
 import { equipAllyWeapon } from './allyWeapons.js';
+import { bindCharTabs } from './charTabs.js';
 
 let selectedId = null;
 
 export function renderSkillsTab() {
     const root = document.getElementById('skills-view');
     if (!root) return;
+    bindCharTabs(root, 'skills', renderSkillsTab);   // un onglet par personnage (charTabs.js)
     root.innerHTML = skillsTabHtml(player, teachers(player, wornStuff(player)), selectedId, gameState.combatState !== 'active');
 }
 
