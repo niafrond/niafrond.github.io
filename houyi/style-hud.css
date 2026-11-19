@@ -1210,3 +1210,5 @@ body.show-xiu-text #xiu-banner { display: block; }
 /* Barre de chargement propre à chaque ennemi (foesView.js) : fine, sous la barre de vie. */
 .foe-chip .foe-charge { display: block; height: 4px; margin-top: 2px; background: var(--hp-back, rgba(0,0,0,.45)); border-radius: 2px; overflow: hidden; }
 .foe-chip .foe-charge > span { display: block; height: 100%; background: #4aa3d8; }
+/* Nom chinois sur une pastille d'ennemi : plus grand, comme sur la fiche de l'ennemi. */
+.foe-chip .foe-name.name-hanzi { font-size: 1.2em; line-height: 1.15; }

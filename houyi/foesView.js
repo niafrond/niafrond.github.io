@@ -6,6 +6,9 @@ import { gameState } from './game.js';
 import { allFoes, pickTarget, isPickingTarget, cancelTargetPick, foeChargeProgress } from './foes.js';
 import { isAlive } from './enemyGroup.js';
 import { playSfx } from './sound.js';
+import { enemyNameLabel, enemyNameAsHanzi, toggleEnemyNameAsHanzi, enemyNameIsHanzi } from './bestiaryNames.js';
+import { bindEnemyStuffLongPress } from './gameTooltips.js';
+import { updateStats } from './gameHud.js';
 
 let bound = false;
 
@@ -21,17 +24,23 @@ export function renderFoeBar() {
         const pct = Math.max(0, Math.min(100, Math.round(100 * (f.hp || 0) / Math.max(1, f.maxHp || 1))));
         const cls = `foe-chip${isAlive(f) ? '' : ' down'}${picking && isAlive(f) ? ' pickable' : ''}`;
         return `<button type="button" class="${cls}" data-foe="${i}" ${isAlive(f) ? '' : 'disabled'} aria-label="${escapeHtml(f.name)}, ${pct} % de vie${picking && isAlive(f) ? ', toucher pour viser' : ''}">`
-            + `<span class="foe-name">${escapeHtml(f.name)}${f.summonedBy ? ' ✦' : ''}</span>`
+            + `<span class="foe-name${enemyNameIsHanzi(f) ? ' name-hanzi' : ''}">${escapeHtml(enemyNameLabel(f, enemyNameAsHanzi()))}${f.summonedBy ? ' ✦' : ''}</span>`
             + `<span class="foe-hp"><span style="width:${pct}%"></span></span>`
             + `<span class="foe-charge" title="Chargement"><span style="width:${Math.round(100 * foeChargeProgress(f))}%"></span></span></button>`;
     }).join('');
     if (!bound) {
         bound = true;
+        // Appui long sur une pastille : traduction du nom, force et faiblesse (même infobulle que la fiche de l'ennemi). Posé AVANT le clic : il lui passe la main.
+        let pressed = null;
+        box.addEventListener('pointerdown', ev => { const chip = ev.target.closest?.('.foe-chip'); pressed = chip ? allFoes()[Number(chip.dataset.foe)] : null; }, true);
+        bindEnemyStuffLongPress(box, () => pressed?.name || '', () => pressed || allFoes()[0]);
         document.addEventListener('keydown', ev => { if (ev.key === 'Escape' && isPickingTarget()) { cancelTargetPick(); } });
         box.addEventListener('click', ev => {
             const chip = ev.target.closest?.('.foe-chip');
-            if (!chip || gameState.combatState !== 'active' || !isPickingTarget()) return;   // on ne vise qu'après avoir choisi une attaque
-            if (pickTarget(allFoes()[Number(chip.dataset.foe)])) playSfx('uiClick');
+            if (!chip || gameState.combatState !== 'active') return;
+            if (isPickingTarget()) { if (pickTarget(allFoes()[Number(chip.dataset.foe)])) playSfx('uiClick'); return; }   // choix de la cible d'une attaque
+            toggleEnemyNameAsHanzi();   // sinon : le clic bascule les noms entre caractères chinois et pinyin (fiche de l'ennemi comprise)
+            updateStats();
         });
     }
 }

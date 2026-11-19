@@ -2,7 +2,7 @@
 // Extrait de game.js.
 import { cappedEnemyHit } from './combatBalance.js';
 import { escapeHtml } from "./escapeHtml.js";
-import { enemyNameLabel } from './bestiaryNames.js';
+import { enemyNameLabel, enemyNameAsHanzi, toggleEnemyNameAsHanzi, enemyNameIsHanzi } from './bestiaryNames.js';
 import { heroSprite, enemySprite, spriteUri, gbaSprite, gbaAttackFrames } from './sprites/index.js';
 import { hpBarTiming, hpShieldSegment } from './combatFlow.js';
 import { setAIDifficulty, getAIDifficulty } from './enemyAI.js';
@@ -27,9 +27,6 @@ import { bonusTurnBadge, canEntityCastSpell, castUltimate, activateXiuxian, ally
 
 // Nom de l'ennemi dans la barre de stats : caractères chinois simplifiés par défaut (bestiaryNames.js), pinyin après un clic sur l'ennemi (et inversement).
 // Le choix est gardé pour toute la session de jeu ; sans entrée pour le gabarit, le nom du gabarit reste affiché.
-let enemyNameAsHanzi = true;
-// Le nom affiché est-il en caractères chinois ? (agrandi par .name-hanzi : les hanzi sont illisibles à la taille du texte latin)
-const enemyNameIsHanzi = (e, asHanzi) => /[\u3400-\u9fff]/.test(enemyNameLabel(e, asHanzi));
 
 // --- Animation compteur (tick 1 par 1) ---
 export const _activeCounters = {};
@@ -288,7 +285,7 @@ export function updateStats(){
     const enemyClassEmoji = classIcon(enemy.playerClass);
     
     enemyDiv.innerHTML = `
-        <div class="stat row-name"><span class="enemy-combat-name${enemyNameIsHanzi(enemy, enemyNameAsHanzi) ? ' name-hanzi' : ''}" data-full-name="${enemy.name}" aria-label="Nom complet: ${enemy.name}">${enemyClassEmoji} ${escapeHtml(enemyNameLabel(enemy, enemyNameAsHanzi))}</span>${enemy.personality === 'aggressive' ? '<span class="enemy-mood">en colère</span>' : ''}${bonusTurnBadge(enemy)}</div>
+        <div class="stat row-name"><span class="enemy-combat-name${enemyNameIsHanzi(enemy) ? ' name-hanzi' : ''}" data-full-name="${enemy.name}" aria-label="Nom complet: ${enemy.name}">${enemyClassEmoji} ${escapeHtml(enemyNameLabel(enemy, enemyNameAsHanzi()))}</span>${enemy.personality === 'aggressive' ? '<span class="enemy-mood">en colère</span>' : ''}${bonusTurnBadge(enemy)}</div>
         ${statusBadgesHtml(enemy) || STATUS_ROW_PLACEHOLDER}
         <div class="stat row-hp">
             <div class="hp-bar-container">
@@ -322,11 +319,12 @@ export function updateStats(){
     if(!enemyDiv.dataset.nameToggleBound) {
         enemyDiv.dataset.nameToggleBound = '1';
         enemyDiv.addEventListener('click', () => {
-            enemyNameAsHanzi = !enemyNameAsHanzi;
+            toggleEnemyNameAsHanzi();
             const el = enemyDiv.querySelector('.enemy-combat-name');
             if(el){
-                el.innerHTML = `${classIcon(enemy.playerClass)} ${escapeHtml(enemyNameLabel(enemy, enemyNameAsHanzi))}`;
-                el.classList.toggle('name-hanzi', enemyNameIsHanzi(enemy, enemyNameAsHanzi));
+                el.innerHTML = `${classIcon(enemy.playerClass)} ${escapeHtml(enemyNameLabel(enemy, enemyNameAsHanzi()))}`;
+                el.classList.toggle('name-hanzi', enemyNameIsHanzi(enemy));
+            renderFoeBar();   // les pastilles du groupe suivent le même choix
             }
         });
     }
