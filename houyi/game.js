@@ -1816,6 +1816,7 @@ export function loadGameData() {
             player.inventory = loaded.inventory ?? player.inventory;
             player.equipment = { rightHand: null, leftHand: null, item: null, ...(loaded.equipment || {}) };
             player.equipment.rightHand = player.equippedWeapon;
+            player.allySpells = loaded.allySpells && typeof loaded.allySpells === 'object' ? Object.fromEntries(Object.entries(loaded.allySpells).filter(([, ids]) => Array.isArray(ids)).map(([id, ids]) => [id, ids.filter(x => typeof x === 'string')])) : {};   // sorts choisis pour chaque compagnon (allySpells.js)
             player.allyWeapons = loaded.allyWeapons && typeof loaded.allyWeapons === 'object' ? { ...loaded.allyWeapons } : {};   // armes portées par les compagnons
             ensureAllyWeapons(player);   // un compagnon déjà recruté sans arme en reçoit une
             player.stuffOwned = loaded.stuffOwned ?? [];

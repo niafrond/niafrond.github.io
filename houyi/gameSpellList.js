@@ -1,6 +1,7 @@
 // Sorts disponibles selon le niveau (plafond, liste débloquée), boutons de sorts, déblocage par le menu secret.
 // Extrait de game.js.
 import { MAX_ACTIVE_SPELLS } from './constants.js';
+import { activeAllySpells } from './allySpells.js';
 import { actionGuard } from './actionGuard.js';
 import { isAllyKnockedOut, isMemberKO, ALLIES, memberName } from './allies.js';
 import { isBoardResolving } from './board.js';
@@ -292,8 +293,10 @@ export const INVOCATION_COOLDOWN = 3;   // tours de recharge d'une invocation
 export function combatSpellList(){
     const cls = getTurnClass();
     // Un personnage = ses propres boutons : les sorts équipés sans classe sont ceux de Hou Yi ; un compagnon n'a que les sorts de sa classe.
-    const list = (player.activeSpells || []).filter(sp => sp.class ? sp.class === cls : cls === START_CLASS);
-    if(cls){
+    // Un compagnon a SON panel de sorts (allySpells.js) : la liste réglée pour lui, sinon les premiers sorts de sa classe.
+    const list = cls && cls !== START_CLASS ? [...activeAllySpells(player, cls)]
+        : (player.activeSpells || []).filter(sp => sp.class ? sp.class === cls : cls === START_CLASS);
+    if(cls && cls === START_CLASS){
         for(const sp of getClassSpells(cls, player.level)){
             if(list.length >= MAX_ACTIVE_SPELLS) break;
             if(!list.some(s => s.id === sp.id) && !(player.archivedSpells || []).includes(sp.id)) list.push(sp);
