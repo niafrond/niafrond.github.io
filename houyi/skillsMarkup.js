@@ -6,6 +6,7 @@ import { TRANSE_TURNS, TRANSE_EFFECTS } from './transe.js';
 import { CLASS_IDS, CLASS_SHORT, MAX_USABLE_CLASSES, START_CLASS, BIOME_CLASS_LIMITS, normalizeRoster } from './classRoster.js';
 import { ALLIES, memberName, allyMaxHp } from './allies.js';
 import { weaponsFor, allyEquippedWeapon } from './allyWeapons.js';
+import { charTabsHtml, getCharTab, charTabIds } from './charTabs.js';
 import { allyWeaponBonus } from './weapons.js';
 
 const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -116,8 +117,13 @@ export function skillsTabHtml(hero, gear, selectedId, canToggle = true) {
     const taught = taughtMap(gear, hero);
     const order = { active: 0, learned: 1, training: 2, locked: 3 };
     markSeen(hero, [...taught.keys()]);   // ce que l'équipement porté enseigne devient visible (et le reste du catalogue reste caché)
-    const list = [...visibleSkills(hero, [...taught.keys()])].sort((a, b) => order[skillState(hero, a, taught)] - order[skillState(hero, b, taught)]);
-    const selected = getSkill(selectedId) || list[0];
+    // Un onglet par personnage : les compétences de sa classe (celles sans classe, ou d'une classe sans onglet, appartiennent à Hou Yi)
+    const charId = getCharTab('skills', hero);
+    const tabIds = charTabIds(hero);
+    const owner = s => (tabIds.includes(s.classId) ? s.classId : START_CLASS);   // une compétence d'une classe sans onglet reste sous Hou Yi
+    const list = [...visibleSkills(hero, [...taught.keys()])].filter(s => owner(s) === charId)
+        .sort((a, b) => order[skillState(hero, a, taught)] - order[skillState(hero, b, taught)]);
+    const selected = list.find(s => s.id === selectedId) || list[0];
     const learnedCount = hero.skills.learned.length;
     const ownedClasses = normalizeRoster(hero).owned;
     const transe = Object.entries(TRANSE_EFFECTS).filter(([cls]) => ownedClasses.includes(cls)).map(([cls, e]) => `<li><strong>${esc(e.name)}</strong> (${esc(CLASS_SHORT[cls])}) : ${esc(e.text)}</li>`).join('');
@@ -129,6 +135,7 @@ export function skillsTabHtml(hero, gear, selectedId, canToggle = true) {
         </div>
         <div class="fulu-meter" aria-hidden="true">${gems(used, cap)}</div>
         ${classesHtml(hero, canToggle)}
+        ${charTabsHtml('skills', hero, 'Compétences par personnage')}
         <div class="ab-body">
             <div class="ab-groups">${[['Soutien', list.filter(isSupport)], ['Actions', list.filter(s => !isSupport(s))]].filter(([, items]) => items.length).map(([title, items]) => `<h3 class="ab-group">${title}</h3><div class="ab-grid" role="list">${items.map(s => row(hero, s, taught, selected.id)).join('')}</div>`).join('')}</div>
             ${infoPanel(hero, selected, taught, true)}

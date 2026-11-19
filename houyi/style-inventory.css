@@ -484,3 +484,8 @@ body.casual-mode .tab-btn[onclick*="'spells'"] { display: none; }
 /* Ciblage : « Zone » touche tous les ennemis, « Ciblé » l'ennemi choisi (targeting.js). */
 .rc-badge-area { background: #2f7fb8; color: #fff; }
 .rc-badge-single { background: transparent; color: inherit; border-color: currentColor; opacity: .8; }
+/* Sorts actifs : un onglet par personnage. */
+.char-tabs { display: flex; flex-wrap: wrap; gap: 4px; margin: 0 0 6px; }
+.char-tab { flex: 1 1 auto; min-width: 0; padding: 5px 10px; border: 2px solid var(--rt-ink, #2b1b17); border-radius: 6px; background: var(--rt-paper, #f4e2b0); color: inherit; font: inherit; font-size: .9em; cursor: pointer; }
+.char-tab.on { background: var(--rt-gold, #f2c14e); font-weight: 700; }
+.char-tab:focus-visible { outline: 2px solid var(--rt-gold, #f2c14e); outline-offset: 2px; }

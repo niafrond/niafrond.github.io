@@ -14,7 +14,32 @@ import { isHeavyHit } from './combatStats.js';
 import { statValueHtml } from './gameInventoryTabs.js';
 import { playFighterAttack, log, saveUpdate } from './gameHud.js';
 import { resetAttributePoints, showAttributeMenu } from './gameLevelUp.js';
+import { charTabsHtml, getCharTab, bindCharTabs } from './charTabs.js';
+import { START_CLASS, CLASS_SHORT } from './classRoster.js';
+import { ALLIES, buildAlly } from './allies.js';
+import { allyEquippedWeapon } from './allyWeapons.js';
+import { allyWeaponBonus } from './weapons.js';
+import { RAGE_MAX } from './ultimates.js';
 import { COMPANION_NAMES, classIcon, companionMenuHooks, enemy, gameState, getPrimaryAttributeEffect, player } from './game.js';
+
+// Statistiques d'un compagnon (onglet Stats, un onglet par personnage) : ce que le combat utilise, tiré de la même fiche (allies.js : buildAlly).
+function allyStatsHtml(charId){
+    const ally = ALLIES[charId];
+    if(!ally) return '';
+    const a = buildAlly(player, charId);
+    const weapon = allyEquippedWeapon(player, charId);
+    const line = (icon, label, value, hint = '') => `<div class="stat-line"><span class="stat-label">${svgIcon(icon)} ${label}</span><span class="stat-value">${value}</span>${hint ? `<span class="stat-effect">${hint}</span>` : ''}</div>`;
+    return `<div class="stats-section"><h3>${escapeHtml(ally.name)}</h3>`
+        + line('idCard', 'Titre :', escapeHtml(ally.title))
+        + line('mask', 'Classe :', escapeHtml(CLASS_SHORT[charId] || charId))
+        + line('star', 'Niveau :', a.level)
+        + line('heart', 'PV max :', a.maxHp, `${Math.round(ally.hpPct * 100)} % de ceux de Hou Yi`)
+        + line('shield', 'Défense :', a.defense, `${Math.round(ally.defensePct * 100)} % de celle de Hou Yi`)
+        + line('sword', 'Attaque :', a.attack, 'La moitié de celle de Hou Yi')
+        + line('sword', 'Arme :', weapon ? `${escapeHtml(weapon.name)} (+${allyWeaponBonus(weapon)} aux sorts)` : 'Mains nues')
+        + line('bolt', 'Xiūxiān :', `${Math.floor(a.rage)} / ${RAGE_MAX}`, 'Sa propre jauge, conservée d\'un combat à l\'autre')
+        + '<div class="stat-line"><span class="stat-effect">Il partage le qì de Hou Yi et a sa propre barre de vie et de chargement.</span></div></div>';
+}
 
 // mise à jour de l'onglet stats détaillées
 // Section « Esprit gardien » (ex-compagnon) de l'onglet Stats : un seul esprit gardien actif à la fois, choisi parmi les recrutés (hors combat).
@@ -35,7 +60,12 @@ function companionSectionHtml(){
 export function updatePlayerStatsTab(){
     const statsContent = document.getElementById('stats-content');
     if(!statsContent) return;
-    
+    // Un onglet par personnage : Hou Yi (tout ce qui suit) ou un compagnon (sa fiche)
+    const statsChar = getCharTab('stats', player);
+    const statsTabs = charTabsHtml('stats', player, 'Statistiques par personnage');
+    bindCharTabs(statsContent, 'stats', updatePlayerStatsTab);
+    if(statsChar !== START_CLASS){ statsContent.innerHTML = statsTabs + allyStatsHtml(statsChar); return; }
+
     // Import de la classe pour afficher le nom
     import('./classes.js').then(module => {
         const classData = player.class ? module.playerClasses[player.class] : null;
@@ -45,7 +75,7 @@ export function updatePlayerStatsTab(){
         const xpProgress = getXPProgress(player);
         const xpRemaining = getXPToNextLevel(player);
         
-        statsContent.innerHTML = `
+        statsContent.innerHTML = statsTabs + `
             <div class="stats-section">
                 <h3>Informations</h3>
                 <div class="stat-line">
