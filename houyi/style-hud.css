@@ -1145,7 +1145,7 @@ body.show-xiu-text #xiu-banner { display: block; }
 #enemy-spells { display: none; }
 
 /* Menu Objet ouvert : seuls les objets (et « Retour ») restent affichés */
-#player-spells.object-menu > #weapon-button, #player-spells.object-menu > #item-button, #player-spells.object-menu > #spell-buttons { display: none; }
+#player-spells.object-menu > #weapon-button, #player-spells.object-menu > #item-button, #player-spells.object-menu > #spell-buttons, #player-spells.object-menu > #xiu-button { display: none; }
 
 /* Jauge de Xiūxiān / d'ultime de Hou Yi : plus épaisse et zone tactile élargie (invisible) pour être facile à déclencher. */
 #player-stats .rage-stat { height: 12px; }
@@ -1210,3 +1210,12 @@ body.show-xiu-text #xiu-banner { display: block; }
 /* Barre de chargement propre à chaque ennemi (foesView.js) : fine, sous la barre de vie. */
 .foe-chip .foe-charge { display: block; height: 4px; margin-top: 2px; background: var(--hp-back, rgba(0,0,0,.45)); border-radius: 2px; overflow: hidden; }
 .foe-chip .foe-charge > span { display: block; height: 100%; background: #4aa3d8; }
+/* Nom chinois sur une pastille d'ennemi : plus grand, comme sur la fiche de l'ennemi. */
+.foe-chip .foe-name.name-hanzi { font-size: 1.2em; line-height: 1.15; }
+/* Xiūxiān : sous le bloc d'actions, sur toute la largeur (grille compacte comme liste verticale). */
+#player-spells > #xiu-button { order: 10; grid-column: 1 / -1; width: 100%; }
+#player-spells > #xiu-button > * { width: 100%; box-sizing: border-box; }
+/* Pleine largeur : une seule ligne (nom, jauge, valeur) pour que le plateau garde la place. */
+#player-spells > #xiu-button > .xiu-btn { flex-direction: row; align-items: center; gap: 8px; padding-top: 3px; padding-bottom: 3px; text-align: left; }
+#player-spells > #xiu-button > .xiu-btn .xiu-gauge { flex: 1 1 auto; min-width: 0; }
+#player-spells > #xiu-button > .xiu-btn .spell-name, #player-spells > #xiu-button > .xiu-btn .spell-cost { flex: 0 0 auto; white-space: nowrap; }

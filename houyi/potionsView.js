@@ -4,7 +4,7 @@ import { POTION_SIZES, POTIONS, potionCount, potionHeal, drinkBlockReason } from
 import { escapeHtml } from './escapeHtml.js';
 import { itemUsability, useItemChoosingTarget } from './gameInventoryTabs.js';
 import { openTargetPicker, hasLivingAlly } from './itemTargetPicker.js';
-import { classCanAct } from './gameSpellList.js';
+import { classCanAct, decoupled } from './gameSpellList.js';
 import { isSingleUse } from './itemReuse.js';
 
 const label = size => `${POTIONS[size].name} (+${potionHeal(player, size)} PV)`;
@@ -25,7 +25,7 @@ export function renderPotionButtons() {
     const box = document.getElementById('potion-buttons');
     if (!box) return;
     if (gameState.combatState !== 'active') { potionMenuOpen = false; box.innerHTML = ''; box.classList.remove('potion-menu'); document.getElementById('player-spells')?.classList.remove('object-menu'); return; }
-    const mine = currentTurn === 'player';
+    const mine = currentTurn === 'player' || decoupled();   // actions indépendantes du plateau : l'objet reste disponible pendant le tour de plateau adverse
     const potions = POTION_SIZES.reduce((n, size) => n + potionCount(player, size), 0);
     const items = usableItems();
     const total = potions + items.length;

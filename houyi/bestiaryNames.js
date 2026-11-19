@@ -77,5 +77,13 @@ export function beastLabel(template) {
 // Nom de l'ennemi dans la barre de stats du combat : caractères (asHanzi) ou pinyin ; sans entrée, le nom du gabarit.
 export const enemyNameLabel = (e, asHanzi = true) => BESTIARY_NAMES[e?.templateId]?.[asHanzi ? 1 : 0] || e?.name || '';
 
+// Choix d'affichage des noms d'ennemis en combat, partagé par la fiche de l'ennemi (gameHud.js) et les pastilles du groupe (foesView.js) :
+// caractères chinois simplifiés par défaut, pinyin après un clic (et inversement) ; gardé pour toute la session.
+let nameAsHanzi = true;
+export const enemyNameAsHanzi = () => nameAsHanzi;
+export const toggleEnemyNameAsHanzi = () => (nameAsHanzi = !nameAsHanzi);
+/** Le nom affiché est-il en caractères chinois ? (agrandi par .name-hanzi : les hanzi sont illisibles à la taille du texte latin) */
+export const enemyNameIsHanzi = (e, asHanzi = nameAsHanzi) => /[\u3400-\u9fff]/.test(enemyNameLabel(e, asHanzi));
+
 // Traduction littérale du nom chinois (bestiaryLiteral.js) pour un gabarit ; '' si le gabarit n'a pas de nom chinois connu.
 export const literalTranslation = templateId => LITERAL_BY_HANZI[BESTIARY_NAMES[templateId]?.[1]] || '';
