@@ -10,7 +10,7 @@ describe('ennemi de tempérament agressif : « en colère » derrière son nom',
     });
     test("la fiche de l'ennemi ajoute l'étiquette seulement pour ce tempérament, juste après le nom", () => {
         const tag = `enemy.personality === 'aggressive' ? '<span class="enemy-mood">en colère</span>' : ''`;
-        expect(hud).toContain(`enemyNameLabel(enemy, enemyNameAsHanzi))}</span>${'${' + tag + '}'}`);
+        expect(hud).toContain(`enemyNameLabel(enemy, enemyNameAsHanzi()))}</span>${'${' + tag + '}'}`);
         expect(css).toContain('.enemy-mood');
     });
     test("la fiche du héros n'a pas d'étiquette", () => {
