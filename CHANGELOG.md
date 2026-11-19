@@ -1,3 +1,9 @@
+## [3.11.0](https://github.com/niafrond/niafrond.github.io/compare/v3.10.0...v3.11.0) (2026-11-19)
+
+### Features
+
+* **houyi:** ligne des ennemis puis ligne de qì et PA communs, sans fiche de l'ennemi principal ([37d1033](https://github.com/niafrond/niafrond.github.io/commit/37d1033442024ac076b45a29bc9af9eb8ce4348a))
+
 ## [3.10.0](https://github.com/niafrond/niafrond.github.io/compare/v3.9.0...v3.10.0) (2026-11-19)
 
 ### Features
