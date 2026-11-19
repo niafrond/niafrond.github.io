@@ -1,3 +1,9 @@
+## [3.7.1](https://github.com/niafrond/niafrond.github.io/compare/v3.7.0...v3.7.1) (2026-11-19)
+
+### Bug Fixes
+
+* **houyi:** ne plus planter au chargement du sélecteur de personnages ([a46fe4f](https://github.com/niafrond/niafrond.github.io/commit/a46fe4f587954772893d54807759fa6675a4498f))
+
 ## [3.7.0](https://github.com/niafrond/niafrond.github.io/compare/v3.6.0...v3.7.0) (2026-11-19)
 
 ### Features
