@@ -1,3 +1,16 @@
+## [3.7.0](https://github.com/niafrond/niafrond.github.io/compare/v3.6.0...v3.7.0) (2026-11-19)
+
+### Features
+
+* **houyi:** choisir l'ennemi visé après l'attaque, sans mémoriser la cible ([9344d9b](https://github.com/niafrond/niafrond.github.io/commit/9344d9b8bffe618a5efa53a8367c8869db3648c5))
+* **houyi:** combats à plusieurs ennemis, invocation de renforts et dégâts de zone ([83843b3](https://github.com/niafrond/niafrond.github.io/commit/83843b30b028330ff8475082bf052c08f376cdf3))
+* **houyi:** effets de zone sur tous les ennemis, mention Zone/Ciblé et chargement propre à chaque ennemi ([1fbfb6e](https://github.com/niafrond/niafrond.github.io/commit/1fbfb6ea11762df73aea9cf7501f5c4e6771625a))
+* **houyi:** qì et PA mutualisés entre les ennemis du groupe ([5f635b4](https://github.com/niafrond/niafrond.github.io/commit/5f635b4e0d7db6a8682aaa64d0514e38182e8b76))
+
+### Bug Fixes
+
+* **houyi:** copies d'ennemis invocateurs, carte d'import et pas d'invocation par un boss ([6c8ff9e](https://github.com/niafrond/niafrond.github.io/commit/6c8ff9ea05191d832dc615771345304f9ff275c0))
+
 ## [3.6.0](https://github.com/niafrond/niafrond.github.io/compare/v3.5.0...v3.6.0) (2026-11-18)
 
 ### Features
