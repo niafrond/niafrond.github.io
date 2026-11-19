@@ -1,3 +1,9 @@
+## [3.8.2](https://github.com/niafrond/niafrond.github.io/compare/v3.8.1...v3.8.2) (2026-11-19)
+
+### Bug Fixes
+
+* **houyi:** griser le bouton Objet tant que le personnage n'est pas chargé ([249c9a1](https://github.com/niafrond/niafrond.github.io/commit/249c9a11e27b0016aa10ad6371c42a444d41410b))
+
 ## [3.8.1](https://github.com/niafrond/niafrond.github.io/compare/v3.8.0...v3.8.1) (2026-11-19)
 
 ### Bug Fixes
