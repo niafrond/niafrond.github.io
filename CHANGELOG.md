@@ -1,3 +1,15 @@
+## [3.8.0](https://github.com/niafrond/niafrond.github.io/compare/v3.7.1...v3.8.0) (2026-11-19)
+
+### Features
+
+* **houyi:** noms chinois des ennemis sur les pastilles, bascule au clic et traduction à l'appui long ([6554d06](https://github.com/niafrond/niafrond.github.io/commit/6554d06777027b1717fd5d94b6a070145769746b))
+* **houyi:** Xiūxiān sur toute la largeur sous le bloc d'actions ([48eac88](https://github.com/niafrond/niafrond.github.io/commit/48eac880066c4b72e599cb9375738ae58c304405))
+
+### Bug Fixes
+
+* **houyi:** garder le bouton Objet actif pendant le tour de plateau adverse ([ba07868](https://github.com/niafrond/niafrond.github.io/commit/ba0786819f4004078183087489153fa9a244191f))
+* **houyi:** ne plus écraser les boutons Objet et Xiūxiān dans la grille d'actions compacte ([d411df4](https://github.com/niafrond/niafrond.github.io/commit/d411df404385a006988e886e74e990dc7fd94d78))
+
 ## [3.7.1](https://github.com/niafrond/niafrond.github.io/compare/v3.7.0...v3.7.1) (2026-11-19)
 
 ### Bug Fixes
