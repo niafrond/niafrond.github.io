@@ -6,9 +6,11 @@ import { START_CLASS } from "./classRoster.js";
 import { actionGuard } from "./actionGuard.js";
 import { compareAttrs, deltaBadgesHtml, equipDeltaGroupsHtml } from "./compareView.js";
 import { isSingleUse, reuseLabel } from "./itemReuse.js";
-import { heroWeapons } from "./weapons.js";
+import { heroWeapons, allyWeaponBonus } from "./weapons.js";
+import { charTabsHtml, getCharTab, bindCharTabs } from "./charTabs.js";
+import { weaponsFor, allyEquippedWeapon, equipAllyWeapon } from "./allyWeapons.js";
 import { openTargetPicker, teamMembers, hasLivingAlly } from "./itemTargetPicker.js";
-import { healAlly } from "./allies.js";
+import { healAlly, ALLIES } from "./allies.js";
 import { getItemIcon, getRarityColor, useItem, isTeamItem, teamItemKind, describeRecharge, shiftActiveItemIndexes } from "./items.js";
 import { updateStats } from "./gameHud.js";
 import { afflictionsOf } from "./alterations.js";
@@ -214,6 +216,56 @@ function weaponCardHtml(weapon, { hand, count = 1 } = {}){
     });
 }
 
+// Arme d'un compagnon : une arme de son type (butin, marchands), qui renforce les dégâts de ses sorts ; réglée hors combat.
+function allyWeaponCard(weapon, charId, worn){
+    const locked = player.level < (weapon.minLevel || 1);
+    const primary = worn
+        ? `<button type="button" class="rc-btn rc-btn-alt" data-ally-unequip="${charId}">Retirer</button>`
+        : `<button type="button" class="rc-btn" data-ally-equip="${weapon.id}" data-char="${charId}"${locked ? ' disabled' : ''}>${locked ? `Niv. ${weapon.minLevel}` : 'Équiper'}</button>`;
+    return rowCardHtml({
+        key: `aw:${charId}:${weapon.id}`,
+        cls: `${worn ? 'rc-equipped' : ''}${locked && !worn ? ' is-locked' : ''}`,
+        border: getRarityColor(weapon.rarity),
+        name: `${getWeaponIcon(weapon.type)} ${escapeHtml(weapon.name)}`,
+        badges: worn ? badgeHtml('En main', 'rc-badge-on') : '',
+        sub: `<span class="rc-stats">+${allyWeaponBonus(weapon)} aux dégâts de ses sorts · Niv. ${weapon.minLevel || 1}</span>`,
+        primary,
+        tip: cardTipHtml(escapeHtml(weapon.name), [`+${allyWeaponBonus(weapon)} aux dégâts de ses sorts`, `Niv. ${weapon.minLevel || 1}`], escapeHtml(weapon.description || ''))
+    });
+}
+
+function renderAllyWeapons(charId, equippedDiv, availableList, charTabs){
+    const ally = ALLIES[charId];
+    const eq = allyEquippedWeapon(player, charId);
+    equippedDiv.innerHTML = charTabs + `<h3>En main : ${escapeHtml(ally?.name || charId)}</h3>` + (eq ? allyWeaponCard(eq, charId, true) : emptyRowHtml('Arme', 'mains nues'));
+    const taken = Object.values(player.allyWeapons || {});
+    const spare = weaponsFor(player, charId).filter(w => w.id !== eq?.id && !taken.includes(w.id));
+    availableList.innerHTML = spare.length
+        ? spare.map(w => allyWeaponCard(w, charId, false)).join('')
+        : `<p class="shop-empty">Aucune autre arme pour ${escapeHtml(ally?.short || charId)} : elles se trouvent en butin et chez les marchands.</p>`;
+    const shields = document.getElementById('shield-list');
+    if(shields) shields.innerHTML = '';
+    bindCardTips(equippedDiv);
+    bindCardTips(availableList);
+}
+
+// Équiper / retirer l'arme d'un compagnon (hors combat) : un seul écouteur sur l'onglet Armes.
+function bindAllyWeaponActions(){
+    const panel = document.getElementById('tab-weapons');
+    if(!panel || panel.dataset.allyWeaponsBound) return;
+    panel.dataset.allyWeaponsBound = '1';
+    panel.addEventListener('click', ev => {
+        const equip = ev.target.closest?.('[data-ally-equip]');
+        const unequip = ev.target.closest?.('[data-ally-unequip]');
+        if(!equip && !unequip) return;
+        if(gameState.combatState === 'active'){ log('Vous ne pouvez pas changer d\'arme pendant le combat !'); return; }
+        const res = equip ? equipAllyWeapon(player, equip.dataset.char, equip.dataset.allyEquip) : equipAllyWeapon(player, unequip.dataset.allyUnequip, null);
+        log(res.message);
+        if(res.ok) saveUpdate();
+        updateWeaponsTab();
+    });
+}
+
 // mise à jour de l'onglet armes
 export function updateWeaponsTab(){
     bindSortSelect('weapons-sort', updateWeaponsTab);
@@ -222,8 +274,15 @@ export function updateWeaponsTab(){
     const availableList = document.getElementById('available-weapons-list');
     if(!equippedDiv || !availableList) return;
     
+    // Un onglet par personnage : Hou Yi (ses deux mains, ses boucliers) ou un compagnon (l'arme de son type qu'il porte).
+    const weaponsChar = getCharTab('weapons', player);
+    const charTabs = charTabsHtml('weapons', player, 'Armes par personnage');
+    bindCharTabs(equippedDiv, 'weapons', updateWeaponsTab);
+    bindAllyWeaponActions();
+    if(weaponsChar !== START_CLASS){ renderAllyWeapons(weaponsChar, equippedDiv, availableList, charTabs); return; }
+
     // Armes équipées : une case par main, vide ou occupée (bouclier, arme à deux mains), comme l'onglet Stuff.
-    equippedDiv.innerHTML = '<h3>En main</h3>';
+    equippedDiv.innerHTML = charTabs + '<h3>En main</h3>';
     const right = player.equippedWeapon;
     const left = getLeftHandWeapon();
     equippedDiv.insertAdjacentHTML('beforeend', right
