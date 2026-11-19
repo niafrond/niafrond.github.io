@@ -33,8 +33,9 @@ export function renderPotionButtons() {
     box.classList.toggle('potion-menu', potionMenuOpen);   // menu déplié : sur toute la largeur
     document.getElementById('player-spells')?.classList.toggle('object-menu', potionMenuOpen);   // menu Objet ouvert : les autres boutons d'action sont cachés
     if (!potionMenuOpen) {
-        const off = !mine || !total;
-        box.innerHTML = `<button type="button" class="enemy-spell-item potion-btn${off ? ' disabled' : ''}" data-open-potions${off ? ' disabled' : ''} title="${total ? 'Choisir une potion ou un objet' : 'Aucun objet : achetez-en chez les marchands'}">
+        const ready = classCanAct();   // le personnage choisi doit avoir sa barre de chargement pleine pour agir
+        const off = !mine || !total || !ready;
+        box.innerHTML = `<button type="button" class="enemy-spell-item potion-btn${off ? ' disabled' : ''}" data-open-potions${off ? ' disabled' : ''} title="${!total ? 'Aucun objet : achetez-en chez les marchands' : !ready ? 'En chargement : le personnage n\'est pas encore prêt' : 'Choisir une potion ou un objet'}">
             <div class="spell-name">Objet</div>
             <div class="spell-cost">${potions ? `Potions ×${potions}` : ''}${potions && items.length ? ' · ' : ''}${items.length ? `Objets ×${items.length}` : ''}${total ? '' : '—'}</div></button>`;
         return;
