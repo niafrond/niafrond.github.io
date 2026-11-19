@@ -196,10 +196,12 @@ export function ensureBoardResizeListeners(){
 export function applyActionGrid(){
     const grid = document.getElementById('player-spells');
     if(!grid) return;
-    // « Objet » (#potion-buttons) et « Xiūxiān » (#xiu-button) sont des conteneurs pleins (pas `display: contents`) : ils comptent comme UNE carte chacun. Sans cela
-    // ils restaient sur une colonne sur 60, écrasés et empilés sur le bouton voisin. Un menu Objet déplié prend toute la largeur (style-inventory.css).
-    const cards = [...grid.querySelectorAll('#weapon-button > *, #item-button > *, #potion-buttons:not(.potion-menu):not(:empty), #xiu-button:not(:empty), #spell-buttons > *')];
-    ['potion-buttons', 'xiu-button'].forEach(id => { const el = document.getElementById(id); if(el && !cards.includes(el)) el.style.gridColumn = ''; });
+    // « Objet » (#potion-buttons) est un conteneur plein (pas `display: contents`) : il compte comme UNE carte. Sans cela il restait sur une colonne sur 60,
+    // écrasé et empilé sur le bouton voisin. Un menu Objet déplié prend toute la largeur (style-inventory.css).
+    // « Xiūxiān » (#xiu-button) n'est pas dans la grille : il occupe toute la largeur, sous le bloc d'actions (style-hud.css).
+    const cards = [...grid.querySelectorAll('#weapon-button > *, #item-button > *, #potion-buttons:not(.potion-menu):not(:empty), #spell-buttons > *')];
+    const potionBox = document.getElementById('potion-buttons');
+    if(potionBox && !cards.includes(potionBox)) potionBox.style.gridColumn = '';
     const compact = document.getElementById('spells-container')?.classList.contains('spells-compact');
     if(!compact || cards.length <= 3){
         grid.style.gridTemplateColumns = '';

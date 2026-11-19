@@ -1212,3 +1212,10 @@ body.show-xiu-text #xiu-banner { display: block; }
 .foe-chip .foe-charge > span { display: block; height: 100%; background: #4aa3d8; }
 /* Nom chinois sur une pastille d'ennemi : plus grand, comme sur la fiche de l'ennemi. */
 .foe-chip .foe-name.name-hanzi { font-size: 1.2em; line-height: 1.15; }
+/* Xiūxiān : sous le bloc d'actions, sur toute la largeur (grille compacte comme liste verticale). */
+#player-spells > #xiu-button { order: 10; grid-column: 1 / -1; width: 100%; }
+#player-spells > #xiu-button > * { width: 100%; box-sizing: border-box; }
+/* Pleine largeur : une seule ligne (nom, jauge, valeur) pour que le plateau garde la place. */
+#player-spells > #xiu-button > .xiu-btn { flex-direction: row; align-items: center; gap: 8px; padding-top: 3px; padding-bottom: 3px; text-align: left; }
+#player-spells > #xiu-button > .xiu-btn .xiu-gauge { flex: 1 1 auto; min-width: 0; }
+#player-spells > #xiu-button > .xiu-btn .spell-name, #player-spells > #xiu-button > .xiu-btn .spell-cost { flex: 0 0 auto; white-space: nowrap; }
