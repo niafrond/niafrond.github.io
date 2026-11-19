@@ -280,6 +280,8 @@ export function updateStats(){
     
     const enemyDiv=document.getElementById('enemy-stats');
     enemyDiv.classList.toggle('active-turn', currentTurn === 'enemy');
+    // Plusieurs ennemis : leur ligne de pastilles (foesView.js) porte noms et vies ; la fiche ne montre plus que la réserve commune de qì et de PA.
+    enemyDiv.classList.toggle('pool-only', gameState.combatState === 'active' && (gameState.foes || []).filter(f => f.hp > 0).length > 1);
     
     // Icône de la classe de l'ennemi
     const enemyClassEmoji = classIcon(enemy.playerClass);

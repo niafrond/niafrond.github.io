@@ -2,6 +2,7 @@
 // Après avoir choisi une attaque ciblée, on touche l'ennemi voulu (jamais de cible mémorisée) ; les sorts et armes « de zone » (targeting.js) touchent toutes les pastilles.
 // Cachée quand il n'y a qu'un ennemi. Données : gameState.foes (foes.js).
 import { escapeHtml } from './escapeHtml.js';
+import { statusBadgesHtml } from './statusBadges.js';
 import { gameState } from './game.js';
 import { allFoes, pickTarget, isPickingTarget, cancelTargetPick, foeChargeProgress } from './foes.js';
 import { isAlive } from './enemyGroup.js';
@@ -17,7 +18,7 @@ export function renderFoeBar() {
     if (!box) return;
     const foes = allFoes();
     const picking = isPickingTarget();
-    const show = gameState.combatState === 'active' && foes.length > 1;
+    const show = gameState.combatState === 'active' && foes.filter(isAlive).length > 1;   // un seul ennemi debout : la fiche complète reprend (gameHud.js)
     box.hidden = !show;
     if (!show) { box.innerHTML = ''; return; }
     box.innerHTML = foes.map((f, i) => {
@@ -25,6 +26,7 @@ export function renderFoeBar() {
         const cls = `foe-chip${isAlive(f) ? '' : ' down'}${picking && isAlive(f) ? ' pickable' : ''}`;
         return `<button type="button" class="${cls}" data-foe="${i}" ${isAlive(f) ? '' : 'disabled'} aria-label="${escapeHtml(f.name)}, ${pct} % de vie${picking && isAlive(f) ? ', toucher pour viser' : ''}">`
             + `<span class="foe-name${enemyNameIsHanzi(f) ? ' name-hanzi' : ''}">${escapeHtml(enemyNameLabel(f, enemyNameAsHanzi()))}${f.summonedBy ? ' ✦' : ''}</span>`
+            + (statusBadgesHtml(f) || '')
             + `<span class="foe-hp"><span style="width:${pct}%"></span></span>`
             + `<span class="foe-charge" title="Chargement"><span style="width:${Math.round(100 * foeChargeProgress(f))}%"></span></span></button>`;
     }).join('');
