@@ -8,6 +8,7 @@ import { bindTooltip, showSpellTooltip, hideSpellTooltip } from "./gameTooltips.
 import { cardActionsHtml, sortChoice, bindSortSelect, spellTargetBadge } from "./gameCardUi.js";
 import { getClassSpells } from "./classes.js";
 import { ALLIES, memberName } from "./allies.js";
+import { activeAllySpells, availableAllySpells, equipAllySpell, unequipAllySpell } from "./allySpells.js";
 import { charTabsHtml, getCharTab, bindCharTabs } from "./charTabs.js";
 import { START_CLASS } from "./classRoster.js";
 import { spellEffectIcon, spellColorsOf, spellCostHtml, markMultiManaSpell, player, gameState, log, saveUpdate } from "./game.js";
@@ -65,21 +66,36 @@ export function updateSpellsTab(){
             activeList.insertAdjacentHTML('beforeend', `<div class="spell-item gear-card slot-empty"><div class="spell-content"><div class="spell-name">Emplacement ${i + 1}</div><div class="spell-cost">libre</div></div></div>`);
         }
     } else {
-        // Compagnon : ses sorts de classe, préparés automatiquement par niveau (les mêmes qu'en combat, combatSpellList)
-        const classSpells = getClassSpells(spellsCharTab, player.level).slice(0, MAX_ACTIVE_SPELLS);
+        // Compagnon : SON panel de sorts (allySpells.js) ; équiper ou retirer ne concerne que lui
+        const classSpells = activeAllySpells(player, spellsCharTab);
         activeList.innerHTML = `<h3>Sorts actifs de ${ALLIES[spellsCharTab]?.name || memberName(spellsCharTab)} (${classSpells.length}/${MAX_ACTIVE_SPELLS})</h3>`;
-        activeList.insertAdjacentHTML('beforeend', tabsHtml + '<p class="shop-empty">Ses sorts de classe se préparent seuls selon son niveau.</p>');
-        classSpells.forEach(sp => activeList.appendChild(spellCard(sp, '', 'active-spell')));
+        activeList.insertAdjacentHTML('beforeend', tabsHtml);
+        classSpells.forEach(sp => activeList.appendChild(spellCard(sp, `<button type="button" class="weapon-action" data-ally-spell-unequip="${sp.id}" data-char="${spellsCharTab}">Retirer</button>`, 'active-spell')));
         for(let i = classSpells.length; i < MAX_ACTIVE_SPELLS; i++){
-            activeList.insertAdjacentHTML('beforeend', `<div class="spell-item gear-card slot-empty"><div class="spell-content"><div class="spell-name">Emplacement ${i + 1}</div><div class="spell-cost">pas encore de sort à ce niveau</div></div></div>`);
+            activeList.insertAdjacentHTML('beforeend', `<div class="spell-item gear-card slot-empty"><div class="spell-content"><div class="spell-name">Emplacement ${i + 1}</div><div class="spell-cost">libre</div></div></div>`);
         }
+    }
+    bindAllySpellActions();
+    const archiveBox = document.getElementById('archived-spells');
+    if(archiveBox) archiveBox.hidden = spellsCharTab !== START_CLASS;   // les archives sont celles de Hou Yi
+    const sortFn = SPELL_SORTS[sortChoice('spells-sort')];
+
+    if(spellsCharTab !== START_CLASS){
+        // sorts de classe du compagnon qu'il n'a pas équipés
+        document.getElementById('ultimate-spells-list')?.replaceChildren();
+        availableList.innerHTML = '';
+        const spare = availableAllySpells(player, spellsCharTab);
+        if(sortFn) spare.sort(sortFn);
+        const full = activeAllySpells(player, spellsCharTab).length >= MAX_ACTIVE_SPELLS;
+        if(!spare.length) availableList.innerHTML = '<p class="shop-empty">Aucun autre sort de classe à équiper pour l\'instant.</p>';
+        spare.forEach(sp => availableList.appendChild(spellCard(sp, `<button type="button" class="weapon-action" data-ally-spell-equip="${sp.id}" data-char="${spellsCharTab}">${full ? 'Remplacer…' : 'Équiper'}</button>`, 'available-spell')));
+        return;
     }
 
     updateUltimatePicker();
 
     // sorts disponibles (non équipés)
     availableList.innerHTML = '';
-    const sortFn = SPELL_SORTS[sortChoice('spells-sort')];
     const archived = archivedIds();
     const unequipped = player.availableSpells.filter(sp => !player.activeSpells.some(active => active.id === sp.id) && !archived.includes(sp.id));
     if(sortFn) unequipped.sort(sortFn);
@@ -93,6 +109,49 @@ export function updateSpellsTab(){
         availableList.appendChild(spellCard(sp, actions, 'available-spell'));
     });
     updateArchivedSpells(sortFn);
+}
+
+// Équiper / retirer un sort pour UN compagnon (hors combat) : un seul écouteur sur l'onglet Sorts.
+function bindAllySpellActions(){
+    const panel = document.getElementById('tab-spells');
+    if(!panel || panel.dataset.allySpellsBound) return;
+    panel.dataset.allySpellsBound = '1';
+    panel.addEventListener('click', ev => {
+        const equip = ev.target.closest?.('[data-ally-spell-equip]');
+        const unequip = ev.target.closest?.('[data-ally-spell-unequip]');
+        if(!equip && !unequip) return;
+        if(gameState.combatState === 'active'){ log('Vous ne pouvez pas modifier vos sorts pendant le combat !'); return; }
+        if(unequip){ finishAllySpellChange(unequipAllySpell(player, unequip.dataset.char, unequip.dataset.allySpellUnequip)); return; }
+        const res = equipAllySpell(player, equip.dataset.char, equip.dataset.allySpellEquip);
+        if(res.needsReplace) askAllySpellToReplace(equip.dataset.char, equip.dataset.allySpellEquip); else finishAllySpellChange(res);
+    });
+}
+function finishAllySpellChange(res){
+    if(res.message) log(res.message);
+    if(res.ok) saveUpdate();
+    updateSpellsTab();
+}
+// Fenêtre « Remplacer quel sort ? » pour un compagnon : ses sorts équipés seulement.
+function askAllySpellToReplace(charId, spellId){
+    const spell = availableAllySpells(player, charId).find(s => s.id === spellId);
+    if(!spell) return;
+    document.getElementById('replace-spell-modal')?.remove();
+    const modal = document.createElement('div');
+    modal.id = 'replace-spell-modal';
+    modal.className = 'modal active';
+    modal.innerHTML = `<div class="modal-content"><h3>${ALLIES[charId]?.name || charId} : remplacer quel sort par ${spell.name} ?</h3><div class="replace-spell-list"></div><button type="button" class="weapon-action replace-spell-cancel">Annuler</button></div>`;
+    const list = modal.querySelector('.replace-spell-list');
+    activeAllySpells(player, charId).forEach(sp => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'weapon-action';
+        btn.innerHTML = `${sp.name} ${spellCostHtml(sp)}`;
+        btn.addEventListener('click', () => { modal.remove(); finishAllySpellChange(equipAllySpell(player, charId, spellId, sp.id)); });
+        list.appendChild(btn);
+    });
+    modal.querySelector('.replace-spell-cancel').addEventListener('click', () => modal.remove());
+    modal.addEventListener('click', ev => { if(ev.target === modal) modal.remove(); });
+    document.body.appendChild(modal);
 }
 
 // ── Archives : sorts rangés hors de la liste des sorts disponibles (pour épurer la vue) ──
