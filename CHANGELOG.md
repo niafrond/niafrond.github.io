@@ -1,3 +1,10 @@
+## [3.10.0](https://github.com/niafrond/niafrond.github.io/compare/v3.9.0...v3.10.0) (2026-11-19)
+
+### Features
+
+* **houyi:** un onglet par personnage dans les menus Armes, Compétences et Stats ([68981ef](https://github.com/niafrond/niafrond.github.io/commit/68981ef7848a189f88b39f9292cbf34b38e93b51))
+* **houyi:** un onglet par personnage dans les sorts actifs ([b62b48a](https://github.com/niafrond/niafrond.github.io/commit/b62b48a3aaba765485bc65d765f49dc50dcde4d0))
+
 ## [3.9.0](https://github.com/niafrond/niafrond.github.io/compare/v3.8.2...v3.9.0) (2026-11-19)
 
 ### Features
