@@ -6,6 +6,9 @@ import { icon as svgIcon } from "./icons.js";
 import { getSelectableUltimates, getEquippedUltimate, getQuestUltimates, isUltimateUnlocked, withUltimateCost } from "./ultimates.js";
 import { bindTooltip, showSpellTooltip, hideSpellTooltip } from "./gameTooltips.js";
 import { cardActionsHtml, sortChoice, bindSortSelect, spellTargetBadge } from "./gameCardUi.js";
+import { getClassSpells } from "./classes.js";
+import { ALLIES, recruitedAllies, memberName } from "./allies.js";
+import { START_CLASS } from "./classRoster.js";
 import { spellEffectIcon, spellColorsOf, spellCostHtml, markMultiManaSpell, player, gameState, log, saveUpdate } from "./game.js";
 
 // ── Tri de la liste des sorts disponibles (menu déroulant de l'onglet Sorts) ──
@@ -39,6 +42,8 @@ function spellCard(sp, actionHtml, extraClass){
     return div;
 }
 
+// Personnage dont l'onglet « Sorts actifs » est affiché (Hou Yi par défaut).
+let spellsCharTab = START_CLASS;
 // mise à jour de l'onglet sorts
 export function updateSpellsTab(){
     const activeList = document.getElementById('active-spells-list');
@@ -46,13 +51,40 @@ export function updateSpellsTab(){
     if(!activeList || !availableList) return;
     bindSortSelect('spells-sort', updateSpellsTab);
 
-    // sorts actifs, puis une case vide par emplacement libre
-    activeList.innerHTML = `<h3>Sorts actifs (${player.activeSpells.length}/${MAX_ACTIVE_SPELLS})</h3>`;
-    player.activeSpells.forEach(sp => {
-        activeList.appendChild(spellCard(sp, `<button type="button" class="weapon-action" onclick="window.unequipSpell('${sp.id}')">Retirer</button>`, 'active-spell'));
+    // sorts actifs : un onglet par personnage (Hou Yi, puis chaque compagnon recruté)
+    const members = [START_CLASS, ...recruitedAllies(player)];
+    if(!members.includes(spellsCharTab)) spellsCharTab = START_CLASS;
+    const tabs = document.createElement('div');
+    tabs.className = 'char-tabs';
+    tabs.setAttribute('role', 'tablist');
+    tabs.setAttribute('aria-label', 'Sorts actifs par personnage');
+    tabs.innerHTML = members.map(id => `<button type="button" class="char-tab${id === spellsCharTab ? ' on' : ''}" role="tab" id="spell-tab-${id}" aria-selected="${id === spellsCharTab}" data-char="${id}">${memberName(id)}</button>`).join('');
+    tabs.addEventListener('click', ev => {
+        const btn = ev.target.closest?.('.char-tab');
+        if(!btn || btn.dataset.char === spellsCharTab) return;
+        spellsCharTab = btn.dataset.char;
+        updateSpellsTab();
     });
-    for(let i = player.activeSpells.length; i < MAX_ACTIVE_SPELLS; i++){
-        activeList.insertAdjacentHTML('beforeend', `<div class="spell-item gear-card slot-empty"><div class="spell-content"><div class="spell-name">Emplacement ${i + 1}</div><div class="spell-cost">libre</div></div></div>`);
+    if(spellsCharTab === START_CLASS){
+        // Hou Yi : ses sorts équipés (modifiables), puis une case vide par emplacement libre
+        activeList.innerHTML = `<h3>Sorts actifs (${player.activeSpells.length}/${MAX_ACTIVE_SPELLS})</h3>`;
+        activeList.appendChild(tabs);
+        player.activeSpells.forEach(sp => {
+            activeList.appendChild(spellCard(sp, `<button type="button" class="weapon-action" onclick="window.unequipSpell('${sp.id}')">Retirer</button>`, 'active-spell'));
+        });
+        for(let i = player.activeSpells.length; i < MAX_ACTIVE_SPELLS; i++){
+            activeList.insertAdjacentHTML('beforeend', `<div class="spell-item gear-card slot-empty"><div class="spell-content"><div class="spell-name">Emplacement ${i + 1}</div><div class="spell-cost">libre</div></div></div>`);
+        }
+    } else {
+        // Compagnon : ses sorts de classe, préparés automatiquement par niveau (les mêmes qu'en combat, combatSpellList)
+        const classSpells = getClassSpells(spellsCharTab, player.level).slice(0, MAX_ACTIVE_SPELLS);
+        activeList.innerHTML = `<h3>Sorts actifs de ${ALLIES[spellsCharTab]?.name || memberName(spellsCharTab)} (${classSpells.length}/${MAX_ACTIVE_SPELLS})</h3>`;
+        activeList.appendChild(tabs);
+        activeList.insertAdjacentHTML('beforeend', '<p class="shop-empty">Ses sorts de classe se préparent seuls selon son niveau.</p>');
+        classSpells.forEach(sp => activeList.appendChild(spellCard(sp, '', 'active-spell')));
+        for(let i = classSpells.length; i < MAX_ACTIVE_SPELLS; i++){
+            activeList.insertAdjacentHTML('beforeend', `<div class="spell-item gear-card slot-empty"><div class="spell-content"><div class="spell-name">Emplacement ${i + 1}</div><div class="spell-cost">pas encore de sort à ce niveau</div></div></div>`);
+        }
     }
 
     updateUltimatePicker();
