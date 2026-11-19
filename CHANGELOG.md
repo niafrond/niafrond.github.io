@@ -1,3 +1,10 @@
+## [3.12.0](https://github.com/niafrond/niafrond.github.io/compare/v3.11.0...v3.12.0) (2026-11-19)
+
+### Features
+
+* **houyi:** un panel de sorts par compagnon, équiper et retirer par personnage ([5efedac](https://github.com/niafrond/niafrond.github.io/commit/5efedac8bb4be7d7104bfb6e1fd2e34e85c1fdf8))
+* **houyi:** zoom de la carte d'exploration (cases de 68 px au minimum) ([0bf5953](https://github.com/niafrond/niafrond.github.io/commit/0bf5953e61c22c2e142ea024229092a80af3c4fd))
+
 ## [3.11.0](https://github.com/niafrond/niafrond.github.io/compare/v3.10.0...v3.11.0) (2026-11-19)
 
 ### Features
