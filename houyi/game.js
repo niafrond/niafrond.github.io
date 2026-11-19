@@ -269,11 +269,10 @@ export function ultimateManaBarHtml(entity, spell){
     return parts.length ? `<div class="ult-mana-bar" aria-hidden="true">${parts.join('')}</div>` : '';
 }
 
-// Fiche de la jauge de Xiūxiān : remplissage, effet de la classe du tour, rappel de la règle de l'ultime.
+// Fiche de la jauge de Xiūxiān : remplissage et effet de la classe du tour (plus de texte explicatif sur la jauge), rappel de la règle de l'ultime.
 export function transeTooltipHtml(entity, ultimate){
     const filled = Math.floor(entity?.rage || 0);
     return `<div class="spell-tooltip-title">XIŪXIĀN · ${isInTranse(entity) ? `${Math.max(1, Math.floor(entity.transe || 1))} tour(s) restant(s)` : `${filled} / 100`}</div>`
-        + `<div class="spell-tooltip-line">Jauge du ${CLASS_SHORT[getTurnClass()] || 'héros'} : chaque classe a la sienne. Elle se remplit quand vous subissez des dégâts avec cette classe et se conserve d'un combat à l'autre. Pleine, touchez-la pour déclencher sa Xiūxiān (3 tours).</div>`
         + `<div class="spell-tooltip-line">${describeTranse(isInTranse(entity) ? entity.transeClass : getTurnClass())}</div>`
         + (ultimate ? `<div class="spell-tooltip-line">Les invocations du Mage sont de simples sorts de sa liste : aucune jauge requise.</div>` : '');
 }
