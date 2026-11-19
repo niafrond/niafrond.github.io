@@ -1,3 +1,9 @@
+## [3.8.1](https://github.com/niafrond/niafrond.github.io/compare/v3.8.0...v3.8.1) (2026-11-19)
+
+### Bug Fixes
+
+* **houyi:** retirer le texte explicatif de l'infobulle de Xiūxiān ([9b374de](https://github.com/niafrond/niafrond.github.io/commit/9b374dea7cd6b8591b0745d50cfeae0257a9d78a))
+
 ## [3.8.0](https://github.com/niafrond/niafrond.github.io/compare/v3.7.1...v3.8.0) (2026-11-19)
 
 ### Features
