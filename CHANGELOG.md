@@ -1,3 +1,9 @@
+## [3.9.0](https://github.com/niafrond/niafrond.github.io/compare/v3.8.2...v3.9.0) (2026-11-19)
+
+### Features
+
+* **houyi:** chaque compagnon reçoit et équipe une arme dès son recrutement ([6b465f5](https://github.com/niafrond/niafrond.github.io/commit/6b465f518b7ff952032657d4dc43611b58b8d5a4))
+
 ## [3.8.2](https://github.com/niafrond/niafrond.github.io/compare/v3.8.1...v3.8.2) (2026-11-19)
 
 ### Bug Fixes
