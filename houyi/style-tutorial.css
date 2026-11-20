@@ -347,3 +347,20 @@ body.dark-mode .tutorial-card {
 /* Position de la fenêtre : en bas à droite par défaut ; déplacée quand elle cacherait ce qu'elle montre (tutorial.js, _placeOverlay) */
 .tutorial-overlay.pos-left { right: auto; left: 8px; }
 .tutorial-overlay.pos-top { bottom: auto; top: calc(8px + env(safe-area-inset-top, 0px)); }
+
+/* Tâche demandée (tutorial.js, _setDim) : tout le reste du plateau et des actions est grisé, seule la cible garde ses couleurs.
+   [data-tuto-task] : swap (les deux tuiles surlignées et celles de l'alignement à former restent en couleur), spell, weapon (le bouton surligné reste en couleur), xiuxian ou potion (le bouton ou menu concerné reste en couleur).
+   Les conteneurs d'actions sont parfois en `display: contents` (grille compacte) : le filtre vise donc leurs boutons (`> *`). */
+#tab-combat[data-tuto-task] #board .tile:not(.tutorial-highlight):not(.tutorial-combo),
+#tab-combat[data-tuto-task]:not([data-tuto-task="swap"]) #board,
+#tab-combat[data-tuto-task] #class-picker,
+#tab-combat[data-tuto-task] #item-button > *,
+#tab-combat[data-tuto-task]:not([data-tuto-task="spell"]) #spell-buttons > *,
+#tab-combat[data-tuto-task="spell"] #spell-buttons > *:not(.tutorial-highlight),
+#tab-combat[data-tuto-task]:not([data-tuto-task="weapon"]) #weapon-button > *,
+#tab-combat[data-tuto-task="weapon"] #weapon-button > *:not(.tutorial-highlight),
+#tab-combat[data-tuto-task]:not([data-tuto-task="potion"]) #potion-buttons > *,
+#tab-combat[data-tuto-task]:not([data-tuto-task="xiuxian"]) #xiu-button > * {
+    filter: grayscale(1) brightness(0.55);
+    opacity: 0.8;
+}

@@ -3,7 +3,7 @@ import { describe, test, expect } from '@jest/globals';
 import { readFileSync } from 'fs';
 import './fixtures/xhrFromDisk.js';
 import { SCREENS, QUESTS, buildWorld } from '../../story.js';
-import { createSession, teleportToScreen, talkToNpc, openChest, markEnemyDefeated, questStatus, isExitLocked, isTerrainBlocked, enterScreen, tryMove, solvePuzzle, isShielded, visibleNpcs, visibleChests, aliveEnemies, bossEase } from '../../exploration.js';
+import { createSession, teleportToScreen, talkToNpc, openChest, markEnemyDefeated, questStatus, isExitLocked, isTerrainBlocked, enterScreen, takeDoorNotices, tryMove, solvePuzzle, isShielded, visibleNpcs, visibleChests, aliveEnemies, bossEase } from '../../exploration.js';
 import { EVENTS, EVENTS_DEFAULT, isEventEnabled, parseEventOverrides, applyOverrides } from '../../events/config.js';
 import { applyEvents, activeModules, eventScreens } from '../../events/engine.js';
 import { EVENT_MODULES } from '../../events/registry.js';
@@ -192,8 +192,14 @@ describe('La Nuit des âmes errantes : événement activé', () => {
         });
     });
 
-    test('l\'annonce du royaume ne s\'affiche qu\'une fois, à la première arrivée', () => {
+    test('la rumeur du royaume ne s\'affiche qu\'une fois, à la première arrivée sur une zone qui porte une de ses portes (sinon dans le royaume)', () => {
         expect(realm.eventNotice).toEqual(D.REALM.notice);
+        expect(wild.eventDoorNotices).toContainEqual(D.REALM.notice);
+        expect(takeDoorNotices(createSession(null))).toEqual([]);   // au chargement du jeu, hors de ces zones : rien
+        const arrived = createSession(null);
+        enterScreen(arrived, wild.id, wild.exits.find(e => e.to === D.REALM_ID).rememberReturn);   // arrivée sur la zone (voyage rapide, sauvegarde reprise)
+        expect(takeDoorNotices(arrived)).toContainEqual(D.REALM.notice);
+        expect(takeDoorNotices(arrived)).toEqual([]);
         const text = D.REALM.notice.lines.join(' ');
         expect(text).toMatch(/lanternes/);
         expect(text).not.toMatch(/Halloween|Toussaint|octobre|novembre|\bjeu\b|bonus/i);   // diégétique : ni date ni monde réel
@@ -201,12 +207,12 @@ describe('La Nuit des âmes errantes : événement activé', () => {
         const session = createSession(null);
         enterScreen(session, wild.id, door.rememberReturn);
         const first = tryMove(session, door.x - door.rememberReturn.x, door.y - door.rememberReturn.y);
-        expect(first.notice).toEqual(D.REALM.notice);
+        expect(first.notices).toEqual([D.REALM.notice]);   // rumeur pas encore lue : à défaut, elle s'affiche à l'arrivée dans le royaume
         expect(session.data.eventNotices).toEqual([D.REALM.notice.id]);
         tryMove(session, -1, 0);   // retour
         enterScreen(session, wild.id, door.rememberReturn);
         const second = tryMove(session, door.x - door.rememberReturn.x, door.y - door.rememberReturn.y);
-        expect(second.notice).toBeUndefined();
+        expect(second.notices).toBeUndefined();
         // l'annonce lue survit à une sauvegarde
         const reloaded = createSession(JSON.parse(JSON.stringify(session.data)));
         expect(reloaded.data.eventNotices).toEqual([D.REALM.notice.id]);

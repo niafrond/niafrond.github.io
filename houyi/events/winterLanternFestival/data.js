@@ -27,7 +27,8 @@ export const VILLAGE = {
     ]
 };
 
-// Annonce de lancement : affichée une seule fois par partie, au premier chargement du jeu tant que l'événement est actif (exploration.js `takeLaunchNotices`).
+// Rumeur de l'événement : affichée une seule fois par partie, à la première arrivée sur la zone qui porte la porte (`eventDoorNotices` de la zone sauvage des Rizières ;
+// exploration.js `transitionTo` / `takeDoorNotices`), jamais au simple chargement du jeu.
 // Elle dit OÙ chercher : l'entrée est une porte rouge à l'est de la zone sauvage des Rizières (HOST).
 export const LAUNCH_NOTICE = {
     id: 'winterLanternFestival',

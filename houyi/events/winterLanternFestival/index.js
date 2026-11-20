@@ -155,6 +155,7 @@ export function applyWinterLanternFestival(screens, quests) {
         x: door.x, y: door.y, to: D.REALM_ID, label: D.VILLAGE.entrance, arrive: { ...village.spawn },
         rememberReturn: { x: back.x, y: back.y }, sprite: D.GATE_SPRITE
     });
+    (wild.eventDoorNotices = wild.eventDoorNotices || []).push(D.LAUNCH_NOTICE);   // la rumeur s'affiche à la première arrivée dans cette zone, où se trouve la porte
     village.exits.push({ x: D.GATES.W.x, y: D.GATES.W.y, to: wild.id, label: D.VILLAGE.exitLabel, arrive: back, returnToSaved: true, sprite: D.GATE_SPRITE });
     village.levelBase = D.HOST.level;   // la région est celle des Rizières (niveau 1) mais le contenu reste de niveau 22 : ennemis, herbes et butin des coffres
     village.underground = true;   // écran hors carte : mêmes exemptions que les souterrains (agrandissement, bordure, musique de la région)
@@ -176,4 +177,4 @@ export function applyWinterLanternFestival(screens, quests) {
     return true;
 }
 
-export default { id: D.ID, apply: applyWinterLanternFestival, registerPuzzles, launchNotice: D.LAUNCH_NOTICE };
+export default { id: D.ID, apply: applyWinterLanternFestival, registerPuzzles };

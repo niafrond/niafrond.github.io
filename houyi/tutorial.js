@@ -866,6 +866,16 @@ function _startHighlightLoop() {
     setTimeout(_refreshHighlight, 300);
 }
 
+// Positions des tuiles de l'alignement que l'échange attendu va former (les deux tuiles échangées comprises) : elles restent en couleur quand le reste est grisé.
+function _comboIndices() {
+    if (!_target || !_bm?.board || !_mm) return [];
+    const after = [..._bm.board];
+    [after[_target.from], after[_target.to]] = [after[_target.to], after[_target.from]];
+    const found = new Set([_target.from, _target.to]);
+    try { _mm.collectMatches(after).forEach(m => m.indices.forEach(i => found.add(i))); } catch (_) { /* seules les deux tuiles échangées restent en couleur */ }
+    return [...found];
+}
+
 function _refreshHighlight() {
     if (!_active || !_target || _cur()?.who !== 'player' || _cur().kind !== 'swap') return;
     const tiles = document.getElementById('board')?.children;
@@ -880,6 +890,11 @@ function _refreshHighlight() {
         el.classList.add('tutorial-highlight');
         if (!_highlightedElements.includes(el)) _highlightedElements.push(el);
     });
+    // Les tuiles de l'alignement à former gardent leurs couleurs (sans clignoter) ; le reste du plateau et des actions se grise.
+    const combo = _comboIndices().map(i => tiles[i]).filter(Boolean);
+    combo.forEach(el => el.classList.add('tutorial-combo'));
+    document.querySelectorAll('#board .tutorial-combo').forEach(el => { if (!combo.includes(el)) el.classList.remove('tutorial-combo'); });
+    _setDim('swap');
     _placeOverlay();
 }
 
@@ -892,6 +907,7 @@ function _highlightFocus(step) {
         _highlightedElements.push(el);
     });
     if (step.kind === 'xiuxian' || step.kind === 'potion') {
+        _setDim(step.kind);
         (step.focus || []).forEach(sel => document.querySelectorAll(`${sel} .enemy-spell-item:not(.disabled)`).forEach(btn => {
             btn.classList.add('tutorial-highlight');
             _highlightedElements.push(btn);
@@ -924,6 +940,7 @@ function _highlightWeaponButton() {
     });
     container.classList.add('tutorial-highlight-container');
     _highlightedElements.push(container);
+    _setDim('weapon');
     _placeOverlay();
 }
 
@@ -941,10 +958,20 @@ function _highlightSpellButtons() {
     // Encadrer aussi le conteneur
     container.classList.add('tutorial-highlight-container');
     _highlightedElements.push(container);
+    _setDim('spell');
     _placeOverlay();
 }
 
+// Tâche demandée au joueur : tout le reste du combat est grisé (style-tutorial.css, [data-tuto-task]). `task` : 'swap' | 'spell' | 'weapon' | 'xiuxian' | 'potion'.
+function _setDim(task) {
+    const tab = document.getElementById('tab-combat');
+    if (!tab) return;
+    if (task) tab.dataset.tutoTask = task; else delete tab.dataset.tutoTask;
+}
+
 function _cleanupHighlights() {
+    _setDim(null);
+    document.querySelectorAll('.tutorial-combo').forEach(el => el.classList.remove('tutorial-combo'));
     _highlightedElements.forEach(el => {
         if (!el) return;
         el.classList.remove('tutorial-highlight');

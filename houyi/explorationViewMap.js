@@ -177,6 +177,7 @@ export function createMapOverlay(env) {
         cfg.onRegionVisited?.(screen.region);
         env.refreshHud();
         env.toast(`Voyage rapide : ${screen.name}`, 2600);
+        X.takeDoorNotices(env.session).forEach(n => env.openDialog({ ...env.NARRATOR, title: n.title }, n.lines));   // rumeur d'événement, à la première arrivée sur la zone de la porte
         cfg.onSave();
         return true;
     }

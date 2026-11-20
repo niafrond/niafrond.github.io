@@ -747,7 +747,7 @@ export function createExplorationView(cfg) {
                 // Tout ce qui s'affiche après l'arrivée (annonce, texte d'ambiance, alertes, quêtes) ; pour une porte d'événement, après l'animation de passage.
                 const arrivalStory = () => {
                     // Annonce d'événement (une seule fois par partie) : s'affiche avant le texte d'ambiance de l'écran.
-                    if (res.notice) openDialog({ ...NARRATOR, title: res.notice.title }, res.notice.lines);
+                    (res.notices || []).forEach(n => openDialog({ ...NARRATOR, title: n.title }, n.lines));
                     const showArrival = () => { if (res.firstVisit && res.arrival?.length && !screen.interior) openDialog({ ...NARRATOR, title: screen.name }, res.arrival); };
                     if (zone) playRegionDiscovery(zone).then(showArrival); else showArrival();
                     if (res.warning) toast(`${res.warning.regionName} : niveau ${res.warning.minLevel} recommandé — les ennemis y sont redoutables.`, 5000);
@@ -1105,8 +1105,8 @@ export function createExplorationView(cfg) {
                 if (!prologueAnimationPlayed()) openDialog({ icon: 'scroll', name: STORY_TITLE, title: 'Prologue' }, lines, () => { cfg.onSave(); });
                 cfg.onSave();
             }
-            // Annonce d'un événement activé : une seule fois par partie, au premier chargement du jeu (après le prologue éventuel).
-            const launch = X.takeLaunchNotices(session);
+            // Rumeur d'un événement : seulement si la partie reprend sur une zone qui porte sa porte et qu'elle n'a pas encore été lue (après le prologue éventuel).
+            const launch = X.takeDoorNotices(session);
             if (launch.length) {
                 launch.forEach(n => openDialog({ ...NARRATOR, title: n.title }, n.lines, () => cfg.onSave()));
                 cfg.onSave();
