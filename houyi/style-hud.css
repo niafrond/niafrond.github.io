@@ -1227,3 +1227,20 @@ body.show-xiu-text #xiu-banner { display: block; }
 .foe-chip .status-badges { gap: 2px; margin: 2px 0 0; }
 .foe-chip .status-badge { padding: 0 3px; font-size: .75em; }
 .foe-chip .status-badge svg { width: 1em; height: 1em; }
+
+/* ── Personnage choisi en combat : on voit tout de suite lequel est actif ───────────────────────────────────────
+   Son bouton prend sa couleur (--mc) avec un anneau blanc, un halo et une flèche qui descend vers les actions ; les autres sont atténués ;
+   le cadre des actions (#player-spells[data-member]) reprend la même couleur : « ces actions sont celles du bouton éclairé ». */
+.class-picker .class-pick { overflow: visible; }
+.class-pick::before { border-radius: inherit; }   /* la jauge de chargement reste dans les coins arrondis, sans que le bouton rogne la flèche */
+.class-picker .class-pick:not(.on):not(.ko) { filter: brightness(0.7) saturate(0.75); }
+.class-picker .class-pick.on {
+    border: 2px solid var(--mc, #fff); outline: 2px solid #fff; outline-offset: 0;
+    box-shadow: 0 0 10px 2px var(--mc, #b58cff); z-index: 2; font-weight: 800;
+}
+.class-picker .class-pick.on::after {
+    content: ""; position: absolute; left: 50%; bottom: -10px; transform: translateX(-50%); z-index: 3;
+    border: 7px solid transparent; border-top: 8px solid var(--mc, #fff); border-bottom: 0;
+    filter: drop-shadow(0 1px 0 #fff) drop-shadow(0 0 2px #000);
+}
+#player-spells[data-member] { border-color: var(--mc, currentColor); box-shadow: inset 0 3px 0 var(--mc, transparent), 0 0 0 1px var(--mc, transparent); }

@@ -15,19 +15,26 @@ export function weaponsFor(hero, classId) {
         .sort((a, b) => (b.damage || 0) - (a.damage || 0));
 }
 
-/** Arme actuellement équipée par le compagnon (ou null) ; ignorée si elle a quitté le sac (vendue, fusionnée). */
+/**
+ * Arme que porte le compagnon. Un compagnon n'est jamais sans arme (pas de « mains nues ») : si celle qu'il portait a quitté le sac (vendue, fusionnée) ou
+ * si aucune n'est choisie, il reprend la meilleure arme libre de son type, à défaut son arme de départ. Renvoie null seulement pour une classe qui n'est pas
+ * un compagnon (Hou Yi).
+ */
 export function allyEquippedWeapon(hero, classId) {
+    if (!ALLIES[classId]) return null;
     const id = hero?.allyWeapons?.[classId];
-    if (!id) return null;
-    return (hero.weapons || []).find(w => w.id === id) || null;
+    const own = id && (hero.weapons || []).find(w => w.id === id);
+    if (own) return own;
+    const taken = Object.entries(hero?.allyWeapons || {}).filter(([k]) => k !== classId).map(([, v]) => v);
+    return weaponsFor(hero, classId).find(w => !taken.includes(w.id)) || startingWeaponFor(classId);
 }
 
-/** Équipe (ou retire avec `weaponId` null) l'arme d'un compagnon. Renvoie { ok, message }. */
+/** Équipe l'arme d'un compagnon ; il ne peut pas s'en passer (`weaponId` absent : refusé). Renvoie { ok, message }. */
 export function equipAllyWeapon(hero, classId, weaponId) {
     const ally = ALLIES[classId];
     if (!ally) return { ok: false, message: 'Compagnon inconnu.' };
     if (!hero.allyWeapons) hero.allyWeapons = {};
-    if (!weaponId) { delete hero.allyWeapons[classId]; return { ok: true, message: `${ally.name} range son arme.` }; }
+    if (!weaponId) return { ok: false, message: `${ally.name} garde toujours une arme.` };
     const w = weaponsFor(hero, classId).find(x => x.id === weaponId);
     if (!w) return { ok: false, message: `${ally.name} ne peut pas porter cette arme.` };
     // une arme n'équipe qu'un compagnon à la fois (deux compagnons d'un même type : une arme chacun)
@@ -36,7 +43,7 @@ export function equipAllyWeapon(hero, classId, weaponId) {
     return { ok: true, message: `${ally.name} prend ${w.name}.` };
 }
 
-/** Arme de départ d'un compagnon : la plus modeste de son type (niveau 1), de façon qu'il ne soit jamais recruté les mains vides. */
+/** Arme de départ d'un compagnon : la plus modeste de son type (niveau 1), de façon qu'il n'aille jamais au combat sans arme. */
 export function startingWeaponFor(classId) {
     const type = ALLIES[classId]?.weapon;
     if (!type) return null;
@@ -55,7 +62,7 @@ export function ensureAllyWeapon(hero, classId) {
         const start = startingWeaponFor(classId);
         if (start) { hero.weapons.push(start); out.given = start; }
     }
-    if (!allyEquippedWeapon(hero, classId)) {
+    if (!hero.allyWeapons?.[classId] || !hero.weapons.some(w => w.id === hero.allyWeapons[classId])) {
         const best = weaponsFor(hero, classId).find(w => !Object.values(hero.allyWeapons || {}).includes(w.id)) || weaponsFor(hero, classId)[0];
         if (best && equipAllyWeapon(hero, classId, best.id).ok) out.equipped = best;
     }

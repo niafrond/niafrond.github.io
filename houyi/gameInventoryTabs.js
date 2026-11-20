@@ -220,7 +220,7 @@ function weaponCardHtml(weapon, { hand, count = 1 } = {}){
 function allyWeaponCard(weapon, charId, worn){
     const locked = player.level < (weapon.minLevel || 1);
     const primary = worn
-        ? `<button type="button" class="rc-btn rc-btn-alt" data-ally-unequip="${charId}">Retirer</button>`
+        ? ''   // un compagnon garde toujours une arme : pas de « Retirer », on en équipe une autre
         : `<button type="button" class="rc-btn" data-ally-equip="${weapon.id}" data-char="${charId}"${locked ? ' disabled' : ''}>${locked ? `Niv. ${weapon.minLevel}` : 'Équiper'}</button>`;
     return rowCardHtml({
         key: `aw:${charId}:${weapon.id}`,
@@ -237,7 +237,7 @@ function allyWeaponCard(weapon, charId, worn){
 function renderAllyWeapons(charId, equippedDiv, availableList, charTabs){
     const ally = ALLIES[charId];
     const eq = allyEquippedWeapon(player, charId);
-    equippedDiv.innerHTML = charTabs + `<h3>En main : ${escapeHtml(ally?.name || charId)}</h3>` + (eq ? allyWeaponCard(eq, charId, true) : emptyRowHtml('Arme', 'mains nues'));
+    equippedDiv.innerHTML = charTabs + `<h3>En main : ${escapeHtml(ally?.name || charId)}</h3>` + (eq ? allyWeaponCard(eq, charId, true) : emptyRowHtml('Arme', 'aucune arme'));
     const taken = Object.values(player.allyWeapons || {});
     const spare = weaponsFor(player, charId).filter(w => w.id !== eq?.id && !taken.includes(w.id));
     availableList.innerHTML = spare.length
@@ -249,17 +249,16 @@ function renderAllyWeapons(charId, equippedDiv, availableList, charTabs){
     bindCardTips(availableList);
 }
 
-// Équiper / retirer l'arme d'un compagnon (hors combat) : un seul écouteur sur l'onglet Armes.
+// Équiper l'arme d'un compagnon (hors combat) : un seul écouteur sur l'onglet Armes.
 function bindAllyWeaponActions(){
     const panel = document.getElementById('tab-weapons');
     if(!panel || panel.dataset.allyWeaponsBound) return;
     panel.dataset.allyWeaponsBound = '1';
     panel.addEventListener('click', ev => {
         const equip = ev.target.closest?.('[data-ally-equip]');
-        const unequip = ev.target.closest?.('[data-ally-unequip]');
-        if(!equip && !unequip) return;
+        if(!equip) return;
         if(gameState.combatState === 'active'){ log('Vous ne pouvez pas changer d\'arme pendant le combat !'); return; }
-        const res = equip ? equipAllyWeapon(player, equip.dataset.char, equip.dataset.allyEquip) : equipAllyWeapon(player, unequip.dataset.allyUnequip, null);
+        const res = equipAllyWeapon(player, equip.dataset.char, equip.dataset.allyEquip);
         log(res.message);
         if(res.ok) saveUpdate();
         updateWeaponsTab();
