@@ -1114,7 +1114,7 @@ body.a11y-colorblind .action-beads .bead-foe { background: #e08a1e; }
 .ally-card.ko { opacity: 0.45; filter: grayscale(1); }
 .ally-card.ko .ally-hp i { background: #777; }
 .class-picker .class-pick.ko { opacity: 0.4; text-decoration: line-through; }
-#player-stats.hero-ko { opacity: 0.5; filter: grayscale(1); }
+/* Hou Yi à terre : la ligne des qì (partagée par l'équipe) reste en couleur */
 
 /* Jauge de Xiūxiān de Hou Yi : toujours visible, en barre horizontale sous sa barre de vie (les compagnons gardent la leur au clic long) */
 #player-stats:has(.rage-stat) { display: block; }

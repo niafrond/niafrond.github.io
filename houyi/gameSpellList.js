@@ -272,7 +272,7 @@ function chargeTicker(){
     // Tempo : plateau inactif depuis 5 s = chargements en pause (barres figées) ; ils reprennent au prochain combo du plateau.
     const running = chargeRunning(now, actionGuard.lastComboAt());
     if(typeof document !== 'undefined') document.body?.classList.toggle('charge-paused', !running);
-    if(!running) return;
+    if(!running){ pumpActions(); return; }   // pause d'inactivité : seules les barres sont figées ; une action déjà choisie et payée (objet, sort) doit partir quand même, sinon elle reste coincée dans la file
     const heroSpeed = memberSpeeds(), foeSpeed = chargeSpeed(enemy);
     chargeTick(gameState.charge, dt, heroSpeed, foeSpeed);
     pumpActions();   // les actions en file partent dès que possible, sans lien avec le plateau
