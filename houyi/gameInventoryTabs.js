@@ -151,7 +151,19 @@ export function createWeaponButton(){
     const container = document.getElementById('weapon-button');
     if(!container) return;
     container.innerHTML = "";
-    if(gameState.combatState === 'active' && getTurnClass() !== START_CLASS){ updateWeaponsTab(); return; }   // l'arme est celle de Hou Yi : un compagnon choisi n'a pas ce bouton
+    if(gameState.combatState === 'active' && getTurnClass() !== START_CLASS){
+        // Un compagnon n'attaque pas avec son arme (elle gonfle ses sorts) : on l'affiche en carte d'information, non cliquable.
+        const w = allyEquippedWeapon(player, getTurnClass());
+        if(w){
+            const card = document.createElement('div');
+            card.className = 'enemy-spell-item disabled';
+            card.innerHTML = `<div class="spell-name">${getWeaponIcon(w.type)} ${escapeHtml(w.name)}</div>
+                <div class="spell-cost">+${allyWeaponBonus(w)} ${svgIcon('skull')} aux sorts</div>`;
+            container.appendChild(card);
+        }
+        updateWeaponsTab();
+        return;
+    }
 
     if(!player.equippedWeapon){
         if(player.availableWeapons && player.availableWeapons.length > 0) {
