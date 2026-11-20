@@ -100,6 +100,12 @@ describe('scénario du tutoriel : câblage', () => {
         expect(src).toMatch(/function _comboIndices\(\)/);
     });
 
+    test("la barre de chargement du tutoriel reste pleine : elle ne se vide qu'une fois, à l'étape 2, pour la démontrer", () => {
+        expect(src).toMatch(/charge\.ready\[id\] = charge\.now/);   // démarre pleine
+        expect(src).toMatch(/if \(_step === 2\) _demoCharge\(\);/);
+        expect(read('gameSpellList.js')).toMatch(/if\(!chargeEnabled\(\) \|\| enemy\?\.isTutorialEnemy\) return;/);   // sorts, arme, potion : aucune recharge
+    });
+
     test("les sorts ne sont acceptés qu'à l'étape du sort (plus de garde par numéro d'étape dans game.js)", () => {
         expect(read('game.js')).not.toMatch(/getTutorialStep\(\) < 4/);
         expect(src).toMatch(/Pas encore : suivez les instructions du tutoriel/);

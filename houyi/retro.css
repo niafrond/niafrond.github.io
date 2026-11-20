@@ -559,6 +559,8 @@ body.rt .enemy-name-tooltip {
 }
 
 body.rt .tutorial-card h3 { font-family: var(--rt-title); font-size: 11px; }
+/* Bouton « – » : petit (le style des boutons rétro le grossit) et le titre lui laisse la place, sans jamais passer dessous */
+body.rt .tutorial-toggle { width: 24px; height: 22px; min-height: 0; min-width: 0; padding: 0; border-width: 2px; box-shadow: none; font-size: 14px; line-height: 1; }
 body.rt .tutorial-card p { color: var(--rt-text); opacity: 1; font-size: 12px; line-height: 1.35; }   /* explications du tutoriel lisibles sur le papier */
 body.rt .tutorial-card p strong { color: inherit; font-weight: 800; }
 body.rt .tutorial-actions button.tutorial-next { background: #2e7d32; color: #fff; }   /* « Compris » lisible */

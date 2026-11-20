@@ -364,3 +364,6 @@ body.dark-mode .tutorial-card {
     filter: grayscale(1) brightness(0.55);
     opacity: 0.8;
 }
+
+/* Le titre laisse sa place au bouton « – » (replier / déplier) : il ne passe jamais dessous et le texte commence sous le bouton */
+.tutorial-card h3 { padding-right: 30px; min-height: 22px; box-sizing: border-box; }
