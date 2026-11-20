@@ -1,3 +1,14 @@
+## [3.13.0](https://github.com/niafrond/niafrond.github.io/compare/v3.12.0...v3.13.0) (2026-11-20)
+
+### Features
+
+* **houyi:** déplacer la fenêtre du tutoriel et affiner le bandeau ennemi ([6bc712f](https://github.com/niafrond/niafrond.github.io/commit/6bc712f27ed57ead49431cad775cc03577d4ef02))
+* **houyi:** montrer toutes les mécaniques du combat dans le tutoriel ([11bf9ba](https://github.com/niafrond/niafrond.github.io/commit/11bf9badc95afa882d9c19869ae3c95f666913b2))
+
+### Bug Fixes
+
+* **houyi:** raccourcir les explications du tutoriel à une phrase ([0cc525e](https://github.com/niafrond/niafrond.github.io/commit/0cc525e4cdaa83efba1fde0fe80c0dc0e50f9a43))
+
 ## [3.12.0](https://github.com/niafrond/niafrond.github.io/compare/v3.11.0...v3.12.0) (2026-11-19)
 
 ### Features
