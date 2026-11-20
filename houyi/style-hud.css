@@ -1180,7 +1180,7 @@ body.show-xiu-text #xiu-banner { display: block; }
     .stats-container:not([style*="none"]) { grid-template-columns: minmax(0, 1fr); }
     .stats-container > #enemy-stats { grid-column: 1; }
 }
-#player-stats.qi-strip { display: flex !important; flex-wrap: wrap; align-items: center; justify-content: center; gap: 4px 8px; padding: 4px 6px; margin: 4px 0; }
+#player-stats.qi-strip { display: flex !important; flex-wrap: wrap; align-items: center; justify-content: center; gap: 4px 8px; padding: 4px 6px; margin: 4px 0; flex: 0 0 auto; align-self: auto; }   /* hauteur = son contenu : ne jamais s'étirer pour remplir la place libre (style-tutorial.css donne `flex: 1 1 0` aux fiches) */
 #player-stats.qi-strip::after { display: none !important; }
 #player-stats.qi-strip .stat { margin: 0 !important; }
 #player-stats.qi-strip .row-pills, #player-stats.qi-strip .mana-dots { display: flex; align-items: center; gap: 6px; }
