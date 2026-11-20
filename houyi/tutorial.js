@@ -880,6 +880,7 @@ function _refreshHighlight() {
         el.classList.add('tutorial-highlight');
         if (!_highlightedElements.includes(el)) _highlightedElements.push(el);
     });
+    _placeOverlay();
 }
 
 // Découverte : encadre les zones de l'écran décrites par l'étape (sélecteurs CSS de `focus`).
@@ -896,6 +897,22 @@ function _highlightFocus(step) {
             _highlightedElements.push(btn);
         }));
     }
+    _placeOverlay();
+}
+
+// ─── Position de la fenêtre ─────────────────────────────────────────────────
+// La fenêtre ne doit jamais cacher ce qu'elle montre : bas-droite, sinon bas-gauche, haut-droite, haut-gauche (la première libre).
+const OVERLAY_SPOTS = [[], ['pos-left'], ['pos-top'], ['pos-top', 'pos-left']];
+const _overlaps = (a, b) => a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom;
+
+function _placeOverlay() {
+    const overlay = document.getElementById('tutorial-overlay');
+    if (!overlay || overlay.classList.contains('hidden')) return;
+    const targets = _highlightedElements.filter(el => el?.isConnected).map(el => el.getBoundingClientRect()).filter(r => r.width && r.height);
+    const apply = spot => { overlay.classList.remove('pos-left', 'pos-top'); spot.forEach(c => overlay.classList.add(c)); };
+    const free = () => { const r = overlay.getBoundingClientRect(); return !targets.some(t => _overlaps(r, t)); };
+    if (free()) return;   // déjà libre : la fenêtre ne saute pas pendant l'étape
+    apply(OVERLAY_SPOTS.find(spot => { apply(spot); return free(); }) || OVERLAY_SPOTS[0]);
 }
 
 function _highlightWeaponButton() {
@@ -907,6 +924,7 @@ function _highlightWeaponButton() {
     });
     container.classList.add('tutorial-highlight-container');
     _highlightedElements.push(container);
+    _placeOverlay();
 }
 
 function _highlightSpellButtons() {
@@ -923,6 +941,7 @@ function _highlightSpellButtons() {
     // Encadrer aussi le conteneur
     container.classList.add('tutorial-highlight-container');
     _highlightedElements.push(container);
+    _placeOverlay();
 }
 
 function _cleanupHighlights() {
@@ -936,14 +955,21 @@ function _cleanupHighlights() {
 
 // ─── UI Overlay ───────────────────────────────────────────────────────────
 
+const PLACE_CHECK_MS = 450;   // fréquence de vérification de la position de la fenêtre
+let _placeTimer = null;   // la cible peut grandir ou bouger (menu Objet déplié, défilement) : la position est revérifiée régulièrement
+
 function _renderOverlay() {
     const overlay = document.getElementById('tutorial-overlay');
     if (overlay) overlay.classList.remove('hidden');
+    clearInterval(_placeTimer);
+    _placeTimer = setInterval(() => { if (_active && !document.hidden) _placeOverlay(); }, PLACE_CHECK_MS);
 }
 
 function _hideOverlay() {
     const overlay = document.getElementById('tutorial-overlay');
     if (overlay) overlay.classList.add('hidden');
+    clearInterval(_placeTimer);
+    _placeTimer = null;
 }
 
 function _updateOverlay(step) {
@@ -973,6 +999,7 @@ function _updateOverlay(step) {
     if (overlay) {
         overlay.classList.remove('hidden');
         overlay.classList.toggle('explained', explained);
+        overlay.classList.remove('pos-left', 'pos-top');   // nouvelle étape : en bas à droite, déplacée ensuite si elle cache la cible (_placeOverlay)
         overlay.classList.remove('step-pop');
         // force reflow pour relancer l'animation
         void overlay.getBoundingClientRect();

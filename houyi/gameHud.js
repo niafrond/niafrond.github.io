@@ -294,7 +294,17 @@ export function updateStats(){
                 <progress class="enemy-bar" value="${initEnemyHp}" max="${enemy.maxHp}"></progress>
                 <span class="hp-text"><span id="enemy-hp-current">${targetEnemyHp}</span>/${enemy.maxHp}</span>
             </div>
-        </div>
+        </div>`;
+    // Qì de l'ennemi : sa propre barre SOUS son bandeau (miroir de la barre de qì de Hou Yi, au-dessus de son bouton).
+    let enemyQi = document.getElementById('enemy-qi');
+    if(!enemyQi){
+        enemyQi = document.createElement('div');
+        enemyQi.id = 'enemy-qi';
+        enemyQi.className = 'qi-strip enemy-qi';
+        enemyQi.setAttribute('aria-label', "Qì de l'ennemi");
+        enemyDiv.after(enemyQi);
+    }
+    enemyQi.innerHTML = `
         <div class="stat row-pills">
             <div class="mana-dots">
                 <span id="enemy-mana-red" class="cost-badge mana-red" title="red">${targetEnemyMana.red}</span>
