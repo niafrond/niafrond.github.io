@@ -136,13 +136,13 @@ const STEPS = [
     {   // J1 : découverte de la réserve de qì (sous le plateau)
         who: 'player', kind: 'info', icon: 'mana', focus: ['#player-stats'],
         title: () => 'Votre réserve de qì',
-        desc: () => `Sous le plateau, chaque couleur de gâteau remplit sa propre réserve de qì ${icon('mana_' + _myColor)}. Un sort coûte du qì <strong>de sa couleur</strong> : alignez les gâteaux des couleurs de vos sorts. Chaque réserve a un plafond, et le qì de Fengmeng se remplit de la même façon avec ses gâteaux.`,
+        desc: () => `Les gâteaux remplissent votre <strong>qì</strong>. Il paie les sorts de sa couleur.`,
         done: '',
     },
     {   // J1 : découverte de la barre d'action (bouton du personnage)
         who: 'player', kind: 'info', icon: 'hourglass', focus: ['#class-picker'],
         title: () => "Votre barre d'action",
-        desc: () => `Le bouton de <strong>Hou Yi</strong> porte ses <strong>PV</strong> et sa <strong>barre d'action</strong>. Après chaque action, elle se vide puis se remplit avec le temps ; quand elle est pleine, il peut de nouveau lancer un sort, frapper ou utiliser un objet. L'Agilité, le Moral, le qì et les compétences la font se remplir plus vite. Plus tard, vos <strong>compagnons</strong> auront chacun leur bouton : touchez-en un pour le faire agir, appui long pour lire sa fiche.`,
+        desc: () => `Vos <strong>PV</strong> et votre <strong>barre d'action</strong> : pleine, vous pouvez agir.`,
         done: '',
     },
     {   // J1 : 4 gâteaux (tour bonus)
@@ -172,7 +172,7 @@ const STEPS = [
     {   // J1 : découverte de la fiche de l'adversaire (portrait, sorts et arme à droite)
         who: 'player', kind: 'info', icon: 'eye', focus: ['#enemy-stats'],
         title: () => 'Connaître son adversaire',
-        desc: () => `En haut : le nom, les <strong>PV</strong> et le <strong>qì</strong> de l'adversaire ; son qì lui sert à lancer ses sorts. <strong>Appui long</strong> sur cette zone : sa fiche, avec sa <strong>force</strong>, sa <strong>faiblesse</strong> (un élément qui le blesse davantage) et son équipement. Un toucher bref écrit son nom en caractères chinois. L'appui long marche aussi sur vos propres boutons pour lire leur effet.`,
+        desc: () => `<strong>Appui long</strong> ici : la fiche de l'ennemi et sa faiblesse.`,
         done: '',
     },
     {   // J1 : lance un sort
@@ -202,13 +202,13 @@ const STEPS = [
     {   // J1 : déclenche sa Xiūxiān (jauge remplie par les coups reçus ; offerte pleine si besoin)
         who: 'player', kind: 'xiuxian', icon: 'anger', hp: 'keep', focus: ['#xiu-button'],
         title: () => 'Déclenchez votre Xiūxiān',
-        desc: () => `Chaque coup reçu remplit la jauge de <strong>Xiūxiān</strong>, la transe de combat. Elle est pleine : touchez le bouton <strong>« Xiūxiān »</strong> pour entrer en transe. Pendant quelques tours, Hou Yi tire une volée gratuite et gagne un point d'action à chaque tour ; chaque classe a sa propre transe.`,
+        desc: () => `Les coups reçus remplissent la jauge. Pleine : touchez <strong>« Xiūxiān »</strong>.`,
         done: 'Xiūxiān ! Hou Yi entre en transe.',
     },
     {   // J1 : boit une potion (fin de son tour)
         who: 'player', kind: 'potion', icon: 'potion', focus: ['#potion-buttons'],
         title: () => 'Buvez une potion',
-        desc: () => `Vos PV ne remontent pas tout seuls, même après le combat. Touchez <strong>« Objet »</strong> puis la <strong>Petite potion</strong> pour vous soigner. Ce bouton ouvre aussi les objets de votre sac ; les marchands vendent d'autres potions.`,
+        desc: () => `Les PV ne remontent pas seuls : <strong>« Objet »</strong> puis la potion.`,
         done: 'Vous avez récupéré des PV.',
     },
     {   // J2 : sort d'altération (Maudit), non bloqué
@@ -220,7 +220,7 @@ const STEPS = [
     {   // J1 : découverte des altérations (pastilles dans le bouton du personnage)
         who: 'player', kind: 'info', icon: 'ghost', focus: ['#class-picker'],
         title: () => 'Les altérations',
-        desc: () => `Une <strong>pastille</strong> est apparue dans le bouton de Hou Yi : c'est une <strong>altération</strong>. <strong>Maudit</strong> fait subir davantage de dégâts ; d'autres rendent muet, endorment, brûlent, ralentissent la barre d'action… Elles durent quelques tours ; touchez longuement la pastille pour sa fiche. Certains objets et remèdes les soignent, et l'ennemi peut lui aussi en subir.`,
+        desc: () => `Une <strong>pastille</strong> : vous êtes maudit pour quelques tours.`,
         done: '',
     },
     {   // J1 : 4 flèches (tuiles d'action) : tour bonus, il utilise son arme tout de suite

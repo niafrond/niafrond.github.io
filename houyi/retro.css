@@ -561,6 +561,7 @@ body.rt .enemy-name-tooltip {
 body.rt .tutorial-card h3 { font-family: var(--rt-title); font-size: 11px; }
 body.rt .tutorial-card p { color: var(--rt-text); opacity: 1; font-size: 12px; line-height: 1.35; }   /* explications du tutoriel lisibles sur le papier */
 body.rt .tutorial-card p strong { color: inherit; font-weight: 800; }
+body.rt .tutorial-actions button.tutorial-next { background: #2e7d32; color: #fff; }   /* « Compris » lisible */
 body.rt .tutorial-step-badge {
     font-family: var(--rt-title);
     font-size: 9px;

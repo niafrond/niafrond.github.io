@@ -341,5 +341,5 @@ body.dark-mode .tutorial-card {
     white-space: nowrap;
 }
 
-/* Étape expliquée (découverte, Xiūxiān, potion) : panneau plus large pour lire le texte */
-.tutorial-overlay.explained { max-width: 300px; }
+/* Étape expliquée (découverte, Xiūxiān, potion) : panneau un peu plus large pour sa ligne d'explication */
+.tutorial-overlay.explained { max-width: 260px; }
