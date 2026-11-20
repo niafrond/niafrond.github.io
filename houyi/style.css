@@ -18,6 +18,7 @@ body {
     text-align: center;
 }
 #board {
+    touch-action: none;   /* glisser une tuile pour l'échanger (swipe.js) : la page ne défile pas sous le doigt */
     display: grid;
     grid-template-columns: repeat(var(--board-cols, 8), var(--tile-size));
     grid-gap: 6px;

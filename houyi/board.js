@@ -17,6 +17,7 @@ import { showStrikeAnimation } from "./gameStatsTab.js";
 import { confusedSelfHit } from "./alterations.js";
 import { chilledGain } from "./enemyBehaviors.js";
 import { ensureBoardResizeListeners, syncBoardTileSize } from './boardLayout.js';
+import { swipeTarget, swipeThreshold } from './swipe.js';
 export * from './boardLayout.js';
 import { clearSuggestion, clearSuggestionTimer, getSortedPossibleMoves, handleNoPossibleMoveForCurrentTurn, startSuggestionTimer } from './boardSuggestions.js';
 export * from './boardSuggestions.js';
@@ -521,7 +522,7 @@ export function generateBoard(){
         const tile=document.createElement('div');
         tile.className=`tile ${board[i]}`;
         tile.dataset.index=i;
-        tile.onclick=()=>selectTile(i);
+        tile.onclick=()=>{ if(swipeJustDone()) return; selectTile(i); };   // le clic qui suit un glisser ne compte pas
         tile.setAttribute('role', 'button');   // lecteurs d'écran tactiles (TalkBack, VoiceOver) : nom donné par aria-label
         boardDiv.appendChild(tile);
     }
@@ -558,6 +559,36 @@ export function regenerateBoard(){
             renderBoard();
         }, 400);
     }, 900);
+}
+
+// ── Glisser pour échanger (swipe.js) ───────────────────────────────────────────
+// Un doigt ou la souris posé sur une tuile et glissé vers une voisine = deux appuis (sélection puis échange), avec les mêmes règles
+// (tour, tuile bloquée, tutoriel…). Écoute globale : le plateau est reconstruit à chaque combat.
+let swipe = null, swipeDoneAt = 0;
+const swipeJustDone = () => Date.now() - swipeDoneAt < 350;
+function swipeSwap(from, to){
+    const tiles = document.getElementById('board')?.children;
+    if(!tiles) return;
+    if(selected !== null){ tiles[selected]?.classList.remove('selected'); selected = null; }   // un appui précédent reste sans suite
+    selectTile(from);
+    if(selected === from) selectTile(to);   // la première tuile n'a pas été prise (pas votre tour, case bloquée) : rien de plus
+}
+if(typeof document !== 'undefined'){
+    document.addEventListener('pointerdown', ev => {
+        const tile = ev.target?.closest?.('#board .tile');
+        if(!tile || ev.button > 0 || tileClickInterceptor) { swipe = null; return; }   // ciblage d'un sort : on garde le toucher
+        swipe = { id: ev.pointerId, index: Number(tile.dataset.index), x: ev.clientX, y: ev.clientY, size: tile.getBoundingClientRect().width, done: false };
+    });
+    document.addEventListener('pointermove', ev => {
+        if(!swipe || swipe.id !== ev.pointerId || swipe.done) return;
+        const to = swipeTarget(swipe.index, boardSize, ev.clientX - swipe.x, ev.clientY - swipe.y, swipeThreshold(swipe.size));
+        if(to === null) return;
+        swipe.done = true; swipeDoneAt = Date.now();
+        swipeSwap(swipe.index, to);
+    });
+    const end = ev => { if(swipe && swipe.id === ev.pointerId){ if(swipe.done) swipeDoneAt = Date.now(); swipe = null; } };
+    document.addEventListener('pointerup', end);
+    document.addEventListener('pointercancel', end);
 }
 
 export function selectTile(index){

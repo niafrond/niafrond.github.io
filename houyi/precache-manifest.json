@@ -164,6 +164,7 @@
   "style-inventory.css",
   "style-tutorial.css",
   "style.css",
+  "swipe.js",
   "targeting.js",
   "terrain.js",
   "tileBitmaps.js",
