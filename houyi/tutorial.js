@@ -880,6 +880,7 @@ function _refreshHighlight() {
         el.classList.add('tutorial-highlight');
         if (!_highlightedElements.includes(el)) _highlightedElements.push(el);
     });
+    _setDim('swap');   // les deux tuiles sont surlignées : le reste du plateau et des actions se grise
     _placeOverlay();
 }
 
@@ -892,6 +893,7 @@ function _highlightFocus(step) {
         _highlightedElements.push(el);
     });
     if (step.kind === 'xiuxian' || step.kind === 'potion') {
+        _setDim(step.kind);
         (step.focus || []).forEach(sel => document.querySelectorAll(`${sel} .enemy-spell-item:not(.disabled)`).forEach(btn => {
             btn.classList.add('tutorial-highlight');
             _highlightedElements.push(btn);
@@ -924,6 +926,7 @@ function _highlightWeaponButton() {
     });
     container.classList.add('tutorial-highlight-container');
     _highlightedElements.push(container);
+    _setDim('weapon');
     _placeOverlay();
 }
 
@@ -941,10 +944,19 @@ function _highlightSpellButtons() {
     // Encadrer aussi le conteneur
     container.classList.add('tutorial-highlight-container');
     _highlightedElements.push(container);
+    _setDim('spell');
     _placeOverlay();
 }
 
+// Tâche demandée au joueur : tout le reste du combat est grisé (style-tutorial.css, [data-tuto-task]). `task` : 'swap' | 'spell' | 'weapon' | 'xiuxian' | 'potion'.
+function _setDim(task) {
+    const tab = document.getElementById('tab-combat');
+    if (!tab) return;
+    if (task) tab.dataset.tutoTask = task; else delete tab.dataset.tutoTask;
+}
+
 function _cleanupHighlights() {
+    _setDim(null);
     _highlightedElements.forEach(el => {
         if (!el) return;
         el.classList.remove('tutorial-highlight');

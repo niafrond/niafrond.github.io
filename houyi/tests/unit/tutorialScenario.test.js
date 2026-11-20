@@ -89,6 +89,15 @@ describe('scénario du tutoriel : câblage', () => {
         expect((src.match(/title: \(\) => "L'ennemi joue( : votre barre de classe se recharge)?"/g) || [])).toHaveLength(6);   // le premier coup de Fengmeng annonce aussi le chargement
     });
 
+    test("tâche demandée : tout le reste du plateau et des actions est grisé, et le grisé est retiré dès que la tâche change", () => {
+        for (const task of ['swap', 'weapon', 'spell']) expect(src).toContain(`_setDim('${task}')`);
+        expect(src).toContain('_setDim(step.kind)');   // Xiūxiān et potion : la tâche porte le nom du type d'étape
+        expect(src).toMatch(/function _cleanupHighlights\(\) \{\s+_setDim\(null\);/);
+        const css = read('style-tutorial.css');
+        expect(css).toMatch(/#tab-combat\[data-tuto-task\] #board \.tile:not\(\.tutorial-highlight\)/);
+        expect(css).toMatch(/#tab-combat\[data-tuto-task\] #class-picker/);
+    });
+
     test("les sorts ne sont acceptés qu'à l'étape du sort (plus de garde par numéro d'étape dans game.js)", () => {
         expect(read('game.js')).not.toMatch(/getTutorialStep\(\) < 4/);
         expect(src).toMatch(/Pas encore : suivez les instructions du tutoriel/);
