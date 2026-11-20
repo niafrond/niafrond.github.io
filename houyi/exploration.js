@@ -48,9 +48,7 @@ import { weakColorOfTemplate } from './enemies.js';
 import { isLowObstacle } from './decor.js';
 import { approachOf, FACE_FRONT, faceFromStep, spotAt, buildPrep, observationTarget } from './terrain.js';
 import { crossBorder, onSide, dirOfStep, overlapOf } from './mapConnections.js';
-import { launchNotices } from './events/engine.js';
 import { defaultChangeData, normalizeChangeData } from './change/state.js';
-import { EVENT_MODULES } from './events/registry.js';
 import { ARENA_HALL, ARENA_TIERS, arenaTier, arenaEncounterInfo, normalizeArenaData } from './arena.js';
 import { MIMIC_NAME, MIMIC_SPRITE, clearMarker, isMimicChest, markerOf, reclosePastChests, revealFog } from './explorationSenses.js';
 export * from './explorationSenses.js';
@@ -161,13 +159,16 @@ export function takeWildIntro(session) {
     return WILD_INTRO;
 }
 
-// Annonces de lancement des événements activés (events/engine.js `launchNotices`) pas encore lues dans cette partie : une seule fois chacune
-// (`data.eventNotices`), au premier chargement du jeu ; renvoie [] ensuite.
-export function takeLaunchNotices(session) {
-    const fresh = launchNotices(session.screens, EVENT_MODULES).filter(n => !session.data.eventNotices.includes(n.id));
+// Rumeurs d'événements de la zone où se trouve le héros (`screen.eventDoorNotices`, posées par les événements qui ouvrent une porte dans cette zone) :
+// une seule fois par partie chacune (`data.eventNotices`), la première fois qu'il y arrive ; renvoie [] ensuite et partout ailleurs.
+// Appelée au chargement (sauvegarde reprise sur une telle zone) et après un voyage rapide ; les passages de carte les lisent dans `transitionTo`.
+function unreadNotices(session, screen) {
+    const fresh = [...(screen?.eventDoorNotices || []), ...(screen?.eventNotice ? [screen.eventNotice] : [])]
+        .filter((n, i, all) => !session.data.eventNotices.includes(n.id) && all.findIndex(m => m.id === n.id) === i);
     fresh.forEach(n => session.data.eventNotices.push(n.id));
     return fresh;
 }
+export const takeDoorNotices = session => unreadNotices(session, session.screens[session.data.screenId]);
 
 // Quête qui enseigne le « Pas de Yu » (yubu) : une fois terminée, le héros marche sur les eaux.
 export const YUBU_QUEST = 'sq_pas_de_yu';
@@ -735,12 +736,10 @@ function transitionTo(session, screen, toId, pos, playerLevel, extra = {}) {
     // Texte du Narrateur affiché seulement à la toute première visite de l'écran.
     if (firstVisit && !target.interior && target.arrival?.length) res.arrival = target.arrival;
     if (warning) res.warning = warning;
-    // Annonce d'événement : une seule fois par partie (data.eventNotices), à la première arrivée dans l'écran qui la porte.
-    const notice = target.eventNotice;
-    if (notice && !session.data.eventNotices.includes(notice.id)) {
-        session.data.eventNotices.push(notice.id);
-        res.notice = notice;
-    }
+    // Rumeurs d'événements : une seule fois par partie chacune (data.eventNotices), à la première arrivée dans la zone qui porte la porte (`eventDoorNotices`)
+    // ou, à défaut, dans l'écran de l'événement lui-même (`eventNotice`).
+    const notices = unreadNotices(session, target);
+    if (notices.length) res.notices = notices;
     return res;
 }
 

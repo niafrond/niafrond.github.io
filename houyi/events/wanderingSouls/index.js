@@ -158,6 +158,7 @@ export function applyWanderingSouls(screens, quests) {
             sprite: D.GATE_SPRITE
         });
         hostBack[host.id] = back;
+        (host.eventDoorNotices = host.eventDoorNotices || []).push(D.REALM.notice);   // la rumeur s'affiche à la première arrivée dans une zone qui porte une de ces portes
     });
     realm.exits.push({ x: 0, y: realm.spawn.y, to: wild.id, label: D.REALM.exitLabel, arrive: hostBack[wild.id], returnToSaved: true, sprite: D.GATE_SPRITE });
     realm.eventNotice = D.REALM.notice;
