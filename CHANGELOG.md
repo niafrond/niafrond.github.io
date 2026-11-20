@@ -1,3 +1,14 @@
+## [3.15.0](https://github.com/niafrond/niafrond.github.io/compare/v3.14.0...v3.15.0) (2026-11-20)
+
+### Features
+
+* **houyi:** glisser une tuile vers sa voisine pour les échanger ([6488290](https://github.com/niafrond/niafrond.github.io/commit/6488290810246a9d9d52e8f6ea80af4884503473))
+* **houyi:** les maîtres de classe attendent le héros sur sa route et le rejoignent après un petit combat ([adcccf8](https://github.com/niafrond/niafrond.github.io/commit/adcccf84ad3fbbdbe5d755a473714739bd29a053))
+
+### Bug Fixes
+
+* **houyi:** stabiliser la barre de chargement du tutoriel et dégager le titre du bouton replier ([e6c7c94](https://github.com/niafrond/niafrond.github.io/commit/e6c7c942e83361134e9130d8e11cb40cabe8337e))
+
 ## [3.14.0](https://github.com/niafrond/niafrond.github.io/compare/v3.13.0...v3.14.0) (2026-11-20)
 
 ### Features
