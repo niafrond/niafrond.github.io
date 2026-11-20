@@ -816,3 +816,8 @@ body.rt #enemy-qi .mana-dots .cost-badge { font-size: 13px; height: 20px; min-wi
 body.rt #enemy-qi .stat-chip.pa-stat { font-size: 13px; padding: 0 3px; }
 body.rt .stats-container > #enemy-qi { grid-column: 1 / -1; grid-row: auto; }
 @media (orientation: landscape) { body.rt .stats-container > #enemy-qi { grid-area: espells; } }   /* paysage : en haut de la colonne de l'ennemi, sous son bandeau */
+
+/* Personnage choisi en combat : le cadre des actions prend la couleur du bouton éclairé (style-hud.css) */
+body.rt #player-spells[data-member] { border-color: var(--mc, var(--rt-ink)); box-shadow: 0 4px 0 var(--rt-ink), inset 0 4px 0 var(--mc, transparent); }
+/* Le survol (qui reste collé après un toucher) ne repeint pas le bouton du personnage : son texte clair reste lisible */
+body.rt .class-picker .class-pick:hover:not(:disabled):not(.disabled) { background: #1d2530; }

@@ -58,3 +58,13 @@ describe('arme de départ des compagnons', () => {
         expect(ensureAllyWeapons(h)).toEqual([]);
     });
 });
+
+describe('pas de « mains nues » : un compagnon a toujours une arme', () => {
+    test("même sac vide ou arme vendue, il reprend une arme de son type (arme de départ à défaut) ; Hou Yi n'est pas concerné", () => {
+        const h = { level: 1, weapons: [], allyWeapons: { monk: 'arme_vendue' } };
+        expect(allyEquippedWeapon(h, 'monk')?.id).toBe(startingWeaponFor('monk').id);
+        expect(allyEquippedWeapon(h, 'assassin')).toBeNull();
+        expect(allyEquippedWeapon(null, 'shaman')?.id).toBe(startingWeaponFor('shaman').id);
+    });
+});
+

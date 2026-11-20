@@ -1627,3 +1627,5 @@ body.no-anim .stage-mid, body.no-anim .stage-fighter { animation: none !importan
 
 /* Pause d'une seconde en fin d'animation d'attaque : l'overlay reste (invisible, sans clic) pour que le jeu patiente. */
 .attack-overlay.attack-pause { visibility: hidden; pointer-events: none; animation: none; background: none; }
+.battle-result-known-note { font-size: 0.78em; color: #2e7d32; font-weight: 700; }
+.battle-result-known-note[hidden] { display: none; }

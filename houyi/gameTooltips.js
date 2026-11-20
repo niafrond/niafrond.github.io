@@ -195,7 +195,7 @@ function getMemberTooltipHtml(classId = 'assassin') {
         });
     } else {
         const w = allyEquippedWeapon(player, classId);
-        html += line('Arme', w ? `${w.name} (+${allyWeaponBonus(w)})` : 'mains nues');
+        html += line('Arme', w ? `${w.name} (+${allyWeaponBonus(w)})` : '—');
     }
     html += statusLinesHtml(member);
     if(isInTranse(member)) {

@@ -27,6 +27,10 @@ export const ALLY_TARGET_CHANCE = 0.25;   // part des actions ennemies qui visen
 export const allyOf = classId => ALLIES[classId] || null;
 export const isAllyClass = classId => classId in ALLIES;
 
+/** Couleur de chaque personnage : celle de son bouton quand il est choisi en combat, du cadre de ses actions et de la flèche qui les relie (style-hud.css, --mc). */
+export const MEMBER_COLORS = { assassin: '#3fa7ff', monk: '#46c27d', barbarian: '#ff6b4a', templar: '#f2c14e', sorcerer: '#b58cff', alchemist: '#2fd0c2', shaman: '#ff9f43' };
+export const memberColor = id => MEMBER_COLORS[id] || '#ffffff';
+
 /** Nom court d'un membre de l'équipe (Hou Yi pour le Chasseur). */
 export const memberName = classId => (ALLIES[classId] ? ALLIES[classId].short : 'Hou Yi');
 

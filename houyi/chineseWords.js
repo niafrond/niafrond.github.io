@@ -355,7 +355,7 @@ export const LESSON_WORDS = LESSON_LOTS.flat();
 export const lotTitle = i => LOT_TITLES[i] || 'Créatures';
 
 export const LESSON_STORAGE_KEY = 'houyi.zhLesson';
-const blank = () => ({ lot: 0, pos: 0, passes: 0, known: [] });
+const blank = () => ({ lot: 0, pos: 0, passes: 0, last: undefined, known: [] });   // `last` : dernier mot montré du lot (`pos` : ancien format, lu une fois)
 function load(storage) {
     try {
         const raw = JSON.parse(storage?.getItem(LESSON_STORAGE_KEY) || 'null');
@@ -377,22 +377,27 @@ export function setKnown(hanzi, known, storage = globalThis.localStorage) {
 
 /**
  * Prochain mot : on parcourt les mots encore inconnus du lot courant dans l'ordre, `LOT_PASSES` fois, puis on passe au lot suivant ; un lot
- * entièrement connu est sauté. Renvoie { …mot, lot, lotCount, rank, rankCount } ou null quand tous les mots sont connus.
+ * entièrement connu est sauté. La position est mémorisée par le DERNIER MOT MONTRÉ (et non par un rang) : un mot que le joueur vient de déclarer connu
+ * disparaît sans décaler ni sauter le suivant, et n'est jamais reproposé. Renvoie { …mot, lot, lotCount, rank, rankCount } ou null quand tous les mots
+ * sont connus.
  */
 export function nextLesson(storage = globalThis.localStorage) {
     const p = load(storage);
     const known = new Set(p.known);
     if (LESSON_WORDS.every(w => known.has(w.hanzi))) return null;
-    for (let guard = 0; guard <= LESSON_LOTS.length; guard++) {
+    for (let guard = 0; guard <= LESSON_LOTS.length * (LOT_PASSES + 1); guard++) {
         p.lot = ((p.lot % LESSON_LOTS.length) + LESSON_LOTS.length) % LESSON_LOTS.length;
-        const unknown = LESSON_LOTS[p.lot].filter(w => !known.has(w.hanzi));
-        if (!unknown.length || p.passes >= LOT_PASSES) { p.lot = (p.lot + 1) % LESSON_LOTS.length; p.pos = 0; p.passes = 0; continue; }
-        const rank = p.pos % unknown.length;
-        const word = unknown[rank];
-        p.pos = rank + 1;
-        if (p.pos >= unknown.length) { p.pos = 0; p.passes++; }
+        const lot = LESSON_LOTS[p.lot];
+        const unknown = lot.filter(w => !known.has(w.hanzi));
+        if (!unknown.length || p.passes >= LOT_PASSES) { p.lot = (p.lot + 1) % LESSON_LOTS.length; p.last = null; p.passes = 0; continue; }
+        if (p.last === undefined) p.last = p.pos > 0 ? (lot[Math.min(p.pos, lot.length) - 1]?.hanzi ?? null) : null;   // ancien format (rang) : repris une fois
+        const after = p.last ? lot.findIndex(w => w.hanzi === p.last) : -1;
+        const word = lot.find((w, i) => i > after && !known.has(w.hanzi));
+        if (!word) { p.passes++; p.last = null; continue; }   // fin d'une passe du lot
+        p.last = word.hanzi;
+        p.pos = 0;
         save(storage, p);
-        return { ...word, lot: p.lot, lotCount: LESSON_LOTS.length, rank: rank + 1, rankCount: unknown.length };
+        return { ...word, lot: p.lot, lotCount: LESSON_LOTS.length, rank: unknown.indexOf(word) + 1, rankCount: unknown.length };
     }
     return null;
 }

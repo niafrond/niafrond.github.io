@@ -171,8 +171,8 @@ describe('armes de compagnon : variantes, équipement, butin et marchands', () =
         expect(equipAllyWeapon(h, 'barbarian', sword.id).ok).toBe(false);
         expect(equipAllyWeapon(h, 'barbarian', axe.id).ok).toBe(true);
         expect(allyEquippedWeapon(h, 'barbarian').id).toBe(axe.id);
-        expect(equipAllyWeapon(h, 'barbarian', null).ok).toBe(true);
-        expect(allyEquippedWeapon(h, 'barbarian')).toBeNull();
+        expect(equipAllyWeapon(h, 'barbarian', null).ok).toBe(false);   // pas de « mains nues » : un compagnon garde toujours une arme
+        expect(allyEquippedWeapon(h, 'barbarian').id).toBe(axe.id);
         expect(getWeaponById(axe.id)?.id).toBe(axe.id);   // la sauvegarde recharge les armes par identifiant
     });
     test('Hou Yi ne manie pas les armes de compagnon ; butin et marchands en proposent', async () => {

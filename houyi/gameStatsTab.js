@@ -36,7 +36,7 @@ function allyStatsHtml(charId){
         + line('heart', 'PV max :', a.maxHp, `${Math.round(ally.hpPct * 100)} % de ceux de Hou Yi`)
         + line('shield', 'Défense :', a.defense, `${Math.round(ally.defensePct * 100)} % de celle de Hou Yi`)
         + line('sword', 'Attaque :', a.attack, 'La moitié de celle de Hou Yi')
-        + line('sword', 'Arme :', weapon ? `${escapeHtml(weapon.name)} (+${allyWeaponBonus(weapon)} aux sorts)` : 'Mains nues')
+        + line('sword', 'Arme :', weapon ? `${escapeHtml(weapon.name)} (+${allyWeaponBonus(weapon)} aux sorts)` : '—')
         + line('bolt', 'Xiūxiān :', `${Math.floor(a.rage)} / ${RAGE_MAX}`, 'Sa propre jauge, conservée d\'un combat à l\'autre')
         + '<div class="stat-line"><span class="stat-effect">Il partage le qì de Hou Yi et a sa propre barre de vie et de chargement.</span></div></div>';
 }

@@ -45,7 +45,7 @@ function init() {
     document.getElementById('skills-view')?.addEventListener('change', ev => {   // arme d'un compagnon (hors combat)
         const sel = ev.target.closest?.('[data-ally-weapon]');
         if (!sel || gameState.combatState === 'active') return;
-        const res = equipAllyWeapon(player, sel.dataset.allyWeapon, sel.value || null);
+        const res = equipAllyWeapon(player, sel.dataset.allyWeapon, sel.value);
         log(res.message);
         if (res.ok) saveUpdate();
         renderSkillsTab();

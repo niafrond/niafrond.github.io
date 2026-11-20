@@ -3,6 +3,7 @@ import { escapeHtml } from './escapeHtml.js';
 import { LESSON_LOTS, LESSON_WORDS, lotTitle, knownWords, setKnown } from './chineseWords.js';
 import { playNameAudio, canPlayNameAudio } from './nameAudio.js';
 
+const KNOWN_NOTE = 'Noté : ce mot ne reviendra plus.';
 const listenButton = (hanzi, cls) => {
     const online = canPlayNameAudio();
     return `<button type="button" class="${cls}" data-speak="${escapeHtml(hanzi)}"${online ? '' : ' disabled title="Écoute disponible en ligne seulement"'}>Écouter</button>`;
@@ -17,7 +18,8 @@ export function lessonBodyHtml(lesson) {
         <div class="battle-result-pinyin">${escapeHtml(lesson.pinyin)}</div>
         <div class="battle-result-fr">${escapeHtml(lesson.fr)}</div>
         ${listenButton(lesson.hanzi, 'battle-result-listen')}
-        <label class="battle-result-known"><input type="checkbox" data-known="${escapeHtml(lesson.hanzi)}"${known ? ' checked' : ''}> Je connais ce mot</label>`;
+        <label class="battle-result-known"><input type="checkbox" data-known="${escapeHtml(lesson.hanzi)}"${known ? ' checked' : ''}> Je connais ce mot</label>
+        <div class="battle-result-known-note" role="status" aria-live="polite"${known ? '' : ' hidden'}>${known ? KNOWN_NOTE : ''}</div>`;
 }
 
 /** Liste complète : un titre par lot, une ligne par mot (caractères, pinyin et traduction, écoute, case « je connais »). */
@@ -47,6 +49,8 @@ export function bindLessons(root) {
         setKnown(box.dataset.known, box.checked);
         // même mot affiché ailleurs (carte de résultat ou liste) : on garde les deux cases d'accord
         document.querySelectorAll(`input[data-known="${CSS.escape(box.dataset.known)}"]`).forEach(o => { o.checked = box.checked; });
+        const note = box.closest('.battle-result-sec-zh')?.querySelector('.battle-result-known-note');   // carte de fin de combat : on confirme que c'est pris en compte
+        if (note) { note.textContent = box.checked ? KNOWN_NOTE : ''; note.hidden = !box.checked; }
         const counter = document.getElementById('zh-count');
         if (counter) counter.textContent = String(knownWords().size);
     });

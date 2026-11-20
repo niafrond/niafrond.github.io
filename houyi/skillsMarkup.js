@@ -92,7 +92,7 @@ export function classesHtml(hero, canToggle = true) {
         let weapon = '';
         if (!isHero) {
             const eq = allyEquippedWeapon(hero, id), choices = weaponsFor(hero, id);
-            const opts = ['<option value="">Mains nues</option>', ...choices.map(w => `<option value="${esc(w.id)}"${eq?.id === w.id ? ' selected' : ''}>${esc(w.name)} (+${allyWeaponBonus(w)})</option>`)].join('');
+            const opts = [...choices.map(w => `<option value="${esc(w.id)}"${eq?.id === w.id ? ' selected' : ''}>${esc(w.name)} (+${allyWeaponBonus(w)})</option>`)].join('');
             weapon = `<label class="cl-weapon">Arme <select data-ally-weapon="${id}"${canToggle ? '' : ' disabled'}>${opts}</select></label>`;
         }
         return `<div class="cl-row${on ? ' on' : ''}" title="${esc(detail)}"><span class="cl-name">${esc(memberName(id))} <small>${esc(CLASS_SHORT[id])}</small></span>${weapon}${action}</div>`;

@@ -3,7 +3,7 @@
 import { MAX_ACTIVE_SPELLS } from './constants.js';
 import { activeAllySpells } from './allySpells.js';
 import { actionGuard } from './actionGuard.js';
-import { isAllyKnockedOut, isMemberKO, ALLIES, memberName } from './allies.js';
+import { isAllyKnockedOut, isMemberKO, ALLIES, memberName, memberColor } from './allies.js';
 import { isBoardResolving } from './board.js';
 import { preloadUltimateCinematic } from './ultimateCinematics.js';
 import { getEquippedUltimate } from './ultimates.js';
@@ -360,8 +360,15 @@ function renderClassPicker(container){
         const chargeText = prog >= 100 ? `Prête (chargement ${info.time})` : `Se recharge : ${Math.ceil(remaining / 1000)} s (temps ${info.time} : Agilité/Moral -${Math.round(info.pct.agility)} %, attribut -${Math.round(info.pct.attribute)} %, qì -${Math.round(info.pct.qi)} %, compétences -${info.pct.skills} %)`;
         const ko = isMemberKO(gameState.allies, gameState.heroKo, id);   // membre hors de combat : il ne joue plus
         const off = !mine || (forced && id !== forced) || restricted[id] || ko;   // choisir un compagnon reste libre : seules ses ACTIONS attendent son chargement
-        return `<button type="button" class="class-pick${id === current ? ' on' : ''}${restricted[id] ? ' limited' : ''}${ko ? ' ko' : ''}${prog >= 100 && !ko ? ' ready-pulse' : ' charging'}${animStyle ? ' charging-anim' : ''}" data-class="${id}" aria-pressed="${id === current}"${off ? ' disabled' : ''} style="--charge:${prog}%;${animStyle}" title="${reason} · ${chargeText}"><span class="cp-name">${memberName(id)}</span>${memberBarsHtml(id)}</button>`;
+        return `<button type="button" class="class-pick${id === current ? ' on' : ''}${restricted[id] ? ' limited' : ''}${ko ? ' ko' : ''}${prog >= 100 && !ko ? ' ready-pulse' : ' charging'}${animStyle ? ' charging-anim' : ''}" data-class="${id}" aria-pressed="${id === current}"${off ? ' disabled' : ''} style="--mc:${memberColor(id)};--charge:${prog}%;${animStyle}" title="${reason} · ${chargeText}"><span class="cp-name">${memberName(id)}</span>${memberBarsHtml(id)}</button>`;
     }).join('');
+    // Les actions en dessous sont celles du personnage choisi : leur cadre prend sa couleur et porte son nom (lecteurs d'écran, infobulle).
+    const actions = document.getElementById('player-spells');
+    if(actions){
+        actions.dataset.member = current;
+        actions.style.setProperty('--mc', memberColor(current));
+        actions.title = `Actions de ${memberName(current)}`;
+    }
     const key = html + `|${current}`;   // `disabled` est déjà dans le html
     if(picker._key === key) return;   // rien n'a changé : on ne redessine pas (l'animation de chargement ne repart pas de zéro)
     picker._key = key;
