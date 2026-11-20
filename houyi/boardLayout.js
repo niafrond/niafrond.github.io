@@ -106,7 +106,17 @@ export function syncBoardTileSize(){
             const top = Math.max(0, boardDiv.getBoundingClientRect().top);
             const controls = getOuterBlockSize(document.getElementById('combat-controls'));
             const needed = top + boardSide + getOuterBlockSize(spellsContainer) + controls + 8;
-            if(viewportHeight > 0 && needed > viewportHeight) spellsContainer.classList.add('spells-compact');
+            let compact = viewportHeight > 0 && needed > viewportHeight;
+            if(!compact){
+                // Mesure réelle, grille à pleine largeur : si la liste verticale fait quand même déborder la page, le plateau serait rogné plus bas
+                // (filet « page trop haute ») ; on passe plutôt les boutons en grille compacte pour qu'il garde toute sa largeur.
+                const previous = boardDiv.style.getPropertyValue('--tile-size');
+                boardDiv.style.setProperty('--tile-size', `${tileSizeFromWidth}px`);
+                const doc = document.documentElement;
+                compact = doc.scrollHeight - doc.clientHeight > 1;
+                if(previous) boardDiv.style.setProperty('--tile-size', previous); else boardDiv.style.removeProperty('--tile-size');
+            }
+            if(compact) spellsContainer.classList.add('spells-compact');
         } else {
             spellsContainer.classList.remove('spells-compact');
         }
