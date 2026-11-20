@@ -39,4 +39,10 @@ describe('potions de soin à usage unique', () => {
         expect(h.combatPoints).toBe(0);
         expect(h.hp).toBe(70);
     });
+    test('un Hou Yi à terre (0 PV) ne se relève pas en buvant hors combat : il faut un point de repos ou une résurrection', () => {
+        const down = hero({ hp: 0, potions: { small: 2, medium: 0, large: 0 } });
+        expect(drinkBlockReason(down, 'small', false)).toMatch(/à terre/);
+        expect(drinkPotion(down, 'small').ok).toBe(false);
+        expect(down.hp).toBe(0);
+    });
 });

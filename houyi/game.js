@@ -23,7 +23,7 @@ import { normalizeRoster, usableClasses, grantClass, CLASS_SHORT } from "./class
 import { newCharge, newActionQueue, initCharge } from "./classCharge.js";
 import { allyWeaponBonus } from "./weapons.js";
 import { allyEquippedWeapon, ensureAllyWeapon, ensureAllyWeapons } from "./allyWeapons.js";
-import { buildTeam, damageAlly, ALLIES, livingAllies, pickAnyAlly, reviveAlly, healAlly } from "./allies.js";
+import { buildTeam, teamAllies, allyMaxHp, damageAlly, ALLIES, livingAllies, pickAnyAlly, reviveAlly, healAlly } from "./allies.js";
 import { inflictBuff, ALTERATION_LABELS } from "./alterations.js";
 import { prepareAllyPortraits } from "./alliesView.js";
 import { boostedDamageDealt, resistedDamageTaken, parryQiGain } from "./gearEffects.js";
@@ -1237,7 +1237,7 @@ function applyLevelUpRewards(levelUpResult){
 
         const beforeHeal = player.hp;
         const healAmount = levelsGained * LEVEL_UP_HEAL_GAIN;
-        if(healAmount > 0 || maxHpGained > 0) {
+        if((healAmount > 0 || maxHpGained > 0) && beforeHeal > 0) {   // un Hou Yi à terre n'est pas relevé par un niveau : il lui faut un point de repos ou une résurrection
             // Le gain de HP max est aussi applique aux HP actuels pour eviter une perte relative.
             player.hp = Math.min(player.maxHp, player.hp + healAmount + maxHpGained);
             hpRecovered = Math.max(0, player.hp - beforeHeal);
@@ -1502,6 +1502,16 @@ export const skullDamage = 1;           // dégâts infligés par crâne lors d'
 export let enemy = { name:"Ennemi", hp:50, maxHp:50, attack:10, resistances:{}, combatPoints:0, mana: { red:0, blue:0, green:0, yellow:0, purple:0 }, spells:[], weapon: null, abilities: [], statusEffects: {}, bonusTurn: 0, inventoryItem: null };
 
 // si le joueur meurt, on restaure ses PV et réinitialise le combat ; `keepHp` : phase enchaînée d'un duel, les PV restent ceux du combat précédent
+/** Point de repos (pierre de voyage, fontaine, couche d'hôte) : tous les personnages à terre se relèvent en pleine forme. Renvoie les PV rendus aux compagnons relevés. */
+export function reviveTeamAtRest(){
+    let gained = 0;
+    (player.downAllies || []).forEach(id => { if(ALLIES[id]) gained += allyMaxHp(player, id); });
+    player.downAllies = [];
+    Object.values(gameState.allies || {}).forEach(a => { if(a?.ko){ a.ko = false; a.hp = a.maxHp; } });
+    gameState.heroKo = false;
+    return gained;
+}
+
 export function restartCombat({ keepHp = true } = {}){
     actionGuard.reset();
     introToken++;
@@ -1517,7 +1527,16 @@ export function restartCombat({ keepHp = true } = {}){
 
     // Les PV ne reviennent plus tout seuls : le héros entre dans le combat avec les PV qu'il avait en sortant du précédent (potions : potions.js).
     // Un héros tombé au combat précédent est relevé à la moitié de ses PV max. `keepHp: false` : réinitialisation complète (tests, outils).
-    player.hp = !keepHp ? player.maxHp : (player.hp <= 0 ? Math.max(1, Math.ceil(player.maxHp * DEFEAT_REVIVE_PCT)) : Math.max(1, Math.min(player.hp, player.maxHp)));
+    // Un personnage tombé au combat précédent reste à terre (Hou Yi : 0 PV ; un compagnon : `downAllies`) jusqu'à un point de repos ou un objet de résurrection.
+    // Seule une défaite (toute l'équipe à terre) relève tout le monde : Hou Yi à la moitié de ses PV, les compagnons en pleine forme.
+    const roster = teamAllies(player);
+    let downIds = keepHp ? (Array.isArray(player.downAllies) ? player.downAllies : []).filter(id => roster.includes(id)) : [];
+    const heroDead = keepHp && player.hp <= 0;
+    const wholeTeamDown = heroDead && downIds.length >= roster.length;
+    if(wholeTeamDown) downIds = [];
+    const heroDown = heroDead && !wholeTeamDown;
+    player.downAllies = downIds;
+    player.hp = !keepHp ? player.maxHp : (heroDown ? 0 : (player.hp <= 0 ? Math.max(1, Math.ceil(player.maxHp * DEFEAT_REVIVE_PCT)) : Math.max(1, Math.min(player.hp, player.maxHp))));
     player.combatPoints = 0;
     player.bonusTurn = 0;
     // La jauge de Xiūxiān est conservée d'un combat à l'autre ; seul son état actif (3 tours) ne l'est pas. Les points de Bataille la remontent au moins à leur niveau.
@@ -1526,7 +1545,8 @@ export function restartCombat({ keepHp = true } = {}){
     gameState.foes = [];   // groupe d'ennemis reconstruit par newEnemy (foes.js)
     gameState.charge = newCharge();   // les barres sont initialisées plus bas (initCharge), une fois l'ennemi en place
     gameState.actionQueue = newActionQueue(); gameState.enemyPending = null;
-    gameState.allies = buildTeam(player); gameState.allyShield = null; gameState.heroKo = false;   // équipe de combat en pleine forme
+    gameState.allies = buildTeam(player); gameState.allyShield = null; gameState.heroKo = heroDown;   // équipe de combat : pleine forme, sauf les personnages restés à terre
+    downIds.forEach(id => { const a = gameState.allies[id]; if(a){ a.ko = true; a.hp = 0; } });
     prepareAllyPortraits();               // dessins des compagnons puis barres de vie
     gameState.playedClasses = new Set();   // classes jouées ce combat (PA de classe)
     gameState.forcedClass = enemy?.training || null;   // entraînement : une seule classe, imposée par le maître
@@ -1822,6 +1842,7 @@ export function loadGameData() {
             player.equipment = { rightHand: null, leftHand: null, item: null, ...(loaded.equipment || {}) };
             player.equipment.rightHand = player.equippedWeapon;
             player.allySpells = loaded.allySpells && typeof loaded.allySpells === 'object' ? Object.fromEntries(Object.entries(loaded.allySpells).filter(([, ids]) => Array.isArray(ids)).map(([id, ids]) => [id, ids.filter(x => typeof x === 'string')])) : {};   // sorts choisis pour chaque compagnon (allySpells.js)
+            player.downAllies = Array.isArray(loaded.downAllies) ? loaded.downAllies.filter(x => typeof x === 'string') : [];   // compagnons restés à terre
             player.allyWeapons = loaded.allyWeapons && typeof loaded.allyWeapons === 'object' ? { ...loaded.allyWeapons } : {};   // armes portées par les compagnons
             ensureAllyWeapons(player);   // un compagnon déjà recruté sans arme en reçoit une
             player.stuffOwned = loaded.stuffOwned ?? [];
