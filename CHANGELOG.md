@@ -1,3 +1,16 @@
+## [3.14.0](https://github.com/niafrond/niafrond.github.io/compare/v3.13.0...v3.14.0) (2026-11-20)
+
+### Features
+
+* **houyi:** afficher la rumeur des villages d'événement à la première arrivée sur une zone avec leur porte ([dd28dba](https://github.com/niafrond/niafrond.github.io/commit/dd28dbadb99fa9928d32b455b7d3c3a6427a5fcc))
+* **houyi:** griser le reste du combat quand le tutoriel demande une tâche ([044b730](https://github.com/niafrond/niafrond.github.io/commit/044b7303ccff985f37c59d3a77e7c33ed9acb6f4))
+
+### Bug Fixes
+
+* **houyi:** garder en couleur les tuiles du combo demandé par le tutoriel ([7d6bc66](https://github.com/niafrond/niafrond.github.io/commit/7d6bc66ca114cf859d15a20b11398d99546bd738))
+* **houyi:** garder le plateau en pleine largeur en passant les boutons en grille compacte ([071ec94](https://github.com/niafrond/niafrond.github.io/commit/071ec94835ba58a36b25511056ff09a78c614b51))
+* **houyi:** griser le bouton Objet quand rien n'est utilisable ([a466449](https://github.com/niafrond/niafrond.github.io/commit/a4664492e6790e2ba55afc41c5a25c450d8aafb9))
+
 ## [3.13.0](https://github.com/niafrond/niafrond.github.io/compare/v3.12.0...v3.13.0) (2026-11-20)
 
 ### Features
