@@ -83,6 +83,16 @@
     background: #a93226;
 }
 
+/* « Compris » : fin d'une étape de découverte */
+.tutorial-actions { gap: 6px; }
+.tutorial-actions button.tutorial-next {
+    background: #2e7d32;
+    font-size: 0.78rem;
+    padding: 4px 12px;
+}
+.tutorial-actions button.tutorial-next:hover { background: #1b5e20; }
+.tutorial-actions button[hidden] { display: none; }
+
 /* Bouton replier / déplier */
 .tutorial-toggle {
     position: absolute;
@@ -330,3 +340,10 @@ body.dark-mode .tutorial-card {
     line-height: 1.5;
     white-space: nowrap;
 }
+
+/* Étape expliquée (découverte, Xiūxiān, potion) : panneau un peu plus large pour sa ligne d'explication */
+.tutorial-overlay.explained { max-width: 260px; }
+
+/* Position de la fenêtre : en bas à droite par défaut ; déplacée quand elle cacherait ce qu'elle montre (tutorial.js, _placeOverlay) */
+.tutorial-overlay.pos-left { right: auto; left: 8px; }
+.tutorial-overlay.pos-top { bottom: auto; top: calc(8px + env(safe-area-inset-top, 0px)); }

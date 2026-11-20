@@ -12,15 +12,15 @@ const TOKEN = { red: 'A', blue: 'B', green: 'C', yellow: 'D', purple: 'E' };
 const PLAN = [   // numéro d'étape du scénario (tutorial.js) et alignement attendu
     { id: 1, want: { type: 'color', len: 3, color: 'red' } },
     { id: 2, want: { type: 'color', len: 3, color: 'blue' } },
-    { id: 3, want: { type: 'color', len: 4, color: 'red' } },
-    { id: 4, want: { type: 'color', len: 5, color: 'red' } },
-    { id: 5, want: { type: 'color', len: 3, color: 'red', joker: true } },
-    { id: 6, want: { type: 'color', len: 3, color: 'blue' } },
-    { id: 9, want: { type: 'skull', len: 3 } },
-    { id: 10, want: { type: 'skull', len: 3 } },
-    { id: 11, want: { type: 'combat', len: 4 } },
-    { id: 13, want: { type: 'color', len: 3, color: 'green' } },
-    { id: 14, want: { type: 'skull', len: 3 } },
+    { id: 5, want: { type: 'color', len: 4, color: 'red' } },
+    { id: 6, want: { type: 'color', len: 5, color: 'red' } },
+    { id: 7, want: { type: 'color', len: 3, color: 'red', joker: true } },
+    { id: 8, want: { type: 'color', len: 3, color: 'blue' } },
+    { id: 12, want: { type: 'skull', len: 3 } },
+    { id: 13, want: { type: 'skull', len: 3 } },
+    { id: 18, want: { type: 'combat', len: 4 } },
+    { id: 20, want: { type: 'color', len: 3, color: 'green' } },
+    { id: 21, want: { type: 'skull', len: 3 } },
 ];
 
 // Générateur pseudo-aléatoire à graine : le résultat est toujours le même.

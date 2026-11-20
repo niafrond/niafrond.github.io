@@ -27,11 +27,15 @@ export const tutorialCallbacks = {
     enemyDecision: null,   // () → décision | null : action imposée à l'adversaire à son tour (gameTurnFlow.js, enemyTurn)
     allowWeapon: null,     // () → bool : refuse l'arme hors de l'étape prévue (game.js, useWeapon)
     onWeaponUsed: null,    // () → void : le joueur vient de frapper avec son arme (game.js, useWeapon)
+    allowPotion: null,     // () → bool : refuse la potion hors de l'étape prévue (game.js, drinkPotionAction)
+    onPotionUsed: null,    // () → void : le joueur vient de boire une potion, avant la fin de son tour (game.js, drinkPotionAction)
+    allowXiuxian: null,    // () → bool : refuse la Xiūxiān hors de l'étape prévue (game.js, activateXiuxian)
+    onXiuxian: null,       // () → void : la Xiūxiān de Hou Yi vient d'être déclenchée (game.js, activateXiuxian)
     onPlayerTurn: null,    // ('turn' | 'bonus') → void : le joueur (re)prend la main (gameTurnFlow.js, finishEnemyTurn / finishPlayerTurn)
 };
 
 // ─── Constantes internes ───────────────────────────────────────────────────
-const TOTAL_STEPS = 14;
+const TOTAL_STEPS = 21;
 const TUTO_SPELL_ID = 'tutorial_fireball';
 const TUTORIAL_COMPLETED_KEY = 'houyi_tutorial_done';
 const ENEMY_FINISH_HP = 10;      // PV laissés à l'adversaire après le sort : le dernier coup (3 crânes) l'achève
@@ -129,6 +133,18 @@ const STEPS = [
         desc: () => `Fengmeng joue à son tour sur le même plateau. Il aligne <strong>3 gâteaux de lune ${COLOR_FR[_foeColor]}</strong> et gagne du qì ${icon('mana_' + _foeColor)}, comme vous.<br><strong>Chargement :</strong> après chaque action, votre classe se recharge. Regardez la <strong>barre sous le plateau</strong> se remplir pendant que Fengmeng joue ; une fois pleine, votre classe peut agir de nouveau. Plus l'Agilité, le Moral, le qì et les compétences sont élevés, plus elle se recharge vite : une classe rapide, ou plusieurs classes à tour de rôle, jouent plus souvent que l'ennemi (qui a aussi son temps de chargement).`,
         done: 'Fengmeng a gagné du qì.',
     },
+    {   // J1 : découverte de la réserve de qì (sous le plateau)
+        who: 'player', kind: 'info', icon: 'mana', focus: ['#player-stats'],
+        title: () => 'Votre réserve de qì',
+        desc: () => `Les gâteaux remplissent votre <strong>qì</strong>. Il paie les sorts de sa couleur.`,
+        done: '',
+    },
+    {   // J1 : découverte de la barre d'action (bouton du personnage)
+        who: 'player', kind: 'info', icon: 'hourglass', focus: ['#class-picker'],
+        title: () => "Votre barre d'action",
+        desc: () => `Vos <strong>PV</strong> et votre <strong>barre d'action</strong> : pleine, vous pouvez agir.`,
+        done: '',
+    },
     {   // J1 : 4 gâteaux (tour bonus)
         who: 'player', kind: 'swap', match: { type: 'color', len: 4, side: 'me' }, icon: 'gift',
         title: () => `Combinez quatre gâteaux ${COLOR_FR[_myColor]}`,
@@ -153,6 +169,12 @@ const STEPS = [
         desc: () => `Fengmeng joue un coup tranquille sur le plateau.`,
         done: '',
     },
+    {   // J1 : découverte de la fiche de l'adversaire (portrait, sorts et arme à droite)
+        who: 'player', kind: 'info', icon: 'eye', focus: ['#enemy-stats'],
+        title: () => 'Connaître son adversaire',
+        desc: () => `<strong>Appui long</strong> ici : la fiche de l'ennemi et sa faiblesse.`,
+        done: '',
+    },
     {   // J1 : lance un sort
         who: 'player', kind: 'spell', icon: 'bow', hp: 'min',
         title: () => 'Lancez votre sort',
@@ -160,10 +182,10 @@ const STEPS = [
         done: 'Votre flèche a atteint sa cible : Fengmeng n\'a plus que 10 PV !',
     },
     {   // J2 : lance un sort, J1 le bloque
-        who: 'enemy', kind: 'spell', icon: 'shield',
+        who: 'enemy', kind: 'spell', spell: 'damage', icon: 'shield',
         title: () => "L'ennemi joue",
         desc: () => `Fengmeng lance un sort, mais votre défense vous permet de <strong>bloquer</strong> le coup : un blocage total annule les dégâts, une parade les réduit.`,
-        done: 'Blocage réussi : aucun dégât !',
+        done: 'Blocage réussi : votre Défense annule parfois les coups ennemis !',
     },
     {   // J1 : 3 crânes
         who: 'player', kind: 'swap', match: { type: 'skull', len: 3 }, icon: 'skull', hp: 'keep',
@@ -176,6 +198,30 @@ const STEPS = [
         title: () => "L'ennemi joue",
         desc: () => `Fengmeng aligne <strong>3 crânes ${icon('skull')}</strong> : vous <strong>subissez des dégâts</strong>. Surveillez vos PV !`,
         done: 'Aïe ! Vous avez perdu des PV.',
+    },
+    {   // J1 : déclenche sa Xiūxiān (jauge remplie par les coups reçus ; offerte pleine si besoin)
+        who: 'player', kind: 'xiuxian', icon: 'anger', hp: 'keep', focus: ['#xiu-button'],
+        title: () => 'Déclenchez votre Xiūxiān',
+        desc: () => `Les coups reçus remplissent la jauge. Pleine : touchez <strong>« Xiūxiān »</strong>.`,
+        done: 'Xiūxiān ! Hou Yi entre en transe.',
+    },
+    {   // J1 : boit une potion (fin de son tour)
+        who: 'player', kind: 'potion', icon: 'potion', focus: ['#potion-buttons'],
+        title: () => 'Buvez une potion',
+        desc: () => `Les PV ne remontent pas seuls : <strong>« Objet »</strong> puis la potion.`,
+        done: 'Vous avez récupéré des PV.',
+    },
+    {   // J2 : sort d'altération (Maudit), non bloqué
+        who: 'enemy', kind: 'spell', spell: 'alteration', icon: 'ghost',
+        title: () => "L'ennemi joue",
+        desc: () => `Fengmeng lance un sort qui vous <strong>maudit</strong>.`,
+        done: 'Vous êtes maudit !',
+    },
+    {   // J1 : découverte des altérations (pastilles dans le bouton du personnage)
+        who: 'player', kind: 'info', icon: 'ghost', focus: ['#class-picker'],
+        title: () => 'Les altérations',
+        desc: () => `Une <strong>pastille</strong> : vous êtes maudit pour quelques tours.`,
+        done: '',
     },
     {   // J1 : 4 flèches (tuiles d'action) : tour bonus, il utilise son arme tout de suite
         who: 'player', kind: 'swap', match: { type: 'combat', len: 4 }, icon: 'arrow', hp: 'keep',
@@ -203,8 +249,14 @@ const STEPS = [
     },
 ];
 
-// Sort de Fengmeng (étape 7) : un petit sort de dégâts de sa couleur, que le joueur bloque.
-function _foeSpell() {
+// Étapes dont l'explication (#tutorial-desc) est affichée sous le titre : découvertes et nouvelles actions. Les autres n'affichent que le titre.
+const EXPLAINED_KINDS = new Set(['info', 'xiuxian', 'potion']);
+
+// Sorts de Fengmeng : un petit sort de dégâts de sa couleur, que le joueur bloque, puis un sort qui maudit Hou Yi (altération, non bloquée).
+function _foeSpell(kind) {
+    if (kind === 'alteration') {
+        return { id: 'tutorial_foe_curse', name: 'Marque de Fengmeng', color: _foeColor, cost: 3, effect: 'alterEnemy', alteration: 'cursed', duration: 3, minLevel: 1, description: 'Sort de tutoriel : maudit la cible 3 tours.' };
+    }
     return { id: 'tutorial_foe_spell', name: 'Rafale de Fengmeng', color: _foeColor, type: 'damage', cost: 3, dmg: 6, minLevel: 1, description: 'Sort de tutoriel.' };
 }
 
@@ -342,6 +394,9 @@ export function initTutorialUI() {
             toggleBtn.textContent = collapsed ? '+' : '–';
         });
     }
+
+    // Bouton « Compris » : termine une étape de découverte
+    document.getElementById('tutorial-next-btn')?.addEventListener('click', _acknowledgeInfo);
 
     // Bouton "Quitter le tutoriel" dans l'overlay
     const quitBtn = document.getElementById('tutorial-quit-btn');
@@ -491,6 +546,31 @@ function _beginPlayerStep() {
         _game.createSpellButtons();   // met à jour l'affichage (bouton actif)
         setTimeout(() => { if (_active && _cur() === step) _highlightSpellButtons(); }, 400);
     }
+    if (step.kind === 'info') {
+        setTimeout(() => { if (_active && _cur() === step) _highlightFocus(step); }, 300);
+    }
+    if (step.kind === 'xiuxian') {
+        // La jauge se remplit en subissant des dégâts ; si les coups reçus n'ont pas suffi, elle est offerte pleine.
+        if (Math.floor(_game.player.rage || 0) < 100) {
+            _game.player.rage = 100;
+            _game.log('Tutoriel : votre jauge de Xiūxiān est pleine !');
+        }
+        _game.updateStats();
+        setTimeout(() => { if (_active && _cur() === step) _highlightFocus(step); }, 400);
+    }
+    if (step.kind === 'potion') {
+        // Il faut une potion et des PV à soigner : la potion est offerte si le sac est vide, et Hou Yi n'est jamais à PV pleins ici.
+        const hero = _game.player;
+        hero.potions = { small: 0, medium: 0, large: 0, ...(hero.potions || {}) };
+        if (!(hero.potions.small > 0)) {
+            hero.potions.small = 1;
+            _game.log('Tutoriel : une petite potion vous est offerte !');
+        }
+        if (hero.hp >= hero.maxHp) hero.hp = Math.max(1, hero.maxHp - Math.max(3, Math.round(hero.maxHp * 0.2)));
+        _game.updateStats();
+        document.dispatchEvent(new Event('potions-changed'));
+        setTimeout(() => { if (_active && _cur() === step) _highlightFocus(step); }, 400);
+    }
     if (step.kind === 'weapon') {
         // Filet de sécurité : si les flèches gagnées ne suffisent pas pour l'arme équipée (arme plus chère), on complète.
         const weapon = _game.player.equippedWeapon;
@@ -517,11 +597,11 @@ function _enemyDecision() {
     _updateOverlay(_step);
 
     if (step.kind === 'spell') {
-        const spell = _foeSpell();
+        const spell = _foeSpell(step.spell);
         const foe = _game.enemy;
         foe.spells = [spell];
         if ((foe.mana[spell.color] || 0) < spell.cost) foe.mana[spell.color] = spell.cost;   // il a de quoi lancer son sort
-        _game.player.tutorialBlock = 'total';                                                 // Hou Yi bloque le coup (consommé par le tirage)
+        if (step.spell === 'damage') _game.player.tutorialBlock = 'total';                    // Hou Yi bloque le coup (consommé par le tirage)
         _game.updateStats();
         return { action: 'spell', data: { spell, score: 100 }, thinkingTime: 900, reason: 'sort du tutoriel', isStupid: false };
     }
@@ -568,6 +648,15 @@ function _completePlayerStep() {
     _step++;
     if (step?.done) _showFeedbackBanner(step.done, null);
     _updateOverlay(_step);
+    // Découverte ou Xiūxiān : le tour du joueur continue, l'étape suivante (à lui) commence tout de suite.
+    if ((step?.kind === 'info' || step?.kind === 'xiuxian') && _cur()?.who === 'player') _beginPlayerStep();
+}
+
+/** « Compris » : fin d'une étape de découverte. */
+function _acknowledgeInfo() {
+    const step = _cur();
+    if (!_active || step?.who !== 'player' || step.kind !== 'info') return;
+    _completePlayerStep();
 }
 
 /**
@@ -660,6 +749,17 @@ function _installHooks() {
         _completePlayerStep();
     };
 
+    tutorialCallbacks.allowPotion = _allowPotion;
+    tutorialCallbacks.onPotionUsed = () => {
+        if (_cur()?.kind !== 'potion' || _cur().who !== 'player') return;
+        _completePlayerStep();
+    };
+    tutorialCallbacks.allowXiuxian = _allowXiuxian;
+    tutorialCallbacks.onXiuxian = () => {
+        if (_cur()?.kind !== 'xiuxian' || _cur().who !== 'player') return;
+        _completePlayerStep();
+    };
+
     tutorialCallbacks.onSpellCast = () => {
         if (_cur()?.kind !== 'spell' || _cur().who !== 'player') return;
         if (_game?.enemy) { _game.enemy.hp = ENEMY_FINISH_HP; _game.updateStats(); }
@@ -676,6 +776,10 @@ function _clearHooks() {
     tutorialCallbacks.allowSpell = null;
     tutorialCallbacks.allowWeapon = null;
     tutorialCallbacks.onWeaponUsed = null;
+    tutorialCallbacks.allowPotion = null;
+    tutorialCallbacks.onPotionUsed = null;
+    tutorialCallbacks.allowXiuxian = null;
+    tutorialCallbacks.onXiuxian = null;
 }
 
 function _warn(message) {
@@ -695,6 +799,18 @@ function _allowSwap(i, j, board) {
         _warn(`Lancez d'abord le sort "${_tutoSpell?.name || ''}" en bas de l'écran.`);
         return false;
     }
+    if (step.kind === 'info') {
+        _warn('Lisez le panneau du tutoriel puis touchez « Compris ».');
+        return false;
+    }
+    if (step.kind === 'xiuxian') {
+        _warn('Touchez d\'abord le bouton « Xiūxiān » en bas de l\'écran.');
+        return false;
+    }
+    if (step.kind === 'potion') {
+        _warn('Buvez d\'abord une potion : bouton « Objet » en bas de l\'écran.');
+        return false;
+    }
     if (!_target) _target = _prepareMove();
     if (!_target) return true;
     if ((i === _target.from && j === _target.to) || (i === _target.to && j === _target.from)) return true;
@@ -705,6 +821,20 @@ function _allowSwap(i, j, board) {
 function _allowWeapon() {
     const step = _cur();
     if (step?.who === 'player' && step.kind === 'weapon') return true;
+    _warn('Pas encore : suivez les instructions du tutoriel.');
+    return false;
+}
+
+function _allowPotion() {
+    const step = _cur();
+    if (step?.who === 'player' && step.kind === 'potion') return true;
+    _warn('Pas encore : suivez les instructions du tutoriel.');
+    return false;
+}
+
+function _allowXiuxian() {
+    const step = _cur();
+    if (step?.who === 'player' && step.kind === 'xiuxian') return true;
     _warn('Pas encore : suivez les instructions du tutoriel.');
     return false;
 }
@@ -750,6 +880,39 @@ function _refreshHighlight() {
         el.classList.add('tutorial-highlight');
         if (!_highlightedElements.includes(el)) _highlightedElements.push(el);
     });
+    _placeOverlay();
+}
+
+// Découverte : encadre les zones de l'écran décrites par l'étape (sélecteurs CSS de `focus`).
+function _highlightFocus(step) {
+    (step.focus || []).forEach(sel => {
+        const el = document.querySelector(sel);
+        if (!el) return;
+        el.classList.add('tutorial-highlight-container');
+        _highlightedElements.push(el);
+    });
+    if (step.kind === 'xiuxian' || step.kind === 'potion') {
+        (step.focus || []).forEach(sel => document.querySelectorAll(`${sel} .enemy-spell-item:not(.disabled)`).forEach(btn => {
+            btn.classList.add('tutorial-highlight');
+            _highlightedElements.push(btn);
+        }));
+    }
+    _placeOverlay();
+}
+
+// ─── Position de la fenêtre ─────────────────────────────────────────────────
+// La fenêtre ne doit jamais cacher ce qu'elle montre : bas-droite, sinon bas-gauche, haut-droite, haut-gauche (la première libre).
+const OVERLAY_SPOTS = [[], ['pos-left'], ['pos-top'], ['pos-top', 'pos-left']];
+const _overlaps = (a, b) => a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom;
+
+function _placeOverlay() {
+    const overlay = document.getElementById('tutorial-overlay');
+    if (!overlay || overlay.classList.contains('hidden')) return;
+    const targets = _highlightedElements.filter(el => el?.isConnected).map(el => el.getBoundingClientRect()).filter(r => r.width && r.height);
+    const apply = spot => { overlay.classList.remove('pos-left', 'pos-top'); spot.forEach(c => overlay.classList.add(c)); };
+    const free = () => { const r = overlay.getBoundingClientRect(); return !targets.some(t => _overlaps(r, t)); };
+    if (free()) return;   // déjà libre : la fenêtre ne saute pas pendant l'étape
+    apply(OVERLAY_SPOTS.find(spot => { apply(spot); return free(); }) || OVERLAY_SPOTS[0]);
 }
 
 function _highlightWeaponButton() {
@@ -761,6 +924,7 @@ function _highlightWeaponButton() {
     });
     container.classList.add('tutorial-highlight-container');
     _highlightedElements.push(container);
+    _placeOverlay();
 }
 
 function _highlightSpellButtons() {
@@ -777,6 +941,7 @@ function _highlightSpellButtons() {
     // Encadrer aussi le conteneur
     container.classList.add('tutorial-highlight-container');
     _highlightedElements.push(container);
+    _placeOverlay();
 }
 
 function _cleanupHighlights() {
@@ -790,14 +955,21 @@ function _cleanupHighlights() {
 
 // ─── UI Overlay ───────────────────────────────────────────────────────────
 
+const PLACE_CHECK_MS = 450;   // fréquence de vérification de la position de la fenêtre
+let _placeTimer = null;   // la cible peut grandir ou bouger (menu Objet déplié, défilement) : la position est revérifiée régulièrement
+
 function _renderOverlay() {
     const overlay = document.getElementById('tutorial-overlay');
     if (overlay) overlay.classList.remove('hidden');
+    clearInterval(_placeTimer);
+    _placeTimer = setInterval(() => { if (_active && !document.hidden) _placeOverlay(); }, PLACE_CHECK_MS);
 }
 
 function _hideOverlay() {
     const overlay = document.getElementById('tutorial-overlay');
     if (overlay) overlay.classList.add('hidden');
+    clearInterval(_placeTimer);
+    _placeTimer = null;
 }
 
 function _updateOverlay(step) {
@@ -811,12 +983,23 @@ function _updateOverlay(step) {
 
     if (elIcon) elIcon.innerHTML = icon(stepData.icon);
     if (elTitle) elTitle.textContent = stepData.title();
-    if (elDesc) { elDesc.innerHTML = stepData.desc(); elDesc.hidden = true; }   // seul le titre est affiché
+    // Seul le titre est affiché, sauf pour les découvertes et les nouvelles actions (Xiūxiān, potion), expliquées sous le titre.
+    const explained = stepData.who === 'player' && EXPLAINED_KINDS.has(stepData.kind);
+    if (elDesc) { elDesc.innerHTML = stepData.desc(); elDesc.hidden = !explained; }
+    const nextBtn = document.getElementById('tutorial-next-btn');
+    if (nextBtn) nextBtn.hidden = !(stepData.who === 'player' && stepData.kind === 'info');
     if (elCurrent) elCurrent.textContent = step;
 
     const overlay = document.getElementById('tutorial-overlay');
+    if (overlay && explained && overlay.classList.contains('collapsed')) {   // une explication à lire : le panneau se déplie
+        overlay.classList.remove('collapsed');
+        const toggleBtn = document.getElementById('tutorial-toggle-btn');
+        if (toggleBtn) toggleBtn.textContent = '–';
+    }
     if (overlay) {
         overlay.classList.remove('hidden');
+        overlay.classList.toggle('explained', explained);
+        overlay.classList.remove('pos-left', 'pos-top');   // nouvelle étape : en bas à droite, déplacée ensuite si elle cache la cible (_placeOverlay)
         overlay.classList.remove('step-pop');
         // force reflow pour relancer l'animation
         void overlay.getBoundingClientRect();

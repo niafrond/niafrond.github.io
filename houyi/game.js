@@ -1067,6 +1067,7 @@ export const allyInXiuxian = classId => { const a = gameState.allies?.[classId];
 // Déclenchement VOLONTAIRE de la Xiūxiān : jauge pleine, en combat, à tout moment (toucher la jauge). Gratuit : ne prend pas le tour.
 export function activateXiuxian(classId = 'assassin'){
     if(gameState.combatState !== 'active' || (currentTurn !== 'player' && !decoupled())) return false;   // jauge pleine : à tout moment, même pendant le tour de plateau adverse
+    if(tutorialCallbacks.allowXiuxian && !tutorialCallbacks.allowXiuxian()) return false;   // tutoriel : la Xiūxiān n'est acceptée qu'à l'étape prévue
     const member = classId === 'assassin' ? player : gameState.allies?.[classId];
     if(!member || (classId !== 'assassin' && member.ko)){ log('Ce compagnon ne peut pas déclencher sa Xiūxiān.'); return false; }
     const name = classId === 'assassin' ? 'Hou Yi' : member.name;
@@ -1077,6 +1078,7 @@ export function activateXiuxian(classId = 'assassin'){
     applyTranseClassEffect();
     updateStats();
     saveUpdate();
+    tutorialCallbacks.onXiuxian?.();   // tutoriel scripté : étape suivante
     return true;
 }
 
@@ -1123,6 +1125,7 @@ export function drinkPotionAction(size, targetClass = null){
     if(targetClass && targetClass !== 'assassin') return drinkPotionForAlly(size, targetClass);
     const inCombat = gameState.combatState === 'active';
     if(inCombat){
+        if(tutorialCallbacks.allowPotion && !tutorialCallbacks.allowPotion()) return false;   // tutoriel : la potion n'est acceptée qu'à l'étape prévue
         if(!decoupled() && currentTurn !== 'player'){ log("Ce n'est pas votre tour."); return false; }
         if(rejectRushedAction()) return false;
         if((player.statusEffects?.sealed || 0) > 0){ log("Vous êtes scellé : impossible d'utiliser un objet."); return false; }
@@ -1161,8 +1164,10 @@ export function drinkPotionAction(size, targetClass = null){
     if(inCombat){
         logActiveAction(`boit une ${POTIONS[size].name.toLowerCase()}`);
         showCombatAnimation({ icon: 'potion', title: POTIONS[size].name, heal: `+${res.healed} PV`, target: '→ Vous' }, true);
+        document.dispatchEvent(new Event('potions-changed'));
         updateStats();
         saveUpdate();
+        tutorialCallbacks.onPotionUsed?.();   // tutoriel scripté : étape suivante, avant la fin du tour
         endAction();
     } else {
         updateStats();
