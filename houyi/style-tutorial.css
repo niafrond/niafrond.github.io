@@ -349,9 +349,9 @@ body.dark-mode .tutorial-card {
 .tutorial-overlay.pos-top { bottom: auto; top: calc(8px + env(safe-area-inset-top, 0px)); }
 
 /* Tâche demandée (tutorial.js, _setDim) : tout le reste du plateau et des actions est grisé, seule la cible garde ses couleurs.
-   [data-tuto-task] : swap (deux tuiles surlignées), spell, weapon (le bouton surligné reste en couleur), xiuxian ou potion (le bouton ou menu concerné reste en couleur).
+   [data-tuto-task] : swap (les deux tuiles surlignées et celles de l'alignement à former restent en couleur), spell, weapon (le bouton surligné reste en couleur), xiuxian ou potion (le bouton ou menu concerné reste en couleur).
    Les conteneurs d'actions sont parfois en `display: contents` (grille compacte) : le filtre vise donc leurs boutons (`> *`). */
-#tab-combat[data-tuto-task] #board .tile:not(.tutorial-highlight),
+#tab-combat[data-tuto-task] #board .tile:not(.tutorial-highlight):not(.tutorial-combo),
 #tab-combat[data-tuto-task]:not([data-tuto-task="swap"]) #board,
 #tab-combat[data-tuto-task] #class-picker,
 #tab-combat[data-tuto-task] #item-button > *,

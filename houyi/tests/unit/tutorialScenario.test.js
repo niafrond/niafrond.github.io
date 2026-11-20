@@ -96,6 +96,8 @@ describe('scénario du tutoriel : câblage', () => {
         const css = read('style-tutorial.css');
         expect(css).toMatch(/#tab-combat\[data-tuto-task\] #board \.tile:not\(\.tutorial-highlight\)/);
         expect(css).toMatch(/#tab-combat\[data-tuto-task\] #class-picker/);
+        expect(css).toContain('.tile:not(.tutorial-highlight):not(.tutorial-combo)');   // les tuiles du combo restent en couleur
+        expect(src).toMatch(/function _comboIndices\(\)/);
     });
 
     test("les sorts ne sont acceptés qu'à l'étape du sort (plus de garde par numéro d'étape dans game.js)", () => {
