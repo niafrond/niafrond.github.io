@@ -750,6 +750,9 @@ function crossMapBorder(session, screen, dx, dy, playerLevel, from = session.dat
         (s, x, y) => isTerrainBlocked(s, x, y, canWalkOnWater(session)));
     if (!hit || hit.x === null) return { type: 'blocked' };
     const target = session.screens[hit.to];
+    // Une recrue attend sur la route : essayer de gagner la zone suivante (même si le passage est fermé) ouvre d'abord la discussion avec elle, sans quitter la carte.
+    const waiting = pendingRecruits(session, screen)[0];
+    if (waiting) return { type: 'talk', npcId: waiting.id, recruit: true };
     if (isExitLocked(session, hit.conn)) {
         return {
             type: 'exitBlocked', reason: 'quest', label: hit.conn.label, regionName: target.name,
@@ -838,7 +841,28 @@ export function tryMove(session, dx, dy, ctx = {}) {
     if (onGrass) session.rt.grassSteps = (session.rt.grassSteps || 0) + 1;
     const out = cm ? { type: 'moved' } : checkAura(session) || (onGrass && rollWildEncounter(session, ctx)) || { type: 'moved', ...(jumped ? { jumped: true } : {}) };
     if (markerReached) out.markerReached = true;
+    // Une recrue à côté (case voisine) : la discussion s'ouvre d'elle-même une fois le pas fait.
+    if (out.type === 'moved' && !cm) {
+        const beside = pendingRecruits(session, screen).find(n => Math.abs(n.x - nx) + Math.abs(n.y - ny) === 1);
+        if (beside) out.autoTalk = beside.id;
+    }
     return out;
+}
+
+// Recrues qui attendent le héros sur sa route (PNJ `recruit` : { quest, classId, foe }) : visibles, et leur quête de rencontre n'est ni verrouillée ni terminée.
+export function pendingRecruits(session, screen = currentScreen(session)) {
+    if (session.rt.changeMode) return [];
+    return screen.npcs.filter(n => {
+        const quest = n.recruit && session.quests.find(q => q.id === n.recruit.quest);
+        return quest && isEntityVisible(session, n) && ['available', 'active'].includes(questStatus(session, quest));
+    });
+}
+
+// Combat de découverte d'une recrue : un petit ennemi « synthétique » (même mécanisme que les créatures d'herbe), SANS embuscade ni piège. Renvoie son identifiant.
+export function registerFriendlyFoe(session, screenId, key, foe) {
+    const id = `${WILD_PREFIX}${screenId}:${key}`;
+    session.rt.wildDefs[id] = { screenId, def: { id, templateId: foe.templateId, name: foe.name, kind: 'wild', offset: foe.offset, wild: true, friendly: true }, ground: null };
+    return id;
 }
 
 // Sol du héros pour la phrase d'embuscade : 'water' ou 'lava' (volcan) s'il est sur un liquide, null sinon (herbes, roseaux).
@@ -1084,7 +1108,7 @@ function wildEncounter(session, { def, screenId, ground }) {
     const screen = session.screens[screenId];
     const level = levelFor(session, def);
     return {
-        prep: buildPrep({ mimic: Boolean(def.mimic), grassAmbush: !def.mimic, ambushGround: ground }),   // mimique démasquée ou créature des hautes herbes : attaque par surprise (terrain.js)
+        prep: def.friendly ? buildPrep() : buildPrep({ mimic: Boolean(def.mimic), grassAmbush: !def.mimic, ambushGround: ground }),   // combat de découverte d'une recrue : aucune embuscade   // mimique démasquée ou créature des hautes herbes : attaque par surprise (terrain.js)
         biome: screen?.biome || null,
         enemyId: def.id,
         spriteKey: def.spriteKey || def.templateId,
@@ -1096,7 +1120,8 @@ function wildEncounter(session, { def, screenId, ground }) {
         duel: null,
         carryHp: false,
         training: null,
-        wild: true
+        wild: true,
+        friendly: Boolean(def.friendly)   // combat de découverte d'une recrue : adversaire à PV réduits (game.js, newEnemy)
     };
 }
 

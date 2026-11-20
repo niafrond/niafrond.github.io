@@ -2,7 +2,7 @@
 // Extrait de exploration.js (ré-exporté par celui-ci).
 import { COMPANIONS, BANTER } from './companions.js';
 import { checkAutoQuests, completeQuest, objectiveDone, progressReached, questStatus, startQuest } from './explorationQuests.js';
-import { visibleNpcs, warpNpc } from './exploration.js';
+import { visibleNpcs, warpNpc, registerFriendlyFoe } from './exploration.js';
 
 // ── Compagnons et dialogues contextuels (companions.js) ─────────────────────
 // Un compagnon rejoint le groupe quand sa condition `joinWhen` est remplie. Une réplique de groupe (`BANTER`) se joue une seule
@@ -63,9 +63,22 @@ export function activeTalkObjective(session, npcId) {
     return null;
 }
 
+// Recrue qui attend sur la route (`npc.recruit`) : la discussion la fait rejoindre l'équipe tout de suite (quête de rencontre terminée, récompense de
+// classe donnée par la vue), puis un petit combat, mené avec elle dans l'équipe, la fait découvrir (`combat` : ennemi amical sans embuscade).
+function recruitTalk(session, npc) {
+    const quest = npc.recruit && session.quests.find(q => q.id === npc.recruit.quest);
+    if (!quest || !['available', 'active'].includes(questStatus(session, quest))) return null;
+    if (!session.data.talked.includes(npc.id)) session.data.talked.push(npc.id);
+    const events = [completeQuest(session, quest), ...checkAutoQuests(session)];
+    const combat = npc.recruit.foe ? registerFriendlyFoe(session, session.data.screenId, `recruit_${npc.recruit.classId}`, npc.recruit.foe) : null;
+    return { type: 'dialog', npc, lines: [...quest.offer, ...quest.complete], events, recruit: { classId: npc.recruit.classId }, ...(combat ? { combat } : {}) };
+}
+
 export function talkToNpc(session, npcId) {
     const npc = visibleNpcs(session).find(n => n.id === npcId);
     if (!npc) return null;
+    const recruit = recruitTalk(session, npc);
+    if (recruit) return recruit;
 
     const related = session.quests.filter(q => q.giver === npcId || q.turnIn === npcId);
     const withStatus = related.map(quest => ({ quest, status: questStatus(session, quest) }));

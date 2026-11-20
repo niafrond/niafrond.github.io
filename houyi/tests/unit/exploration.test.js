@@ -185,6 +185,7 @@ function walkTo(s, x, y) {
             last = tryMove(s, step.x - s.data.x, step.y - s.data.y, { playerLevel: WORLD_LEVEL });
             if (last.type === 'combat') { fights.push(...markEnemyDefeated(s, last.enemyId)); interrupted = true; break; }
             if (last.type === 'illusion') { interrupted = true; break; }
+            if (last.type === 'talk' && last.recruit) { talkToNpc(s, last.npcId); interrupted = true; break; }   // une recrue attend sur la route : on lui parle, puis le trajet reprend
             if (last.type !== 'moved') break;
         }
         if (!interrupted) return { ...last, fights };
@@ -1153,7 +1154,8 @@ describe('histoire complète', () => {
                 expect(scene.map(e => e.type)).toEqual(['scene']);
             }
             if (CLASS_TRIAL_GATES[ORDER[n - 1]]) {   // maître de classe : le soleil n'apparaît qu'une fois l'entraînement rendu
-                expect(currentObjectiveText(s)).toContain('parlez à');
+                // la recrue attend sur la route : en traversant le village la discussion s'est déjà ouverte ; sinon le journal indique de lui parler
+                if (s.data.quests[CLASS_TRIAL_GATES[ORDER[n - 1]][1]] !== 'done') expect(currentObjectiveText(s)).toContain('parlez à');
                 playQuest(s, CLASS_TRIAL_GATES[ORDER[n - 1]][1]);
             }
             expect(s.data.quests[`q_${SUN_ID[n - 1]}`]).toBe('active');

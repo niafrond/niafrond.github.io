@@ -209,7 +209,6 @@ export default {
             { id: 'fleuve_wild_chest_hidden', x: 37, y: 4, gold: 90 }
         ],
         enemies: [
-            { id: 'train_sorcerer', x: 9, y: 13, templateId: 'gui_esprit', name: "Esprit-cible du gué", kind: 'sentinel', offset: -1, permanent: true, training: 'sorcerer' },
             { id: 'fleuve_sluice_golem', x: 43, y: 19, templateId: 'jiuying', spriteKey: 'jiuying', name: 'Jiuying, Neuf Gueules', kind: 'sentinel', offset: 1, permanent: true, boss: { name: 'Jiuying, Neuf Gueules', level: 11 } },
             { id: 'fleuve_salt_thief', x: 26, y: 5, templateId: 'assassin_masque', name: 'Voleur de sel masqué', kind: 'sentinel', offset: 0, permanent: true },
             { id: 'fleuve_w_doctor', x: 20, y: 4, templateId: 'wen_shen', name: 'Docteur-démon des vases', kind: 'sentinel', offset: -1 },

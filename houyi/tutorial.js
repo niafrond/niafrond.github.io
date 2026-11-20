@@ -471,6 +471,9 @@ function _startTutorialCombat() {
             _duelEnemy = null;
         }
         startNewCombat(enemy);
+        // La barre de chargement ne bloque rien dans le tutoriel : elle démarre pleine et le reste (seule l'étape 2 la vide une fois, pour la montrer).
+        const charge = g.gameState.charge;
+        Object.keys(charge?.ready || {}).forEach(id => { charge.ready[id] = charge.now; });
 
         _setTokens();
         _game.player.tutorialDeterministic = true;   // ni critique ni blocage au hasard (le seul blocage est celui du scénario)
@@ -586,6 +589,17 @@ function _beginPlayerStep() {
     }
 }
 
+// Étape 2 : la classe de Hou Yi se recharge sous les yeux du joueur (barre vidée puis remplie pendant le coup de Fengmeng), une seule fois.
+async function _demoCharge() {
+    try {
+        const [classCharge, spellList] = await Promise.all([import('./classCharge.js'), import('./gameSpellList.js')]);
+        const charge = _game?.gameState?.charge;
+        if (!_active || !charge) return;
+        Object.keys(charge.ready).forEach(id => classCharge.spendClass(charge, _game.player, id, spellList.chargeFactor()));
+        _game.createSpellButtons();
+    } catch (_) { /* démonstration facultative */ }
+}
+
 // Action imposée à Fengmeng à son tour (appelée par enemyTurn, à la place de la décision de l'IA).
 function _enemyDecision() {
     const step = _cur();
@@ -595,6 +609,7 @@ function _enemyDecision() {
     _cleanupHighlights();
     _stopHighlightLoop();
     _updateOverlay(_step);
+    if (_step === 2) _demoCharge();
 
     if (step.kind === 'spell') {
         const spell = _foeSpell(step.spell);

@@ -39,6 +39,7 @@ function walkTo(s, x, y) {
                 interrupted = true;
                 break;
             }
+            if (last.type === 'talk' && last.recruit) { talkToNpc(s, last.npcId); interrupted = true; break; }   // une recrue attend sur la route : on lui parle, puis le trajet reprend
             if (last.type !== 'moved') break;
         }
         if (!interrupted) return last;

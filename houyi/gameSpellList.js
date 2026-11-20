@@ -228,7 +228,7 @@ export function refillActionBar(caster, classId = null){
 }
 /** Une action vient d'être faite avec la classe du tour : elle se recharge. */
 export function spendActionCharge(){
-    if(!chargeEnabled()) return;
+    if(!chargeEnabled() || enemy?.isTutorialEnemy) return;   // tutoriel : la barre reste pleine (elle ne bloque rien) ; seule la démonstration de l'étape 2 la vide (tutorial.js)
     const id = getTurnClass();
     if(id) spendClass(gameState.charge, player, id, chargeFactor());
     createSpellButtons();

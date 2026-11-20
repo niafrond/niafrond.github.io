@@ -1,5 +1,5 @@
 import { connectionRows, DIRS } from '../../../mapConnections.js';
-import { tryMove } from '../../../exploration.js';
+import { tryMove, talkToNpc } from '../../../exploration.js';
 
 // Sorties d'une carte : portes (`exits`) + repères des passages de bord (connexions, voir mapConnections.js). Les bordures de mer (`sea`,
 // world/connections.js : tout un bord d'eau, franchi avec le Pas de Yu) ne sont pas des passages à pied : tests/unit/seaRoutes.test.js.
@@ -10,5 +10,7 @@ export function crossExit(s, exit, walkTo) {
     const res = walkTo(s, exit.x, exit.y);
     if (!exit.connection || res.type === 'transition') return res;
     const d = DIRS[exit.edge];
-    return { ...tryMove(s, d.dx, d.dy), fights: res.fights };
+    let out = tryMove(s, d.dx, d.dy);
+    if (out.type === 'talk' && out.recruit) { talkToNpc(s, out.npcId); out = tryMove(s, d.dx, d.dy); }   // une recrue attend sur la route : on lui parle d'abord
+    return { ...out, fights: res.fights };
 }

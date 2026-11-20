@@ -155,7 +155,6 @@ export default {
             { id: 'bambous_wild_incense_chest', x: 44, y: 12, gold: 90 }
         ],
         enemies: [
-            { id: 'train_shaman', x: 11, y: 12, templateId: 'huli_jing', name: "Esprit-renard d'épreuve", kind: 'sentinel', offset: -1, permanent: true, training: 'shaman' },
             { id: 'bambous_seal_keeper', x: 43, y: 5, templateId: 'fengxi', spriteKey: 'fengxi', name: 'Fengxi, le Grand Sanglier', kind: 'sentinel', offset: 1, permanent: true, boss: { name: 'Fengxi, le Grand Sanglier', level: 17 } },
             { id: 'bambous_ember_wisp', x: 12, y: 9, templateId: 'lingzhi_maudit', name: 'Lingzhi des cendres', kind: 'sentinel', offset: 0, permanent: true, group: 'ember_lingzhi' },
             { id: 'bambous_ember_wisp_b', x: 27, y: 6, templateId: 'lingzhi_maudit', name: 'Lingzhi des cendres', kind: 'sentinel', offset: 0, permanent: true, group: 'ember_lingzhi' },

@@ -16,6 +16,7 @@ import { escapeHtml } from "./escapeHtml.js";
 import { getStuffById } from './stuff.js';
 import { allItems } from './items.js';
 import { STORY_TITLE } from './story.js';
+import { ALLIES } from './allies.js';
 import * as X from './exploration.js';
 import { CASUAL_ENCOUNTER_FACTOR } from './casual.js';
 import { vibrate, armVibration, getOption } from './gameOptions.js';
@@ -640,6 +641,8 @@ export function createExplorationView(cfg) {
     function handleResult(res) {
         if (res?.markerReached) toast('Repère atteint.', 1800);
         if (!res) return;
+        // Une recrue attend à côté du héros : la discussion s'ouvre d'elle-même, une fois le pas fait.
+        if (res.type === 'moved' && res.autoTalk) { held = null; walk = null; handleResult({ type: 'talk', npcId: res.autoTalk }); return; }
         switch (res.type) {
             case 'combat':
                 startEncounter(res.enemyId);
@@ -657,7 +660,12 @@ export function createExplorationView(cfg) {
                     () => {
                         processEvents(talk.events, spoken);
                         if (talk.npc.merchant) openMerchant(talk.npc);
-                        if (talk.combat) startEncounter(talk.combat);   // appât : l'ennemi surgit à la fin de la conversation
+                        if (talk.recruit) {
+                            // Une recrue rejoint l'équipe : petite annonce, puis le combat de découverte avec elle dans l'équipe (le clic sur l'annonce le lance).
+                            const ally = ALLIES[talk.recruit.classId];
+                            const who = ally?.name || talk.npc.name;
+                            openDialog({ sprite: npcSprite(talk.npc.id), gba: gbaSprite(talk.npc.id), name: who, title: 'Nouveau compagnon' }, [`${who} a rejoint votre équipe !`], () => { if (talk.combat) startEncounter(talk.combat); });
+                        } else if (talk.combat) startEncounter(talk.combat);   // appât : l'ennemi surgit à la fin de la conversation
                     }, talk.warp ? [
                         { label: talk.warp.label || 'Partir', run: () => { const r = X.warpNpc(session, talk.npc.id); if (r) { held = null; walk = null; handleResult(r); } } },
                         { label: talk.warp.stay || 'Rester ici', run: () => {} }
@@ -892,6 +900,9 @@ export function createExplorationView(cfg) {
         if (res.markerReached) toast('Repère atteint.', 1800);
         if (res.type !== 'moved') {
             walk = null;            // interaction, combat, changement d'écran, obstacle ou brume
+            handleResult(res);
+        } else if (res.autoTalk) {
+            walk = null;            // une recrue attend à côté : on lui parle
             handleResult(res);
         } else if (session.data.x === walk.tx && session.data.y === walk.ty) {
             walk = null;
