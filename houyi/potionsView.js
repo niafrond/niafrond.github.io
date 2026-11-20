@@ -33,11 +33,13 @@ export function renderPotionButtons() {
     box.classList.toggle('potion-menu', potionMenuOpen);   // menu déplié : sur toute la largeur
     document.getElementById('player-spells')?.classList.toggle('object-menu', potionMenuOpen);   // menu Objet ouvert : les autres boutons d'action sont cachés
     if (!potionMenuOpen) {
+        // Grisé comme les autres boutons d'action tant qu'aucune potion ni aucun objet n'est utilisable maintenant (PV pleins, PA manquants, en chargement, scellé…)
+        const free = !!xiuEffect().freePotions;
         const ready = classCanAct();   // le personnage choisi doit avoir sa barre de chargement pleine pour agir
-        const off = !mine || !total || !ready;
-        box.innerHTML = `<button type="button" class="enemy-spell-item potion-btn${off ? ' disabled' : ''}" data-open-potions${off ? ' disabled' : ''} title="${!total ? 'Aucun objet : achetez-en chez les marchands' : !ready ? 'En chargement : le personnage n\'est pas encore prêt' : 'Choisir une potion ou un objet'}">
-            <div class="spell-name">Objet</div>
-            <div class="spell-cost">${potions ? `Potions ×${potions}` : ''}${potions && items.length ? ' · ' : ''}${items.length ? `Objets ×${items.length}` : ''}${total ? '' : '—'}</div></button>`;
+        const usable = mine && ready && (POTION_SIZES.some(size => potionCount(player, size) > 0 && !drinkBlockReason(player, size, true, free)) || items.some(({ item }) => itemUsability(item).ok));
+        const off = !usable;
+        box.innerHTML = `<button type="button" class="enemy-spell-item potion-btn${off ? ' disabled' : ''}" data-open-potions${off ? ' disabled' : ''} title="${!total ? 'Aucun objet : achetez-en chez les marchands' : !ready ? 'En chargement : le personnage n\'est pas encore prêt' : off ? 'Aucun objet utilisable maintenant' : 'Choisir une potion ou un objet'}">
+            <div class="spell-name">Objet</div></button>`;
         return;
     }
     const free = !!xiuEffect().freePotions;   // Souffle du Lotus d'Or : potions sans point d'action
