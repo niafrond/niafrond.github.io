@@ -1,3 +1,15 @@
+## [3.16.1](https://github.com/niafrond/niafrond.github.io/compare/v3.16.0...v3.16.1) (2026-11-20)
+
+### Bug Fixes
+
+* **houyi:** afficher l'arme du compagnon choisi en combat ([#770](https://github.com/niafrond/niafrond.github.io/issues/770)) ([8190669](https://github.com/niafrond/niafrond.github.io/commit/819066902c5faac1fec85d517460703e87771a9c))
+
+## [3.16.0](https://github.com/niafrond/niafrond.github.io/compare/v3.15.0...v3.16.0) (2026-11-20)
+
+### Features
+
+* **houyi:** personnage choisi bien visible en combat, plus de mains nues, mot connu jamais reproposé ([cc9ca99](https://github.com/niafrond/niafrond.github.io/commit/cc9ca991f4826d69a019ee425b1e97ffd1805d62))
+
 ## [3.15.0](https://github.com/niafrond/niafrond.github.io/compare/v3.14.0...v3.15.0) (2026-11-20)
 
 ### Features
