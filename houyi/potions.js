@@ -51,6 +51,7 @@ export function drinkBlockReason(hero, size, inCombat, free = false) {
     const potion = POTIONS[size];
     if (!potion) return 'Potion inconnue.';
     if (potionCount(hero, size) <= 0) return `Aucune ${potion.name.toLowerCase()}.`;
+    if (!inCombat && (hero.hp || 0) <= 0) return 'Hou Yi est à terre : seul un point de repos ou un objet de résurrection le relève.';
     if ((hero.hp || 0) >= (hero.maxHp || 0)) return 'Vos PV sont déjà au maximum.';
     if (inCombat && !free && (hero.combatPoints || 0) < potion.actionPoints) return `Il faut ${potion.actionPoints} point${potion.actionPoints > 1 ? 's' : ''} d'action.`;
     return null;

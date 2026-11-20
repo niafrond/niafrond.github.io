@@ -458,6 +458,8 @@ export function getCurrentAIDifficulty() {
 
 let lastSaveErrorNotice = 0;
 export function saveUpdate(){
+    // Un compagnon tombé reste à terre d'un combat à l'autre (jusqu'à un point de repos ou une résurrection) : sa chute est mémorisée dans la sauvegarde.
+    if(gameState.allies && !enemy?.isTutorialEnemy && !enemy?.duel) player.downAllies = Object.values(gameState.allies).filter(a => a?.ko).map(a => a.classId);
     clampManaToCaps(player);
     storeGauge(player);   // une jauge de Xiūxiān par classe : la jauge affichée est rangée avant l'écriture
     try {

@@ -2,7 +2,7 @@ import { lessonsPanelHtml, bindLessons } from "./chineseLessonsView.js";
 import { icon } from "./icons.js";
 import { escapeHtml } from "./escapeHtml.js";
 import { generateBoard, renderBoard } from "./board.js";
-import { grantStuffPiece, grantQuestRelic, grantUltimate, grantClassReward, updateStats, createSpellButtons, newEnemy, restartCombat, updateAvailableSpells, updatePlayerStatsTab, createWeaponButton, updateAvailableWeapons, player, saveUpdate, log, clearSaveData, startNewCombat, updateInventoryTab, grantStartingWeapon, grantChestLoot, combatHooks, companionMenuHooks, consumeBoardBoost, getCombatMusicScene, getCombatMusicOptions, grantExplorationXP, showAttributeMenu, setCombatBackdrop, setActiveCompanions, gameState } from "./game.js";
+import { reviveTeamAtRest, grantStuffPiece, grantQuestRelic, grantUltimate, grantClassReward, updateStats, createSpellButtons, newEnemy, restartCombat, updateAvailableSpells, updatePlayerStatsTab, createWeaponButton, updateAvailableWeapons, player, saveUpdate, log, clearSaveData, startNewCombat, updateInventoryTab, grantStartingWeapon, grantChestLoot, combatHooks, companionMenuHooks, consumeBoardBoost, getCombatMusicScene, getCombatMusicOptions, grantExplorationXP, showAttributeMenu, setCombatBackdrop, setActiveCompanions, gameState } from "./game.js";
 import { rollChestLoot } from "./chestLoot.js";
 import { rollStuffDrop, CHEST_STUFF_DROP, getStuffById, equipStuff, hasStealth } from "./stuff.js";
 import "./stuffView.js";
@@ -120,7 +120,7 @@ function init() {
         onEncounter: encounter => startEncounterCombat(encounter),
         onGold: amount => { player.gold = (player.gold || 0) + amount; },
         // Point de repos (pierre de voyage, fontaine, couche d'hôte) : PV au maximum ; renvoie les PV rendus.
-        onRest: () => { const gained = Math.max(0, (player.maxHp || 0) - (player.hp || 0)); if(gained > 0) player.hp = player.maxHp; return gained; },
+        onRest: () => { const gained = Math.max(0, (player.maxHp || 0) - (player.hp || 0)); if(gained > 0) player.hp = player.maxHp; return gained + reviveTeamAtRest(); },   // relève aussi les compagnons restés à terre
         onChestLoot: ev => {
             const roll = rollChestLoot(ev.chest, ev.screen, player);
             const labels = grantChestLoot(roll);
