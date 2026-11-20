@@ -1,3 +1,9 @@
+## [3.16.2](https://github.com/niafrond/niafrond.github.io/compare/v3.16.1...v3.16.2) (2026-11-20)
+
+### Bug Fixes
+
+* **houyi:** file d'actions en pause de charge, ligne des qì sans bande Xiūxiān ni grisé ([#771](https://github.com/niafrond/niafrond.github.io/issues/771)) ([3be2889](https://github.com/niafrond/niafrond.github.io/commit/3be28896d26e9e40a21a9374a1578d6624498223))
+
 ## [3.16.1](https://github.com/niafrond/niafrond.github.io/compare/v3.16.0...v3.16.1) (2026-11-20)
 
 ### Bug Fixes
