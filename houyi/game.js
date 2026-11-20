@@ -2464,6 +2464,8 @@ export function prepareFoe(raw, { hpMult = 1, biome = null } = {}){
     return foe;
 }
 
+const FRIENDLY_FOE_HP_SCALE = 0.4;   // part des PV calibrés qu'a l'ennemi du combat de découverte d'une recrue
+
 export function newEnemy(selectedEnemy = null){
     enemy = selectedEnemy ? { ...selectedEnemy } : generateRandomEnemy(player.level, spellsCatalog, allWeapons);
     // Copie propre des statuts (étourdi, affaibli, poison…) : les ennemis générés n'en ont pas, et les sorts écrivent dedans sans vérifier.
@@ -2476,6 +2478,9 @@ export function newEnemy(selectedEnemy = null){
     // Calibrage de la durée du combat (3 à 8 min selon la catégorie, combatBalance.js) ; remplace l'ancien plancher « plus de PV que le héros ».
     if(!enemy.isTutorialEnemy && !enemy.arena && !enemy.duel) calibrateEnemyForCombat(enemy);
     else if(!enemy.isTutorialEnemy && ENEMY_HP_FLOOR_ABOVE_HERO) raiseEnemyHpAboveHero(enemy, player);
+
+    // Combat de découverte d'une recrue (exploration.js : registerFriendlyFoe) : un petit ennemi, vaincu en quelques tours.
+    if(enemy.friendly){ enemy.maxHp = Math.max(12, Math.round(enemy.maxHp * FRIENDLY_FOE_HP_SCALE)); enemy.hp = enemy.maxHp; }
 
     // Avantage du plus haut niveau : bonus d'attaque et de défense (critiques et blocages), borné et annoncé plus bas, voir combatStats.js
     enemy.levelEdge = Math.max(0, (enemy.level || 0) - (player.level || 0));
