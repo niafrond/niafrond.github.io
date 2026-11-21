@@ -1,5 +1,5 @@
 // Chaque compagnon a SA Xiūxiān : sa jauge (`ally.rage`, remplie quand il subit des dégâts, conservée d'un combat à l'autre dans `hero.rages`),
-// son déclenchement et sa durée (`ally.transe`) ; Hou Yi n'a que la sienne (Volée des Dix Soleils). Tant qu'elle dure, son effet profite à l'équipe
+// son déclenchement et sa durée (`ally.transe`) ; Hou Yi n'a que la sienne (Attaque des Dix Soleils). Tant qu'elle dure, son effet profite à l'équipe
 // (`mergeTranseEffects`). Wukong : Soixante-douze Transformations ; Nezha : Roues de Feu ; Longwang : Colère du Roi Dragon ; Fuxi : Huit Trigrammes ;
 // Shennong : Cent Herbes ; Jingwei : Pierre de la Mer.
 // Xiūxiān (ex-« rage ») : UNE JAUGE PAR CLASSE. Subir des dégâts remplit la jauge de la classe choisie pour le tour ; chaque jauge se CONSERVE
@@ -13,8 +13,8 @@
 export const TRANSE_TURNS = 3;
 
 export const TRANSE_EFFECTS = {
-    // Chasseur : l'archer divin lâche une volée gratuite à chaque tour (techniques spéciales offensives).
-    assassin: { name: 'Volée des Dix Soleils', strikePct: 50, actionPoints: 1, text: 'une volée gratuite (la moitié des dégâts de l\'arme) et +1 point d\'action à chaque tour' },
+    // Chasseur : l'archer divin porte une attaque gratuite à chaque tour (techniques spéciales offensives).
+    assassin: { name: 'Attaque des Dix Soleils', strikePct: 50, actionPoints: 1, text: 'une attaque gratuite (la moitié des dégâts de l\'arme) et +1 point d\'action à chaque tour' },
     // Mage : deux sorts par tour (le second ne prend pas le tour) ; seule voie qui permet de lancer l'ultime.
     sorcerer: { name: 'Colère du Roi Dragon', doubleCast: true, ultimate: true, text: 'deux sorts par tour ; l\'ultime peut être lancé' },
     // Alchimiste : le fourneau des huit trigrammes exhale des vapeurs qui rongent l'ennemi et rendent du qì.

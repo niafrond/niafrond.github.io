@@ -15,7 +15,7 @@ import { signatureDamage } from './bossScript.js';
 const STATUS_ROW_PLACEHOLDER = '<div class="status-badges status-badges-empty" aria-hidden="true"></div>';
 import { animationFactor } from './gameOptions.js';
 import { announce, notify } from './a11y.js';
-import { bindStatusBadges, bindTooltip, ensureSpellTooltip, placeTooltip, showSpellTooltip, showPlayerGearTooltip, showPlayerGearTooltipBriefly, showItemTooltip, hideSpellTooltip, bindEnemyStuffLongPress } from './gameTooltips.js';
+import { bindStatusBadges, markPressHeld, bindTooltip, ensureSpellTooltip, placeTooltip, showSpellTooltip, showPlayerGearTooltip, showPlayerGearTooltipBriefly, showItemTooltip, hideSpellTooltip, bindEnemyStuffLongPress } from './gameTooltips.js';
 import { createWeaponButton, statValueHtml } from './gameInventoryTabs.js';
 import { updatePlayerStatsTab } from './gameStatsTab.js';
 import { updateLevelHud } from './gameLevelUp.js';
@@ -130,7 +130,7 @@ function holdTooltip(btn, html){
     const show = () => { const t = ensureSpellTooltip(); t.innerHTML = html(); t.classList.add('visible'); placeTooltip(t, btn, 260); };
     bindTooltip(btn, show, () => hideSpellTooltip());
     let held = null, shown = false;
-    btn.addEventListener('pointerdown', ev => { if(ev.pointerType !== 'mouse') return; held = setTimeout(() => { held = null; shown = true; show(); }, 400); });
+    btn.addEventListener('pointerdown', ev => { if(ev.pointerType !== 'mouse') return; held = setTimeout(() => { held = null; shown = true; markPressHeld(); show(); }, 400); });
     btn.addEventListener('click', ev => { if(!shown) return; shown = false; ev.preventDefault(); ev.stopImmediatePropagation(); }, true);
     ['pointerup', 'pointerleave', 'pointercancel'].forEach(t => btn.addEventListener(t, () => { clearTimeout(held); held = null; }));
 }
