@@ -322,8 +322,9 @@ export function getEnemyStuffTooltipHtml(fullName, enemyEntity) {
     // Appui long : force, faiblesse (toujours montrée) et stuff réunis.
     const lines = [getEnemyNameTooltipHtml(escapeHtml(fullName), enemyEntity, { showAll: true })];
     // Talisman de Résonance (calibrage combatBalance.js) : visible seulement ici, à l'appui long sur l'ennemi.
+    // Toujours affiché quand l'ennemi en porte un, même à ×1,0 (sinon l'objet semblait avoir disparu).
     const power = enemyEntity?.spellAmplifier?.mult || enemyEntity?.skullMult || 1;
-    if(power !== 1) {
+    if(enemyEntity?.spellAmplifier || enemyEntity?.skullMult || power !== 1) {
         const mult = (Math.round(power * 10) / 10).toFixed(1);
         lines.push(`<div class="enemy-tooltip-row"><strong>${escapeHtml(enemyEntity.spellAmplifier?.name || 'Talisman de Résonance')}</strong> : dégâts x${mult}</div>`);
     }
