@@ -36,7 +36,7 @@ function allyStatsHtml(charId){
         + line('heart', 'PV max :', a.maxHp, `${Math.round(ally.hpPct * 100)} % de ceux de Hou Yi`)
         + line('shield', 'Défense :', a.defense, `${Math.round(ally.defensePct * 100)} % de celle de Hou Yi`)
         + line('sword', 'Attaque :', a.attack, 'La moitié de celle de Hou Yi')
-        + line('sword', 'Arme :', weapon ? `${escapeHtml(weapon.name)} (+${allyWeaponBonus(weapon)} aux sorts)` : '—')
+        + line('sword', 'Arme :', weapon ? `${escapeHtml(weapon.name)} (${weapon.damage} dégâts, ${weapon.actionPoints} PA, +${allyWeaponBonus(weapon)} aux sorts)` : '—')
         + line('bolt', 'Xiūxiān :', `${Math.floor(a.rage)} / ${RAGE_MAX}`, 'Sa propre jauge, conservée d\'un combat à l\'autre')
         + '<div class="stat-line"><span class="stat-effect">Il partage le qì de Hou Yi et a sa propre barre de vie et de chargement.</span></div></div>';
 }
@@ -216,21 +216,31 @@ export function foxIconHtml(){
 
 /** Scène de l'annonce d'un sort : lanceur à gauche, sort au milieu, cible à droite (Hou Yi / son équipier à gauche, l'ennemi à droite).
  *  Le sort file vers la cible, qui clignote quand il la touche ; les sorts lancés par l'ennemi font le trajet inverse. `hit` : le sort inflige des dégâts. */
-export function spellStageHtml(fxHtml, isPlayerAttack, hit, dodged = false, lunge = false) {
-    const ally = gameState.allies?.[gameState.turnClass];
-    const heroSrc = (ally && gbaSprite(ally.sprite, 'right')) || gbaSprite(player.class, 'right') || heroSprite(player.class) || heroSprite('assassin');
+export function spellStageHtml(fxHtml, isPlayerAttack, hit, dodged = false, lunge = false, healTarget = null) {
+    const memberSrc = id => {   // dessin d'un personnage de l'équipe : Hou Yi (« assassin ») ou un compagnon
+        const m = id && id !== START_CLASS ? gameState.allies?.[id] : null;
+        return (m && gbaSprite(m.sprite, 'right')) || gbaSprite(player.class, 'right') || heroSprite(player.class) || heroSprite('assassin');
+    };
+    const casterId = gameState.turnClass || START_CLASS;
+    const heroSrc = memberSrc(casterId);
     const key = enemy.spriteKey || enemy.id;
     const foeSrc = gbaSprite(key, 'left') || gbaSprite(enemy.templateId, 'left') || enemySprite(key, enemy.templateId, enemy.biome);
     if(!heroSrc || !foeSrc) return null;
     const img = (src, cls) => `<img class="stage-fighter ${cls}" src="${spriteUri(src)}" alt="" aria-hidden="true">`;
     const casterHero = isPlayerAttack;
-    const left = img(heroSrc, 'stage-left' + (lunge && casterHero ? ' stage-lunge' : '') + (!hit && casterHero ? ' stage-cast' : '') + (hit && !casterHero ? (dodged ? ' stage-dodge' : ' stage-hurt') : ''));
-    const right = img(foeSrc, 'stage-right' + (lunge && !casterHero ? ' stage-lunge' : '') + (!hit && !casterHero ? ' stage-cast' : '') + (hit && casterHero ? (dodged ? ' stage-dodge' : ' stage-hurt') : ''));
-    const dir = !hit ? 'self' : casterHero ? 'ltr' : 'rtl';
+    // Soin ou soutien sans cible hostile : l'ennemi n'a rien à faire dans la scène. Le lanceur est seul (soin sur soi) ou face au personnage soigné (soin d'un autre).
+    if(!hit) {
+        const otherSrc = casterHero && healTarget && healTarget !== casterId ? memberSrc(healTarget) : null;
+        if(otherSrc) return `<div class="spell-stage stage-ltr stage-support">${img(heroSrc, 'stage-left')}<div class="stage-mid">${fxHtml}</div>${img(otherSrc, 'stage-right stage-cast')}</div>`;
+        return `<div class="spell-stage stage-self stage-solo${casterHero ? '' : ' stage-foe'}"><div class="stage-mid">${fxHtml}</div>${img(casterHero ? heroSrc : foeSrc, 'stage-left stage-cast')}</div>`;
+    }
+    const left = img(heroSrc, 'stage-left' + (lunge && casterHero ? ' stage-lunge' : '') + (hit && !casterHero ? (dodged ? ' stage-dodge' : ' stage-hurt') : ''));
+    const right = img(foeSrc, 'stage-right' + (lunge && !casterHero ? ' stage-lunge' : '') + (hit && casterHero ? (dodged ? ' stage-dodge' : ' stage-hurt') : ''));
+    const dir = casterHero ? 'ltr' : 'rtl';
     return `<div class="spell-stage stage-${dir}${casterHero ? '' : ' stage-foe'}">${left}<div class="stage-mid">${fxHtml}</div>${right}</div>`;
 }
 
-export function showCombatAnimation({ icon, title, damage = null, heal = null, source = null, target = null, projectile = null, plain = false }, isPlayerAttack = true, options = {}) {
+export function showCombatAnimation({ icon, title, damage = null, heal = null, source = null, target = null, projectile = null, plain = false, healTarget = null }, isPlayerAttack = true, options = {}) {
     // Les annonces de critique / blocage / parade restent affichées jusqu'au clic du joueur.
     if(options.requireClick === undefined && options.autoHideMs === undefined && /CRITIQUE|BLOQUÉ|paré/.test(String(damage ?? ''))) options = { ...options, requireClick: true };
     // Coup d'arme ou sort offensif : le combattant joue aussi son animation d'attaque (tir à l'arc, coup d'arme…)
@@ -244,7 +254,7 @@ export function showCombatAnimation({ icon, title, damage = null, heal = null, s
     const casterAlly = isPlayerAttack ? gameState.allies?.[gameState.turnClass] : null;   // un compagnon frappe avec son arme (jamais l'arc de Hou Yi)
     if(casterAlly?.weapon && !fx && damage !== null && heal === null && !projectile) { icon = casterAlly.weapon; projectile = casterAlly.weapon === 'bow' ? 'arrow' : 'melee'; }
     const midIcon = projectile === 'melee' && typeof icon === 'string' && !icon.includes('<') ? svgIcon(icon) : (svgIcon(icon) || icon);
-    const stage = !bigFx ? spellStageHtml(fx || (projectile === 'arrow' ? `<div class="attack-icon stage-arrow">${svgIcon('arrow')}</div>` : `<div class="attack-icon">${svgIcon(icon) || icon}</div>`), isPlayerAttack, damage !== null && heal === null, Boolean(options.blocked), projectile === 'melee') : null;
+    const stage = !bigFx ? spellStageHtml(fx || (projectile === 'arrow' ? `<div class="attack-icon stage-arrow">${svgIcon('arrow')}</div>` : `<div class="attack-icon">${svgIcon(icon) || icon}</div>`), isPlayerAttack, damage !== null && heal === null, Boolean(options.blocked), projectile === 'melee', healTarget) : null;
     if(stage && !plain) html = stage;   // `plain` : simple annonce (ex. tour bonus), sans la scène héros / ennemi
     // 2e temps d'un blocage / d'une parade : gros bouclier (plein = bloqué, fendu = paré) et texte qui vibre.
     let caption = `<div class="attack-title">${String(title).toUpperCase()}</div>`;

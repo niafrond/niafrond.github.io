@@ -680,7 +680,7 @@ export function weaponRarity(weapon) {
 
 // === ARMES DE COMPAGNON ===
 // Chaque compagnon porte un type d'arme (voir `ALLIES[...].weapon`) : butin, marchands et coffres en donnent des variantes.
-// `damage` est la puissance de l'arme : le compagnon ajoute `allyWeaponBonus(weapon)` aux dégâts de ses sorts.
+// `damage` est la puissance de l'arme : le compagnon frappe avec (coût en PA, `actionPoints`) et ajoute `allyWeaponBonus(weapon)` aux dégâts de ses sorts.
 export const COMPANION_WEAPON_TYPES = ['sword', 'axe', 'mace', 'dagger', 'staff', 'fan'];
 
 // [niveau, rareté, nom, description] ; 8 variantes par type, du village à la Lune.
@@ -748,11 +748,15 @@ const COMPANION_WEAPON_TABLE = {
 };
 const COMPANION_WEAPON_SLUG = s => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '');
 
+// Une arme de compagnon coûte des points d'action comme celles de Hou Yi : 3 PA pour un petit coup, jusqu'à 12 PA pour les plus puissantes (mêmes paliers que ses arcs).
+const COMPANION_AP_STEPS = [18, 32, 55, 90, 120, 180, 260, 350, 410];
+export const companionWeaponAP = damage => 3 + COMPANION_AP_STEPS.filter(t => damage >= t).length;
+
 export const companionWeapons = Object.entries(COMPANION_WEAPON_TABLE).flatMap(([type, rows]) =>
     rows.map(([minLevel, rarity, name, description]) => normalizeWeapon({
         id: `${type}_${COMPANION_WEAPON_SLUG(name)}`, name, type, companion: true,
         damage: Math.round(8 + minLevel * 5 * ({ common: 0.9, uncommon: 1, rare: 1.08, legendary: 1.18 }[rarity] || 1)),
-        actionPoints: 0, minLevel, rarity, twoHanded: false, description
+        actionPoints: companionWeaponAP(Math.round(8 + minLevel * 5 * ({ common: 0.9, uncommon: 1, rare: 1.08, legendary: 1.18 }[rarity] || 1))), minLevel, rarity, twoHanded: false, description
     })));
 
 /** Arme de compagnon (butin, marchands) : jamais équipable par Hou Yi. */

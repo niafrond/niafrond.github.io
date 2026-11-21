@@ -1112,7 +1112,7 @@ function drinkPotionForAlly(size, classId){
         const healed = healAlly(ally, potionHeal(ally, size));
         log(`${potion.name} : ${ally.name} récupère ${healed} PV.`);
         logActiveAction(`donne une ${potion.name.toLowerCase()} à ${ally.name}`);
-        showCombatAnimation({ icon: 'potion', title: potion.name, heal: `+${healed} PV`, target: `→ ${ally.name}` }, true);
+        showCombatAnimation({ icon: 'potion', title: potion.name, heal: `+${healed} PV`, target: `→ ${ally.name}`, healTarget: ally.classId }, true);
         document.dispatchEvent(new Event('potions-changed'));
         updateStats();
         endAction();
@@ -2008,11 +2008,13 @@ export function useWeapon(hand = 'right'){
     if(gameState.combatState !== 'active'){ log("Aucun combat en cours."); return; }
     if(!decoupled() && currentTurn !== 'player'){ log("Seul le joueur actif peut utiliser une attaque."); return; }
     if(rejectRushedAction()) return;
-    if(getTurnClass() !== 'assassin'){ log("L'arme est celle de Hou Yi : choisissez-le dans la barre d'action."); return; }
+    const cls = getTurnClass();
+    const ally = cls !== 'assassin' ? gameState.allies?.[cls] : null;   // le personnage choisi manie SON arme : Hou Yi son arc, un compagnon son arme de type
+    if(cls !== 'assassin' && !ally){ log("L'arme est celle de Hou Yi : choisissez-le dans la barre d'action."); return; }
     if(tutorialCallbacks.allowWeapon && !tutorialCallbacks.allowWeapon()) return;   // tutoriel : l'arme n'est acceptée qu'à l'étape prévue
     if(!classCanAct()) return;   // la classe du tour doit être chargée (barre pleine) pour choisir une action
-    if(gameState.heroKo){ log('Hou Yi est à terre : il ne peut plus manier son arme.'); return; }
-    const weapon = hand === 'left' ? getLeftHandWeapon() : player.equippedWeapon;
+    if(ally ? ally.ko : gameState.heroKo){ log(`${ally ? ally.name : 'Hou Yi'} est à terre : il ne peut plus manier son arme.`); return; }
+    const weapon = ally ? allyEquippedWeapon(player, cls) : hand === 'left' ? getLeftHandWeapon() : player.equippedWeapon;
     if(!weapon){ log("Aucune arme équipée !"); return; }
     if((player.statusEffects?.sealed || 0) > 0){ log("Vous êtes scellé : impossible d'utiliser une arme."); return; }
     if(player.combatPoints < weapon.actionPoints){ 
@@ -2028,9 +2030,9 @@ export function useWeapon(hand = 'right'){
     if(targetGate(isAreaWeapon(weapon), () => useWeapon(hand))) return;   // plusieurs ennemis : on touche l'ennemi visé après avoir choisi l'attaque (foes.js)
     actionGuard.markPlayerAction();
     player.combatPoints -= weapon.actionPoints;   // payé au choix
-    logActiveAction(`utilise l'arme ${weapon.name} (cout ${weapon.actionPoints} PA)`);
+    logActiveAction(`${ally ? `(${ally.name}) ` : ''}utilise l'arme ${weapon.name} (cout ${weapon.actionPoints} PA)`);
     const effect = () => {
-        strikeWithWeapon(weapon);
+        strikeWithWeapon(weapon, { ally });
         tutorialCallbacks.onWeaponUsed?.();
         endAction();
     };
@@ -2039,7 +2041,8 @@ export function useWeapon(hand = 'right'){
 }
 
 // Coup d'arme du joueur sur l'ennemi (dégâts, critique, vol de vie, animation) ; ne consomme ni PA ni tour.
-function strikeWithWeapon(weapon, { free = false } = {}){
+function strikeWithWeapon(weapon, { free = false, ally = null } = {}){
+    const who = ally || player;   // l'attaquant : Hou Yi ou le compagnon qui manie l'arme
     let dmg = weapon.damage;
     const biomeBonus = weaponBiomeBonus(weapon, enemy.biome);
     if(biomeBonus > 0) {
@@ -2047,7 +2050,7 @@ function strikeWithWeapon(weapon, { free = false } = {}){
         log(`${weapon.name} est dans son biome (${BIOME_LABELS[weapon.biome]}) : +${biomeBonus} dégâts.`);
     }
 
-    if((player.statusEffects?.flameblade || 0) > 0) {
+    if(!ally && (player.statusEffects?.flameblade || 0) > 0) {
         const flameBonus = Math.max(0, Math.floor(player.statusEffects.flameblade));
         dmg += flameBonus;
         delete player.statusEffects.flameblade;
@@ -2055,8 +2058,8 @@ function strikeWithWeapon(weapon, { free = false } = {}){
     }
 
     // Attaque = chance de critique, défense de l'ennemi = chance de blocage (voir combatStats.js)
-    const selfHit = confusedSelfHit(player);   // Confus : le coup se retourne contre le héros
-    const strike = resolveStrike(dmg, player, selfHit ? player : enemy);
+    const selfHit = !ally && confusedSelfHit(player);   // Confus : le coup se retourne contre le héros
+    const strike = resolveStrike(dmg, who, selfHit ? player : enemy);
     const isCrit = strike.crit;
     const blockText = blockLabel(strike.block);
     dmg = strike.damage;
@@ -2066,7 +2069,7 @@ function strikeWithWeapon(weapon, { free = false } = {}){
     playSfx('weaponHit', { isPlayer: true, rarity: weapon.rarity });
 
     // Vol de vie
-    if(player.lifesteal > 0) {
+    if(!ally && player.lifesteal > 0) {
         const heal = Math.floor(dmg * player.lifesteal);
         if(healEntity(player, heal).harmed === 0){
             flyHeal(true, heal);
@@ -2077,7 +2080,7 @@ function strikeWithWeapon(weapon, { free = false } = {}){
     const icon = getWeaponIcon(weapon.type);
 
     showStrikeAnimation({ icon, title: weapon.name, target: `→ ${enemy.name}`, projectile: weapon.type === 'bow' ? 'arrow' : 'melee' }, strike, true, dmg);
-    log(`${icon} Vous utilisez ${weapon.name}${free ? ' gratuitement' : ''} et infligez ${dmg} dégâts.${isCrit ? ' Coup critique !' : ''}${strike.unblockable ? ' Coup inblocable !' : ''}${blockText ? ` L'ennemi ${blockText === 'BLOQUÉ !' ? 'bloque le coup' : 'pare le coup'}.` : ''}`);
+    log(`${icon} ${ally ? escapeHtml(ally.name) + ' utilise' : 'Vous utilisez'} ${weapon.name}${free ? ' gratuitement' : ''} et inflig${ally ? 'e' : 'ez'} ${dmg} dégâts.${isCrit ? ' Coup critique !' : ''}${strike.unblockable ? ' Coup inblocable !' : ''}${blockText ? ` L'ennemi ${blockText === 'BLOQUÉ !' ? 'bloque le coup' : 'pare le coup'}.` : ''}`);
 }
 
 

@@ -159,7 +159,7 @@ function renderXiuButton({ inTranse, canActivate, gaugeLevel }){
     const active = mine ? inTranse : g.inXiu;
     const usable = mine ? canActivate : (!g.ko && !g.inXiu && g.full && (currentTurn === 'player' || decoupled()));
     const level = mine ? gaugeLevel : g.gauge;
-    const xiu = actionCard(`xiu-transe${g.full ? ' full' : ''}${active ? ' in-transe' : ''}`, usable, () => activateXiuxian(cls));
+    const xiu = actionCard(`xiu-transe${g.full && !active ? ' full' : ''}${active ? ' in-transe' : ''}`, usable, () => activateXiuxian(cls));
     const turns = Math.max(1, Math.floor(g.entity.transe || 1));
     const label = usable ? 'Déclencher' : active ? `Transe · ${turns} t.` : `${g.rage} / ${RAGE_MAX}`;
     xiu.innerHTML = `<div class="spell-name">Xiūxiān</div>`

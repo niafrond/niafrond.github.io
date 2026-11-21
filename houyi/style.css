@@ -1598,6 +1598,9 @@ progress.enemy-bar::-webkit-progress-value {
 .stage-rtl .stage-mid { animation: stage-fly-rtl .5s ease-in .15s both; }
 .stage-ltr .stage-hurt, .stage-rtl .stage-hurt { animation: stage-blink .6s steps(1) .65s 3; }
 .stage-self .stage-cast { animation: stage-glow 1s ease-in-out infinite; }
+.stage-solo { justify-content: center; }   /* soin sur soi : le lanceur est seul, sans l'ennemi */
+.stage-solo .stage-mid { bottom: 30%; }
+.stage-support .stage-cast { animation: stage-glow 1s ease-in-out .65s 2; }
 @keyframes stage-fly-ltr { from { left: 50%; } to { left: 72%; } }
 @keyframes stage-fly-rtl { from { left: 50%; } to { left: 28%; } }
 @keyframes stage-blink { 0%, 100% { opacity: 1; filter: brightness(1); } 25% { opacity: .2; } 50% { opacity: 1; filter: brightness(2.2) saturate(0); } 75% { opacity: .35; } }
