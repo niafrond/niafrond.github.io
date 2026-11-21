@@ -152,15 +152,9 @@ export function createWeaponButton(){
     if(!container) return;
     container.innerHTML = "";
     if(gameState.combatState === 'active' && getTurnClass() !== START_CLASS){
-        // Un compagnon n'attaque pas avec son arme (elle gonfle ses sorts) : on l'affiche en carte d'information, non cliquable.
+        // Un compagnon frappe aussi avec son arme (dégâts, coût en PA) ; elle renforce de plus ses sorts.
         const w = allyEquippedWeapon(player, getTurnClass());
-        if(w){
-            const card = document.createElement('div');
-            card.className = 'enemy-spell-item disabled';
-            card.innerHTML = `<div class="spell-name">${getWeaponIcon(w.type)} ${escapeHtml(w.name)}</div>
-                <div class="spell-cost">+${allyWeaponBonus(w)} ${svgIcon('skull')} aux sorts</div>`;
-            container.appendChild(card);
-        }
+        if(w) appendWeaponButton(container, w, 'right');
         updateWeaponsTab();
         return;
     }
@@ -240,9 +234,9 @@ function allyWeaponCard(weapon, charId, worn){
         border: getRarityColor(weapon.rarity),
         name: `${getWeaponIcon(weapon.type)} ${escapeHtml(weapon.name)}`,
         badges: worn ? badgeHtml('En main', 'rc-badge-on') : '',
-        sub: `<span class="rc-stats">+${allyWeaponBonus(weapon)} aux dégâts de ses sorts · Niv. ${weapon.minLevel || 1}</span>`,
+        sub: `<span class="rc-stats">${weapon.damage} ${svgIcon('skull')} · ${weapon.actionPoints} ${svgIcon('arrow')} · +${allyWeaponBonus(weapon)} aux sorts · Niv. ${weapon.minLevel || 1}</span>`,
         primary,
-        tip: cardTipHtml(escapeHtml(weapon.name), [`+${allyWeaponBonus(weapon)} aux dégâts de ses sorts`, `Niv. ${weapon.minLevel || 1}`], escapeHtml(weapon.description || ''))
+        tip: cardTipHtml(escapeHtml(weapon.name), [`${weapon.damage} ${svgIcon('skull')} • ${weapon.actionPoints} ${svgIcon('arrow')}`, `+${allyWeaponBonus(weapon)} aux dégâts de ses sorts`, `Niv. ${weapon.minLevel || 1}`], escapeHtml(weapon.description || ''))
     });
 }
 

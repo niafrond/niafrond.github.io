@@ -1156,6 +1156,8 @@ body.show-xiu-text #xiu-banner { display: block; }
 .xiu-btn .xiu-gauge { height: 8px; border-radius: 4px; background: rgba(0, 0, 0, .35); overflow: hidden; }
 .xiu-btn .xiu-gauge i { display: block; height: 100%; background: linear-gradient(180deg, #e0556f, #a8153a 60%, #6e0c26); transition: width .4s; }
 .xiu-btn.full .xiu-gauge i { background: linear-gradient(180deg, #ffd56a, #f2a61a); }
+.xiu-btn.in-transe { filter: grayscale(1); opacity: .55; box-shadow: none; outline: none; cursor: default; }   /* Xiūxiān déclenchée : bouton grisé jusqu'à la fin de la transe */
+.xiu-btn.in-transe .xiu-gauge i { background: #8a8f94; }
 .xiu-btn.xiu-ready { cursor: pointer; box-shadow: 0 0 8px #f2c14e; outline: 1px solid #f2c14e; touch-action: manipulation; -webkit-tap-highlight-color: transparent; user-select: none; -webkit-user-select: none; }
 .xiu-btn.xiu-ready:active { transform: scale(0.97); }
 .xiu-btn.mana-reached .ult-mana-bar { animation: rage-pulse 0.9s ease-in-out infinite; }
