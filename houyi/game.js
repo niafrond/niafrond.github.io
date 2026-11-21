@@ -1461,6 +1461,7 @@ function revealCombatEndUI(isVictory){
         log(`Cliquez sur "Retour à l'exploration" pour continuer.`);
     } else {
         log("Cliquez sur \"Retour à l'exploration\" : vous reprenez vos esprits à l'entrée de la zone.");
+        restoreTeamAfterDefeat();
     }
     combatHooks.onEnd?.(isVictory);
 }
@@ -1510,6 +1511,15 @@ export function reviveTeamAtRest(){
     Object.values(gameState.allies || {}).forEach(a => { if(a?.ko){ a.ko = false; a.hp = a.maxHp; } });
     gameState.heroKo = false;
     return gained;
+}
+
+/** Combat perdu : tous les personnages (Hou Yi et compagnons, morts compris) se relèvent à 100 % de leurs PV, une fois l'écran de défaite affiché. */
+export function restoreTeamAfterDefeat(){
+    player.hp = player.maxHp;
+    reviveTeamAtRest();
+    Object.values(gameState.allies || {}).forEach(a => { if(a){ a.ko = false; a.hp = a.maxHp; } });
+    updateStats();
+    saveUpdate();
 }
 
 export function restartCombat({ keepHp = true } = {}){

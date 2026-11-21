@@ -7,7 +7,7 @@
 export const POTION_SIZES = ['small', 'medium', 'large'];
 
 export const POTIONS = {
-    small: { id: 'small', name: 'Petite potion', healPct: 25, actionPoints: 0, basePrice: 30 },
+    small: { id: 'small', name: 'Petite potion', healPct: 25, actionPoints: 0, basePrice: 10 },
     medium: { id: 'medium', name: 'Potion moyenne', healPct: 50, actionPoints: 0, basePrice: 70 },
     large: { id: 'large', name: 'Grande potion', healPct: 75, actionPoints: 0, basePrice: 140 }
 };
