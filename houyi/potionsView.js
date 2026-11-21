@@ -2,8 +2,8 @@
 import { player, gameState, currentTurn, drinkPotionAction, xiuEffect } from './game.js';
 import { POTION_SIZES, POTIONS, potionCount, potionHeal, drinkBlockReason } from './potions.js';
 import { escapeHtml } from './escapeHtml.js';
-import { itemUsability, useItemChoosingTarget, itemNeedsTarget, eligibleTargets } from './gameInventoryTabs.js';
-import { openTargetPicker, hasLivingAlly, teamMembers } from './itemTargetPicker.js';
+import { itemUsability, useItemChoosingTarget } from './gameInventoryTabs.js';
+import { openTargetPicker, hasLivingAlly } from './itemTargetPicker.js';
 import { classCanAct, decoupled } from './gameSpellList.js';
 import { isSingleUse } from './itemReuse.js';
 import { showItemTooltip, hideSpellTooltip, ensureSpellTooltip, placeTooltip } from './gameTooltips.js';
@@ -20,20 +20,6 @@ const usableItems = () => (player.inventory || []).map((item, index) => ({ item,
 const itemTag = item => (item.type === 'reusable' && !isSingleUse(item))
     ? `${item.chargesLeft ?? item.chargesPerCycle}/${item.chargesPerCycle} charges`
     : 'usage unique';
-
-/**
- * Une potion ou un objet du sac peut-il être utilisé MAINTENANT sur ce personnage (soin, ranimer, bonus d'équipe) ? Sert au petit
- * logo du bouton d'un personnage non sélectionné (gameSpellList.js) : « une action est possible sur lui ».
- */
-export function canActOnMember(classId) {
-    if (gameState.combatState !== 'active' || !(currentTurn === 'player' || decoupled()) || !classCanAct()) return false;
-    if ((player.statusEffects?.sealed || 0) > 0) return false;
-    const m = teamMembers().find(t => t.classId === classId);
-    if (!m) return false;
-    const free = !!xiuEffect().freePotions;
-    if (!m.ko && m.hp < m.maxHp && POTION_SIZES.some(size => potionCount(player, size) > 0 && (free || (player.combatPoints || 0) >= POTIONS[size].actionPoints))) return true;
-    return usableItems().some(({ item }) => itemNeedsTarget(item) && itemUsability(item).ok && eligibleTargets(item).some(t => t.classId === classId));
-}
 
 /** « Objet » : un seul bouton en combat ; il déplie le choix parmi les potions et tous les objets du sac (usage unique ou reliques réutilisables). */
 export function renderPotionButtons() {
