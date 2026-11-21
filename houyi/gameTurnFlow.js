@@ -20,6 +20,7 @@ import { getRandomItem, getRarityIcon, applyArtifactEffects, tickReusableRecharg
 import { rollCompanionPowers } from './companionPowers.js';
 import { MANA_COLOR_LABELS } from './attributes.js';
 import { calculateXPGain } from './experience.js';
+import { victoryHealPct, victoryHealAmount } from './victoryHeal.js';
 import { playSfx } from './sound.js';
 import { RAGE_MAX, addRage, resetRage } from './ultimates.js';
 import { tickTranse } from './transe.js';
@@ -809,6 +810,13 @@ export function handleEnemyDefeated(){
     const xpGain = calculateXPGain(enemy, player.level);
     queueCombatXP(xpGain);
     log(`Vous gagnez ${xpGain} XP !`);
+
+    // Soin de victoire : une part des PV max (niveau et Stamina), pour un héros resté debout.
+    if(!gameState.heroKo && player.hp > 0 && player.hp < player.maxHp){
+        const before = player.hp;
+        player.hp = Math.min(player.maxHp, before + victoryHealAmount(player));   // soin direct : même Corrompu, la victoire ne fait pas de mal
+        log(`La victoire vous revigore : +${player.hp - before} PV (${victoryHealPct(player.level, player.attributes?.stamina)} % des PV max).`);
+    }
 
     // PA : l'équipement porté enseigne des compétences (skills.js) ; chaque victoire les fait progresser.
     const apGain = apForVictory(enemy.level) * xiuPaMult;
