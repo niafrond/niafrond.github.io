@@ -1,3 +1,9 @@
+## [3.20.0](https://github.com/niafrond/niafrond.github.io/compare/v3.19.0...v3.20.0) (2026-11-21)
+
+### Features
+
+* **houyi:** petite potion moins chère, soin de victoire, équipe restaurée après une défaite ([#776](https://github.com/niafrond/niafrond.github.io/issues/776)) ([f0ae910](https://github.com/niafrond/niafrond.github.io/commit/f0ae9104a97a479cfd22960b1e36592a771e8359))
+
 ## [3.19.0](https://github.com/niafrond/niafrond.github.io/compare/v3.18.0...v3.19.0) (2026-11-21)
 
 ### Features
