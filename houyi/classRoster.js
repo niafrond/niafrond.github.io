@@ -19,7 +19,7 @@ export const BIOME_CLASS_LIMITS = {
     riverbed: { classes: ['alchemist'], reason: 'le fleuve délave les poudres et les élixirs' },
     bamboo: { classes: ['barbarian'], reason: 'les bambous serrés interdisent les grands gestes' },
     storm: { classes: ['monk', 'shaman'], reason: 'la foudre couvre les prières et les chants' },
-    savanna: { classes: ['assassin'], reason: 'la plaine ouverte trahit les chasseurs' },
+    savanna: { classes: ['assassin'], reason: 'la plaine ouverte trahit Hou Yi' },
     coast: { classes: ['barbarian', 'alchemist'], reason: 'les embruns éteignent la rage et les fourneaux' },
     tides: { classes: ['templar', 'sorcerer'], reason: 'les hautes eaux emportent boucliers et parchemins' },
     fusang: { classes: ['shaman'], reason: 'l\'arbre céleste fait taire les esprits' },
