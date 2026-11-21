@@ -1550,7 +1550,7 @@ export function restartCombat({ keepHp = true } = {}){
     prepareAllyPortraits();               // dessins des compagnons puis barres de vie
     gameState.playedClasses = new Set();   // classes jouées ce combat (PA de classe)
     gameState.forcedClass = enemy?.training || null;   // entraînement : une seule classe, imposée par le maître
-    if(gameState.forcedClass) log(`Entraînement : ce combat se mène uniquement en ${CLASS_SHORT[gameState.forcedClass] || gameState.forcedClass}.`);
+    if(gameState.forcedClass) log(`Entraînement : ce combat se mène avec ${ALLIES[gameState.forcedClass] ? ALLIES[gameState.forcedClass].name : 'Hou Yi'} seul.`);
     gameState.transeApplied = null;
     gameState.doubleCastUsed = false;
     syncGauge();   // une jauge par classe : on affiche celle de la classe du tour
@@ -2205,7 +2205,7 @@ export async function castUltimate(spellId){
     if(!spell || getEquippedUltimate(player)?.id !== spell.id){ log("Ultime indisponible !"); return; }
     if(player.level < spell.minLevel && player.cheatAllUltimates !== true){ log(`Nécessite niveau ${spell.minLevel}`); return; }
     if(isMuted(player)){ log("Vous êtes muet : impossible de lancer un ultime."); return; }
-    if(!classAllowsUltimate(getTurnClass())){ log("L'ultime n'est lançable qu'en choisissant le Mage (Longwang) pour ce tour."); return; }
+    if(!classAllowsUltimate(getTurnClass())){ log("L'ultime n'est lançable qu'en choisissant Longwang pour ce tour."); return; }
     if(player.cheatMaxRage !== true && !allyInXiuxian('sorcerer')){ log("L'ultime demande la Xiūxiān de Longwang : remplissez sa jauge (il doit encaisser des coups), puis déclenchez-la."); return; }
     if(player.cheatFreeSpells !== true && !canCastUltimateMana(player, spell)){
         const missing = ultimateCostEntries(spell).find(([color, need]) => collectedUltimateMana(player, color) < need);

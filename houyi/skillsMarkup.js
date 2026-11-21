@@ -37,7 +37,7 @@ function row(hero, skill, taught, selectedId) {
     const cost = isSupport(skill) ? skill.cost : '';
     return `<button type="button" class="ab-row ab-${st}${skill.id === selectedId ? ' selected' : ''}" data-skill="${skill.id}" aria-pressed="${skill.id === selectedId}">
         <span class="ab-gem">${GEM}</span>
-        <span class="ab-name">${esc(skill.name)}${skill.classId ? ` <small class="ab-class">${esc(CLASS_SHORT[skill.classId])}</small>` : ''}</span>
+        <span class="ab-name">${esc(skill.name)}${skill.classId ? ` <small class="ab-class">${esc(memberName(skill.classId))}</small>` : ''}</span>
         <span class="ab-cost" title="Coût en Fulu">${cost}</span>
     </button>`;
 }
@@ -49,7 +49,7 @@ function infoPanel(hero, skill, taught, canToggle) {
     const pct = st === 'active' || st === 'learned' ? 100 : Math.round(have / skill.ap * 100);
     const who = taught.get(skill.id);
     const support = isSupport(skill);
-    const cls = skill.classId ? CLASS_SHORT[skill.classId] : null;
+    const cls = skill.classId ? memberName(skill.classId) : null;
     const left = magikolithCapacity(hero) - usedMagikoliths(hero);
     // D'où vient-elle ? / Où en est-on ? : la réponse change selon l'état.
     let origin;
@@ -126,7 +126,7 @@ export function skillsTabHtml(hero, gear, selectedId, canToggle = true) {
     const selected = list.find(s => s.id === selectedId) || list[0];
     const learnedCount = hero.skills.learned.length;
     const ownedClasses = normalizeRoster(hero).owned;
-    const transe = Object.entries(TRANSE_EFFECTS).filter(([cls]) => ownedClasses.includes(cls)).map(([cls, e]) => `<li><strong>${esc(e.name)}</strong> (${esc(CLASS_SHORT[cls])}) : ${esc(e.text)}</li>`).join('');
+    const transe = Object.entries(TRANSE_EFFECTS).filter(([cls]) => ownedClasses.includes(cls)).map(([cls, e]) => `<li><strong>${esc(e.name)}</strong> (${esc(memberName(cls))}) : ${esc(e.text)}</li>`).join('');
     return `<div class="ab-screen">
         <div class="ab-header">
             <div class="ab-hero"><strong>${esc(hero.name || 'Hou Yi')}</strong> <span class="ab-lv">Niv. ${hero.level || 1}</span>
@@ -143,6 +143,6 @@ export function skillsTabHtml(hero, gear, selectedId, canToggle = true) {
         <p class="ab-legend"><span class="lg lg-active">${GEM}</span> allumée (bonus actif) <span class="lg lg-learned">${GEM}</span> apprise, éteinte <span class="lg lg-training">${GEM}</span> en apprentissage <span class="lg lg-locked">${GEM}</span> à débloquer · ${learnedCount} apprise${learnedCount > 1 ? 's' : ''}</p>
         <details class="ab-xiu"><summary>Xiūxiān</summary>
             <p>Chaque classe a sa jauge, qui se remplit quand vous subissez des dégâts avec cette classe et se conserve d'un combat à l'autre. Pleine, touchez-la pour déclencher la Xiūxiān de cette classe (${TRANSE_TURNS} tours) : son effet s'applique, même si vous changez de classe ensuite.</p>
-            <ul>${transe}</ul>${ownedClasses.includes('sorcerer') ? '<p>L\'ultime ne se lance que pendant la Xiūxiān du Mage, avec le Mage choisi pour le tour.</p>' : ''}</details>
+            <ul>${transe}</ul>${ownedClasses.includes('sorcerer') ? '<p>L\'ultime ne se lance que pendant la Xiūxiān de Longwang, avec Longwang choisi pour le tour.</p>' : ''}</details>
     </div>`;
 }

@@ -130,7 +130,7 @@ const STEPS = [
     {   // J2 : 3 gâteaux de sa couleur
         who: 'enemy', kind: 'swap', match: { type: 'color', len: 3, side: 'foe' }, icon: 'refresh',
         title: () => "L'ennemi joue : votre barre de classe se recharge",
-        desc: () => `Fengmeng joue à son tour sur le même plateau. Il aligne <strong>3 gâteaux de lune ${COLOR_FR[_foeColor]}</strong> et gagne du qì ${icon('mana_' + _foeColor)}, comme vous.<br><strong>Chargement :</strong> après chaque action, votre classe se recharge. Regardez la <strong>barre sous le plateau</strong> se remplir pendant que Fengmeng joue ; une fois pleine, votre classe peut agir de nouveau. Plus l'Agilité, le Moral, le qì et les compétences sont élevés, plus elle se recharge vite : une classe rapide, ou plusieurs classes à tour de rôle, jouent plus souvent que l'ennemi (qui a aussi son temps de chargement).`,
+        desc: () => `Fengmeng joue à son tour sur le même plateau. Il aligne <strong>3 gâteaux de lune ${COLOR_FR[_foeColor]}</strong> et gagne du qì ${icon('mana_' + _foeColor)}, comme vous.<br><strong>Le chargement :</strong> chaque action (arme, sort, objet) vide la barre de votre personnage, qui <strong>se remplit ensuite toute seule</strong>, en temps réel, pendant que le plateau joue. Barre pleine = il peut agir de nouveau ; barre en cours de remplissage = il doit attendre. Regardez-la se remplir pendant que Fengmeng joue.<br>L'ennemi a lui aussi sa barre : quand elle est pleine, il agit. L'Agilité, le Moral, le qì et les compétences raccourcissent le chargement. Si le plateau reste inactif quelques secondes, les chargements se mettent en pause jusqu'au prochain alignement.`,
         done: 'Fengmeng a gagné du qì.',
     },
     {   // J1 : découverte de la réserve de qì (sous le plateau)
@@ -142,7 +142,7 @@ const STEPS = [
     {   // J1 : découverte de la barre d'action (bouton du personnage)
         who: 'player', kind: 'info', icon: 'hourglass', focus: ['#class-picker'],
         title: () => "Votre barre d'action",
-        desc: () => `Vos <strong>PV</strong> et votre <strong>barre d'action</strong> : pleine, vous pouvez agir.`,
+        desc: () => `Le bouton de votre personnage montre trois choses :<br>• le <strong>fond qui se remplit</strong> = son chargement : plein et clignotant, il est <strong>prêt à agir</strong> ; sinon, il se recharge encore ;<br>• la fine barre <strong>verte</strong> = ses PV ;<br>• la barre <strong>rouge</strong> = sa jauge de Xiūxiān.<br>Touchez-le pour choisir ses actions dès qu'il est prêt.`,
         done: '',
     },
     {   // J1 : 4 gâteaux (tour bonus)
