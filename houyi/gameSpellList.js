@@ -20,7 +20,7 @@ import { ULTIMATE_CLASS, getSelectableUltimates } from './ultimates.js';
 import { statusBadgesHtml } from './statusBadges.js';
 import { actionSpells } from './skills.js';
 import { classProgress, classRemainingMs, classChargeInfo, isClassReady, chargeTick, spendClass, spendEnemy, isEnemyReady, chargeRunning, chargeSpeed, enqueueAction, takeNextDue, upcomingBeads } from './classCharge.js';
-import { renderPotionButtons } from './potionsView.js';
+import { renderPotionButtons, canActOnMember } from './potionsView.js';
 import { isInTranse, describeTranse, transeEffectFor, TRANSE_TURNS } from './transe.js';
 import { escapeHtml } from './escapeHtml.js';
 import { xiuMembers, canEntityCastSpell, castSpell, enemy, gameState, currentTurn, markMultiManaSpell, player, setTurnClass, spellColorsOf, spellCostHtml, spellEffectIcon, log, updateStats } from './game.js';
@@ -360,7 +360,10 @@ function renderClassPicker(container){
         const chargeText = prog >= 100 ? `Prête (chargement ${info.time})` : `Se recharge : ${Math.ceil(remaining / 1000)} s (temps ${info.time} : Agilité/Moral -${Math.round(info.pct.agility)} %, attribut -${Math.round(info.pct.attribute)} %, qì -${Math.round(info.pct.qi)} %, compétences -${info.pct.skills} %)`;
         const ko = isMemberKO(gameState.allies, gameState.heroKo, id);   // membre hors de combat : il ne joue plus
         const off = !mine || (forced && id !== forced) || restricted[id] || ko;   // choisir un compagnon reste libre : seules ses ACTIONS attendent son chargement
-        return `<button type="button" class="class-pick${id === current ? ' on' : ''}${restricted[id] ? ' limited' : ''}${ko ? ' ko' : ''}${prog >= 100 && !ko ? ' ready-pulse' : ' charging'}${animStyle ? ' charging-anim' : ''}" data-class="${id}" aria-pressed="${id === current}"${off ? ' disabled' : ''} style="--mc:${memberColor(id)};--charge:${prog}%;${animStyle}" title="${reason} · ${chargeText}"><span class="cp-name">${memberName(id)}</span>${memberBarsHtml(id)}</button>`;
+        // Petit cœur : un objet ou une potion peut être utilisé sur ce personnage (non sélectionné) ; on le lui donne en choisissant « Objet ».
+        const canHelp = id !== current && canActOnMember(id);
+        const hint = canHelp ? `<span class="cp-hint" title="Une potion ou un objet peut être utilisé sur ${escapeHtml(memberName(id))}">${svgIcon('heart')}</span>` : '';
+        return `<button type="button" class="class-pick${id === current ? ' on' : ''}${restricted[id] ? ' limited' : ''}${ko ? ' ko' : ''}${prog >= 100 && !ko ? ' ready-pulse' : ' charging'}${animStyle ? ' charging-anim' : ''}" data-class="${id}" aria-pressed="${id === current}"${off ? ' disabled' : ''} style="--mc:${memberColor(id)};--charge:${prog}%;${animStyle}" title="${reason} · ${chargeText}"><span class="cp-name">${memberName(id)}</span>${hint}${memberBarsHtml(id)}</button>`;
     }).join('');
     // Les actions en dessous sont celles du personnage choisi : leur cadre prend sa couleur et porte son nom (lecteurs d'écran, infobulle).
     const actions = document.getElementById('player-spells');
