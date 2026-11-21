@@ -321,12 +321,6 @@ const STUFF_RARITY_LABEL = { common: 'Commun', uncommon: 'Peu commun', rare: 'Ra
 export function getEnemyStuffTooltipHtml(fullName, enemyEntity) {
     // Appui long : force, faiblesse (toujours montrée) et stuff réunis.
     const lines = [getEnemyNameTooltipHtml(escapeHtml(fullName), enemyEntity, { showAll: true })];
-    // Talisman de Résonance (calibrage combatBalance.js) : visible seulement ici, à l'appui long sur l'ennemi.
-    const power = enemyEntity?.spellAmplifier?.mult || enemyEntity?.skullMult || 1;
-    if(power !== 1) {
-        const mult = (Math.round(power * 10) / 10).toFixed(1);
-        lines.push(`<div class="enemy-tooltip-row"><strong>${escapeHtml(enemyEntity.spellAmplifier?.name || 'Talisman de Résonance')}</strong> : dégâts x${mult}</div>`);
-    }
     const pieces = enemyStuffPieces(enemyEntity);
     if(!pieces.length) {
         lines.push('<div class="enemy-tooltip-row">Aucun stuff équipé.</div>');

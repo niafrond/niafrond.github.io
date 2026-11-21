@@ -23,7 +23,7 @@ import { classProgress, classRemainingMs, classChargeInfo, isClassReady, chargeT
 import { renderPotionButtons } from './potionsView.js';
 import { isInTranse, describeTranse, transeEffectFor, TRANSE_TURNS } from './transe.js';
 import { escapeHtml } from './escapeHtml.js';
-import { xiuMembers, canEntityCastSpell, castSpell, enemy, gameState, currentTurn, markMultiManaSpell, player, setTurnClass, spellColorsOf, spellCostHtml, spellEffectIcon, log, updateStats } from './game.js';
+import { xiuMembers, getLeftHandWeapon, canEntityCastSpell, castSpell, enemy, gameState, currentTurn, markMultiManaSpell, player, setTurnClass, spellColorsOf, spellCostHtml, spellEffectIcon, log, updateStats } from './game.js';
 
 // sorts
 const HIGH_SPELL_FROM_LEVEL = 15;
@@ -330,6 +330,23 @@ function renderXiuBanner(zone){
     }).join('');
 }
 
+/** Un personnage a-t-il au moins une action (sort ou arme) utilisable maintenant, à part l'attente de son chargement ? Sert à la pastille de son bouton. */
+export function memberHasAction(id){
+    const g = memberGauge(id);
+    if(!g || g.ko) return false;
+    const castable = sp => player.level >= (sp.minLevel || 1) && canEntityCastSpell(player, sp) && !spellCooldownLeft(sp.id);
+    if(id !== START_CLASS){   // compagnon : ses sorts de classe (son arme ne fait que les renforcer)
+        return !isMuted(g.entity) && activeAllySpells(player, id).some(castable);
+    }
+    if((player.statusEffects?.sealed || 0) <= 0){
+        const weapons = [player.equippedWeapon, getLeftHandWeapon()].filter(Boolean);
+        if(weapons.some(w => player.level >= (w.minLevel || 1) && player.combatPoints >= (w.actionPoints || 0))) return true;
+    }
+    if(isMuted(player)) return false;
+    return (player.activeSpells || []).filter(sp => !sp.class || sp.class === START_CLASS)
+        .some(castable);
+}
+
 function renderClassPicker(container){
     let picker = document.getElementById('class-picker');
     if(!picker){
@@ -360,7 +377,9 @@ function renderClassPicker(container){
         const chargeText = prog >= 100 ? `Prête (chargement ${info.time})` : `Se recharge : ${Math.ceil(remaining / 1000)} s (temps ${info.time} : Agilité/Moral -${Math.round(info.pct.agility)} %, attribut -${Math.round(info.pct.attribute)} %, qì -${Math.round(info.pct.qi)} %, compétences -${info.pct.skills} %)`;
         const ko = isMemberKO(gameState.allies, gameState.heroKo, id);   // membre hors de combat : il ne joue plus
         const off = !mine || (forced && id !== forced) || restricted[id] || ko;   // choisir un compagnon reste libre : seules ses ACTIONS attendent son chargement
-        return `<button type="button" class="class-pick${id === current ? ' on' : ''}${restricted[id] ? ' limited' : ''}${ko ? ' ko' : ''}${prog >= 100 && !ko ? ' ready-pulse' : ' charging'}${animStyle ? ' charging-anim' : ''}" data-class="${id}" aria-pressed="${id === current}"${off ? ' disabled' : ''} style="--mc:${memberColor(id)};--charge:${prog}%;${animStyle}" title="${reason} · ${chargeText}"><span class="cp-name">${memberName(id)}</span>${memberBarsHtml(id)}</button>`;
+        // Pastille dorée : ce personnage (non sélectionné) est chargé et a une action utilisable maintenant (arme ou sort) ; un clic le sélectionne.
+        const hint = id !== current && !off && prog >= 100 && memberHasAction(id) ? `<span class="cp-hint" title="${escapeHtml(memberName(id))} peut agir maintenant"></span>` : '';
+        return `<button type="button" class="class-pick${id === current ? ' on' : ''}${restricted[id] ? ' limited' : ''}${ko ? ' ko' : ''}${prog >= 100 && !ko ? ' ready-pulse' : ' charging'}${animStyle ? ' charging-anim' : ''}" data-class="${id}" aria-pressed="${id === current}"${off ? ' disabled' : ''} style="--mc:${memberColor(id)};--charge:${prog}%;${animStyle}" title="${reason} · ${chargeText}"><span class="cp-name">${memberName(id)}</span>${hint}${memberBarsHtml(id)}</button>`;
     }).join('');
     // Les actions en dessous sont celles du personnage choisi : leur cadre prend sa couleur et porte son nom (lecteurs d'écran, infobulle).
     const actions = document.getElementById('player-spells');
