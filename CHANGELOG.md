@@ -1,3 +1,9 @@
+## [3.19.0](https://github.com/niafrond/niafrond.github.io/compare/v3.18.0...v3.19.0) (2026-11-21)
+
+### Features
+
+* **houyi:** armes des compagnons offensives avec coût en PA, annonces de soin sans l'ennemi, Xiūxiān grisée ([#775](https://github.com/niafrond/niafrond.github.io/issues/775)) ([bbadd13](https://github.com/niafrond/niafrond.github.io/commit/bbadd13d004d36670d3e329d2f28d61c70d2b1c3))
+
 ## [3.18.0](https://github.com/niafrond/niafrond.github.io/compare/v3.17.1...v3.18.0) (2026-11-21)
 
 ### Features
