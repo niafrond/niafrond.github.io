@@ -1,3 +1,9 @@
+## [3.18.0](https://github.com/niafrond/niafrond.github.io/compare/v3.17.1...v3.18.0) (2026-11-21)
+
+### Features
+
+* **houyi:** masquer le talisman à l'appui long et signaler les personnages prêts à agir ([#774](https://github.com/niafrond/niafrond.github.io/issues/774)) ([7f9a6d1](https://github.com/niafrond/niafrond.github.io/commit/7f9a6d104c79ed008e45274f080fc00f1346759b))
+
 ## [3.17.1](https://github.com/niafrond/niafrond.github.io/compare/v3.17.0...v3.17.1) (2026-11-21)
 
 ### Bug Fixes
