@@ -1,3 +1,9 @@
+## [3.17.1](https://github.com/niafrond/niafrond.github.io/compare/v3.17.0...v3.17.1) (2026-11-21)
+
+### Bug Fixes
+
+* **houyi:** vrais noms des personnages, tutoriel des barres de chargement, specs allégées ([#773](https://github.com/niafrond/niafrond.github.io/issues/773)) ([e62e1e9](https://github.com/niafrond/niafrond.github.io/commit/e62e1e986bbd7080984a81ce36a211b237c7095a))
+
 ## [3.17.0](https://github.com/niafrond/niafrond.github.io/compare/v3.16.2...v3.17.0) (2026-11-20)
 
 ### Features
