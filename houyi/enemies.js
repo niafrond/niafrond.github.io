@@ -3,12 +3,14 @@
 import { growEnemy } from './enemyGrowth.js';
 import { rollEnemyStuff, enemyStuffMaxHp } from './enemyStuff.js';
 import { allWeapons } from "./weapons.js";
-import { MAX_ACTIVE_SPELLS, BASE_BOARD_SIZE } from "./constants.js";
+import { MAX_ACTIVE_SPELLS, BASE_BOARD_SIZE, BASE_MANA_CAP } from "./constants.js";
 import { getSpellsByClass, getAllSpells } from "./spells.js";
 import { getRandomItem } from "./items.js";
 import { applyArenaScaling } from "./arena.js";
 import { enemyDefenseForLevel } from "./progression.js";
 import { weaknessOf, applyWeaknessToResistances } from "./elements.js";
+import { ATTRIBUTE_MANA_RULES, manaBonusFor, getAttributePoints } from "./attributes.js";
+import { gearManaBonus } from "./manaGear.js";
 
 let enemyCatalog = [];
 
@@ -260,9 +262,24 @@ export function enemyClassSpell(sp){
     return { ...rest, type, ...out, ...(ops ? { enemyOps: ops } : {}), ...(debuff ? { debuff: true } : {}), ...(!debuff && type === 'buff' ? { buff: true } : {}) };
 }
 
-function buildSpellLoadout(template, enemyLevel, { fullLoadout = false } = {}){
-    const classSpells = getSpellsByClass(template.playerClass, enemyLevel).map(enemyClassSpell).filter(Boolean);   // sans version ennemie, un sort de classe ne ferait rien
-    const genericSpells = getAllSpells().filter(sp => !sp.class && sp.minLevel <= enemyLevel).map(enemyVersionOfSpell).filter(Boolean);
+/**
+ * Un sort est « à portée » d'un ennemi si, pour chaque couleur, son coût tient dans la réserve de qì que l'ennemi peut atteindre (réserve de base,
+ * plus points d'attribut de la couleur, plus équipement porté). Sinon le sort occuperait un des 4 emplacements du grimoire sans jamais pouvoir être lancé
+ * (sorts multimana de haut niveau : jusqu'à 58 qì par couleur contre 50 de base).
+ */
+export function canEnemyAffordSpell(sp, enemy){
+    if(!sp || typeof sp.cost !== 'object' || sp.cost === null) return true;
+    return Object.entries(sp.cost).every(([color, amount]) => {
+        const attribute = Object.keys(ATTRIBUTE_MANA_RULES).find(a => ATTRIBUTE_MANA_RULES[a].color === color);
+        const cap = BASE_MANA_CAP + (attribute ? manaBonusFor(attribute, getAttributePoints(enemy, attribute), 'max') : 0) + gearManaBonus(enemy, color);
+        return amount <= cap;
+    });
+}
+
+function buildSpellLoadout(template, enemyLevel, { fullLoadout = false, enemy = null } = {}){
+    const affordable = sp => !enemy || canEnemyAffordSpell(sp, enemy);
+    const classSpells = getSpellsByClass(template.playerClass, enemyLevel).map(enemyClassSpell).filter(Boolean).filter(affordable);   // sans version ennemie, un sort de classe ne ferait rien
+    const genericSpells = getAllSpells().filter(sp => !sp.class && sp.minLevel <= enemyLevel).map(enemyVersionOfSpell).filter(Boolean).filter(affordable);
 
     const preferredColors = template.spellProfile?.preferredColors || [];
     const slots = enemySpellSlots(enemyLevel);
@@ -396,7 +413,7 @@ function buildEnemyFromTemplate(template, enemyLevel, allWeaponsArg = allWeapons
         resistances: buildResistances(template, enemyLevel),
         combatPoints: 0,
         mana: { red: 0, blue: 0, green: 0, yellow: 0, purple: 0 },
-        spells: buildSpellLoadout(template, enemyLevel, { fullLoadout: boss }),
+        spells: buildSpellLoadout(template, enemyLevel, { fullLoadout: boss, enemy: { attributes, weapon: enemyWeapon, stuff: enemyStuff } }),
         weapon: enemyWeapon,
         level: enemyLevel,
         abilities: enemyAbilities,
@@ -454,8 +471,10 @@ export function createBossEnemyForTier(tierLevel, allWeaponsArg = allWeapons, pr
 function transplantKit(target, kit){
     target.maxHp = Math.max(1, target.maxHp - enemyStuffMaxHp(target) + enemyStuffMaxHp(kit));
     target.hp = target.maxHp;
+    // Le kit a été tiré avec ses propres points d'attribut : un sort hors de portée de CET ennemi (qì trop haut) ne ferait qu'occuper un emplacement.
     target.stuff = kit.stuff;
-    target.spells = kit.spells;
+    const reachable = kit.spells.filter(sp => canEnemyAffordSpell(sp, { attributes: target.attributes, weapon: kit.weapon, stuff: kit.stuff }));
+    target.spells = reachable.length ? reachable : kit.spells;
     target.weapon = kit.weapon;
     target.weaponPower = kit.weapon ? Math.floor((target.power || 0) * 0.45) : 0;
     target.inventoryItem = kit.inventoryItem;

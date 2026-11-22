@@ -1112,6 +1112,7 @@
         "yellow": 15
       },
       "minLevel": 15,
+      "type": "damage",
       "dmg": 150,
       "description": "Grande attaque des cinq éléments consommant beaucoup de qì"
     },
