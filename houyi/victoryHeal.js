@@ -13,3 +13,12 @@ export function victoryHealPct(level = 1, stamina = 0) {
 
 /** PV rendus au héros (au moins 1). */
 export const victoryHealAmount = hero => Math.max(1, Math.round((hero?.maxHp || 0) * victoryHealPct(hero?.level, hero?.attributes?.stamina) / 100));
+
+/** Détail lisible du soin de victoire : « 9 % des PV max : 5 de base + 3 de niveau + 1 de Stamina » (plafonné à VICTORY_HEAL_MAX). */
+export function victoryHealBreakdown(level = 1, stamina = 0) {
+    const total = victoryHealPct(level, stamina);
+    const byLevel = Math.round(Math.max(0, level - 1) * VICTORY_HEAL_PER_LEVEL);
+    const byStamina = Math.round(Math.max(0, stamina) * VICTORY_HEAL_PER_STAMINA);
+    const parts = [`${VICTORY_HEAL_BASE} de base`, byLevel > 0 ? `${byLevel} de niveau` : '', byStamina > 0 ? `${byStamina} de Stamina` : ''].filter(Boolean);
+    return `${total} % des PV max : ${parts.join(' + ')}${total >= VICTORY_HEAL_MAX ? ' (plafond)' : ''}`;
+}

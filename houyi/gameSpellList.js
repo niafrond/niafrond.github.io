@@ -23,7 +23,9 @@ import { classProgress, classRemainingMs, classChargeInfo, isClassReady, chargeT
 import { renderPotionButtons } from './potionsView.js';
 import { isInTranse, describeTranse, transeEffectFor, TRANSE_TURNS } from './transe.js';
 import { escapeHtml } from './escapeHtml.js';
-import { xiuMembers, getLeftHandWeapon, canEntityCastSpell, castSpell, enemy, gameState, currentTurn, markMultiManaSpell, player, setTurnClass, spellColorsOf, spellCostHtml, spellEffectIcon, log, updateStats } from './game.js';
+import { unreachableCosts, unreachableText } from './spellReach.js';
+import { chargePaceFactor } from './gameOptions.js';
+import { xiuMembers, getManaCapForColor, getLeftHandWeapon, canEntityCastSpell, castSpell, enemy, gameState, currentTurn, markMultiManaSpell, player, setTurnClass, spellColorsOf, spellCostHtml, spellEffectIcon, log, updateStats } from './game.js';
 
 // sorts
 const HIGH_SPELL_FROM_LEVEL = 15;
@@ -274,10 +276,11 @@ function chargeTicker(){
     if(typeof document !== 'undefined') document.body?.classList.toggle('charge-paused', !running);
     if(!running){ pumpActions(); return; }   // pause d'inactivité : seules les barres sont figées ; une action déjà choisie et payée (objet, sort) doit partir quand même, sinon elle reste coincée dans la file
     const heroSpeed = memberSpeeds(), foeSpeed = chargeSpeed(enemy);
-    chargeTick(gameState.charge, dt, heroSpeed, foeSpeed);
+    const paced = dt * chargePaceFactor();   // rythme choisi / mode calme (gameOptions.js) : héros et ennemis ralentis à égalité
+    chargeTick(gameState.charge, paced, heroSpeed, foeSpeed);
     pumpActions();   // les actions en file partent dès que possible, sans lien avec le plateau
     aiModule().then(m => m && m.enemyProactiveAction());
-    import('./foeTurns.js').then(m => m.tickFoeCharges(dt)).catch(() => {});   // chaque autre ennemi du groupe a sa barre de chargement (foeTurns.js)   // l'ennemi choisit lui aussi ses actions dès qu'il est chargé
+    import('./foeTurns.js').then(m => m.tickFoeCharges(paced)).catch(() => {});   // chaque autre ennemi du groupe a sa barre de chargement (foeTurns.js)   // l'ennemi choisit lui aussi ses actions dès qu'il est chargé
     const key = usableNow().map(id => isClassReady(gameState.charge, id) ? 1 : 0).join('') + (isEnemyReady(gameState.charge) ? 'e' : '') + `|${Object.values(heroSpeed).join(',')}`;   // la vitesse (altérations) redessine les barres
     if(key !== _chargeKey){
         _chargeKey = key;
@@ -450,6 +453,8 @@ export function createSpellButtons(){
             <div class="spell-name">${sp.name} ${muted ? svgIcon('lock') : spellEffectIcon(sp)}</div>
             <div class="spell-cost">${sp.invocation ? '<span class="spell-tag">Invocation</span> ' : ''}${costHTML}${damageText}${healText}</div>
         `;
+        const unreachable = unreachableText(unreachableCosts(sp, color => getManaCapForColor(player, color)));
+        if(unreachable && player.level >= sp.minLevel){ btn.classList.add('spell-unreachable'); btn.title = unreachable; btn.insertAdjacentHTML('beforeend', `<div class="spell-unreach">${unreachable}</div>`); }
         const coolLeft = spellCooldownLeft(sp.id);
         if(coolLeft > 0) btn.querySelector('.spell-cost').insertAdjacentHTML('beforeend', ` <span class="spell-cooldown">Recharge : ${coolLeft} tour${coolLeft > 1 ? 's' : ''}</span>`);
         if(player.level<sp.minLevel || !hasEnoughMana || coolLeft > 0 || muted || !classCanAct()) {   // classe du tour en chargement : on ne peut pas choisir l'action

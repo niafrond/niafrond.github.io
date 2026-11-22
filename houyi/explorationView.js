@@ -575,7 +575,7 @@ export function createExplorationView(cfg) {
         window.dispatchEvent(new CustomEvent('houyi:encounter-start', {
             detail: enc.boss ? { scene: 'boss', options: { boss: enc.boss.name } } : { scene: 'combat', options: { variant: enc.name, biome: enc.biome || null } }
         }));
-        const reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+        const reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches || document.body.classList.contains('fx-reduced') || document.body.classList.contains('no-anim');   // mode calme / effets réduits : pas de flash d'entrée
         const overlay = document.createElement('div');
         const eKey = enc.spriteKey || enc.enemyId;
         const encGbaSprite = gbaSprite(eKey, 'front') || gbaSprite(enc.templateId, 'front');

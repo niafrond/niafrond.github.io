@@ -13,6 +13,8 @@
 //    Tant que le joueur n'a pas choisi lui-même « Animations », le réglage « réduire les animations » du système (prefers-reduced-motion) s'applique ;
 //    son choix explicite, dans un sens ou dans l'autre, prime ensuite.
 // Confort :
+//  - calm        : mode calme (moins de stimulation) : effets réduits, aucun clignotement, annonces brèves (×0,7), une seule particule de qì par match, barres de chargement à 75 % ;
+//  - chargePace : 'normal' | 'calm' (×0,75) | 'relaxed' (×0,5) — rythme réel des barres de chargement du héros et des ennemis (l'équilibre est inchangé) ;
 //  - breakReminder : rappel de pause bienveillant (breakReminder.js), désactivable.
 //  - casual : mode Casual (casual.js, casualPilot.js) : le jeu choisit stuff, armes, sorts et points d'attribut, et passe à un équipement défensif après des défaites.
 //  - horseAvoid : à cheval, le trajet au toucher évite les zones que le cheval ne franchit pas (eau et lave, où il faudrait mettre pied à terre) ;
@@ -24,9 +26,13 @@
 // Les autres options sont purement visuelles : elles ne changent pas les règles du jeu.
 
 export const OPTIONS_STORAGE_KEY = 'houyi.options';
-export const OPTION_DEFAULTS = { manaFlight: true, effects: 'auto', speed: 'normal', vibration: true, textSize: 'normal', shapes: false, colorblind: false, animations: true, blink: true, reduceFx: false, breakReminder: true, casual: false, horseAvoid: true, aiDifficulty: 'auto' };
-const CHOICES = { effects: ['auto', 'low', 'normal', 'high'], speed: ['slow', 'normal', 'fast'], textSize: ['normal', 'large', 'xlarge'], aiDifficulty: ['auto', 'story', 'easy', 'normal', 'hard', 'expert'] };
+export const OPTION_DEFAULTS = { manaFlight: true, effects: 'auto', speed: 'normal', vibration: true, textSize: 'normal', shapes: false, colorblind: false, animations: true, blink: true, reduceFx: false, breakReminder: true, casual: false, horseAvoid: true, aiDifficulty: 'auto', calm: false, chargePace: 'normal' };
+const CHOICES = { effects: ['auto', 'low', 'normal', 'high'], speed: ['slow', 'normal', 'fast'], textSize: ['normal', 'large', 'xlarge'], aiDifficulty: ['auto', 'story', 'easy', 'normal', 'hard', 'expert'], chargePace: ['normal', 'calm', 'relaxed'] };
 const SPEED_FACTOR = { slow: 1.4, normal: 1, fast: 0.6 };
+// Rythme des barres de chargement (héros ET ennemis à égalité : l'équilibre ne change pas, seul le temps réel s'étire).
+export const CHARGE_PACE_FACTOR = { normal: 1, calm: 0.75, relaxed: 0.5 };
+export const CALM_ANIMATION_FACTOR = 0.7;   // mode calme : annonces et pauses plus brèves
+export const CALM_MANA_PARTICLES = 1;       // mode calme : une seule particule par match (cascades condensées)
 
 let current = { ...OPTION_DEFAULTS };
 const explicit = new Set();   // options que le joueur a réellement choisies (stockées)
@@ -91,7 +97,7 @@ export function resetSoftwareRenderingCache() { softwareRendering = null; }
 
 // Niveau d'effets réellement appliqué : 'low' | 'normal' | 'high'.
 export function effectsLevel() {
-    if (current.reduceFx) return 'low';
+    if (reduceFxActive()) return 'low';
     if (current.effects !== 'auto') return current.effects;
     try {
         if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return 'low';
@@ -113,11 +119,20 @@ export function animationsEnabled() {
     return explicit.has('animations') ? current.animations : !osReducesMotion();
 }
 
+/** Mode calme (moins de stimulation) : effets réduits, aucun clignotement, annonces brèves, particules condensées, barres plus lentes. */
+export function isCalm() { return current.calm === true; }
+
+/** Effets visuels réduits : choix explicite ou mode calme. */
+export function reduceFxActive() { return current.reduceFx === true || isCalm(); }
+
+/** Multiplicateur du temps réel des barres de chargement (1 = normal) : le plus lent entre le rythme choisi et celui du mode calme. */
+export function chargePaceFactor() { return Math.min(CHARGE_PACE_FACTOR[current.chargePace] || 1, isCalm() ? CHARGE_PACE_FACTOR.calm : 1); }
+
 // Multiplicateur appliqué aux durées d'animation et aux pauses (1 = normal).
-export function animationFactor() { return (SPEED_FACTOR[current.speed] || 1) * (animationsEnabled() ? 1 : 0.3); }
+export function animationFactor() { return (SPEED_FACTOR[current.speed] || 1) * (animationsEnabled() ? 1 : 0.3) * (isCalm() ? CALM_ANIMATION_FACTOR : 1); }
 
 // Nombre maximal de particules de qì par match, selon le niveau d'effets.
-export function maxManaParticles() { return { low: 3, normal: 6, high: 10 }[effectsLevel()]; }
+export function maxManaParticles() { return isCalm() ? CALM_MANA_PARTICLES : { low: 3, normal: 6, high: 10 }[effectsLevel()]; }
 
 // Fait vibrer l'appareil (durée en ms ou motif), sauf si l'option « Vibrations » est coupée ou si l'appareil ne sait pas vibrer.
 // `shakeIfUnsupported` : sur un appareil sans vibreur, secoue l'écran à la place (dégâts subis).
@@ -173,15 +188,16 @@ export function applyOptions() {
     if (typeof document === 'undefined' || !document.body) return;
     const level = effectsLevel();
     document.body.classList.toggle('fx-low', level === 'low');
-    document.body.classList.toggle('fx-high', level === 'high' && !current.reduceFx);
+    document.body.classList.toggle('fx-high', level === 'high' && !reduceFxActive());
     const b = document.body.classList;
     b.toggle('text-large', current.textSize === 'large');
     b.toggle('text-xlarge', current.textSize === 'xlarge');
     b.toggle('a11y-shapes', current.shapes);   // le mode daltonien seul garde les gâteaux de lune ; avec Symboles, formes à la palette daltonienne
     b.toggle('a11y-colorblind', current.colorblind);
     b.toggle('no-anim', !animationsEnabled());
-    b.toggle('fx-reduced', current.reduceFx);
-    b.toggle('no-blink', !current.blink || current.reduceFx);   // aucun clignotement si l'option est coupée ou si les effets sont réduits
+    b.toggle('fx-reduced', reduceFxActive());
+    b.toggle('calm', isCalm());
+    b.toggle('no-blink', !current.blink || reduceFxActive());   // aucun clignotement si l'option est coupée ou si les effets sont réduits
     b.toggle('casual-mode', current.casual === true);   // mode Casual : le côté RPG (armes, stuff, répartition des points) est géré par le jeu
 }
 

@@ -1142,7 +1142,7 @@ export function drinkPotionAction(size, targetClass = null){
         actionGuard.markPlayerAction();
         const effect = () => {
             const { ok, healed } = applyQueuedPotion(player, size, gameState.heroKo);
-            if(!ok){ log(`Hou Yi est à terre : la ${potion.name.toLowerCase()} est rendue au sac.`); document.dispatchEvent(new Event('potions-changed')); endAction(); return; }
+            if(!ok){ log(`Hou Yi est à terre : la ${potion.name.toLowerCase()} est rendue au sac.`); showCombatAnimation({ icon: 'potion', title: 'Potion rendue', plain: true, damage: 'Hou Yi est à terre', target: 'Elle revient au sac' }, true); document.dispatchEvent(new Event('potions-changed')); endAction(); return; }
             flyHeal(true, healed);
             log(`${potion.name} : +${healed} PV.`);
             logActiveAction(`boit une ${potion.name.toLowerCase()}`);
@@ -1513,6 +1513,7 @@ export function reviveTeamAtRest(){
 
 /** Combat perdu : tous les personnages (Hou Yi et compagnons, morts compris) se relèvent à 100 % de leurs PV, une fois l'écran de défaite affiché. */
 export function restoreTeamAfterDefeat(){
+    log("Tout le monde se relève, en pleine forme : la défaite ne coûte rien. Reprenez quand vous voulez.");   // rassurer : aucune pénalité, pas de pression
     player.hp = player.maxHp;
     reviveTeamAtRest();
     Object.values(gameState.allies || {}).forEach(a => { if(a){ a.ko = false; a.hp = a.maxHp; } });

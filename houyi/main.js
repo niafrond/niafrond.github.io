@@ -480,7 +480,9 @@ function init() {
     // Accessibilité : taille du texte, symboles, animations, effets réduits (gameOptions.js)
     const textSizeSelect = document.getElementById('opt-text-size');
     if(textSizeSelect) { textSizeSelect.value = getOption('textSize'); textSizeSelect.addEventListener('change', () => setOption('textSize', textSizeSelect.value)); }
-    [['opt-shapes', 'shapes'], ['opt-colorblind', 'colorblind'], ['opt-animations', 'animations'], ['opt-blink', 'blink'], ['opt-reduce-fx', 'reduceFx'], ['opt-break-reminder', 'breakReminder'], ['opt-horse-avoid', 'horseAvoid'], ['opt-casual', 'casual']].forEach(([id, key]) => {
+    const paceSelect = document.getElementById('opt-charge-pace');
+    if(paceSelect) { paceSelect.value = getOption('chargePace'); paceSelect.addEventListener('change', () => setOption('chargePace', paceSelect.value)); }
+    [['opt-shapes', 'shapes'], ['opt-colorblind', 'colorblind'], ['opt-animations', 'animations'], ['opt-blink', 'blink'], ['opt-reduce-fx', 'reduceFx'], ['opt-calm', 'calm'], ['opt-break-reminder', 'breakReminder'], ['opt-horse-avoid', 'horseAvoid'], ['opt-casual', 'casual']].forEach(([id, key]) => {
         const btn = document.getElementById(id);
         if(!btn) return;
         const value = () => key === 'animations' ? animationsEnabled() : getOption(key);
