@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#0b1d33">
+<title>Mon bus Naolib</title>
+<script async src="https://stats.fontaine.one/count.js"></script>
+<style>
+:root{--bg:#0b1d33;--card:#13294a;--line:#25416b;--txt:#eef3fa;--mute:#93a7c4;--acc:#ffc83d;--ok:#4cd08a;--bad:#ff6b6b}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--txt);font:16px/1.4 system-ui,sans-serif;padding:16px;max-width:480px;margin-inline:auto}
+h1{font-size:18px;margin:0 0 14px;display:flex;justify-content:space-between;align-items:center}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:14px}
+.mute{color:var(--mute);font-size:14px}
+.big{font-size:56px;font-weight:700;color:var(--acc);line-height:1.05;margin:4px 0}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+label{display:block;font-size:13px;color:var(--mute);margin:12px 0 4px}
+input,select,button{font:inherit;color:var(--txt);background:#0d2140;border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+input,select{width:100%}
+button{cursor:pointer;width:auto}
+button.p{background:var(--acc);color:#1b1500;border:0;font-weight:700}
+button.g{background:none;border:0;color:var(--mute);padding:4px 8px}
+.chip{padding:6px 12px;border-radius:99px;font-size:14px}
+.list{max-height:220px;overflow:auto;border:1px solid var(--line);border-radius:10px;margin-top:6px}
+.list div{padding:10px 12px;border-bottom:1px solid var(--line);cursor:pointer}
+.list div:last-child{border:0}.list div:hover{background:#1b3a66}
+.late{border-color:var(--acc)}
+.err{color:var(--bad);font-size:14px}
+.warn{color:var(--bad);font-weight:600}
+.alt{display:flex;justify-content:space-between;padding:6px 0;border-top:1px solid var(--line);font-size:15px}
+.hide{display:none}
+</style>
+</head>
+<body>
+<h1><span>🚌 Mon bus</span><button class="g" id="gear">⚙️ Réglages</button></h1>
+
+<section id="main" class="hide">
+  <div class="card" id="result"></div>
+  <div class="card" id="startCard"></div>
+  <div class="mute" id="foot"></div>
+</section>
+
+<section id="setup" class="card hide">
+  <b>Réglages</b>
+  <label>Mon arrêt (nom)</label>
+  <input id="q" placeholder="Ex. Commerce, Haluchère…" autocomplete="off">
+  <div class="list hide" id="stops"></div>
+  <div id="picked" class="mute"></div>
+  <div id="lineBox" class="hide">
+    <label>Ma ligne</label><select id="line"></select>
+    <label>Mon sens</label><select id="sens"></select>
+  </div>
+  <label>Temps de marche maison → arrêt (min)</label>
+  <input id="walk" type="number" min="0" max="120" inputmode="numeric">
+  <label>Trajet en bus jusqu'au travail, marche comprise (min)</label>
+  <input id="ride" type="number" min="0" max="240" inputmode="numeric">
+  <label>Heure de début habituelle</label>
+  <input id="start" type="time">
+  <div class="row" style="margin-top:16px">
+    <button class="p" id="save">Enregistrer</button>
+    <button class="g" id="cancel">Annuler</button>
+  </div>
+  <div class="err" id="serr"></div>
+</section>
+
+<script>
+// Données : Open Data Naolib (open.tan.fr). Stockage : localStorage uniquement.
+const API = 'https://open.tan.fr/ewp/';
+const K = 'bus-naolib:v1';
+const $ = id => document.getElementById(id);
+const pad = n => String(n).padStart(2, '0');
+const norm = s => (s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+const ymd = d => d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+const hm = m => pad(Math.floor(m / 60) % 24) + ':' + pad(m % 60);
+const toMin = t => { const [h, m] = t.split(':').map(Number); return h * 60 + m; };
+
+const load = (k, d) => { try { const v = JSON.parse(localStorage.getItem(k)); return v ?? d; } catch { return d; } };
+const save = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} };
+
+let cfg = load(K + ':cfg', null);        // {code,label,line,sens,dirs,walk,ride,start}
+let late = load(K + ':late', null);      // {date, time} — début décalé pour aujourd'hui seulement
+let times = null;                        // minutes depuis minuit des départs du jour à l'arrêt
+let status = '';                         // message réseau
+let draft = {};                          // choix en cours dans les réglages
+
+async function getJSON(path) {
+  const r = await fetch(API + path);
+  if (!r.ok) throw new Error('HTTP ' + r.status);
+  return r.json();
+}
+
+// Horaires théoriques du jour pour l'arrêt/ligne/sens (cache par jour)
+async function fetchTimes(code, line, sens, date) {
+  const key = `${K}:h:${code}:${line}:${sens}`;
+  const c = load(key, null);
+  if (c && c.date === date) return { times: c.times, dirs: c.dirs };
+  const j = await getJSON(`horairesarret.json/${encodeURIComponent(code)}/${encodeURIComponent(line)}/${sens}/${date}`);
+  const out = [];
+  for (const h of j.horaires || []) {
+    const hh = parseInt(h.heure, 10);
+    for (const p of h.passages || []) { const mm = parseInt(p, 10); if (!isNaN(hh) && !isNaN(mm)) out.push(hh * 60 + mm); }
+  }
+  out.sort((a, b) => a - b);
+  const dirs = j.ligne ? [j.ligne.directionSens1, j.ligne.directionSens2] : null;
+  save(key, { date, times: out, dirs });
+  return { times: out, dirs };
+}
+
+async function refresh() {
+  if (!cfg) return;
+  const date = ymd(new Date());
+  try {
+    const r = await fetchTimes(cfg.code, cfg.line, cfg.sens, date);
+    times = r.times; status = '';
+    if (!times.length) status = 'Aucun passage trouvé aujourd’hui sur cette ligne.';
+  } catch (e) {
+    const c = load(`${K}:h:${cfg.code}:${cfg.line}:${cfg.sens}`, null);
+    times = c ? c.times : null;
+    status = 'Naolib injoignable' + (c ? ' — horaires enregistrés du ' + c.date : '') + '.';
+  }
+  render();
+}
+
+function todayStart() {
+  const d = ymd(new Date());
+  return late && late.date === d ? { time: late.time, late: true } : { time: cfg.start, late: false };
+}
+
+function render() {
+  if (!cfg) { show('setup'); return; }
+  const now = new Date(), nowMin = now.getHours() * 60 + now.getMinutes() + now.getSeconds() / 60;
+  const st = todayStart(), target = toMin(st.time) - cfg.ride;
+  const res = $('result');
+  let html = '';
+  if (!times || !times.length) {
+    html = `<div class="mute">${cfg.label} · ligne ${cfg.line}</div><div class="warn">${status || 'Chargement…'}</div>`;
+  } else {
+    let i = -1;
+    times.forEach((t, k) => { if (t <= target) i = k; });
+    if (i < 0) {
+      html = `<div class="warn">Aucun bus ne t’amène à ${st.time} avec ${cfg.ride} min de trajet.</div>`;
+    } else {
+      const bus = times[i], leave = bus - cfg.walk, left = leave - nowMin;
+      let cd;
+      if (left >= 1) cd = `<span style="color:var(--ok)">dans ${left >= 60 ? Math.floor(left / 60) + ' h ' + pad(Math.floor(left % 60)) : Math.floor(left)} min</span>`;
+      else if (left > -1) cd = `<span class="warn">maintenant !</span>`;
+      else cd = `<span class="warn">déjà passé${-left < 60 ? ' (' + Math.ceil(-left) + ' min)' : ''}</span>`;
+      html = `<div class="mute">Pour arriver à ${st.time}${st.late ? ' (début décalé)' : ''}, sortir à</div>
+        <div class="big">${hm(leave)}</div><div>${cd}</div>
+        <div class="mute" style="margin-top:8px">Bus de ${hm(bus)} à ${cfg.label} · ligne ${cfg.line} ${cfg.dirs ? '→ ' + cfg.dirs[cfg.sens - 1] : ''}</div>`;
+      const alts = [];
+      if (i > 0) alts.push(['Bus d’avant (marge)', times[i - 1]]);
+      if (i + 1 < times.length) alts.push(['Bus suivant (plus tard)', times[i + 1]]);
+      alts.forEach(([l, b]) => html += `<div class="alt"><span>${l} : ${hm(b)}</span><span>sortir à ${hm(b - cfg.walk)}</span></div>`);
+    }
+    if (status) html += `<div class="err" style="margin-top:8px">${status}</div>`;
+  }
+  res.innerHTML = html;
+
+  const sc = $('startCard');
+  sc.className = 'card' + (st.late ? ' late' : '');
+  sc.innerHTML = st.late
+    ? `<div class="row" style="justify-content:space-between"><span>Début aujourd’hui : <b>${st.time}</b> <span class="mute">(habituel ${cfg.start})</span></span><button class="g" id="reset">Revenir à ${cfg.start}</button></div>`
+    : `<div class="mute">Je commence plus tard aujourd’hui :</div>
+       <div class="row" style="margin-top:8px"><input type="time" id="lt" style="width:auto"><button class="p" id="lbtn">OK</button>
+       <button class="chip" data-add="30">+30 min</button><button class="chip" data-add="60">+1 h</button></div>`;
+  if (st.late) $('reset').onclick = () => { late = null; save(K + ':late', null); render(); };
+  else {
+    const setLate = t => { if (!t) return; late = { date: ymd(new Date()), time: t }; save(K + ':late', late); render(); };
+    $('lbtn').onclick = () => setLate($('lt').value);
+    sc.querySelectorAll('[data-add]').forEach(b => b.onclick = () => setLate(hm(toMin(cfg.start) + +b.dataset.add)));
+  }
+  $('foot').textContent = `Départ ${cfg.walk} min avant le bus · trajet ${cfg.ride} min · horaires théoriques Naolib.`;
+  show('main');
+}
+
+function show(which) {
+  $('main').classList.toggle('hide', which !== 'main');
+  $('setup').classList.toggle('hide', which !== 'setup');
+}
+
+/* ---------- Réglages ---------- */
+let allStops = load(K + ':stops', null);
+
+async function getStops() {
+  if (allStops) return allStops;
+  allStops = await getJSON('arrets.json');
+  save(K + ':stops', allStops.map(s => ({ codeLieu: s.codeLieu, libelle: s.libelle, ligne: (s.ligne || []).map(l => ({ numLigne: l.numLigne })) })));
+  return allStops;
+}
+
+function openSetup() {
+  draft = cfg ? { code: cfg.code, label: cfg.label, line: cfg.line, sens: cfg.sens, dirs: cfg.dirs } : {};
+  $('walk').value = cfg ? cfg.walk : 5;
+  $('ride').value = cfg ? cfg.ride : 20;
+  $('start').value = cfg ? cfg.start : '08:30';
+  $('q').value = ''; $('serr').textContent = ''; $('stops').classList.add('hide');
+  $('cancel').classList.toggle('hide', !cfg);
+  pickedUI(); show('setup');
+  if (draft.code) loadLines(draft.line, draft.sens);
+}
+
+function pickedUI() {
+  $('picked').textContent = draft.code ? '✔ ' + draft.label : 'Aucun arrêt choisi';
+  $('lineBox').classList.toggle('hide', !draft.code);
+}
+
+$('q').oninput = async () => {
+  const q = norm($('q').value.trim()), box = $('stops');
+  if (q.length < 2) { box.classList.add('hide'); return; }
+  try {
+    const all = await getStops();
+    const seen = new Set();
+    const hits = all.filter(s => norm(s.libelle).includes(q) && !seen.has(s.codeLieu) && seen.add(s.codeLieu)).slice(0, 30);
+    box.innerHTML = '';
+    hits.forEach(s => {
+      const d = document.createElement('div');
+      const lines = (s.ligne || []).map(l => l.numLigne).join(', ');
+      d.textContent = s.libelle + (lines ? ' — lignes ' + lines : '');
+      d.onclick = () => {
+        draft = { code: s.codeLieu, label: s.libelle, lines: (s.ligne || []).map(l => l.numLigne) };
+        box.classList.add('hide'); pickedUI(); loadLines();
+      };
+      box.appendChild(d);
+    });
+    if (!hits.length) box.innerHTML = '<div class="mute">Aucun arrêt trouvé</div>';
+    box.classList.remove('hide');
+  } catch { $('serr').textContent = 'Impossible de charger la liste des arrêts Naolib.'; }
+};
+
+async function loadLines(selLine, selSens) {
+  let lines = draft.lines;
+  if (!lines) {
+    try { const s = (await getStops()).find(x => x.codeLieu === draft.code); lines = s ? s.ligne.map(l => l.numLigne) : []; } catch { lines = []; }
+    if (selLine && !lines.includes(selLine)) lines.push(selLine);
+  }
+  $('line').innerHTML = lines.map(l => `<option>${l}</option>`).join('');
+  if (selLine) $('line').value = selLine;
+  await loadDirs(selSens);
+}
+
+async function loadDirs(selSens) {
+  const line = $('line').value;
+  $('sens').innerHTML = '<option value="1">Sens 1</option><option value="2">Sens 2</option>';
+  if (selSens) $('sens').value = selSens;
+  if (!line) return;
+  try {
+    const r = await fetchTimes(draft.code, line, 1, ymd(new Date()));
+    if (r.dirs) {
+      $('sens').innerHTML = `<option value="1">→ ${r.dirs[0]}</option><option value="2">→ ${r.dirs[1]}</option>`;
+      if (selSens) $('sens').value = selSens;
+    }
+  } catch {}
+}
+$('line').onchange = () => loadDirs();
+
+$('save').onclick = async () => {
+  const walk = parseInt($('walk').value, 10), ride = parseInt($('ride').value, 10), start = $('start').value;
+  if (!draft.code || !$('line').value) { $('serr').textContent = 'Choisis ton arrêt et ta ligne.'; return; }
+  if (isNaN(walk) || isNaN(ride) || !start) { $('serr').textContent = 'Renseigne les temps et l’heure de début.'; return; }
+  const sens = +$('sens').value, line = $('line').value;
+  let dirs = null;
+  try { dirs = (await fetchTimes(draft.code, line, sens, ymd(new Date()))).dirs; } catch {}
+  cfg = { code: draft.code, label: draft.label, line, sens, dirs, walk, ride, start };
+  save(K + ':cfg', cfg);
+  late = null; save(K + ':late', null);
+  times = null; render(); refresh();
+};
+$('cancel').onclick = () => render();
+$('gear').onclick = openSetup;
+
+if (cfg) { render(); refresh(); } else openSetup();
+setInterval(() => { if (document.activeElement && document.activeElement.id === 'lt') return; if (cfg && !$('main').classList.contains('hide')) { if (ymd(new Date()) !== lastDay) { lastDay = ymd(new Date()); refresh(); } else render(); } }, 15000);
+let lastDay = ymd(new Date());
+</script>
+</body>
+</html>
