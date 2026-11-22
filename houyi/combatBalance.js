@@ -196,7 +196,12 @@ export const MAX_DAMAGE_MULT = 7;   // dégâts de l'ennemi au plus ×7 (au-del�
 // Plafond du multiplicateur final (tous ennemis, boss compris) selon le mode : ×7 était trop fort en Facile et en Normal, où le diviseur du mode
 // (< 1 pour les ennemis ordinaires) et le réglage propre à chaque boss le laissaient filer jusqu'au plafond général. Auto, Difficile et Expert : inchangés.
 export const MODE_MAX_DAMAGE_MULT = { easy: 2, normal: 5 };
-export const maxDamageMultFor = difficulty => MODE_MAX_DAMAGE_MULT[difficulty] ?? MAX_DAMAGE_MULT;
+// Début de partie : un héros de niveau ≤ EARLY_HERO_LEVEL n'a que ~100 à 150 PV et ne se soigne plus tout seul. Avec un multiplicateur de 5 à 7, presque tous
+// les coups d'un ennemi de niveau 1 étaient plafonnés à 40 % des PV max (45 PV sur 112) : deux coups, voire un seul, tuaient. Le multiplicateur est donc
+// borné à EARLY_MAX_DAMAGE_MULT dans tous les modes tant que le héros est de niveau ≤ EARLY_HERO_LEVEL (SPECS.md, 2026-11-22).
+export const EARLY_HERO_LEVEL = 10;
+export const EARLY_MAX_DAMAGE_MULT = 2.5;
+export const maxDamageMultFor = (difficulty, heroLevel = Infinity) => Math.min(MODE_MAX_DAMAGE_MULT[difficulty] ?? MAX_DAMAGE_MULT, heroLevel <= EARLY_HERO_LEVEL ? EARLY_MAX_DAMAGE_MULT : Infinity);
 // Diviseur de l'attaque et du stuff de l'ennemi par mode et catégorie (simulation : tools/balance-search.mjs search-divisors).
 export const MODE_DIVISOR = {
     story: { weak: 40, normal: 40, aggressive: 40, elite: 40, miniBoss: 40, boss: 40 },   // attaque et talisman de résonance de l'ennemi quasi nuls (plancher STORY_DAMAGE_MULT)
@@ -378,7 +383,7 @@ export function calibrateEnemy({ category, heroMaxHp: rawHeroMaxHp, heroLevel = 
     const expert = isExpertMode(difficulty);
     const floorMult = isStoryMode(difficulty) ? STORY_DAMAGE_MULT : (category === 'boss' ? MIN_DAMAGE_MULT_BOSS : MIN_DAMAGE_MULT);
     const baseMult = Math.max(floorMult, expertMult / divisor);
-    const damageMult = Math.round(Math.min(maxDamageMultFor(difficulty), baseMult * (expert ? EXPERT_DAMAGE_BONUS : 1)) * 100) / 100;
+    const damageMult = Math.round(Math.min(maxDamageMultFor(difficulty, heroLevel), baseMult * (expert ? EXPERT_DAMAGE_BONUS : 1)) * 100) / 100;
     const finalHp = Math.max(1, Math.round(hp * (adjust?.hp ?? 1)));
     return { hp: finalHp, hpBase: hp, modeDivisor: divisor, hitShareCap: expert ? EXPERT_HIT_SHARE_CAP : HIT_SHARE_CAP, spellCostFactor: expert ? EXPERT_SPELL_COST_FACTOR : 1, gearScale: Math.round(Math.min(1.5, 1 / divisor) * 100) / 100, damageMult, damageScale, heroDamageScale, heroEffectiveHp: heroMaxHp, cycles: Math.round(cycles * 10) / 10, cycleSeconds: Math.round(cycleSeconds * 10) / 10, damagePerCycle: Math.round(damagePerCycle * 10) / 10, measured: corr.weight > 0, measuredWeight: corr.weight, measuredSample: corr.n };
 }

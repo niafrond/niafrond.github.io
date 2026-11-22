@@ -53,7 +53,7 @@ describe('combatBalance : enregistreur', () => {
     });
 });
 
-import { maxDamageMultFor, MODE_MAX_DAMAGE_MULT, MAX_DAMAGE_MULT, heroEffectiveHp, heroReferenceHp, calibrateEnemy, enemyCategory, DEFAULT_CYCLE_SECONDS, ENEMY_WIN_RATIO, ENEMY_RAW_CATEGORY_FACTOR, HP_DURATION_FACTOR, winRatioLevelFactor, measuredCorrections, cappedEnemyHit, HIT_SHARE_CAP, EXPERT_WIN_RATIO_FACTOR, EXPERT_CATEGORY_FACTOR, heroDamagePerCycleModel, enemyRawDamagePerCycleModel } from '../../combatBalance.js';
+import { maxDamageMultFor, EARLY_HERO_LEVEL, EARLY_MAX_DAMAGE_MULT, MODE_MAX_DAMAGE_MULT, MAX_DAMAGE_MULT, heroEffectiveHp, heroReferenceHp, calibrateEnemy, enemyCategory, DEFAULT_CYCLE_SECONDS, ENEMY_WIN_RATIO, ENEMY_RAW_CATEGORY_FACTOR, HP_DURATION_FACTOR, winRatioLevelFactor, measuredCorrections, cappedEnemyHit, HIT_SHARE_CAP, EXPERT_WIN_RATIO_FACTOR, EXPERT_CATEGORY_FACTOR, heroDamagePerCycleModel, enemyRawDamagePerCycleModel } from '../../combatBalance.js';
 
 describe('combatBalance : calibrage des ennemis', () => {
     test('catégories', () => {
@@ -246,6 +246,23 @@ describe('plafond du multiplicateur de dégâts selon le mode', () => {
         expect(maxDamageMultFor('normal')).toBe(5);
         ['auto', 'hard', 'expert', undefined].forEach(d => expect(maxDamageMultFor(d)).toBe(MAX_DAMAGE_MULT));
         expect(MODE_MAX_DAMAGE_MULT.normal).toBeLessThan(MAX_DAMAGE_MULT);
+    });
+    test('début de partie : ×2,5 au plus tant que le héros est de niveau 10 ou moins, dans tous les modes', () => {
+        expect(EARLY_HERO_LEVEL).toBe(10);
+        expect(EARLY_MAX_DAMAGE_MULT).toBe(2.5);
+        ['auto', 'normal', 'hard', 'expert', undefined].forEach(d => expect(maxDamageMultFor(d, 3)).toBe(2.5));
+        expect(maxDamageMultFor('easy', 3)).toBe(2);                    // Facile reste plus bas
+        expect(maxDamageMultFor('auto', 10)).toBe(2.5);                 // cas limite : niveau 10 inclus
+        expect(maxDamageMultFor('auto', 11)).toBe(MAX_DAMAGE_MULT);     // niveau 11 : plafond normal
+        expect(maxDamageMultFor('normal', 11)).toBe(5);
+    });
+    test('un héros de niveau 3 (112 PV) face à un ennemi de niveau 1 : multiplicateur de ×2,5 au plus, quelle que soit la catégorie ou la difficulté', () => {
+        for (const difficulty of ['auto', 'easy', 'normal', 'hard', 'expert']) {
+            for (const category of cats) {
+                const { damageMult } = calibrateEnemy({ category, heroMaxHp: 112, heroLevel: 3, enemyLevel: 1, difficulty });
+                expect(damageMult).toBeLessThanOrEqual(2.5);
+            }
+        }
     });
     test('en Normal, aucun ennemi (boss compris, même réglé très offensif) ne dépasse ×5', () => {
         cats.forEach(category => expect(calibrateEnemy({ ...hero, category, difficulty: 'normal' }).damageMult).toBeLessThanOrEqual(5));
