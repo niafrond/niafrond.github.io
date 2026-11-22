@@ -21,7 +21,7 @@ const { PNG } = createRequire(import.meta.url)('pngjs');
 const args = Object.fromEntries(process.argv.slice(2).filter(a => a.startsWith('--')).map(a => { const [k, ...v] = a.slice(2).split('='); return [k, v.length ? v.join('=') : true]; }));
 const ONLY = args.only ? String(args.only).split(',') : null;
 const STEPS = Number(args.steps || 25), CFG = Number(args.cfg || 7), LORA = Number(args.lora ?? 1);
-const SIZE = 48, FRAMES = 8, FPS = 10, TIER = 2, PORT = 8188, GEN = 512;
+const SIZE = 48, FRAMES = 8, FPS = 10, PORT = 8188, GEN = 512;
 const OUT = join(GAME, 'sprites', 'spellfx'), INDEX = join(OUT, 'index.json');
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
@@ -34,7 +34,55 @@ const SPELLS = {
   iceStorm: ['Tempête de Givre', 'a large ice crystal snowflake, six symmetric pointed arms, pale blue and white', 'blizzard'],
   dragonBreath: ['Souffle de Braise', 'a red chinese dragon head in profile with open jaws and a small plume of flame, no circle, no sun, no round shape behind it', 'breath'],
   knightCounter: ['Contre-attaque', 'a dark steel longsword with a black crossguard and a faint purple glow, pointing up', 'slash'],
-  steelMoult: ["Mue d'Acier", 'a shed steel snake skin shimmering with purple light, ring shape', 'moult']
+  steelMoult: ["Mue d'Acier", 'a shed steel snake skin shimmering with purple light, ring shape', 'moult'],
+  // Sorts de classes (Alchimiste, Voleur, Garde, Berserker, Chasseur…) : motif, mouvement[:couleur]
+  awakenQi: ['Éveil du Qi', 'a glowing blue lotus bud opening, soft light', 'pulse:BLUE'],
+  stormTide: ["Marée d'Orage", 'a blue ocean wave topped with yellow lightning', 'wave:BLUE'],
+  cinnabarTransmute: ['Conversion du Cinabre', 'a red cinnabar crystal ingot on an alchemy circle', 'swirl:GREEN'],
+  innerCrucible: ['Creuset Intérieur', 'a small green jade alchemy cauldron glowing inside', 'pulse:GREEN'],
+  furyBolt: ['Éclair de Fureur', 'a jagged blue and purple lightning bolt', 'bolt:BLUE'],
+  innerThunder: ['Tonnerre Intérieur', 'a purple thunder cloud with blue lightning inside a fist', 'bolt:PURPLE'],
+  skyJudgement: ['Jugement du Ciel', 'a huge blue and purple lightning column from a dark sky', 'bolt:PURPLE'],
+  silenceSeal: ['Sceau du Silence', 'a purple talisman seal with a closed mouth symbol', 'seal:PURPLE'],
+  cursedMark: ['Marque Maudite', 'a glowing purple cursed rune mark', 'seal:PURPLE'],
+  impureBreath: ['Souffle Impur', 'a sickly purple and green poison cloud', 'cloud:PURPLE'],
+  bloodThirst: ['Soif de Sang', 'a yellow wolf fang dripping with red', 'drain:RED'],
+  hunterThrill: ['Frisson du Chasseur', 'a golden hunting bow with a glowing arrow', 'pulse:GOLD'],
+  furyTheft: ['Vol de Fureur', 'a purple hand grabbing a red flame', 'drain:PURPLE'],
+  innerPlunder: ['Pillage Intérieur', 'a dark purple sack spilling glowing orbs', 'drain:PURPLE'],
+  spiteStrike: ['Frappe de Rancœur', 'a yellow and red fist punch with impact lines', 'slash'],
+  furiousLunge: ['Estocade Furieuse', 'a red spear thrust forward with yellow motion lines', 'slash'],
+  absoluteShadowBlow: ["Coup de l'Ombre Absolue", 'a black shadow dagger with red and yellow glow', 'slash'],
+  sleepDust: ['Poudre de Sommeil', 'a pouch pouring blue sleep dust and tiny stars, crescent moon', 'cloud:BLUE'],
+  exhaustArrow: ["Flèche d'Épuisement", 'a green arrow with a drooping feather and green mist', 'arrow:GREEN'],
+  battleOath: ['Serment de Combat', 'a purple war banner with a crossed sword emblem', 'pulse:PURPLE'],
+  guardFervor: ['Ferveur du Garde', 'a glowing purple guard helmet with an aura', 'pulse:PURPLE'],
+  wrathOffering: ['Offrande de Colère', 'a green incense burner offering with red flame', 'rise:GREEN'],
+  furyAltar: ['Autel de Fureur', 'a stone altar with a green and red flame', 'rise:RED'],
+  righteousStrike: ['Frappe du Juste', 'a purple sword with white holy light and red edge', 'slash'],
+  guardSentence: ['Sentence du Garde', 'a heavy halberd with purple light and red edge', 'slash'],
+  mandateJudgement: ['Jugement du Mandat', 'a golden imperial mandate scroll with purple light', 'bolt:PURPLE'],
+  stoneGaze: ['Regard Pétrifiant', 'a yellow glowing eye turning to stone with cracks', 'seal:GOLD'],
+  unbreakableGuard: ['Bastion Infranchissable', 'a round green and purple shield with bronze studs', 'pulse:GREEN'],
+  bloodBoil: ['Sang en Ébullition', 'a bubbling red blood cauldron with steam', 'rise:RED'],
+  furyToQi: ['Souffle de la Colère', 'a red anger flame turning into green qi swirl', 'swirl:GREEN'],
+  furyBlow: ['Coup de la Fureur Brisée', 'a cracked red war hammer with yellow sparks', 'slash'],
+  dragonBlood: ['Sang du Dragon', 'a red dragon scale with a drop of glowing blood', 'pulse:RED'],
+  angerCirculation: ['Circulation de la Colère', 'a red and green circular yin yang flow', 'swirl:RED'],
+  tigerBreaker: ['Brise-Tigre', 'a red and yellow tiger paw print crushed by a fist', 'slash'],
+  skySplitter: ['Fendeur de Ciel', 'a huge red and yellow axe splitting a crack of light', 'slash'],
+  ultimateFiveElements: ['Courroux des Cinq Éléments', 'five element orbs red blue green yellow purple around a glowing center', 'swirl:GOLD'],
+  ultimateHeavenlyThunder: ['Tribulation de la Foudre Céleste', 'a huge yellow and purple lightning storm from a swirling heavenly vortex', 'bolt:GOLD'],
+  ultimateThousandArrows: ['Pluie des Mille Flèches', 'a volley of many red and yellow arrows pointing down', 'arrow:GOLD'],
+  ultimateSunPiercer: ['Flèche qui Abat le Soleil', 'a single huge golden arrow piercing a blazing sun', 'arrow:GOLD'],
+  ultimateImperialDragon: ['Colère du Dragon Impérial', 'a golden and green imperial chinese dragon head roaring', 'breath'],
+  ultimateEternalBastion: ['Rempart Éternel', 'a blue and green fortress wall tower glowing', 'pulse:BLUE'],
+  ultimateThousandRiders: ['Charge des Mille Cavaliers', 'a charging red horse with a rider silhouette and dust', 'slash'],
+  ultimateSkyWolf: ['Hurlement du Loup Céleste', 'a howling white and purple wolf head under the moon', 'wave:PURPLE'],
+  ultimateVermilionBird: ["Renaissance de l'Oiseau Vermillon", 'a vermilion phoenix bird rising from red and purple flames', 'rise:RED'],
+  ultimateBlackTortoise: ['Carapace de la Tortue Noire', 'a black tortoise with a snake and a blue and green shell glow', 'pulse:BLUE'],
+  ultimateWhiteTiger: ['Chasse du Tigre Blanc', 'a leaping white tiger with red and blue slash marks', 'slash'],
+  ultimateAzureDragon: ["Tempête du Dragon d'Azur", 'an azure chinese dragon coiling in a green and blue storm', 'wave:BLUE']
 };
 
 const NEGATIVE = '3d render, realistic, photo, blurry, noisy, smooth gradients, antialiased, jpeg artifacts, text, letters, watermark, lowres, ' +
@@ -254,6 +302,62 @@ const MOTIONS = {
     }
     return out;
   },
+  // ── Mouvements génériques à teinte (« mouvement:COULEUR ») pour les sorts de classes ──
+  // aura qui pulse, étincelles en anneau
+  pulse(key, f, c) {
+    const t = f / (FRAMES - 1), k = Math.sin(t * Math.PI), out = tint(transform(key, 0, 0, -k * 2, 1 + 0.12 * k), c, 0.35 * k);
+    for (let i = 0; i < 8; i++) { const a = (i / 8) * Math.PI * 2 + t, rr = 11 + 11 * ease(t); put(out, 24 + Math.cos(a) * rr, 24 + Math.sin(a) * rr, i % 2 ? c : WHITE); }
+    return out;
+  },
+  // éclair : l'objet tremble et blanchit par à-coups, un trait zigzague du haut
+  bolt(key, f, c) {
+    const t = f / (FRAMES - 1), flash = f % 3 === 1, out = tint(transform(key, 0, flash ? 1 : -1, 0), WHITE, flash ? 0.6 : 0.1);
+    if (t > 0.1 && t < 0.85) { let x = 24 + ((f * 5) % 7) - 3; for (let y = 0; y < 22; y++) { x += ((y * 7 + f * 3) % 3) - 1; put(out, x, y, flash ? WHITE : c); put(out, x + 1, y, c); } }
+    for (let i = 0; i < 6; i++) put(out, (i * 17 + f * 9) % SIZE, 30 + ((i * 7 + f * 5) % 14), i % 2 ? c : GOLD);
+    return out;
+  },
+  // sceau : l'objet pivote légèrement, anneau de runes qui tourne autour
+  seal(key, f, c) {
+    const t = f / (FRAMES - 1), out = tint(transform(key, 0.1 * Math.sin(t * Math.PI * 2), 0, 0, 1 + 0.05 * Math.sin(t * Math.PI)), c, 0.25 * Math.sin(t * Math.PI));
+    for (let i = 0; i < 12; i++) { const a = (i / 12) * Math.PI * 2 + t * Math.PI * 0.8; put(out, 24 + Math.cos(a) * 21, 24 + Math.sin(a) * 21, i % 3 ? c : WHITE); }
+    return out;
+  },
+  // nuage : l'objet se dilate, volutes qui dérivent vers la droite
+  cloud(key, f, c) {
+    const t = f / (FRAMES - 1), out = tint(transform(key, 0, 2 * ease(t), 0, 0.9 + 0.2 * ease(t)), c, 0.25);
+    for (let i = 0; i < 18; i++) { const u = ((i * 5 + f * 4) % 24) / 24, x = 14 + u * 32, y = 24 + ((i * 7) % 19) - 9 + Math.sin(u * 5 + i) * 2; put(out, x, y, mix(c, WHITE, u * 0.6)); if (i % 3 === 0) put(out, x + 1, y + 1, c); }
+    return out;
+  },
+  // drain : des points convergent vers l'objet
+  drain(key, f, c) {
+    const t = f / (FRAMES - 1), out = tint(transform(key, 0, 0, 0, 1 + 0.1 * Math.sin(t * Math.PI)), c, 0.3 * ease(t));
+    for (let i = 0; i < 12; i++) { const a = i * 0.52, u = ((t * 1.2 + i / 12) % 1), rr = 24 - 18 * u; put(out, 24 + Math.cos(a) * rr, 24 + Math.sin(a) * rr, u > 0.7 ? WHITE : c); }
+    return out;
+  },
+  // montée : l'objet s'élève, flammes ou étincelles montantes
+  rise(key, f, c) {
+    const t = f / (FRAMES - 1), out = tint(transform(key, 0, 0, -6 * ease(t) + (f % 2), 1 + 0.1 * t), c, 0.3 * Math.sin(t * Math.PI));
+    for (let i = 0; i < 10; i++) { const u = ((i * 3 + f * 5) % 20) / 20; put(out, 8 + i * 4 + (i % 2), 40 - u * 34, mix(c, GOLD, u)); if (i % 2) put(out, 8 + i * 4 + (i % 2), 39 - u * 34, WHITE); }
+    return out;
+  },
+  // tourbillon : l'objet tourne, orbes en spirale
+  swirl(key, f, c) {
+    const t = f / (FRAMES - 1), out = tint(transform(key, t * Math.PI * 1.6, 0, 0, 1), c, 0.25);
+    for (let i = 0; i < 9; i++) { const a = (i / 9) * Math.PI * 2 + t * 4, rr = 8 + ((i * 5 + f * 3) % 14); put(out, 24 + Math.cos(a) * rr, 24 + Math.sin(a) * rr, i % 3 ? c : WHITE); }
+    return out;
+  },
+  // vague : l'objet ondule vers la droite, écume
+  wave(key, f, c) {
+    const t = f / (FRAMES - 1), out = tint(transform(key, 0.08 * Math.sin(t * Math.PI * 2), 5 * ease(t) - 2, Math.sin(t * Math.PI * 2) * 1.5, 0.9 + 0.15 * ease(t)), c, 0.25);
+    for (let i = 0; i < 14; i++) { const u = ((i * 4 + f * 6) % 24) / 24, x = 8 + u * 34, y = 36 - Math.abs(Math.sin(u * 7 + i)) * 12; put(out, x, y, i % 3 ? c : WHITE); }
+    return out;
+  },
+  // flèche : l'objet file vers la droite, traînée
+  arrow(key, f, c) {
+    const t = f / (FRAMES - 1), out = tint(transform(key, 0, -10 + 24 * ease(t), 3 * Math.sin(t * Math.PI), 1), c, 0.2);
+    for (let i = 0; i < 8; i++) { const x = 4 + ((i * 7 + f * 8) % 30), y = 18 + (i * 5) % 14; put(out, x, y, mix(c, WHITE, (i % 3) / 3)); put(out, x + 1, y, c); }
+    return out;
+  },
   // Chevalier noir : l'épée balaie de gauche à droite, éclair rouge à l'impact, étincelles violettes.
   slash(key, f) {
     const t = f / (FRAMES - 1), a = -0.9 + 1.8 * ease(t), out = tint(transform(key, a, Math.sin(t * Math.PI) * 3, 0), RED, t > 0.55 ? 0.35 : 0);
@@ -288,11 +392,15 @@ const host = await findHost(), base = `http://${host}:${PORT}`;
 console.log(`ComfyUI : ${base}`);
 mkdirSync(OUT, { recursive: true });
 const index = JSON.parse(readFileSync(INDEX, 'utf8'));
+const CATALOG = JSON.parse(readFileSync(join(GAME, 'spells.json'), 'utf8'));
+const COSTS = new Map(Object.values(CATALOG).filter(Array.isArray).flat().filter(s => s && s.id).map(s => [s.id, Object.values(typeof s.cost === 'object' ? s.cost : { n: s.cost }).reduce((a, b) => a + (Number(b) || 0), 0)]));
+// Même seuils que gen-spellfx.mjs : plus le sort coûte cher, plus l'annonce s'étale sur le plateau (paliers 4 et 5). Sorts hors catalogue (boss) : palier 2.
+const tierOf = id => { const c = COSTS.get(id); return c == null ? 2 : c <= 10 ? 1 : c <= 24 ? 2 : c <= 49 ? 3 : c <= 99 ? 4 : 5; };
 const todo = Object.keys(SPELLS).filter(id => (!ONLY || ONLY.includes(id)) && (args.force || !existsSync(join(OUT, `${id}.png`))));
 console.log(`${todo.length} sort(s) à générer`);
 let ok = 0, fail = 0;
 for (const id of todo) {
-  const [name, motif, motion] = SPELLS[id], t0 = Date.now();
+  const [name, motif, spec] = SPELLS[id], [motion, colName] = spec.split(':'), color = colName ? { BLUE, GREEN, RED, PURPLE, GOLD }[colName] : null, t0 = Date.now();
   try {
     const prompt = `pixel art, ${motif}, one single object alone, centered, plain solid flat medium gray (#808080) background, ` +
       'video game spell icon, clean bold dark outline, flat shading, limited color palette, ancient Chinese style';
@@ -304,8 +412,8 @@ for (const id of todo) {
     }
     if (!best.q.ok) throw new Error(`contrôle qualité échoué (${whys.join(', ')})`);
     const key = toGrid(toCells(best.img), 34);
-    writeFileSync(join(OUT, `${id}.png`), PNG.sync.write(toPng(Array.from({ length: FRAMES }, (_, f) => MOTIONS[motion](key, f)))));
-    index[id] = { name, frames: FRAMES, size: SIZE, fps: FPS, tier: TIER };
+    writeFileSync(join(OUT, `${id}.png`), PNG.sync.write(toPng(Array.from({ length: FRAMES }, (_, f) => MOTIONS[motion](key, f, color)))));
+    index[id] = { name, frames: FRAMES, size: SIZE, fps: FPS, tier: tierOf(id) };
     writeFileSync(INDEX, JSON.stringify(index, null, 2) + '\n');
     ok++; console.log(`OK   ${id} (${Math.round((Date.now() - t0) / 1000)} s)`);
   } catch (e) { fail++; console.log(`ERR  ${id}: ${e.message}`); }
