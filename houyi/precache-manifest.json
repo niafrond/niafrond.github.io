@@ -145,6 +145,7 @@
   "sound.js",
   "spellCooldown.js",
   "spellFx.js",
+  "spellReach.js",
   "spellTileFx.js",
   "spells.js",
   "spells.json",

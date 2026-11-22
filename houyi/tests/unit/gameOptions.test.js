@@ -1,6 +1,6 @@
 /** @jest-environment jsdom */
 import { describe, test, expect, beforeEach } from '@jest/globals';
-import { detectSoftwareRendering, isSoftwareRendering, resetSoftwareRenderingCache, getOption, animationsEnabled, setOption, effectsLevel, animationFactor, maxManaParticles, applyOptions, vibrate, canVibrate, armVibration, isVibrationBlocked, OPTION_DEFAULTS } from '../../gameOptions.js';
+import { isCalm, reduceFxActive, chargePaceFactor, detectSoftwareRendering, isSoftwareRendering, resetSoftwareRenderingCache, getOption, animationsEnabled, setOption, effectsLevel, animationFactor, maxManaParticles, applyOptions, vibrate, canVibrate, armVibration, isVibrationBlocked, OPTION_DEFAULTS } from '../../gameOptions.js';
 import { readFileSync } from 'node:fs';
 import { flyManaToCounter } from '../../manaFlight.js';
 
@@ -226,5 +226,37 @@ describe('mode daltonien', () => {
             expect(css).toContain(`body.a11y-colorblind .tile.${c} {`);
             expect(css).toContain(`body.a11y-colorblind .mana-${c} {`);
         }
+    });
+});
+
+describe('mode calme et rythme des barres', () => {
+    test('rythme : normal, posé et tranquille ralentissent les barres, valeur invalide refusée', () => {
+        expect(chargePaceFactor()).toBe(1);
+        setOption('chargePace', 'calm'); expect(chargePaceFactor()).toBe(0.75);
+        setOption('chargePace', 'relaxed'); expect(chargePaceFactor()).toBe(0.5);
+        expect(setOption('chargePace', 'lent')).toBe(false);
+        expect(chargePaceFactor()).toBe(0.5);
+    });
+    test('mode calme : barres à 75 % au moins, mais jamais plus rapides que le rythme choisi', () => {
+        setOption('calm', true);
+        expect(chargePaceFactor()).toBe(0.75);
+        setOption('chargePace', 'relaxed');
+        expect(chargePaceFactor()).toBe(0.5);   // le plus lent des deux
+    });
+    test('mode calme : effets réduits, aucun clignotement, annonces plus brèves, une seule particule de qì', () => {
+        setOption('effects', 'high');
+        const normal = animationFactor();
+        setOption('calm', true);
+        expect(isCalm()).toBe(true);
+        expect(reduceFxActive()).toBe(true);
+        expect(effectsLevel()).toBe('low');
+        expect(maxManaParticles()).toBe(1);
+        expect(animationFactor()).toBeCloseTo(normal * 0.7);
+        expect(document.body.classList.contains('fx-reduced')).toBe(true);
+        expect(document.body.classList.contains('no-blink')).toBe(true);
+        expect(document.body.classList.contains('calm')).toBe(true);
+        setOption('calm', false);
+        expect(document.body.classList.contains('fx-reduced')).toBe(false);
+        expect(animationFactor()).toBe(normal);
     });
 });
