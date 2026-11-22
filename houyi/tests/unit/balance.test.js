@@ -7,6 +7,7 @@ import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { allItems, useItem, isCombatLongEffect, getRandomItem } from '../../items.js';
 import { allWeapons } from '../../weapons.js';
+import { POTION_SIZES, POTIONS, potionPrice } from '../../potions.js';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const allGeneric = JSON.parse(readFileSync(join(root, 'spells.json'), 'utf8')).allSpells;
@@ -188,5 +189,20 @@ describe('objets de haut niveau (au-delà du niveau 18)', () => {
     });
     test('getRandomItem ne retombe plus sur l\'élixir de niveau 1 quand la fenêtre est vide', () => {
         for (let n = 0; n < 30; n++) expect(getRandomItem(70).minLevel).toBeGreaterThanOrEqual(60);
+    });
+});
+
+describe('potions de soin : garde-fous contre le spam', () => {
+    test('une grande potion coûte plus cher par PV rendu qu\'une petite, dans toutes les régions', () => {
+        for (const region of [1, 5, 10, 15, 20]) {
+            const perPct = POTION_SIZES.map(s => potionPrice(s, region) / POTIONS[s].healPct);
+            perPct.slice(1).forEach((v, i) => expect(v).toBeGreaterThanOrEqual(perPct[i]));
+        }
+    });
+    test('aucune potion ne soigne à plus de 75 % des PV max, et aucune n\'est gratuite', () => {
+        POTION_SIZES.forEach(s => {
+            expect(POTIONS[s].healPct).toBeLessThanOrEqual(75);
+            expect(potionPrice(s, 1)).toBeGreaterThan(0);
+        });
     });
 });

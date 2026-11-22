@@ -69,3 +69,18 @@ export function drinkPotion(hero, size, { inCombat = false, free = false } = {})
     const healed = hero.hp - before;
     return { ok: true, healed, message: `${potion.name} : +${healed} PV.` };
 }
+
+/**
+ * Effet d'une potion mise en file (actions indépendantes du plateau) : la potion est payée au choix, mais son effet part plus tard. Si Hou Yi est tombé
+ * entre-temps (`heroKo`), la potion ne le relève pas : elle est rendue au sac et rien n'est soigné. Renvoie { ok, healed, refunded }.
+ */
+export function applyQueuedPotion(hero, size, heroKo = false) {
+    if (!POTIONS[size]) return { ok: false, healed: 0, refunded: false };
+    if (heroKo || (hero.hp || 0) <= 0) {
+        addPotions(hero, size, 1);
+        return { ok: false, healed: 0, refunded: true };
+    }
+    const before = hero.hp;
+    hero.hp = Math.min(hero.maxHp, hero.hp + potionHeal(hero, size));
+    return { ok: true, healed: hero.hp - before, refunded: false };
+}

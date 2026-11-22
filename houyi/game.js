@@ -6,7 +6,7 @@ import { createBehavior, adjustDamageTaken, damageKindOf } from './enemyBehavior
 import { runCasualAutopilot, noteCasualOutcome } from "./casualPilot.js";
 import { abandonCombatRecord, annotateCombatRecord, beginCombatRecord, BOSS_ADJUST, calibrateEnemy, cappedEnemyHit, enemySpellCost, expertCatchUpPoints, isExpertMode, finishCombatRecord, saveCombatRecord, enemyCategory, loadCombatRecords, pauseCombatRecord, recordDamageDealt, recordDamageTaken, resumeCombatRecord } from './combatBalance.js';
 import { escapeHtml } from "./escapeHtml.js";
-import { setBoardSize, BASE_BOARD_SIZE, BOSS_BOARD_SIZE, MAX_ACTIVE_SPELLS, MAX_WEAPONS } from "./constants.js";
+import { setBoardSize, BASE_BOARD_SIZE, BOSS_BOARD_SIZE, MAX_ACTIVE_SPELLS, MAX_WEAPONS, BASE_MANA_CAP } from "./constants.js";
 import { enemyCatalogList, generateRandomEnemy } from "./enemies.js";
 import { tutorialCallbacks } from "./tutorial.js";
 import { allWeapons, getWeaponById, weaponBiomeBonus, BIOME_LABELS } from "./weapons.js";
@@ -17,7 +17,7 @@ import { actionGuard } from "./actionGuard.js";
 
 import { protectsFromBiome, collarForBiome, stuffTotals, normalizeStuff, grantStuff, inflictPoison, wornStuff } from "./stuff.js";
 import { isInTranse, endTranse, startTranse, transeEffectFor, mergeTranseEffects, classAllowsUltimate, describeTranse, switchGauge, storeGauge } from "./transe.js";
-import { POTIONS, normalizePotions, potionHeal, drinkPotion, drinkBlockReason } from "./potions.js";
+import { POTIONS, normalizePotions, potionHeal, drinkPotion, drinkBlockReason, applyQueuedPotion } from "./potions.js";
 import { normalizeSkills, skillBonus, actionSpells } from "./skills.js";
 import { normalizeRoster, usableClasses, grantClass, CLASS_SHORT } from "./classRoster.js";
 import { newCharge, newActionQueue, initCharge } from "./classCharge.js";
@@ -81,7 +81,6 @@ import { applyDuelRulesAtCombatStart, enemyTurn, finishPlayerTurn, handleEnemyDe
 export * from './gameTurnFlow.js';
 export * from './gameSpellList.js';
 
-const BASE_MANA_CAP = 50;
 const EMPTY_MANA_POOL = { red:0, blue:0, green:0, yellow:0, purple:0 };
 const WEAPON_ICONS = {
     sword: 'sword',
@@ -1093,7 +1092,7 @@ export function endXiuxianAtCombatEnd(){
     gameState.transeApplied = null;
 }
 
-// ── Potions (potions.js) : à usage unique, 1 / 2 / 3 PA en combat selon la taille ──
+// ── Potions (potions.js) : à usage unique, 0 PA en combat (payées en or chez le marchand) ──
 /** Potion donnée à un compagnon (choisi dans « sur qui ? ») : elle rend une part des PV max du compagnon. */
 function drinkPotionForAlly(size, classId){
     const ally = gameState.allies?.[classId];
@@ -1142,9 +1141,8 @@ export function drinkPotionAction(size, targetClass = null){
         if(!free) player.combatPoints -= potion.actionPoints;
         actionGuard.markPlayerAction();
         const effect = () => {
-            const before = player.hp;
-            player.hp = Math.min(player.maxHp, player.hp + potionHeal(player, size));
-            const healed = player.hp - before;
+            const { ok, healed } = applyQueuedPotion(player, size, gameState.heroKo);
+            if(!ok){ log(`Hou Yi est à terre : la ${potion.name.toLowerCase()} est rendue au sac.`); document.dispatchEvent(new Event('potions-changed')); endAction(); return; }
             flyHeal(true, healed);
             log(`${potion.name} : +${healed} PV.`);
             logActiveAction(`boit une ${potion.name.toLowerCase()}`);
