@@ -1,5 +1,5 @@
 import { describe, test, expect } from '@jest/globals';
-import { POTIONS, POTION_SIZES, potionHeal, potionPrice, buyPotion, drinkPotion, drinkBlockReason, normalizePotions } from '../../potions.js';
+import { POTIONS, POTION_SIZES, potionHeal, potionPrice, buyPotion, drinkPotion, drinkBlockReason, normalizePotions, applyQueuedPotion } from '../../potions.js';
 
 const hero = (extra = {}) => ({ hp: 20, maxHp: 100, gold: 1000, combatPoints: 3, ...extra });
 
@@ -44,5 +44,19 @@ describe('potions de soin à usage unique', () => {
         expect(drinkBlockReason(down, 'small', false)).toMatch(/à terre/);
         expect(drinkPotion(down, 'small').ok).toBe(false);
         expect(down.hp).toBe(0);
+    });
+    test("potion en file : si Hou Yi est tombé entre-temps, elle est rendue au sac et ne soigne rien", () => {
+        const h = hero({ hp: 0, potions: { small: 0, medium: 0, large: 0 } });
+        expect(applyQueuedPotion(h, 'small', true)).toEqual({ ok: false, healed: 0, refunded: true });
+        expect(h.hp).toBe(0);
+        expect(h.potions.small).toBe(1);
+        expect(applyQueuedPotion(hero({ hp: 0 }), 'small', false).refunded).toBe(true);   // 0 PV sans drapeau : même règle
+    });
+    test("potion en file : héros debout, soin plafonné aux PV max (cas limite)", () => {
+        const h = hero({ hp: 95, potions: { small: 0, medium: 0, large: 0 } });
+        expect(applyQueuedPotion(h, 'small', false)).toEqual({ ok: true, healed: 5, refunded: false });
+        expect(h.hp).toBe(100);
+        expect(h.potions.small).toBe(0);
+        expect(applyQueuedPotion(h, 'enorme').ok).toBe(false);
     });
 });

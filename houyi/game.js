@@ -17,7 +17,7 @@ import { actionGuard } from "./actionGuard.js";
 
 import { protectsFromBiome, collarForBiome, stuffTotals, normalizeStuff, grantStuff, inflictPoison, wornStuff } from "./stuff.js";
 import { isInTranse, endTranse, startTranse, transeEffectFor, mergeTranseEffects, classAllowsUltimate, describeTranse, switchGauge, storeGauge } from "./transe.js";
-import { POTIONS, normalizePotions, potionHeal, drinkPotion, drinkBlockReason } from "./potions.js";
+import { POTIONS, normalizePotions, potionHeal, drinkPotion, drinkBlockReason, applyQueuedPotion } from "./potions.js";
 import { normalizeSkills, skillBonus, actionSpells } from "./skills.js";
 import { normalizeRoster, usableClasses, grantClass, CLASS_SHORT } from "./classRoster.js";
 import { newCharge, newActionQueue, initCharge } from "./classCharge.js";
@@ -1093,7 +1093,7 @@ export function endXiuxianAtCombatEnd(){
     gameState.transeApplied = null;
 }
 
-// ── Potions (potions.js) : à usage unique, 1 / 2 / 3 PA en combat selon la taille ──
+// ── Potions (potions.js) : à usage unique, 0 PA en combat (payées en or chez le marchand) ──
 /** Potion donnée à un compagnon (choisi dans « sur qui ? ») : elle rend une part des PV max du compagnon. */
 function drinkPotionForAlly(size, classId){
     const ally = gameState.allies?.[classId];
@@ -1142,9 +1142,8 @@ export function drinkPotionAction(size, targetClass = null){
         if(!free) player.combatPoints -= potion.actionPoints;
         actionGuard.markPlayerAction();
         const effect = () => {
-            const before = player.hp;
-            player.hp = Math.min(player.maxHp, player.hp + potionHeal(player, size));
-            const healed = player.hp - before;
+            const { ok, healed } = applyQueuedPotion(player, size, gameState.heroKo);
+            if(!ok){ log(`Hou Yi est à terre : la ${potion.name.toLowerCase()} est rendue au sac.`); document.dispatchEvent(new Event('potions-changed')); endAction(); return; }
             flyHeal(true, healed);
             log(`${potion.name} : +${healed} PV.`);
             logActiveAction(`boit une ${potion.name.toLowerCase()}`);
