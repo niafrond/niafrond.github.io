@@ -1117,11 +1117,9 @@ function drinkPotionForAlly(size, classId){
     const potion = POTIONS[size];
     if(!potion || (player.potions?.[size] || 0) <= 0){ log(`Aucune ${potion ? potion.name.toLowerCase() : 'potion'}.`); return false; }
     player.potions[size] -= 1;
-    const drunk = gameState.potionsDrunk || 0;   // rendement décroissant (potions.js) : rang fixé au choix
-    gameState.potionsDrunk = drunk + 1;
     actionGuard.markPlayerAction();
     const effect = () => {
-        const healed = healAlly(ally, potionHeal(ally, size, drunk));
+        const healed = healAlly(ally, potionHeal(ally, size));
         log(`${potion.name} : ${ally.name} récupère ${healed} PV.`);
         logActiveAction(`donne une ${potion.name.toLowerCase()} à ${ally.name}`);
         showCombatAnimation({ icon: 'potion', title: potion.name, heal: `+${healed} PV`, target: `→ ${ally.name}`, healTarget: ally.classId }, true);
@@ -1152,12 +1150,10 @@ export function drinkPotionAction(size, targetClass = null){
         const potion = POTIONS[size];
         player.potions[size] -= 1;
         if(!free) player.combatPoints -= potion.actionPoints;
-        const drunk = gameState.potionsDrunk || 0;   // rendement décroissant (potions.js) : rang fixé au choix
-        gameState.potionsDrunk = drunk + 1;
         actionGuard.markPlayerAction();
         const effect = () => {
-            const { ok, healed } = applyQueuedPotion(player, size, gameState.heroKo, drunk);
-            if(!ok){ gameState.potionsDrunk = Math.max(0, (gameState.potionsDrunk || 1) - 1); log(`Hou Yi est à terre : la ${potion.name.toLowerCase()} est rendue au sac.`); showCombatAnimation({ icon: 'potion', title: 'Potion rendue', plain: true, damage: 'Hou Yi est à terre', target: 'Elle revient au sac' }, true); document.dispatchEvent(new Event('potions-changed')); endAction(); return; }
+            const { ok, healed } = applyQueuedPotion(player, size, gameState.heroKo);
+            if(!ok){ log(`Hou Yi est à terre : la ${potion.name.toLowerCase()} est rendue au sac.`); showCombatAnimation({ icon: 'potion', title: 'Potion rendue', plain: true, damage: 'Hou Yi est à terre', target: 'Elle revient au sac' }, true); document.dispatchEvent(new Event('potions-changed')); endAction(); return; }
             flyHeal(true, healed);
             log(`${potion.name} : +${healed} PV.`);
             logActiveAction(`boit une ${potion.name.toLowerCase()}`);
@@ -1168,11 +1164,10 @@ export function drinkPotionAction(size, targetClass = null){
         chooseAction(effect);
         return true;
     }
-    const drunk = inCombat ? (gameState.potionsDrunk || 0) : 0;
-    const heal = potionHeal(player, size, drunk);
-    const res = drinkPotion(player, size, { inCombat, free: !!xiuEffect().freePotions, drunk });
+    const heal = potionHeal(player, size);
+    const res = drinkPotion(player, size, { inCombat, free: !!xiuEffect().freePotions });
     if(!res.ok){ log(res.message); return false; }
-    if(inCombat){ gameState.potionsDrunk = drunk + 1; actionGuard.markPlayerAction(); spendActionCharge(); }
+    if(inCombat){ actionGuard.markPlayerAction(); spendActionCharge(); }
     flyHeal(true, res.healed || heal);
     log(res.message);
     if(inCombat){
@@ -1580,7 +1575,6 @@ export function restartCombat({ keepHp = true } = {}){
     downIds.forEach(id => { const a = gameState.allies[id]; if(a){ a.ko = true; a.hp = 0; } });
     prepareAllyPortraits();               // dessins des compagnons puis barres de vie
     gameState.playedClasses = new Set();
-    gameState.potionsDrunk = 0;   // rendement décroissant des potions (potions.js) : compteur du combat
     gameState.lastStrikeClass = null;   // bonus d'alternance (synergy.js) : classe du dernier coup porté   // classes jouées ce combat (PA de classe)
     gameState.forcedClass = enemy?.training || null;   // entraînement : une seule classe, imposée par le maître
     if(gameState.forcedClass) log(`Entraînement : ce combat se mène avec ${ALLIES[gameState.forcedClass] ? ALLIES[gameState.forcedClass].name : 'Hou Yi'} seul.`);

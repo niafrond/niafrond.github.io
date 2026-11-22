@@ -7,7 +7,7 @@ import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { allItems, useItem, isCombatLongEffect, getRandomItem } from '../../items.js';
 import { allWeapons } from '../../weapons.js';
-import { POTION_SIZES, POTIONS, potionPrice, POTION_FALLOFF } from '../../potions.js';
+import { POTION_SIZES, POTIONS, potionPrice } from '../../potions.js';
 import { SYNERGY_MAX_PCT, GRIMOIRE_SYNERGY_PCT, CLASS_ALTERNATION_PCT } from '../../synergy.js';
 import { COMPANION_POWERS, powerChance } from '../../companionPowers.js';
 
@@ -210,10 +210,6 @@ describe('potions de soin : garde-fous contre le spam', () => {
 });
 
 describe('garde-fous ajoutés le 2026-11-22 (agent Équilibrage)', () => {
-    test('potions : rendement décroissant, jamais nul, jamais croissant', () => {
-        expect(POTION_FALLOFF[0]).toBe(1);
-        POTION_FALLOFF.slice(1).forEach((v, i) => { expect(v).toBeLessThan(POTION_FALLOFF[i]); expect(v).toBeGreaterThan(0); });
-    });
     test('synergies : +10 % au plus, chaque source ≤ 5 %', () => {
         expect(SYNERGY_MAX_PCT).toBeLessThanOrEqual(10);
         expect(GRIMOIRE_SYNERGY_PCT).toBeLessThanOrEqual(5);

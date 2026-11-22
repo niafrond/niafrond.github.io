@@ -1,6 +1,6 @@
 // Potions de soin à usage unique (potions.js) : boutons de combat (coût en PA) et panneau de l'onglet Inventaire (on boit hors combat, gratuitement).
 import { player, gameState, currentTurn, drinkPotionAction, xiuEffect } from './game.js';
-import { POTION_SIZES, POTIONS, potionCount, potionHeal, potionFalloff, drinkBlockReason } from './potions.js';
+import { POTION_SIZES, POTIONS, potionCount, potionHeal, drinkBlockReason } from './potions.js';
 import { escapeHtml } from './escapeHtml.js';
 import { itemUsability, useItemChoosingTarget } from './gameInventoryTabs.js';
 import { openTargetPicker, hasLivingAlly } from './itemTargetPicker.js';
@@ -8,8 +8,7 @@ import { classCanAct, decoupled } from './gameSpellList.js';
 import { isSingleUse } from './itemReuse.js';
 import { showItemTooltip, markPressHeld, hideSpellTooltip, ensureSpellTooltip, placeTooltip } from './gameTooltips.js';
 
-const drunkNow = () => (gameState.combatState === 'active' ? gameState.potionsDrunk || 0 : 0);   // rendement décroissant en combat
-const label = size => `${POTIONS[size].name} (+${potionHeal(player, size, drunkNow())} PV)${drunkNow() > 0 ? ` : potion n° ${drunkNow() + 1} de ce combat, les potions soignent de moins en moins (100, 75, 50 puis 25 %)` : ''}`;
+const label = size => `${POTIONS[size].name} (+${potionHeal(player, size)} PV)`;
 
 let potionMenuOpen = false;
 // le menu des potions est déplié (après un clic sur « Objet »)
@@ -50,7 +49,7 @@ export function renderPotionButtons() {
         const blocked = drinkBlockReason(player, size, true, free) || !classCanAct();
         return `<button type="button" class="enemy-spell-item potion-btn${blocked ? ' disabled' : ''}" data-potion="${size}"${blocked ? ' aria-disabled="true"' : ''} title="${escapeHtml(label(size))}">
             <div class="spell-name">${escapeHtml(p.name)} ×${potionCount(player, size)}</div>
-            <div class="spell-cost">${p.actionPoints > 0 && !free ? `${p.actionPoints} PA · ` : ''}${Math.round(p.healPct * potionFalloff(drunkNow()))} % des PV${drunkNow() > 0 ? ', réduit' : ''}</div></button>`;
+            <div class="spell-cost">${p.actionPoints > 0 && !free ? `${p.actionPoints} PA · ` : ''}${p.healPct} % des PV</div></button>`;
     }).join('');
     const itemTiles = items.map(({ item, index }) => {
         const use = itemUsability(item);
