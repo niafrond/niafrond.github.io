@@ -1,3 +1,9 @@
+## [3.20.2](https://github.com/niafrond/niafrond.github.io/compare/v3.20.1...v3.20.2) (2026-11-22)
+
+### Bug Fixes
+
+* **houyi:** passe Gameplay : potions en file, équipement deux mains, grimoires ennemis ([#778](https://github.com/niafrond/niafrond.github.io/issues/778)) ([81574bb](https://github.com/niafrond/niafrond.github.io/commit/81574bb23cada57b7dd4f27954cfd261735b1935))
+
 ## [3.20.1](https://github.com/niafrond/niafrond.github.io/compare/v3.20.0...v3.20.1) (2026-11-22)
 
 ### Bug Fixes
