@@ -2151,7 +2151,9 @@ async function castEffectSpellDecoupled(spell){
         if(ok) module.endPlayerSpellTurn(before); else resumeAfterBoundary();
     });
     if(module.TARGETED_EFFECTS.has(spell.effect)){
-        captureBoardTarget(() => module.applyClassSpellEffect(spell), (index, config) => {
+        // La visée lance l'effet pour en capturer la configuration : sans lanceur désigné, pendant le tour de plateau de l'ennemi (actions indépendantes du plateau)
+        // le sort se croyait lancé par l'ennemi (ligne tirée au hasard, qì et dégâts de son côté) et blessait le héros : le lanceur est donc imposé.
+        captureBoardTarget(() => module.runAs('player', () => module.applyClassSpellEffect(spell)), (index, config) => {
             if(gameState.combatState !== 'active' || isMuted(player) || !canEntityCastSpell(player, spell) || !classCanAct()) return;
             pay();
             chooseAction(run(index, config), { turnBound: true });
