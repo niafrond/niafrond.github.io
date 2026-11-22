@@ -1,3 +1,9 @@
+## [3.23.0](https://github.com/niafrond/niafrond.github.io/compare/v3.22.0...v3.23.0) (2026-11-22)
+
+### Features
+
+* **bus-naolib:** lire les horaires de la ligne 23 dans le GTFS officiel Naolib ([#782](https://github.com/niafrond/niafrond.github.io/issues/782)) ([80a548d](https://github.com/niafrond/niafrond.github.io/commit/80a548d303a88ed59751138937fdb3d4ef19329b))
+
 ## [3.22.0](https://github.com/niafrond/niafrond.github.io/compare/v3.21.0...v3.22.0) (2026-11-22)
 
 ### Features
