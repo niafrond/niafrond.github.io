@@ -1,3 +1,9 @@
+## [3.22.0](https://github.com/niafrond/niafrond.github.io/compare/v3.21.0...v3.22.0) (2026-11-22)
+
+### Features
+
+* **bus-naolib:** ajouter l'app d'heure de sortie pour le bus quotidien ([#781](https://github.com/niafrond/niafrond.github.io/issues/781)) ([3bca37d](https://github.com/niafrond/niafrond.github.io/commit/3bca37dd73f5eb1401e30ced9aad5cdf6a1ded38))
+
 ## [3.21.0](https://github.com/niafrond/niafrond.github.io/compare/v3.20.2...v3.21.0) (2026-11-22)
 
 ### Features
