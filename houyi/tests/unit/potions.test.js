@@ -1,5 +1,5 @@
 import { describe, test, expect } from '@jest/globals';
-import { POTIONS, POTION_SIZES, potionHeal, potionPrice, buyPotion, drinkPotion, drinkBlockReason, normalizePotions, applyQueuedPotion } from '../../potions.js';
+import { POTION_STOCK_MARKUP, POTIONS, POTION_SIZES, potionHeal, potionPrice, buyPotion, drinkPotion, drinkBlockReason, normalizePotions, applyQueuedPotion } from '../../potions.js';
 
 const hero = (extra = {}) => ({ hp: 20, maxHp: 100, gold: 1000, combatPoints: 3, ...extra });
 
@@ -58,5 +58,22 @@ describe('potions de soin à usage unique', () => {
         expect(h.hp).toBe(100);
         expect(h.potions.small).toBe(0);
         expect(applyQueuedPotion(h, 'enorme').ok).toBe(false);
+    });
+});
+
+describe("potions : le prix monte avec la réserve portée (compensation à l'achat)", () => {
+    test('+20 % par potion de la même taille déjà dans le sac', () => {
+        expect(POTION_STOCK_MARKUP).toBe(0.2);
+        expect(potionPrice('small', 20, 0)).toBe(24);
+        expect(potionPrice('small', 20, 5)).toBe(48);
+        expect(potionPrice('small', 20, 10)).toBe(72);
+        expect(potionPrice('small', 20)).toBe(potionPrice('small', 20, 0));   // cas limite : sans réserve, prix de base
+        expect(potionPrice('small', 20, -3)).toBe(24);
+    });
+    test("l'achat applique la réserve de la taille achetée, pas des autres", () => {
+        const h = hero({ gold: 1000, potions: { small: 5, medium: 0, large: 0 } });
+        expect(buyPotion(h, 'small', 20).price).toBe(48);
+        expect(buyPotion(h, 'small', 20).price).toBe(53);   // 6 en réserve : 24 × 2,2 = 52,8
+        expect(buyPotion(h, 'medium', 20).price).toBe(potionPrice('medium', 20, 0));
     });
 });

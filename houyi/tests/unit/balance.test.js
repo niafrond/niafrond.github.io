@@ -7,7 +7,9 @@ import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { allItems, useItem, isCombatLongEffect, getRandomItem } from '../../items.js';
 import { allWeapons } from '../../weapons.js';
-import { POTION_SIZES, POTIONS, potionPrice } from '../../potions.js';
+import { POTION_SIZES, POTIONS, potionPrice, POTION_STOCK_MARKUP } from '../../potions.js';
+import { SYNERGY_MAX_PCT, GRIMOIRE_SYNERGY_PCT, CLASS_ALTERNATION_PCT } from '../../synergy.js';
+import { COMPANION_POWERS, powerChance } from '../../companionPowers.js';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const allGeneric = JSON.parse(readFileSync(join(root, 'spells.json'), 'utf8')).allSpells;
@@ -204,5 +206,23 @@ describe('potions de soin : garde-fous contre le spam', () => {
             expect(POTIONS[s].healPct).toBeLessThanOrEqual(75);
             expect(potionPrice(s, 1)).toBeGreaterThan(0);
         });
+    });
+});
+
+describe('garde-fous ajoutés le 2026-11-22 (agent Équilibrage)', () => {
+    test("potions : le prix ne baisse jamais quand la réserve augmente, et double au plus tard à 5 en réserve", () => {
+        expect(POTION_STOCK_MARKUP).toBeGreaterThan(0);
+        POTION_SIZES.forEach(size => {
+            for (let n = 1; n <= 20; n++) expect(potionPrice(size, 20, n)).toBeGreaterThanOrEqual(potionPrice(size, 20, n - 1));
+            expect(potionPrice(size, 20, 5)).toBeGreaterThanOrEqual(2 * potionPrice(size, 20, 0) - 1);
+        });
+    });
+    test('synergies : +10 % au plus, chaque source ≤ 5 %', () => {
+        expect(SYNERGY_MAX_PCT).toBeLessThanOrEqual(10);
+        expect(GRIMOIRE_SYNERGY_PCT).toBeLessThanOrEqual(5);
+        expect(CLASS_ALTERNATION_PCT).toBeLessThanOrEqual(5);
+    });
+    test('compagnons : aucune chance de déclenchement au-delà de 30 % au niveau 70', () => {
+        Object.values(COMPANION_POWERS).forEach(p => expect(powerChance(p, { level: 70 })).toBeLessThanOrEqual(0.30));
     });
 });

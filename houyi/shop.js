@@ -151,9 +151,9 @@ export function renderMerchant(npc, card, hooks = {}) {
             ${o.reason ? `<div class="fuse-reason">${escapeHtml(o.reason)}</div>` : ''}</div>
             <button type="button" class="rc-btn" data-fuse="${o.fusion.id}"${o.ready ? '' : ' disabled'}>${svgIcon('coin')} ${o.fee}</button>
         </div>`;
-    // Potions de soin à usage unique : toujours en rayon, le prix monte avec la région du marchand (potions.js).
+    // Potions de soin à usage unique : toujours en rayon, le prix monte avec la région du marchand et avec la réserve déjà portée (potions.js).
     const potionsSection = () => `<h3 class="shop-section-title">Potions</h3>${POTION_SIZES.map(size => {
-        const p = POTIONS[size], price = potionPrice(size, REGION_LEVEL[npc.region] || 1);
+        const p = POTIONS[size], price = potionPrice(size, REGION_LEVEL[npc.region] || 1, potionCount(player, size));   // plus on en porte, plus la suivante coûte (potions.js)
         return `<div class="potion-row"><span><strong>${escapeHtml(p.name)}</strong> <em>+${potionHeal(player, size)} PV (${p.healPct} %) · ${p.actionPoints} PA au combat · vous en avez ${potionCount(player, size)}</em></span>
             <button type="button" class="rc-btn" data-buy-potion="${size}"${(player.gold || 0) < price ? ' disabled' : ''}>${svgIcon('coin')} ${price}</button></div>`;
     }).join('')}`;

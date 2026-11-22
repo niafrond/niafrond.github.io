@@ -57,6 +57,9 @@ import { gearManaBonus } from "./manaGear.js";
 import { ENVIRONMENT_STATUSES, environmentDamage, clearEnvironmentStatuses, cureStatuses, alterationOfSpell, inflictAlteration, setAlterationHooks, cursedDamage, wakeIfAsleep, healEntity, isMuted, confusedSelfHit } from "./alterations.js";
 import { rawAttack, rawDefense, setStrikeHooks, describeLevelEdge, resolveStrike, blockLabel, addStatBuff, describeStatBuff, clearStatBuffs } from "./combatStats.js";
 import { animationFactor, getOption, vibrate } from "./gameOptions.js";
+import { defeatGoldLoss } from "./defeatPenalty.js";
+import { grimoireSynergyPct, alternationPct, applySynergy } from "./synergy.js";
+import { activeAllySpells } from "./allySpells.js";
 import { PLAY_STYLES, styleDamageDealt, styleDamageTaken, styleSpellCost, styleManaGain } from "./playStyles.js";
 import { flyManaSpend, flyHeal } from "./manaFlight.js";
 import { getSpellTooltipHtml, TOOLTIP_LONG_PRESS_MS } from "./gameTooltips.js";
@@ -745,6 +748,14 @@ export function applyStandardSpellEffects(caster, target, spell, isPlayerCaster)
             : (target.resistances?.[spell.color] || 0);
         const allyBonus = isPlayerCaster && gameState.turnClass && gameState.turnClass !== 'assassin' ? allyWeaponBonus(allyEquippedWeapon(player, gameState.turnClass)) : 0;   // arme équipée du compagnon qui lance le sort
         let dmg = Math.floor((spell.dmg + intelligenceBonus + allyBonus) * (1 - targetResistance));
+        if(isPlayerCaster && target !== caster){   // synergies (synergy.js) : couleur partagée dans le grimoire, alternance des classes
+            const cls = gameState.turnClass || 'assassin';
+            const loadout = cls === 'assassin' ? player.activeSpells : activeAllySpells(player, cls);
+            const grimoire = grimoireSynergyPct(loadout, spell), alternate = alternationPct(gameState.lastStrikeClass, cls);
+            dmg = applySynergy(dmg, grimoire, alternate);
+            gameState.lastStrikeClass = cls;
+            if(grimoire || alternate) log(`Synergie : ${[grimoire ? 'grimoire accordé' : '', alternate ? 'relais entre classes' : ''].filter(Boolean).join(' et ')} (+${Math.min(10, grimoire + alternate)} %).`);
+        }
         if(isPlayerCaster && target.prep?.weaknessRevealed){
             dmg = weaknessDamage(dmg, spellColors.includes(target.weakColor) ? target.weakColor : spell.color, target.weakColor, true);
         }
@@ -1142,7 +1153,7 @@ export function drinkPotionAction(size, targetClass = null){
         actionGuard.markPlayerAction();
         const effect = () => {
             const { ok, healed } = applyQueuedPotion(player, size, gameState.heroKo);
-            if(!ok){ log(`Hou Yi est à terre : la ${potion.name.toLowerCase()} est rendue au sac.`); document.dispatchEvent(new Event('potions-changed')); endAction(); return; }
+            if(!ok){ log(`Hou Yi est à terre : la ${potion.name.toLowerCase()} est rendue au sac.`); showCombatAnimation({ icon: 'potion', title: 'Potion rendue', plain: true, damage: 'Hou Yi est à terre', target: 'Elle revient au sac' }, true); document.dispatchEvent(new Event('potions-changed')); endAction(); return; }
             flyHeal(true, healed);
             log(`${potion.name} : +${healed} PV.`);
             logActiveAction(`boit une ${potion.name.toLowerCase()}`);
@@ -1513,6 +1524,13 @@ export function reviveTeamAtRest(){
 
 /** Combat perdu : tous les personnages (Hou Yi et compagnons, morts compris) se relèvent à 100 % de leurs PV, une fois l'écran de défaite affiché. */
 export function restoreTeamAfterDefeat(){
+    const lost = defeatGoldLoss(player.level, player.gold, getOption('aiDifficulty'));   // difficile / expert : l'or d'un combat (defeatPenalty.js)
+    if(lost > 0){
+        player.gold -= lost;
+        log(`Tout le monde se relève, en pleine forme. Dans la retraite, vous perdez ${lost} zhu (difficulté ${getOption('aiDifficulty') === 'expert' ? 'Expert' : 'Difficile'}).`);
+    } else {
+        log("Tout le monde se relève, en pleine forme : la défaite ne coûte rien. Reprenez quand vous voulez.");   // rassurer : aucune pénalité, pas de pression
+    }
     player.hp = player.maxHp;
     reviveTeamAtRest();
     Object.values(gameState.allies || {}).forEach(a => { if(a){ a.ko = false; a.hp = a.maxHp; } });
@@ -1556,7 +1574,8 @@ export function restartCombat({ keepHp = true } = {}){
     gameState.allies = buildTeam(player); gameState.allyShield = null; gameState.heroKo = heroDown;   // équipe de combat : pleine forme, sauf les personnages restés à terre
     downIds.forEach(id => { const a = gameState.allies[id]; if(a){ a.ko = true; a.hp = 0; } });
     prepareAllyPortraits();               // dessins des compagnons puis barres de vie
-    gameState.playedClasses = new Set();   // classes jouées ce combat (PA de classe)
+    gameState.playedClasses = new Set();
+    gameState.lastStrikeClass = null;   // bonus d'alternance (synergy.js) : classe du dernier coup porté   // classes jouées ce combat (PA de classe)
     gameState.forcedClass = enemy?.training || null;   // entraînement : une seule classe, imposée par le maître
     if(gameState.forcedClass) log(`Entraînement : ce combat se mène avec ${ALLIES[gameState.forcedClass] ? ALLIES[gameState.forcedClass].name : 'Hou Yi'} seul.`);
     gameState.transeApplied = null;
@@ -2067,6 +2086,13 @@ function strikeWithWeapon(weapon, { free = false, ally = null, pct = 100, nonLet
 
     // Attaque = chance de critique, défense de l'ennemi = chance de blocage (voir combatStats.js)
     const selfHit = !ally && confusedSelfHit(player);   // Confus : le coup se retourne contre le héros
+    if(!selfHit){   // relais entre classes (synergy.js) : +5 % si la classe qui frappe n'est pas celle du coup précédent
+        const cls = ally?.classId || 'assassin';
+        const alternate = alternationPct(gameState.lastStrikeClass, cls);
+        dmg = applySynergy(dmg, alternate);
+        gameState.lastStrikeClass = cls;
+        if(alternate) log(`Relais entre classes : +${alternate} % de dégâts.`);
+    }
     const strike = resolveStrike(dmg, who, selfHit ? player : enemy);
     const isCrit = strike.crit;
     const blockText = blockLabel(strike.block);
