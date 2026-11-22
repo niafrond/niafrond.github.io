@@ -17,3 +17,10 @@ App HTML autonome (`index.html`, sans build) qui indique à quelle heure sortir 
   - Exceptions : sur l'écran principal, vue « 5 jours à venir » ou « Semaine prochaine » ; toucher un jour permet un début décalé, un repos ou de rétablir le normal. Les exceptions passées sont purgées.
   - Chaque jour affiche l'heure de sortie calculée avec les horaires théoriques de la date concernée ; le bloc du haut traite aujourd'hui (compte à rebours, bus d'avant / suivant).
   - Stockage v2 (`bus-naolib:v2:*`) ; migration automatique de la config v1 (une heure unique appliquée à tous les jours, lun–ven).
+
+- 2026-11-22 (arrêt d'arrivée, incidents) :
+  - Réglages en 2 écrans : 1) ligne, sens, arrêt de départ, marche maison → départ ; 2) arrêt d'arrivée (même ligne), marche arrivée → travail, semaine habituelle. La durée de trajet saisie à la main est supprimée : elle est déduite des horaires aux deux arrêts.
+  - Appariement départ/arrivée : l'API n'a pas d'identifiant de course ; décalage d'index entre les deux listes choisi pour des durées positives (≤ 150 min) et régulières (`pairTrips`). Limite : ambigu si les listes n'ont pas les mêmes courses avec cadencement parfaitement régulier.
+  - Incidents : lecture de `ligne.etatTrafic` / `ligne.bloquant` renvoyés avec les horaires (départ et arrivée). Bandeau ⚠️ « trafic perturbé, prends de la marge » ou ⛔ « ligne bloquée » sur aujourd'hui, icône sur les jours à venir. Horaires du jour relus après 10 min de cache, état du trafic relu toutes les 5 min ; repli sur le cache si Naolib injoignable.
+  - Migration : une config v1/v2 sans arrêt d'arrivée rouvre les réglages.
+  - Non vérifié contre l'API réelle (réseau bloqué) : les champs `etatTrafic`/`bloquant` sont ceux documentés par Open TAN ; pas d'appel à un flux d'info trafic dédié.

@@ -34,6 +34,8 @@ button.g{background:none;border:0;color:var(--mute);padding:4px 8px}
 .edit{margin-top:8px;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 .wk{display:flex;align-items:center;gap:10px;margin:6px 0}.wk span{width:70px}
 .hide{display:none}
+.inc{background:#3a1f1f;border:1px solid var(--bad);border-radius:10px;padding:8px 10px;margin:8px 0;font-size:14px}
+.inc.b{background:#5a1616}
 </style>
 </head>
 <body>
@@ -50,24 +52,37 @@ button.g{background:none;border:0;color:var(--mute);padding:4px 8px}
 </section>
 
 <section id="setup" class="card hide">
-  <b>Réglages</b>
-  <label>Ligne (numéro ou nom)</label>
-  <input type="text" id="line" list="lines" placeholder="Ex. 1, C3, 23…" autocomplete="off">
-  <datalist id="lines"></datalist>
-  <label>Sens</label>
-  <select id="sens"><option value="1">Sens 1</option><option value="2">Sens 2</option></select>
-  <label>Mon arrêt (parmi ceux de la ligne)</label>
-  <input type="text" id="q" placeholder="Taper pour filtrer…" autocomplete="off">
-  <div class="list hide" id="stops"></div>
-  <div class="mute" id="picked"></div>
-  <label>Temps de marche maison → arrêt (min)</label>
-  <input type="number" id="walk" min="0" max="120" inputmode="numeric">
-  <label>Trajet en bus jusqu'au travail, marche comprise (min)</label>
-  <input type="number" id="ride" min="0" max="240" inputmode="numeric">
-  <label>Ma semaine habituelle</label>
-  <div id="week"></div>
+  <div class="mute" id="stepno"></div>
+  <div id="step1">
+    <b>1 · Arrêt de départ</b>
+    <label>Ligne (numéro ou nom)</label>
+    <input type="text" id="line" list="lines" placeholder="Ex. 1, C3, 23…" autocomplete="off">
+    <datalist id="lines"></datalist>
+    <label>Sens</label>
+    <select id="sens"><option value="1">Sens 1</option><option value="2">Sens 2</option></select>
+    <label>Arrêt de départ (parmi ceux de la ligne)</label>
+    <input type="text" id="q" placeholder="Taper pour filtrer…" autocomplete="off">
+    <div class="list hide" id="stops"></div>
+    <div class="mute" id="picked"></div>
+    <label>Temps de marche maison → arrêt de départ (min)</label>
+    <input type="number" id="walk" min="0" max="120" inputmode="numeric">
+  </div>
+  <div id="step2" class="hide">
+    <b>2 · Arrêt d’arrivée</b>
+    <div class="mute" id="lineRecap"></div>
+    <label>Arrêt d’arrivée (même ligne, plus loin dans le sens choisi)</label>
+    <input type="text" id="q2" placeholder="Taper pour filtrer…" autocomplete="off">
+    <div class="list hide" id="stops2"></div>
+    <div class="mute" id="picked2"></div>
+    <label>Temps de marche arrêt d’arrivée → travail (min)</label>
+    <input type="number" id="walk2" min="0" max="120" inputmode="numeric">
+    <label>Ma semaine habituelle</label>
+    <div id="week"></div>
+  </div>
   <div class="row" style="margin-top:16px">
-    <button class="p" id="save">Enregistrer</button>
+    <button class="g" id="back">← Retour</button>
+    <button class="p" id="next">Suivant →</button>
+    <button class="p hide" id="save">Enregistrer</button>
     <button class="g" id="cancel">Annuler</button>
   </div>
   <div class="err" id="serr"></div>
@@ -92,7 +107,7 @@ const load = (k, d) => { try { const v = JSON.parse(localStorage.getItem(k)); re
 const save = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} };
 const defWeek = () => { const w = {}; for (let i = 0; i < 7; i++) w[i] = { on: i >= 1 && i <= 5, start: '08:30' }; return w; };
 
-// cfg : {line, sens, dirs, code, label, walk, ride, week:{0..6:{on,start}}}
+// cfg : {line, sens, dirs, code, label, arrCode, arrLabel, walk, walk2, week:{0..6:{on,start}}}
 let cfg = load(K + ':cfg', null);
 let exc = load(K + ':exc', {});          // {'YYYY-MM-DD': {off:true} | {start:'HH:MM'}}
 let range = 'five', editing = null;
@@ -102,7 +117,7 @@ let range = 'five', editing = null;
   if (cfg) return;
   const old = load('bus-naolib:v1:cfg', null);
   if (!old) return;
-  cfg = { line: old.line, sens: old.sens, dirs: old.dirs, code: old.code, label: old.label, walk: old.walk, ride: old.ride, week: defWeek() };
+  cfg = { line: old.line, sens: old.sens, dirs: old.dirs, code: old.code, label: old.label, walk: old.walk, walk2: 5, week: defWeek() };
   for (let i = 0; i < 7; i++) cfg.week[i].start = old.start;
   save(K + ':cfg', cfg);
 })();
@@ -120,12 +135,13 @@ async function getJSON(path) {
   return r.json();
 }
 
-// Horaires théoriques d'un arrêt pour une date (cache par date)
+// Horaires théoriques d'un arrêt pour une date (cache par date ; la date du jour est rafraîchie après 10 min)
 const pending = {};
 async function fetchTimes(code, line, sens, date) {
   const key = `${K}:h:${code}:${line}:${sens}:${date}`;
   const c = load(key, null);
-  if (c) return c;
+  const fresh = c && (date !== ymd(new Date()) || Date.now() - (c.ts || 0) < 600000);
+  if (fresh) return c;
   if (pending[key]) return pending[key];
   return pending[key] = (async () => {
     try {
@@ -136,9 +152,12 @@ async function fetchTimes(code, line, sens, date) {
         for (const p of h.passages || []) { const mm = parseInt(p, 10); if (!isNaN(hh) && !isNaN(mm)) out.push(hh * 60 + mm); }
       }
       out.sort((a, b) => a - b);
-      const r = { times: out, dirs: j.ligne ? [j.ligne.directionSens1, j.ligne.directionSens2] : null };
+      const l = j.ligne || {};
+      const r = { ts: Date.now(), times: out, dirs: j.ligne ? [l.directionSens1, l.directionSens2] : null,
+        etat: parseInt(l.etatTrafic, 10) || 0, bloquant: l.bloquant === true || l.bloquant === 'true' };
       save(key, r); return r;
-    } finally { delete pending[key]; }
+    } catch (e) { if (c) return c; throw e; }   // repli sur le cache si Naolib injoignable
+    finally { delete pending[key]; }
   })();
 }
 
@@ -149,11 +168,32 @@ function startFor(date) {
   const w = cfg.week[date.getDay()];
   return w && w.on ? w.start : null;
 }
-function calc(times, start) {
-  const target = toMin(start) - cfg.ride;
-  let i = -1;
-  times.forEach((t, k) => { if (t <= target) i = k; });
-  return i < 0 ? null : { i, bus: times[i], leave: times[i] - cfg.walk };
+// Appariement départ ↔ arrivée d'un même bus : l'API ne donne pas d'identifiant de course, on cherche le
+// décalage d'index entre les deux listes qui donne des durées de trajet positives et les plus régulières.
+function pairTrips(dep, arr) {
+  let best = null;
+  for (let sft = -8; sft <= 8; sft++) {
+    const d = [];
+    dep.forEach((t, k) => { const a = arr[k + sft]; if (a !== undefined) d.push(a - t); });
+    if (d.length < Math.max(3, dep.length / 2)) continue;
+    if (d.filter(x => x > 0 && x <= 150).length < d.length * 0.95) continue;
+    const m = d.reduce((x, y) => x + y, 0) / d.length;
+    const score = d.reduce((x, y) => x + (y - m) ** 2, 0) / d.length + 0.5 * Math.abs(sft);
+    if (!best || score < best.score) best = { score, sft };
+  }
+  const sft = best ? best.sft : 0;
+  return dep.map((t, k) => { const a = arr[k + sft]; return a !== undefined && a > t && a - t <= 150 ? a : null; });
+}
+
+// Dernier bus dont l'arrivée + marche d'arrivée permet d'être à l'heure
+function calc(c, start) {
+  const target = toMin(start) - cfg.walk2;
+  let best = null;
+  c.times.forEach((t, k) => {
+    const a = c.arrs[k];
+    if (a != null && a <= target) best = { i: k, bus: t, arrive: a, leave: t - cfg.walk };
+  });
+  return best;
 }
 
 /* ---------- Écran principal ---------- */
@@ -162,28 +202,32 @@ async function ensure(date) {
   const d = ymd(date);
   if (cache[d]) return;
   cache[d] = 'wait';
-  try { cache[d] = await fetchTimes(cfg.code, cfg.line, cfg.sens, d); }
-  catch { cache[d] = 'err'; }
+  try {
+    const [a, b] = await Promise.all([fetchTimes(cfg.code, cfg.line, cfg.sens, d), fetchTimes(cfg.arrCode, cfg.line, cfg.sens, d)]);
+    cache[d] = { times: a.times, arrs: pairTrips(a.times, b.times), etat: Math.max(a.etat, b.etat), bloquant: a.bloquant || b.bloquant };
+  } catch { cache[d] = 'err'; }
   renderToday(); renderDays();
 }
+const incident = c => c.bloquant ? '<div class="inc b">⛔ Ligne bloquée : ne compte pas sur ces horaires, vérifie sur Naolib.</div>'
+  : c.etat > 0 ? '<div class="inc">⚠️ Trafic perturbé sur la ligne : prends de la marge (bus d’avant conseillé).</div>' : '';
 const ready = c => c && c !== 'wait';
 
 function renderToday() {
   if (!cfg || $('main').classList.contains('hide')) return;
   const now = new Date(), nowMin = now.getHours() * 60 + now.getMinutes() + now.getSeconds() / 60;
   const start = startFor(now), c = cache[ymd(now)], box = $('today');
-  const head = `<div class="mute">Ligne ${cfg.line} ${cfg.dirs ? '→ ' + cfg.dirs[cfg.sens - 1] : ''} · ${cfg.label}</div>`;
+  const head = `<div class="mute">Ligne ${cfg.line} ${cfg.dirs ? '→ ' + cfg.dirs[cfg.sens - 1] : ''} · ${cfg.label} ⇒ ${cfg.arrLabel}</div>`;
   if (!start) { box.innerHTML = head + '<div style="font-size:22px;margin-top:6px">Pas de bus prévu aujourd’hui 😌</div>'; return; }
   if (!ready(c) && c !== 'err') { box.innerHTML = head + '<div class="mute">Chargement…</div>'; return; }
   if (c === 'err') { box.innerHTML = head + '<div class="warn">Naolib injoignable, réessaie plus tard.</div>'; return; }
-  const r = calc(c.times, start);
-  if (!r) { box.innerHTML = head + `<div class="warn">Aucun bus ne t’amène à ${start} avec ${cfg.ride} min de trajet.</div>`; return; }
+  const r = calc(c, start);
+  if (!r) { box.innerHTML = head + incident(c) + `<div class="warn">Aucun bus ne t’amène à ${start}.</div>`; return; }
   const left = r.leave - nowMin;
   const cd = left >= 1 ? `<span style="color:var(--ok)">dans ${left >= 60 ? Math.floor(left / 60) + ' h ' + pad(Math.floor(left % 60)) : Math.floor(left) + ' min'}</span>`
     : left > -1 ? '<span class="warn">maintenant !</span>'
     : `<span class="warn">déjà passé${-left < 60 ? ' (' + Math.ceil(-left) + ' min)' : ''}</span>`;
-  let html = head + `<div class="mute" style="margin-top:6px">Pour arriver à ${start}${exc[ymd(now)] ? ' (exception)' : ''}, sortir à</div>
-    <div class="big">${hm(r.leave)}</div><div>${cd}</div><div class="mute" style="margin-top:8px">Bus de ${hm(r.bus)}</div>`;
+  let html = head + incident(c) + `<div class="mute" style="margin-top:6px">Pour arriver à ${start}${exc[ymd(now)] ? ' (exception)' : ''}, sortir à</div>
+    <div class="big">${hm(r.leave)}</div><div>${cd}</div><div class="mute" style="margin-top:8px">Bus de ${hm(r.bus)} · arrivée à ${cfg.arrLabel} vers ${hm(r.arrive)}</div>`;
   if (r.i > 0) html += `<div class="alt"><span>Bus d’avant : ${hm(c.times[r.i - 1])}</span><span>sortir à ${hm(c.times[r.i - 1] - cfg.walk)}</span></div>`;
   if (r.i + 1 < c.times.length) html += `<div class="alt"><span>Bus suivant : ${hm(c.times[r.i + 1])}</span><span>sortir à ${hm(c.times[r.i + 1] - cfg.walk)}</span></div>`;
   box.innerHTML = html;
@@ -210,7 +254,7 @@ function renderDays() {
     if (!start) right = '<span class="mute">repos</span>';
     else if (c === 'err') right = '<span class="warn">indisponible</span>';
     else if (!ready(c)) right = '<span class="mute">…</span>';
-    else { const r = calc(c.times, start); right = r ? `sortir à <b style="color:var(--acc)">${hm(r.leave)}</b> <span class="mute">(bus ${hm(r.bus)})</span>` : '<span class="warn">pas de bus</span>'; }
+    else { const r = calc(c, start); right = r ? `sortir à <b style="color:var(--acc)">${hm(r.leave)}</b> <span class="mute">(bus ${hm(r.bus)})</span>${c.bloquant ? ' ⛔' : c.etat > 0 ? ' ⚠️' : ''}` : '<span class="warn">pas de bus</span>'; }
     const el = document.createElement('div'); el.className = 'day';
     el.innerHTML = `<div class="h"><span>${dayLabel(d)}${start ? ' <span class="mute">· début ' + start + '</span>' : ''}${e ? '<span class="tag">exception</span>' : ''}</span><span>${right}</span></div>`;
     el.onclick = ev => { if (ev.target.closest('.edit')) return; editing = editing === key ? null : key; renderDays(); };
@@ -233,7 +277,7 @@ function renderDays() {
 
 function showMain() {
   $('setup').classList.add('hide'); $('main').classList.remove('hide');
-  $('foot').textContent = `Marche ${cfg.walk} min · trajet ${cfg.ride} min · horaires théoriques Naolib.`;
+  $('foot').textContent = `Marche ${cfg.walk} min au départ, ${cfg.walk2} min à l’arrivée · horaires théoriques et état du trafic Naolib.`;
   ensure(new Date()); renderToday(); renderDays();
 }
 $('r5').onclick = () => { range = 'five'; editing = null; renderDays(); };
@@ -260,17 +304,27 @@ function weekUI(week) {
   $('week').innerHTML = WEEK_ORDER.map(i => `<div class="wk"><input type="checkbox" id="wo${i}" ${week[i].on ? 'checked' : ''}><span>${DOW[i]}</span><input type="time" id="ws${i}" value="${week[i].start}"></div>`).join('');
 }
 
-function pickedUI() { $('picked').textContent = draft.code ? '✔ ' + draft.label : 'Aucun arrêt choisi'; }
+function pickedUI() {
+  $('picked').textContent = draft.code ? '✔ ' + draft.label : 'Aucun arrêt choisi';
+  $('picked2').textContent = draft.arrCode ? '✔ ' + draft.arrLabel : 'Aucun arrêt choisi';
+}
+function step(n) {
+  $('step1').classList.toggle('hide', n !== 1); $('step2').classList.toggle('hide', n !== 2);
+  $('next').classList.toggle('hide', n !== 1); $('save').classList.toggle('hide', n !== 2);
+  $('back').classList.toggle('hide', n !== 2); $('stepno').textContent = 'Étape ' + n + ' sur 2';
+  $('serr').textContent = '';
+  if (n === 2) $('lineRecap').textContent = `Ligne ${draft.line} ${draft.dirs ? '→ ' + draft.dirs[draft.sens - 1] : ''} · départ ${draft.label}`;
+}
 
 async function openSetup() {
   $('main').classList.add('hide'); $('setup').classList.remove('hide');
-  draft = cfg ? { code: cfg.code, label: cfg.label, dirs: cfg.dirs } : {};
+  draft = cfg ? { line: cfg.line, sens: cfg.sens, code: cfg.code, label: cfg.label, dirs: cfg.dirs, arrCode: cfg.arrCode, arrLabel: cfg.arrLabel } : {};
   $('line').value = cfg ? cfg.line : ''; $('sens').value = cfg ? cfg.sens : 1;
-  $('q').value = ''; $('serr').textContent = ''; $('stops').classList.add('hide');
-  $('walk').value = cfg ? cfg.walk : 5; $('ride').value = cfg ? cfg.ride : 20;
+  $('q').value = ''; $('q2').value = ''; $('stops').classList.add('hide'); $('stops2').classList.add('hide');
+  $('walk').value = cfg ? cfg.walk : 5; $('walk2').value = cfg && cfg.walk2 != null ? cfg.walk2 : 5;
   weekUI(cfg ? cfg.week : defWeek());
-  $('cancel').classList.toggle('hide', !cfg);
-  pickedUI();
+  $('cancel').classList.toggle('hide', !(cfg && cfg.arrCode));
+  pickedUI(); step(1);
   try { await getStops(); } catch { $('serr').textContent = 'Liste des lignes Naolib indisponible (tu peux quand même saisir le numéro).'; }
   $('lines').innerHTML = lineList().map(l => `<option value="${l}">`).join('');
   if (cfg) loadDirs();
@@ -291,34 +345,52 @@ async function loadDirs() {
   } catch {}
 }
 
-function showStops() {
-  const l = realLine($('line').value), box = $('stops'), q = norm($('q').value);
-  if (!l) { box.classList.add('hide'); return; }
-  const hits = stopsOfLine(l).filter(s => !q || norm(s.libelle).includes(q));
-  box.innerHTML = '';
-  hits.slice(0, 60).forEach(s => {
-    const d = document.createElement('div'); d.textContent = s.libelle;
-    d.onclick = () => { draft.code = s.codeLieu; draft.label = s.libelle; box.classList.add('hide'); $('q').value = ''; pickedUI(); loadDirs(); };
-    box.appendChild(d);
-  });
-  if (!hits.length) box.innerHTML = '<div class="mute">Aucun arrêt trouvé</div>';
-  box.classList.remove('hide');
+// Liste filtrable des arrêts de la ligne ; pick(s) est appelé au choix
+function stopPicker(inputId, boxId, pick) {
+  const input = $(inputId), box = $(boxId);
+  const show = () => {
+    const l = realLine($('line').value), q = norm(input.value);
+    if (!l) { box.classList.add('hide'); return; }
+    const hits = stopsOfLine(l).filter(s => !q || norm(s.libelle).includes(q));
+    box.innerHTML = '';
+    hits.slice(0, 60).forEach(s => {
+      const d = document.createElement('div'); d.textContent = s.libelle;
+      d.onclick = () => { pick(s); box.classList.add('hide'); input.value = ''; pickedUI(); };
+      box.appendChild(d);
+    });
+    if (!hits.length) box.innerHTML = '<div class="mute">Aucun arrêt trouvé</div>';
+    box.classList.remove('hide');
+  };
+  input.oninput = show; input.onfocus = show;
 }
+stopPicker('q', 'stops', s => { draft.code = s.codeLieu; draft.label = s.libelle; loadDirs(); });
+stopPicker('q2', 'stops2', s => { draft.arrCode = s.codeLieu; draft.arrLabel = s.libelle; });
+
 $('line').oninput = () => {
-  if (draft.code && !stopsOfLine($('line').value).some(s => s.codeLieu === draft.code)) { draft.code = null; pickedUI(); }
-  showStops(); loadDirs();
+  const ok = c => stopsOfLine($('line').value).some(s => s.codeLieu === c);
+  if (draft.code && !ok(draft.code)) { draft.code = null; }
+  if (draft.arrCode && !ok(draft.arrCode)) { draft.arrCode = null; }
+  pickedUI(); $('q').oninput(); loadDirs();
 };
-$('q').oninput = showStops; $('q').onfocus = showStops;
+
+$('next').onclick = () => {
+  const walk = parseInt($('walk').value, 10), line = realLine($('line').value) || $('line').value.trim();
+  if (!line) { $('serr').textContent = 'Indique ta ligne.'; return; }
+  if (!draft.code) { $('serr').textContent = 'Choisis ton arrêt de départ dans la liste.'; return; }
+  if (isNaN(walk)) { $('serr').textContent = 'Renseigne le temps de marche.'; return; }
+  draft.line = line; draft.sens = +$('sens').value; draft.walk = walk;
+  step(2);
+};
+$('back').onclick = () => step(1);
 
 $('save').onclick = () => {
-  const walk = parseInt($('walk').value, 10), ride = parseInt($('ride').value, 10);
-  const line = realLine($('line').value) || $('line').value.trim();
-  if (!line) { $('serr').textContent = 'Indique ta ligne.'; return; }
-  if (!draft.code) { $('serr').textContent = 'Choisis ton arrêt dans la liste.'; return; }
-  if (isNaN(walk) || isNaN(ride)) { $('serr').textContent = 'Renseigne les temps de marche et de trajet.'; return; }
+  const walk2 = parseInt($('walk2').value, 10);
+  if (!draft.arrCode) { $('serr').textContent = 'Choisis ton arrêt d’arrivée dans la liste.'; return; }
+  if (isNaN(walk2)) { $('serr').textContent = 'Renseigne le temps de marche à l’arrivée.'; return; }
   const week = {};
   for (let i = 0; i < 7; i++) week[i] = { on: $('wo' + i).checked, start: $('ws' + i).value || '08:30' };
-  cfg = { line, sens: +$('sens').value, dirs: draft.dirs || null, code: draft.code, label: draft.label, walk, ride, week };
+  cfg = { line: draft.line, sens: draft.sens, dirs: draft.dirs || null, code: draft.code, label: draft.label,
+    arrCode: draft.arrCode, arrLabel: draft.arrLabel, walk: draft.walk, walk2, week };
   save(K + ':cfg', cfg);
   for (const k in cache) delete cache[k];
   showMain();
@@ -326,8 +398,10 @@ $('save').onclick = () => {
 $('cancel').onclick = () => showMain();
 $('gear').onclick = openSetup;
 
-if (cfg) showMain(); else openSetup();
+if (cfg && cfg.arrCode) showMain(); else openSetup();
 setInterval(() => { if (cfg && !$('main').classList.contains('hide')) renderToday(); }, 15000);
+// Relecture de l'état du trafic (incidents) toutes les 5 min
+setInterval(() => { if (cfg && cfg.arrCode && !$('main').classList.contains('hide')) { delete cache[ymd(new Date())]; ensure(new Date()); } }, 300000);
 </script>
 </body>
 </html>
