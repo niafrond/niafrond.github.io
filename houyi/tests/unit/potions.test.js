@@ -1,5 +1,5 @@
 import { describe, test, expect } from '@jest/globals';
-import { POTIONS, POTION_SIZES, potionHeal, potionPrice, buyPotion, drinkPotion, drinkBlockReason, normalizePotions, applyQueuedPotion } from '../../potions.js';
+import { POTIONS, POTION_SIZES, potionHeal, potionPrice, buyPotion, drinkPotion, drinkBlockReason, normalizePotions, applyQueuedPotion, potionFalloff, POTION_FALLOFF } from '../../potions.js';
 
 const hero = (extra = {}) => ({ hp: 20, maxHp: 100, gold: 1000, combatPoints: 3, ...extra });
 
@@ -58,5 +58,26 @@ describe('potions de soin à usage unique', () => {
         expect(h.hp).toBe(100);
         expect(h.potions.small).toBe(0);
         expect(applyQueuedPotion(h, 'enorme').ok).toBe(false);
+    });
+});
+
+describe('potions : rendement décroissant en combat', () => {
+    test('100 %, 75 %, 50 %, puis 25 % pour toutes les suivantes', () => {
+        expect(POTION_FALLOFF).toEqual([1, 0.75, 0.5, 0.25]);
+        expect([0, 1, 2, 3, 9].map(potionFalloff)).toEqual([1, 0.75, 0.5, 0.25, 0.25]);
+        expect(potionFalloff(-1)).toBe(1);
+    });
+    test('le soin suit le rang de la potion dans le combat', () => {
+        const h = hero({ hp: 1, maxHp: 200 });
+        expect([0, 1, 2, 3].map(n => potionHeal(h, 'small', n))).toEqual([50, 38, 25, 13]);
+    });
+    test('en combat, drinkPotion applique le rang ; hors combat, jamais', () => {
+        const a = hero({ hp: 10, potions: { small: 2, medium: 0, large: 0 } });
+        expect(drinkPotion(a, 'small', { inCombat: true, drunk: 2 }).healed).toBe(13);   // 25 % × 50 % de 100
+        expect(drinkPotion(a, 'small', { inCombat: false, drunk: 2 }).healed).toBe(25);
+    });
+    test('potion en file : le rang est appliqué au soin', () => {
+        const h = hero({ hp: 10, potions: { small: 0, medium: 0, large: 0 } });
+        expect(applyQueuedPotion(h, 'large', false, 1).healed).toBe(56);   // 75 × 0,75
     });
 });

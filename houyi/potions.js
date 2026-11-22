@@ -21,8 +21,15 @@ export function normalizePotions(hero) {
 
 export const potionCount = (hero, size) => normalizePotions(hero)[size] || 0;
 
-/** PV rendus par une potion pour ce héros (part des PV max, arrondie, au moins 1). */
-export const potionHeal = (hero, size) => Math.max(1, Math.round((hero?.maxHp || 0) * POTIONS[size].healPct / 100));
+// Rendement décroissant EN COMBAT : la 1re potion bue soigne à 100 %, la 2e à 75 %, la 3e à 50 %, puis 25 % (toutes tailles et tous
+// bénéficiaires confondus, compteur remis à zéro à chaque combat). Les potions sont bon marché (petite : 10 zhu de base) et ne coûtent
+// aucun PA : la barre de chargement ne les limite pas (11 à 21 potions possibles par combat), d'où ce frein doux plutôt qu'un plafond sec.
+// Hors combat : aucun effet. Valeurs validées par l'agent Équilibrage (SPECS.md, 2026-11-22).
+export const POTION_FALLOFF = [1, 0.75, 0.5, 0.25];
+export const potionFalloff = drunk => POTION_FALLOFF[Math.min(POTION_FALLOFF.length - 1, Math.max(0, Math.floor(drunk || 0)))];
+
+/** PV rendus par une potion pour ce héros (part des PV max, arrondie, au moins 1) ; `drunk` : potions déjà bues dans ce combat. */
+export const potionHeal = (hero, size, drunk = 0) => Math.max(1, Math.round((hero?.maxHp || 0) * POTIONS[size].healPct / 100 * potionFalloff(drunk)));
 
 /** Prix d'une potion chez un marchand dont la région est de niveau `regionLevel` : le barème monte avec la région. */
 export const potionPrice = (size, regionLevel = 1) => Math.ceil(POTIONS[size].basePrice * (1 + Math.max(1, regionLevel) / 15));
@@ -58,14 +65,14 @@ export function drinkBlockReason(hero, size, inCombat, free = false) {
 }
 
 /** Boit une potion : retire la potion (et les PA en combat), rend les PV (plafonnés). Renvoie { ok, message, healed }. */
-export function drinkPotion(hero, size, { inCombat = false, free = false } = {}) {
+export function drinkPotion(hero, size, { inCombat = false, free = false, drunk = 0 } = {}) {
     const reason = drinkBlockReason(hero, size, inCombat, free);
     if (reason) return { ok: false, message: reason, healed: 0 };
     const potion = POTIONS[size];
     hero.potions[size] -= 1;
     if (inCombat && !free) hero.combatPoints -= potion.actionPoints;
     const before = hero.hp;
-    hero.hp = Math.min(hero.maxHp, hero.hp + potionHeal(hero, size));
+    hero.hp = Math.min(hero.maxHp, hero.hp + potionHeal(hero, size, inCombat ? drunk : 0));
     const healed = hero.hp - before;
     return { ok: true, healed, message: `${potion.name} : +${healed} PV.` };
 }
@@ -74,13 +81,13 @@ export function drinkPotion(hero, size, { inCombat = false, free = false } = {})
  * Effet d'une potion mise en file (actions indépendantes du plateau) : la potion est payée au choix, mais son effet part plus tard. Si Hou Yi est tombé
  * entre-temps (`heroKo`), la potion ne le relève pas : elle est rendue au sac et rien n'est soigné. Renvoie { ok, healed, refunded }.
  */
-export function applyQueuedPotion(hero, size, heroKo = false) {
+export function applyQueuedPotion(hero, size, heroKo = false, drunk = 0) {
     if (!POTIONS[size]) return { ok: false, healed: 0, refunded: false };
     if (heroKo || (hero.hp || 0) <= 0) {
         addPotions(hero, size, 1);
         return { ok: false, healed: 0, refunded: true };
     }
     const before = hero.hp;
-    hero.hp = Math.min(hero.maxHp, hero.hp + potionHeal(hero, size));
+    hero.hp = Math.min(hero.maxHp, hero.hp + potionHeal(hero, size, drunk));
     return { ok: true, healed: hero.hp - before, refunded: false };
 }

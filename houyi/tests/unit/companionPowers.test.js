@@ -1,5 +1,5 @@
 import { readFileSync } from 'fs';
-import { COMPANION_POWERS, rollCompanionPowers, turnPowerIds, MANA_COLORS } from '../../companionPowers.js';
+import { COMPANION_POWERS, rollCompanionPowers, turnPowerIds, MANA_COLORS, powerChance, manaPowerAmount } from '../../companionPowers.js';
 import { COMPANIONS } from '../../companions.js';
 import { createSession, activeCompanionOf, setActiveCompanion } from '../../exploration.js';
 import { QUESTS } from '../../story.js';
@@ -24,7 +24,7 @@ describe('pouvoirs des compagnons', () => {
         const by = Object.fromEntries(fired.map(f => [f.id, f]));
         expect(by.zhi.amount).toBe(10);
         expect(by.yu.amount).toBe(14);
-        expect(by.etincelle.amount).toBe(4);
+        expect(by.etincelle.amount).toBe(6);   // 4 + 1 tous les 5 niveaux (niveau 10)
         expect(MANA_COLORS).toContain(by.etincelle.color);
         expect(by.dawa.power.kind).toBe('mirage');
     });
@@ -32,8 +32,8 @@ describe('pouvoirs des compagnons', () => {
         expect(COMPANION_POWERS.braise.ragePct).toBe(0.5);
         expect(rollCompanionPowers(['braise'], hero, () => 0)[0].amount).toBe(0.5);
         expect(COMPANION_POWERS.jian.chance).toBe(0.05);
-        expect(rollCompanionPowers(['jian'], hero, () => 0.04)).toHaveLength(1);
-        expect(rollCompanionPowers(['jian'], hero, () => 0.05)).toHaveLength(0);
+        expect(rollCompanionPowers(['jian'], { ...hero, level: 1 }, () => 0.04)).toHaveLength(1);
+        expect(rollCompanionPowers(['jian'], { ...hero, level: 1 }, () => 0.05)).toHaveLength(0);
         expect(rollCompanionPowers(['tou'], hero, () => 0, { mana: { red: 0, blue: 0, green: 0, yellow: 0, purple: 0 } })).toEqual([]);
         const stolen = rollCompanionPowers(['tou'], hero, () => 0, { mana: { red: 0, blue: 0, green: 3, yellow: 0, purple: 7 } });
         expect(stolen[0].color).toBe('green');
@@ -86,5 +86,27 @@ describe('un seul compagnon actif, choisi dans le menu', () => {
         expect(main).toContain('companionMenuHooks.setActive');
         const view = readExplorationViewSource();
         expect(view).toContain('return active ? [active.id] : [];');
+    });
+});
+
+describe('pouvoirs fixes qui suivent le niveau (validés par l\'agent Équilibrage)', () => {
+    const at = level => ({ maxHp: 100, level });
+    test('Braise : 15 % au niveau 1, +0,15 point par niveau, plafond 25 %', () => {
+        expect(powerChance(COMPANION_POWERS.braise, at(1))).toBeCloseTo(0.15);
+        expect(powerChance(COMPANION_POWERS.braise, at(41))).toBeCloseTo(0.21);
+        expect(powerChance(COMPANION_POWERS.braise, at(70))).toBeCloseTo(0.25);   // cas limite : plafond
+    });
+    test('Jian : 5 % au niveau 1, plafond 12 %', () => {
+        expect(powerChance(COMPANION_POWERS.jian, at(1))).toBeCloseTo(0.05);
+        expect(powerChance(COMPANION_POWERS.jian, at(71))).toBeCloseTo(0.12);
+    });
+    test('Leigong : 4 qì, +1 tous les 5 niveaux', () => {
+        expect(manaPowerAmount(COMPANION_POWERS.etincelle, at(4))).toBe(4);
+        expect(manaPowerAmount(COMPANION_POWERS.etincelle, at(5))).toBe(5);
+        expect(manaPowerAmount(COMPANION_POWERS.etincelle, at(70))).toBe(18);
+    });
+    test('les pouvoirs sans progression gardent leur chance fixe', () => {
+        expect(powerChance(COMPANION_POWERS.tou, at(70))).toBe(0.30);
+        expect(powerChance(COMPANION_POWERS.zhi, at(1))).toBe(0.25);
     });
 });
