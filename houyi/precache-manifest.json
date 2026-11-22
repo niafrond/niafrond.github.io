@@ -3365,6 +3365,21 @@
    "h": "3f51ef06d8"
   },
   {
+   "p": "sprites/spellfx/absoluteShadowBlow.png",
+   "s": 8352,
+   "h": "63e8cb5fcf"
+  },
+  {
+   "p": "sprites/spellfx/angerCirculation.png",
+   "s": 23924,
+   "h": "08f5816350"
+  },
+  {
+   "p": "sprites/spellfx/awakenQi.png",
+   "s": 19549,
+   "h": "745d96867b"
+  },
+  {
    "p": "sprites/spellfx/azureDragonRoar.png",
    "s": 98163,
    "h": "a3cc97e625"
@@ -3373,6 +3388,11 @@
    "p": "sprites/spellfx/barrier.png",
    "s": 3443,
    "h": "a02a34bbe7"
+  },
+  {
+   "p": "sprites/spellfx/battleOath.png",
+   "s": 7292,
+   "h": "dc47c5dbd1"
   },
   {
    "p": "sprites/spellfx/berserkerRage.png",
@@ -3388,6 +3408,16 @@
    "p": "sprites/spellfx/blizzard.png",
    "s": 25442,
    "h": "c11e510af3"
+  },
+  {
+   "p": "sprites/spellfx/bloodBoil.png",
+   "s": 23214,
+   "h": "7dac81adb5"
+  },
+  {
+   "p": "sprites/spellfx/bloodThirst.png",
+   "s": 18798,
+   "h": "5e7653d02b"
   },
   {
    "p": "sprites/spellfx/bloodlust.png",
@@ -3420,6 +3450,11 @@
    "h": "caf01ffa14"
   },
   {
+   "p": "sprites/spellfx/cinnabarTransmute.png",
+   "s": 24958,
+   "h": "15f404c5a9"
+  },
+  {
    "p": "sprites/spellfx/cleave.png",
    "s": 14889,
    "h": "3bb6dd7ff9"
@@ -3445,6 +3480,11 @@
    "h": "f6e21f5cba"
   },
   {
+   "p": "sprites/spellfx/cursedMark.png",
+   "s": 27617,
+   "h": "65b8f4fefa"
+  },
+  {
    "p": "sprites/spellfx/darkChannels.png",
    "s": 5140,
    "h": "4cbb9b1a63"
@@ -3463,6 +3503,11 @@
    "p": "sprites/spellfx/divinePower.png",
    "s": 3435,
    "h": "2b81ab3aed"
+  },
+  {
+   "p": "sprites/spellfx/dragonBlood.png",
+   "s": 19351,
+   "h": "ba6492fa4e"
   },
   {
    "p": "sprites/spellfx/dragonBreath.png",
@@ -3498,6 +3543,11 @@
    "p": "sprites/spellfx/enrage.png",
    "s": 4665,
    "h": "c8a57128a1"
+  },
+  {
+   "p": "sprites/spellfx/exhaustArrow.png",
+   "s": 12463,
+   "h": "e44335673a"
   },
   {
    "p": "sprites/spellfx/fingerOfDeath.png",
@@ -3560,6 +3610,36 @@
    "h": "cf58996fbe"
   },
   {
+   "p": "sprites/spellfx/furiousLunge.png",
+   "s": 17473,
+   "h": "0cb6d6fb0e"
+  },
+  {
+   "p": "sprites/spellfx/furyAltar.png",
+   "s": 11532,
+   "h": "131fb93ccf"
+  },
+  {
+   "p": "sprites/spellfx/furyBlow.png",
+   "s": 13748,
+   "h": "c7e1f4e2c4"
+  },
+  {
+   "p": "sprites/spellfx/furyBolt.png",
+   "s": 10645,
+   "h": "ef0b775f31"
+  },
+  {
+   "p": "sprites/spellfx/furyTheft.png",
+   "s": 13890,
+   "h": "94b357c301"
+  },
+  {
+   "p": "sprites/spellfx/furyToQi.png",
+   "s": 22174,
+   "h": "7ed3909690"
+  },
+  {
    "p": "sprites/spellfx/galeSlash.png",
    "s": 2489,
    "h": "f95c6a9eb3"
@@ -3573,6 +3653,16 @@
    "p": "sprites/spellfx/greatHeal.png",
    "s": 12129,
    "h": "4712903fdf"
+  },
+  {
+   "p": "sprites/spellfx/guardFervor.png",
+   "s": 18730,
+   "h": "3452153a53"
+  },
+  {
+   "p": "sprites/spellfx/guardSentence.png",
+   "s": 10221,
+   "h": "ff06d28e9d"
   },
   {
    "p": "sprites/spellfx/handOfIce.png",
@@ -3605,6 +3695,11 @@
    "h": "38d3691469"
   },
   {
+   "p": "sprites/spellfx/hunterThrill.png",
+   "s": 15955,
+   "h": "3f0f9c7f25"
+  },
+  {
    "p": "sprites/spellfx/ice.png",
    "s": 6676,
    "h": "620b3c31e4"
@@ -3630,14 +3725,34 @@
    "h": "8fb3e4400a"
   },
   {
+   "p": "sprites/spellfx/impureBreath.png",
+   "s": 13787,
+   "h": "9402659074"
+  },
+  {
    "p": "sprites/spellfx/index.json",
-   "s": 14125,
-   "h": "22c5a9430b"
+   "s": 19968,
+   "h": "cd5a0e73a7"
   },
   {
    "p": "sprites/spellfx/inferno.png",
    "s": 39059,
    "h": "898a358b6f"
+  },
+  {
+   "p": "sprites/spellfx/innerCrucible.png",
+   "s": 24716,
+   "h": "6a15374d56"
+  },
+  {
+   "p": "sprites/spellfx/innerPlunder.png",
+   "s": 19281,
+   "h": "dfa9fc8734"
+  },
+  {
+   "p": "sprites/spellfx/innerThunder.png",
+   "s": 21222,
+   "h": "cb6786d4f2"
   },
   {
    "p": "sprites/spellfx/intimidate.png",
@@ -3710,6 +3825,11 @@
    "h": "c2b8a50b85"
   },
   {
+   "p": "sprites/spellfx/mandateJudgement.png",
+   "s": 15041,
+   "h": "1819f9b09f"
+  },
+  {
    "p": "sprites/spellfx/meteor.png",
    "s": 42388,
    "h": "e959a3a663"
@@ -3765,6 +3885,11 @@
    "h": "73adb119fe"
   },
   {
+   "p": "sprites/spellfx/righteousStrike.png",
+   "s": 9358,
+   "h": "358927a433"
+  },
+  {
    "p": "sprites/spellfx/rush.png",
    "s": 2257,
    "h": "4c96c8f88e"
@@ -3810,14 +3935,39 @@
    "h": "f18ec25e34"
   },
   {
+   "p": "sprites/spellfx/silenceSeal.png",
+   "s": 25851,
+   "h": "a4081ee784"
+  },
+  {
    "p": "sprites/spellfx/singingBlades.png",
    "s": 7422,
    "h": "675b947d55"
   },
   {
+   "p": "sprites/spellfx/skyJudgement.png",
+   "s": 10550,
+   "h": "2747e814f4"
+  },
+  {
+   "p": "sprites/spellfx/skySplitter.png",
+   "s": 13861,
+   "h": "b20991fc17"
+  },
+  {
+   "p": "sprites/spellfx/sleepDust.png",
+   "s": 18700,
+   "h": "ba0b16968d"
+  },
+  {
    "p": "sprites/spellfx/sneakAttack.png",
    "s": 2087,
    "h": "be9b764298"
+  },
+  {
+   "p": "sprites/spellfx/spiteStrike.png",
+   "s": 24554,
+   "h": "63aef8e93b"
   },
   {
    "p": "sprites/spellfx/springRain.png",
@@ -3845,6 +3995,11 @@
    "h": "98c9034247"
   },
   {
+   "p": "sprites/spellfx/stoneGaze.png",
+   "s": 24222,
+   "h": "836e40d327"
+  },
+  {
    "p": "sprites/spellfx/stoneskin.png",
    "s": 4862,
    "h": "06449f6c80"
@@ -3858,6 +4013,11 @@
    "p": "sprites/spellfx/stormPurge.png",
    "s": 11452,
    "h": "245411db63"
+  },
+  {
+   "p": "sprites/spellfx/stormTide.png",
+   "s": 21097,
+   "h": "982f7a2005"
   },
   {
    "p": "sprites/spellfx/strength.png",
@@ -3905,6 +4065,11 @@
    "h": "79dedb9938"
   },
   {
+   "p": "sprites/spellfx/tigerBreaker.png",
+   "s": 15474,
+   "h": "e9ce4c367d"
+  },
+  {
    "p": "sprites/spellfx/tigerEye.png",
    "s": 3440,
    "h": "38874f9991"
@@ -3913,6 +4078,71 @@
    "p": "sprites/spellfx/twinDragonsStrike.png",
    "s": 166997,
    "h": "fae964ae7e"
+  },
+  {
+   "p": "sprites/spellfx/ultimateAzureDragon.png",
+   "s": 19000,
+   "h": "27e459dd85"
+  },
+  {
+   "p": "sprites/spellfx/ultimateBlackTortoise.png",
+   "s": 21435,
+   "h": "a0325d83e7"
+  },
+  {
+   "p": "sprites/spellfx/ultimateEternalBastion.png",
+   "s": 16874,
+   "h": "f9b97ceaba"
+  },
+  {
+   "p": "sprites/spellfx/ultimateFiveElements.png",
+   "s": 25487,
+   "h": "38e185b764"
+  },
+  {
+   "p": "sprites/spellfx/ultimateHeavenlyThunder.png",
+   "s": 20174,
+   "h": "d5a31631b7"
+  },
+  {
+   "p": "sprites/spellfx/ultimateImperialDragon.png",
+   "s": 20010,
+   "h": "27828148c6"
+  },
+  {
+   "p": "sprites/spellfx/ultimateSkyWolf.png",
+   "s": 19996,
+   "h": "1b6e382934"
+  },
+  {
+   "p": "sprites/spellfx/ultimateSunPiercer.png",
+   "s": 11671,
+   "h": "e16f8d8e30"
+  },
+  {
+   "p": "sprites/spellfx/ultimateThousandArrows.png",
+   "s": 15781,
+   "h": "d5f351602d"
+  },
+  {
+   "p": "sprites/spellfx/ultimateThousandRiders.png",
+   "s": 20205,
+   "h": "ced440d8bd"
+  },
+  {
+   "p": "sprites/spellfx/ultimateVermilionBird.png",
+   "s": 16820,
+   "h": "0233bfd318"
+  },
+  {
+   "p": "sprites/spellfx/ultimateWhiteTiger.png",
+   "s": 24329,
+   "h": "15c2d26b6b"
+  },
+  {
+   "p": "sprites/spellfx/unbreakableGuard.png",
+   "s": 21776,
+   "h": "f310b00233"
   },
   {
    "p": "sprites/spellfx/vaporBurst.png",
@@ -3953,6 +4183,11 @@
    "p": "sprites/spellfx/wildMana.png",
    "s": 5050,
    "h": "8252b08b62"
+  },
+  {
+   "p": "sprites/spellfx/wrathOffering.png",
+   "s": 17644,
+   "h": "878f6175d2"
   },
   {
    "p": "sprites/prologue/1-land.png",

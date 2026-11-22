@@ -817,5 +817,334 @@
     "size": 48,
     "fps": 10,
     "tier": 2
+  },
+  "awakenQi": {
+    "name": "Éveil du Qi",
+    "frames": 8,
+    "size": 48,
+    "fps": 10,
+    "tier": 1
+  },
+  "stormTide": {
+    "name": "Marée d'Orage",
+    "frames": 8,
+    "size": 48,
+    "fps": 10,
+    "tier": 2
+  },
+  "cinnabarTransmute": {
+    "name": "Conversion du Cinabre",
+    "frames": 8,
+    "size": 48,
+    "fps": 10,
+    "tier": 1
+  },
+  "innerCrucible": {
+    "name": "Creuset Intérieur",
+    "frames": 8,
+    "size": 48,
+    "fps": 10,
+    "tier": 2
+  },
+  "furyBolt": {
+    "name": "Éclair de Fureur",
+    "frames": 8,
+    "size": 48,
+    "fps": 10,
+    "tier": 1
+  },
+  "innerThunder": {
+    "name": "Tonnerre Intérieur",
+    "frames": 8,
+    "size": 48,
+    "fps": 10,
+    "tier": 2
+  },
+  "skyJudgement": {
+    "name": "Jugement du Ciel",
+    "frames": 8,
+    "size": 48,
+    "fps": 10,
+    "tier": 3
+  },
+  "impureBreath": {
+    "name": "Souffle Impur",
+    "frames": 8,
+    "size": 48,
+    "fps": 10,
+    "tier": 1
+  },
+  "bloodThirst": {
+    "name": "Soif de Sang",
+    "frames": 8,
+    "size": 48,
+    "fps": 10,
+    "tier": 1
+  },
+  "hunterThrill": {
+    "name": "Frisson du Chasseur",
+    "frames": 8,
+    "size": 48,
+    "fps": 10,
+    "tier": 2
+  },
+  "furyTheft": {
+    "name": "Vol de Fureur",
+    "frames": 8,
+    "size": 48,
+    "fps": 10,
+    "tier": 1
+  },
+  "innerPlunder": {
+    "name": "Pillage Intérieur",
+    "frames": 8,
+    "size": 48,
+    "fps": 10,
+    "tier": 2
+  },
+  "spiteStrike": {
+    "name": "Frappe de Rancœur",
+    "frames": 8,
+    "size": 48,
+    "fps": 10,
+    "tier": 1
+  },
+  "absoluteShadowBlow": {
+    "name": "Coup de l'Ombre Absolue",
+    "frames": 8,
+    "size": 48,
+    "fps": 10,
+    "tier": 3
+  },
+  "sleepDust": {
+    "name": "Poudre de Sommeil",
+    "frames": 8,
+    "size": 48,
+    "fps": 10,
+    "tier": 1
+  },
+  "exhaustArrow": {
+    "name": "Flèche d'Épuisement",
+    "frames": 8,
+    "size": 48,
+    "fps": 10,
+    "tier": 1
+  },
+  "battleOath": {
+    "name": "Serment de Combat",
+    "frames": 8,
+    "size": 48,
+    "fps": 10,
+    "tier": 1
+  },
+  "wrathOffering": {
+    "name": "Offrande de Colère",
+    "frames": 8,
+    "size": 48,
+    "fps": 10,
+    "tier": 1
+  },
+  "furyAltar": {
+    "name": "Autel de Fureur",
+    "frames": 8,
+    "size": 48,
+    "fps": 10,
+    "tier": 2
+  },
+  "righteousStrike": {
+    "name": "Frappe du Juste",
+    "frames": 8,
+    "size": 48,
+    "fps": 10,
+    "tier": 1
+  },
+  "guardSentence": {
+    "name": "Sentence du Garde",
+    "frames": 8,
+    "size": 48,
+    "fps": 10,
+    "tier": 2
+  },
+  "mandateJudgement": {
+    "name": "Jugement du Mandat",
+    "frames": 8,
+    "size": 48,
+    "fps": 10,
+    "tier": 3
+  },
+  "stoneGaze": {
+    "name": "Regard Pétrifiant",
+    "frames": 8,
+    "size": 48,
+    "fps": 10,
+    "tier": 1
+  },
+  "unbreakableGuard": {
+    "name": "Bastion Infranchissable",
+    "frames": 8,
+    "size": 48,
+    "fps": 10,
+    "tier": 2
+  },
+  "bloodBoil": {
+    "name": "Sang en Ébullition",
+    "frames": 8,
+    "size": 48,
+    "fps": 10,
+    "tier": 1
+  },
+  "furyToQi": {
+    "name": "Souffle de la Colère",
+    "frames": 8,
+    "size": 48,
+    "fps": 10,
+    "tier": 1
+  },
+  "furyBlow": {
+    "name": "Coup de la Fureur Brisée",
+    "frames": 8,
+    "size": 48,
+    "fps": 10,
+    "tier": 1
+  },
+  "dragonBlood": {
+    "name": "Sang du Dragon",
+    "frames": 8,
+    "size": 48,
+    "fps": 10,
+    "tier": 2
+  },
+  "angerCirculation": {
+    "name": "Circulation de la Colère",
+    "frames": 8,
+    "size": 48,
+    "fps": 10,
+    "tier": 2
+  },
+  "tigerBreaker": {
+    "name": "Brise-Tigre",
+    "frames": 8,
+    "size": 48,
+    "fps": 10,
+    "tier": 2
+  },
+  "skySplitter": {
+    "name": "Fendeur de Ciel",
+    "frames": 8,
+    "size": 48,
+    "fps": 10,
+    "tier": 3
+  },
+  "ultimateFiveElements": {
+    "name": "Courroux des Cinq Éléments",
+    "frames": 8,
+    "size": 48,
+    "fps": 10,
+    "tier": 4
+  },
+  "ultimateHeavenlyThunder": {
+    "name": "Tribulation de la Foudre Céleste",
+    "frames": 8,
+    "size": 48,
+    "fps": 10,
+    "tier": 4
+  },
+  "ultimateSunPiercer": {
+    "name": "Flèche qui Abat le Soleil",
+    "frames": 8,
+    "size": 48,
+    "fps": 10,
+    "tier": 4
+  },
+  "ultimateImperialDragon": {
+    "name": "Colère du Dragon Impérial",
+    "frames": 8,
+    "size": 48,
+    "fps": 10,
+    "tier": 4
+  },
+  "ultimateEternalBastion": {
+    "name": "Rempart Éternel",
+    "frames": 8,
+    "size": 48,
+    "fps": 10,
+    "tier": 4
+  },
+  "ultimateThousandRiders": {
+    "name": "Charge des Mille Cavaliers",
+    "frames": 8,
+    "size": 48,
+    "fps": 10,
+    "tier": 4
+  },
+  "ultimateSkyWolf": {
+    "name": "Hurlement du Loup Céleste",
+    "frames": 8,
+    "size": 48,
+    "fps": 10,
+    "tier": 4
+  },
+  "ultimateVermilionBird": {
+    "name": "Renaissance de l'Oiseau Vermillon",
+    "frames": 8,
+    "size": 48,
+    "fps": 10,
+    "tier": 4
+  },
+  "ultimateBlackTortoise": {
+    "name": "Carapace de la Tortue Noire",
+    "frames": 8,
+    "size": 48,
+    "fps": 10,
+    "tier": 4
+  },
+  "ultimateWhiteTiger": {
+    "name": "Chasse du Tigre Blanc",
+    "frames": 8,
+    "size": 48,
+    "fps": 10,
+    "tier": 4
+  },
+  "ultimateAzureDragon": {
+    "name": "Tempête du Dragon d'Azur",
+    "frames": 8,
+    "size": 48,
+    "fps": 10,
+    "tier": 4
+  },
+  "cursedMark": {
+    "name": "Marque Maudite",
+    "frames": 8,
+    "size": 48,
+    "fps": 10,
+    "tier": 1
+  },
+  "furiousLunge": {
+    "name": "Estocade Furieuse",
+    "frames": 8,
+    "size": 48,
+    "fps": 10,
+    "tier": 2
+  },
+  "guardFervor": {
+    "name": "Ferveur du Garde",
+    "frames": 8,
+    "size": 48,
+    "fps": 10,
+    "tier": 2
+  },
+  "ultimateThousandArrows": {
+    "name": "Pluie des Mille Flèches",
+    "frames": 8,
+    "size": 48,
+    "fps": 10,
+    "tier": 4
+  },
+  "silenceSeal": {
+    "name": "Sceau du Silence",
+    "frames": 8,
+    "size": 48,
+    "fps": 10,
+    "tier": 1
   }
 }
