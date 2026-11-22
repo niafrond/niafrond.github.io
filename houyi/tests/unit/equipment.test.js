@@ -204,4 +204,21 @@ describe('Equipment System', () => {
             expect(bonus).toBe(0);
         });
     });
+
+    describe('arme à deux mains (règle alignée sur l\'inventaire)', () => {
+        const greataxe = { id: 'greataxe', name: 'Grande Hache', type: 'weapon', twoHanded: true };
+        const dagger = { id: 'dagger', name: 'Poignard', type: 'weapon', twoHanded: false };
+        it('ne se manie qu\'en main droite', () => {
+            expect(getValidSlots(greataxe)).toEqual(['rightHand']);
+            expect(canEquip(greataxe, 'leftHand')).toBe(false);
+            expect(equip({ equipment: initializeEquipment() }, greataxe, 'leftHand').success).toBe(false);
+        });
+        it('refuse une arme en main gauche tant qu\'elle occupe la droite', () => {
+            const p = { equipment: initializeEquipment() };
+            equip(p, greataxe, 'rightHand');
+            const res = equip(p, dagger, 'leftHand');
+            expect(res.success).toBe(false);
+            expect(p.equipment.leftHand).toBeNull();
+        });
+    });
 });

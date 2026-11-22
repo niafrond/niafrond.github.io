@@ -32,10 +32,8 @@ export function getValidSlots(obj) {
     }
 
     if (obj.type === 'weapon') {
-        if (obj.twoHanded) {
-            return ['rightHand', 'leftHand'];
-        }
-        return ['rightHand', 'leftHand'];
+        // Une arme à deux mains ne se manie qu'en main droite (elle occupe aussi la gauche) : même règle que l'inventaire (gameInventoryTabs.js).
+        return obj.twoHanded ? ['rightHand'] : ['rightHand', 'leftHand'];
     }
 
     if (obj.type === 'reusable' || obj.type === 'consumable') {
@@ -56,11 +54,6 @@ export function canEquip(obj, slot) {
 
     // Les boucliers ne vont qu'en main gauche
     if (obj.type === 'shield' && slot !== 'leftHand') {
-        return false;
-    }
-
-    // Les armes à deux mains occupent les deux mains
-    if (obj.type === 'weapon' && obj.twoHanded && slot !== 'rightHand' && slot !== 'leftHand') {
         return false;
     }
 
@@ -100,8 +93,8 @@ export function equip(player, obj, slot) {
         };
     }
 
-    // Si on équipe un bouclier en main gauche et qu'il y a une arme à deux mains à droite
-    if (obj.type === 'shield' && slot === 'leftHand') {
+    // Main gauche (bouclier ou arme) refusée tant qu'une arme à deux mains occupe la droite
+    if ((obj.type === 'shield' || obj.type === 'weapon') && slot === 'leftHand') {
         if (player.equipment.rightHand?.twoHanded) {
             return {
                 success: false,
