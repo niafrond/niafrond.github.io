@@ -1,11 +1,18 @@
 // Onglets Armes, Équipement et Inventaire : armes en main, boutons d'arme/objet, cartes, équiper / vendre / utiliser un objet.
 // Extrait de game.js.
 import { getWeaponById, BIOME_LABELS, describeStatBonuses } from "./weapons.js";
-import { chooseAction, classCanAct, decoupled } from "./gameSpellList.js";
+import { chooseAction, classCanAct, decoupled, getTurnClass } from "./gameSpellList.js";
+import { START_CLASS } from "./classRoster.js";
 import { actionGuard } from "./actionGuard.js";
 import { compareAttrs, deltaBadgesHtml, equipDeltaGroupsHtml } from "./compareView.js";
 import { isSingleUse, reuseLabel } from "./itemReuse.js";
-import { getItemIcon, getRarityColor, useItem, describeRecharge, shiftActiveItemIndexes } from "./items.js";
+import { heroWeapons, allyWeaponBonus } from "./weapons.js";
+import { charTabsHtml, getCharTab, bindCharTabs } from "./charTabs.js";
+import { weaponsFor, allyEquippedWeapon, equipAllyWeapon } from "./allyWeapons.js";
+import { openTargetPicker, teamMembers, hasLivingAlly } from "./itemTargetPicker.js";
+import { healAlly, ALLIES } from "./allies.js";
+import { getItemIcon, getRarityColor, useItem, isTeamItem, teamItemKind, describeRecharge, shiftActiveItemIndexes } from "./items.js";
+import { updateStats } from "./gameHud.js";
 import { afflictionsOf } from "./alterations.js";
 import { playSfx } from "./sound.js";
 import { icon as svgIcon } from "./icons.js";
@@ -14,8 +21,8 @@ import { itemGroupKey, toggleSellTag, allShieldsTagged } from "./merchants.js";
 import { displayAttack, rawDefense, statModifier } from "./combatStats.js";
 import { showCombatAnimation } from "./gameStatsTab.js";
 import { bindTooltip, bindCardTips, showWeaponTooltip, showItemTooltip, hideSpellTooltip } from "./gameTooltips.js";
-import { escapeHtml, rowCardHtml, emptyRowHtml, badgeHtml, cardTipHtml, shortText, WEAPON_SORTS, sortChoice, bindSortSelect, sortedEntries } from "./gameCardUi.js";
-import { getWeaponIcon, player, currentTurn, gameState, enemy, normalizeActiveInventoryIndex, getActiveInventoryItem, getSecondActiveInventoryItem, log, logActiveAction, saveUpdate, rejectRushedAction, useWeapon, finishPlayerTurn, endAction } from "./game.js";
+import { escapeHtml, rowCardHtml, emptyRowHtml, badgeHtml, cardTipHtml, weaponTargetBadge, weaponTargetLine, shortText, WEAPON_SORTS, sortChoice, bindSortSelect, sortedEntries } from "./gameCardUi.js";
+import { getWeaponIcon, player, currentTurn, gameState, enemy, normalizeActiveInventoryIndex, getActiveInventoryItem, getSecondActiveInventoryItem, log, logActiveAction, saveUpdate, rejectRushedAction, useWeapon, finishPlayerTurn, endAction, applyAllyItemEffect } from "./game.js";
 
 // -------------------------------------
 // Armes
@@ -25,7 +32,7 @@ export function updateAvailableWeapons(){
         player.weapons = [];
     }
     // Les armes disponibles sont celles que le joueur possède et peut utiliser
-    player.availableWeapons = player.weapons.filter(weapon => weapon.minLevel <= player.level);
+    player.availableWeapons = heroWeapons(player.weapons).filter(weapon => weapon.minLevel <= player.level);
     
     // Si l'arme équipée n'est plus disponible (niveau trop bas), la retirer
     if(player.equippedWeapon && player.level < player.equippedWeapon.minLevel){
@@ -144,6 +151,13 @@ export function createWeaponButton(){
     const container = document.getElementById('weapon-button');
     if(!container) return;
     container.innerHTML = "";
+    if(gameState.combatState === 'active' && getTurnClass() !== START_CLASS){
+        // Un compagnon frappe aussi avec son arme (dégâts, coût en PA) ; elle renforce de plus ses sorts.
+        const w = allyEquippedWeapon(player, getTurnClass());
+        if(w) appendWeaponButton(container, w, 'right');
+        updateWeaponsTab();
+        return;
+    }
 
     if(!player.equippedWeapon){
         if(player.availableWeapons && player.availableWeapons.length > 0) {
@@ -173,11 +187,12 @@ function weaponCardHtml(weapon, { hand, count = 1 } = {}){
     const bonuses = describeStatBonuses(weapon);
     // Écarts avec la main droite et, pour une arme à une main, avec ce qui est en main gauche (arme, bouclier ou rien).
     const deltas = hand ? '' : equipDeltaGroupsHtml(player, 'weapon', weapon);
-    const stats = `<span class="rc-stats">${weapon.damage} ${svgIcon('skull')} · ${weapon.actionPoints} ${svgIcon('arrow')}</span>`;
+    const stats = `<span class="rc-stats">${weapon.damage} ${svgIcon('skull')} · ${weapon.actionPoints} ${svgIcon('arrow')}</span> ${weaponTargetBadge(weapon)}`;
     const tip = cardTipHtml(escapeHtml(weapon.name), [
         `${weapon.damage} ${svgIcon('skull')} • ${weapon.actionPoints} ${svgIcon('arrow')} • Niv. ${weapon.minLevel}${weapon.twoHanded ? ' • Deux mains' : ''}`,
         bonuses ? escapeHtml(bonuses) : '',
         weapon.biome ? `Bonus de dégâts : ${escapeHtml(BIOME_LABELS[weapon.biome])}` : '',
+        weaponTargetLine(weapon),
         count > 1 ? `Exemplaires : ${count}` : ''
     ], escapeHtml(weapon.description || ''));
     let primary, more = '';
@@ -207,6 +222,55 @@ function weaponCardHtml(weapon, { hand, count = 1 } = {}){
     });
 }
 
+// Arme d'un compagnon : une arme de son type (butin, marchands), qui renforce les dégâts de ses sorts ; réglée hors combat.
+function allyWeaponCard(weapon, charId, worn){
+    const locked = player.level < (weapon.minLevel || 1);
+    const primary = worn
+        ? ''   // un compagnon garde toujours une arme : pas de « Retirer », on en équipe une autre
+        : `<button type="button" class="rc-btn" data-ally-equip="${weapon.id}" data-char="${charId}"${locked ? ' disabled' : ''}>${locked ? `Niv. ${weapon.minLevel}` : 'Équiper'}</button>`;
+    return rowCardHtml({
+        key: `aw:${charId}:${weapon.id}`,
+        cls: `${worn ? 'rc-equipped' : ''}${locked && !worn ? ' is-locked' : ''}`,
+        border: getRarityColor(weapon.rarity),
+        name: `${getWeaponIcon(weapon.type)} ${escapeHtml(weapon.name)}`,
+        badges: worn ? badgeHtml('En main', 'rc-badge-on') : '',
+        sub: `<span class="rc-stats">${weapon.damage} ${svgIcon('skull')} · ${weapon.actionPoints} ${svgIcon('arrow')} · +${allyWeaponBonus(weapon)} aux sorts · Niv. ${weapon.minLevel || 1}</span>`,
+        primary,
+        tip: cardTipHtml(escapeHtml(weapon.name), [`${weapon.damage} ${svgIcon('skull')} • ${weapon.actionPoints} ${svgIcon('arrow')}`, `+${allyWeaponBonus(weapon)} aux dégâts de ses sorts`, `Niv. ${weapon.minLevel || 1}`], escapeHtml(weapon.description || ''))
+    });
+}
+
+function renderAllyWeapons(charId, equippedDiv, availableList, charTabs){
+    const ally = ALLIES[charId];
+    const eq = allyEquippedWeapon(player, charId);
+    equippedDiv.innerHTML = charTabs + `<h3>En main : ${escapeHtml(ally?.name || charId)}</h3>` + (eq ? allyWeaponCard(eq, charId, true) : emptyRowHtml('Arme', 'aucune arme'));
+    const taken = Object.values(player.allyWeapons || {});
+    const spare = weaponsFor(player, charId).filter(w => w.id !== eq?.id && !taken.includes(w.id));
+    availableList.innerHTML = spare.length
+        ? spare.map(w => allyWeaponCard(w, charId, false)).join('')
+        : `<p class="shop-empty">Aucune autre arme pour ${escapeHtml(ally?.short || charId)} : elles se trouvent en butin et chez les marchands.</p>`;
+    const shields = document.getElementById('shield-list');
+    if(shields) shields.innerHTML = '';
+    bindCardTips(equippedDiv);
+    bindCardTips(availableList);
+}
+
+// Équiper l'arme d'un compagnon (hors combat) : un seul écouteur sur l'onglet Armes.
+function bindAllyWeaponActions(){
+    const panel = document.getElementById('tab-weapons');
+    if(!panel || panel.dataset.allyWeaponsBound) return;
+    panel.dataset.allyWeaponsBound = '1';
+    panel.addEventListener('click', ev => {
+        const equip = ev.target.closest?.('[data-ally-equip]');
+        if(!equip) return;
+        if(gameState.combatState === 'active'){ log('Vous ne pouvez pas changer d\'arme pendant le combat !'); return; }
+        const res = equipAllyWeapon(player, equip.dataset.char, equip.dataset.allyEquip);
+        log(res.message);
+        if(res.ok) saveUpdate();
+        updateWeaponsTab();
+    });
+}
+
 // mise à jour de l'onglet armes
 export function updateWeaponsTab(){
     bindSortSelect('weapons-sort', updateWeaponsTab);
@@ -215,8 +279,15 @@ export function updateWeaponsTab(){
     const availableList = document.getElementById('available-weapons-list');
     if(!equippedDiv || !availableList) return;
     
+    // Un onglet par personnage : Hou Yi (ses deux mains, ses boucliers) ou un compagnon (l'arme de son type qu'il porte).
+    const weaponsChar = getCharTab('weapons', player);
+    const charTabs = charTabsHtml('weapons', player, 'Armes par personnage');
+    bindCharTabs(equippedDiv, 'weapons', updateWeaponsTab);
+    bindAllyWeaponActions();
+    if(weaponsChar !== START_CLASS){ renderAllyWeapons(weaponsChar, equippedDiv, availableList, charTabs); return; }
+
     // Armes équipées : une case par main, vide ou occupée (bouclier, arme à deux mains), comme l'onglet Stuff.
-    equippedDiv.innerHTML = '<h3>En main</h3>';
+    equippedDiv.innerHTML = charTabs + '<h3>En main</h3>';
     const right = player.equippedWeapon;
     const left = getLeftHandWeapon();
     equippedDiv.insertAdjacentHTML('beforeend', right
@@ -232,7 +303,8 @@ export function updateWeaponsTab(){
     const lockedWasOpen = !!availableList.querySelector('details.locked-group')?.open;
     availableList.innerHTML = '';
     const weaponSort = WEAPON_SORTS[sortChoice('weapons-sort')];
-    const ownedWeapons = weaponSort ? [...(player.weapons || [])].sort(weaponSort) : (player.weapons || []);
+    const heroOwned = heroWeapons(player.weapons);
+    const ownedWeapons = weaponSort ? [...heroOwned].sort(weaponSort) : heroOwned;
     const spare = ownedWeapons.filter(w => w.id !== right?.id && w.id !== left?.id);
     if(spare.length === 0){
         availableList.innerHTML = ownedWeapons.length
@@ -473,7 +545,7 @@ function buildItemButton(item, index){
 
     const pa = item.actionPoints || 2;
     const exhausted = item.type === 'reusable' && !isSingleUse(item) && (item.chargesLeft ?? item.chargesPerCycle) <= 0;
-    const healUseless = isUselessHeal(item);
+    const healUseless = item.effect?.heal && !isTeamItem(item) && hasLivingAlly() ? !eligibleTargets(item).length : isUselessHeal(item);
     const sealed = (player.statusEffects?.sealed || 0) > 0;   // Talisman de Scellement : cadenas, objet inutilisable
     const canUse = gameState.combatState === 'active' && (currentTurn === 'player' || decoupled()) && classCanAct() && player.combatPoints >= pa && !exhausted && !healUseless && !sealed;
 
@@ -493,11 +565,11 @@ function buildItemButton(item, index){
         btn.tabIndex = -1;
         btn.onclick = null;
     } else {
-        btn.onclick = () => useInventoryItem(item.id, index);
+        btn.onclick = () => useItemChoosingTarget(item, index);
         btn.onkeydown = (event) => {
             if(event.key === 'Enter' || event.key === ' ') {
                 event.preventDefault();
-                useInventoryItem(item.id, index);
+                useItemChoosingTarget(item, index);
             }
         };
     }
@@ -555,6 +627,43 @@ function isUselessHeal(item){
 }
 
 /** Un objet de l'inventaire est-il utilisable maintenant en combat ? { ok, reason } (menu « Objet »). */
+/** Soigne un compagnon (objet de soin donné à un équipier) : renvoie le message de journal. */
+function healAllyMessage(classId, amount){
+    const ally = gameState.allies?.[classId];
+    const healed = healAlly(ally, amount);
+    if(ally) log(`${ally.name} récupère ${healed} PV.`);
+    updateStats();
+    return ally ? `${ally.name} récupère ${healed} PV. ` : '';
+}
+
+/** Sorte de cible d'un objet : 'revive' | 'heal' | 'buff' (objets d'équipe), 'heal' pour une simple potion de soin, sinon null. */
+export const itemTargetKind = item => teamItemKind(item) || (item?.effect?.heal ? 'heal' : null);
+
+/** Faut-il demander « sur qui ? » : objet d'équipe, ou soin quand un compagnon peut le recevoir. */
+export const itemNeedsTarget = item => isTeamItem(item) || (!!item?.effect?.heal && hasLivingAlly());
+
+/** Membres de l'équipe qu'un objet peut viser : [{ classId, name, hp, maxHp, ko }] (Hou Yi d'abord). */
+export function eligibleTargets(item){
+    const kind = itemTargetKind(item);
+    if(!kind) return [];
+    const members = teamMembers();
+    if(kind === 'revive') return members.filter(m => m.ko);
+    return members.filter(m => !m.ko && (kind === 'buff' || m.hp < m.maxHp));
+}
+
+/** Utilise un objet du sac : demande d'abord « sur qui ? » (barres de vie de l'équipe) quand il faut, puis applique l'effet au personnage choisi. */
+export function useItemChoosingTarget(item, index){
+    if(!itemNeedsTarget(item)) { useInventoryItem(item.id, index); return; }
+    const kind = itemTargetKind(item);
+    const ok = new Set(eligibleTargets(item).map(m => m.classId));
+    if(!ok.size){ log(kind === 'revive' ? 'Personne à ranimer.' : 'Aucun équipier à aider.'); return; }
+    openTargetPicker({
+        title: `${item.name} : sur qui ?`,
+        blockReason: m => ok.has(m.classId) ? null : (kind === 'revive' ? 'debout' : m.ko ? 'à ranimer d\'abord' : kind === 'heal' ? 'en pleine forme' : 'indisponible'),
+        onPick: classId => useInventoryItem(item.id, index, classId)
+    });
+}
+
 export function itemUsability(item){
     const pa = item.actionPoints || 2;
     if(gameState.combatState !== 'active' || (!decoupled() && currentTurn !== 'player')) return { ok: false, reason: "Ce n'est pas votre tour." };
@@ -562,12 +671,14 @@ export function itemUsability(item){
     if((player.statusEffects?.sealed || 0) > 0) return { ok: false, reason: 'Scellé' };
     if(item.type === 'reusable' && !isSingleUse(item) && (item.chargesLeft ?? item.chargesPerCycle) <= 0) return { ok: false, reason: describeRecharge(item) };
     if(!classCanAct()) return { ok: false, reason: 'En chargement' };
-    if(isUselessHeal(item)) return { ok: false, reason: 'Sans effet maintenant' };
+    if(isTeamItem(item) && !eligibleTargets(item).length) return { ok: false, reason: teamItemKind(item) === 'revive' ? 'Personne à ranimer' : 'Aucun équipier à aider' };
+    if(item.effect?.heal && !isTeamItem(item) && hasLivingAlly()){ if(!eligibleTargets(item).length) return { ok: false, reason: 'Sans effet maintenant' }; }
+    else if(isUselessHeal(item)) return { ok: false, reason: 'Sans effet maintenant' };
     if(player.combatPoints < pa) return { ok: false, reason: `${pa} PA requis` };
     return { ok: true, reason: '' };
 }
 
-export function useInventoryItem(itemId, index){
+export function useInventoryItem(itemId, index, targetClass = null){
     if(gameState.combatState !== 'active'){ log("Aucun combat en cours."); return; }
     if(!decoupled() && currentTurn !== 'player'){ log("Ce n'est pas votre tour."); return; }
     if(rejectRushedAction()) return;
@@ -587,7 +698,12 @@ export function useInventoryItem(itemId, index){
         return;
     }
     if(!item){ log("Objet introuvable."); return; }
-    if(isUselessHeal(item)){ log(item.effect?.cure ? "Vous ne souffrez d'aucune altération que cet objet guérit." : "Vos PV sont déjà au maximum."); return; }
+    const healsAlly = !!targetClass && targetClass !== 'assassin' && !!item.effect?.heal;   // potion de soin donnée à un compagnon
+    if(gameState.heroKo && !isTeamItem(item) && !healsAlly){ log("Hou Yi est à terre : seuls les objets d'équipe (ranimer, soigner un équipier) servent."); return; }
+    if(healsAlly){
+        const ally = gameState.allies?.[targetClass];
+        if(!ally || ally.ko || ally.hp >= ally.maxHp){ log(!ally || ally.ko ? "Ce compagnon ne peut pas être soigné." : `${ally.name} est en pleine forme.`); return; }
+    } else if(isUselessHeal(item)){ log(item.effect?.cure ? "Vous ne souffrez d'aucune altération que cet objet guérit." : "Vos PV sont déjà au maximum."); return; }
 
     const pa = item.actionPoints || 2;
     if(player.combatPoints < pa){
@@ -600,7 +716,7 @@ export function useInventoryItem(itemId, index){
     // Effet : tout de suite ou en sortant de la file (la classe est consommée dès le choix) ; si l'objet n'est plus utilisable à ce moment, les PA sont rendus.
     const effect = () => {
         const at = player.inventory[resolvedIndex]?.id === itemId ? resolvedIndex : player.inventory.findIndex(i => i.id === itemId);
-        const result = at === -1 ? { success: false, message: 'Objet introuvable' } : useItem(itemId, player, enemy, at);
+        const result = at === -1 ? { success: false, message: 'Objet introuvable' } : useItem(itemId, player, enemy, at, { allyEffect: eff => applyAllyItemEffect(eff, targetClass), healAlly: healsAlly ? (amount => healAllyMessage(targetClass, amount)) : null });
         if(result.success){
             if(item.effect?.cure) playSfx('cure');
             logActiveAction(`utilise l'objet ${item.name} (cout ${pa} PA)`);

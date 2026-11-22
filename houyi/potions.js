@@ -7,7 +7,7 @@
 export const POTION_SIZES = ['small', 'medium', 'large'];
 
 export const POTIONS = {
-    small: { id: 'small', name: 'Petite potion', healPct: 25, actionPoints: 0, basePrice: 30 },
+    small: { id: 'small', name: 'Petite potion', healPct: 25, actionPoints: 0, basePrice: 10 },
     medium: { id: 'medium', name: 'Potion moyenne', healPct: 50, actionPoints: 0, basePrice: 70 },
     large: { id: 'large', name: 'Grande potion', healPct: 75, actionPoints: 0, basePrice: 140 }
 };
@@ -38,10 +38,10 @@ export function buyPotion(hero, size, regionLevel = 1) {
     const potion = POTIONS[size];
     if (!potion) return { ok: false, message: 'Potion inconnue.' };
     const price = potionPrice(size, regionLevel);
-    if ((hero.gold || 0) < price) return { ok: false, message: `Pas assez d'or ! Coût : ${price}, vous avez ${hero.gold || 0}.` };
+    if ((hero.gold || 0) < price) return { ok: false, message: `Pas assez de zhu ! Coût : ${price}, vous avez ${hero.gold || 0}.` };
     hero.gold -= price;
     addPotions(hero, size, 1);
-    return { ok: true, price, message: `${potion.name} achetée pour ${price} pièces d'or (vous en avez ${hero.potions[size]}).` };
+    return { ok: true, price, message: `${potion.name} achetée pour ${price} zhu (vous en avez ${hero.potions[size]}).` };
 }
 
 /**
@@ -51,6 +51,7 @@ export function drinkBlockReason(hero, size, inCombat, free = false) {
     const potion = POTIONS[size];
     if (!potion) return 'Potion inconnue.';
     if (potionCount(hero, size) <= 0) return `Aucune ${potion.name.toLowerCase()}.`;
+    if (!inCombat && (hero.hp || 0) <= 0) return 'Hou Yi est à terre : seul un point de repos ou un objet de résurrection le relève.';
     if ((hero.hp || 0) >= (hero.maxHp || 0)) return 'Vos PV sont déjà au maximum.';
     if (inCombat && !free && (hero.combatPoints || 0) < potion.actionPoints) return `Il faut ${potion.actionPoints} point${potion.actionPoints > 1 ? 's' : ''} d'action.`;
     return null;
@@ -67,4 +68,19 @@ export function drinkPotion(hero, size, { inCombat = false, free = false } = {})
     hero.hp = Math.min(hero.maxHp, hero.hp + potionHeal(hero, size));
     const healed = hero.hp - before;
     return { ok: true, healed, message: `${potion.name} : +${healed} PV.` };
+}
+
+/**
+ * Effet d'une potion mise en file (actions indépendantes du plateau) : la potion est payée au choix, mais son effet part plus tard. Si Hou Yi est tombé
+ * entre-temps (`heroKo`), la potion ne le relève pas : elle est rendue au sac et rien n'est soigné. Renvoie { ok, healed, refunded }.
+ */
+export function applyQueuedPotion(hero, size, heroKo = false) {
+    if (!POTIONS[size]) return { ok: false, healed: 0, refunded: false };
+    if (heroKo || (hero.hp || 0) <= 0) {
+        addPotions(hero, size, 1);
+        return { ok: false, healed: 0, refunded: true };
+    }
+    const before = hero.hp;
+    hero.hp = Math.min(hero.maxHp, hero.hp + potionHeal(hero, size));
+    return { ok: true, healed: hero.hp - before, refunded: false };
 }

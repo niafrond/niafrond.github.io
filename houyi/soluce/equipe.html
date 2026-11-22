@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<meta name="description" content="Les six compagnons de combat : comment les recruter, leur arme, leur Xiūxiān et les objets pour les soigner.">
+<title>Compagnons de combat — Soluce Hou Yi et les Dix Soleils</title>
+<style>
+:root{--bg:#14110f;--panel:#1f1a16;--panel2:#2a231d;--ink:#f1e6d2;--dim:#b9a98f;--gold:#e8b84a;--red:#d9553f;--jade:#59b88a;--blue:#5aa6e6;--line:#4a3d30}
+@media (prefers-color-scheme:light){:root:not([data-theme=dark]){--bg:#f4ead6;--panel:#fffaf0;--panel2:#f0e2c4;--ink:#2a1f14;--dim:#6f5d45;--gold:#9a6a05;--red:#b23a25;--jade:#237a52;--blue:#1d5f9e;--line:#cdb88e}}
+*{box-sizing:border-box}[hidden]{display:none!important}html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 Georgia,'Times New Roman',serif}
+a{color:var(--blue)}a:hover{color:var(--gold)}
+header.top{background:linear-gradient(180deg,var(--red),#7d2417);color:#fff4dc;border-bottom:4px solid var(--gold);padding:14px 16px}
+header.top .in{max-width:980px;margin:0 auto;display:flex;flex-wrap:wrap;gap:6px 18px;align-items:baseline}
+header.top h1{margin:0;font-size:1.35rem;letter-spacing:.04em;text-transform:uppercase}
+header.top h1 small{display:block;font-size:.7rem;font-weight:400;opacity:.85;letter-spacing:.12em}
+nav.menu{max-width:980px;margin:0 auto;display:flex;flex-wrap:wrap;gap:4px 14px;font:600 .85rem system-ui,sans-serif}
+nav.menu a{color:#fff4dc;text-decoration:none;padding:4px 0;border-bottom:2px solid transparent}
+nav.menu a:hover,nav.menu a.on{border-bottom-color:var(--gold)}
+main{max-width:980px;margin:0 auto;padding:18px 16px 60px}
+h2{margin:1.8em 0 .5em;border-left:6px solid var(--gold);padding-left:10px;font-size:1.35rem}
+h3{margin:1.4em 0 .4em;font-size:1.1rem;color:var(--gold)}
+.crumbs{font:.82rem system-ui,sans-serif;color:var(--dim);margin-bottom:10px}
+.lead{font-size:1.05rem;color:var(--dim)}
+.box{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:10px 14px;margin:12px 0}
+.box.tip{border-left:6px solid var(--jade)}.box.warn{border-left:6px solid var(--red)}.box.info{border-left:6px solid var(--blue)}
+.box b.t{display:block;font:700 .75rem system-ui,sans-serif;text-transform:uppercase;letter-spacing:.1em;margin-bottom:2px}
+.tip b.t{color:var(--jade)}.warn b.t{color:var(--red)}.info b.t{color:var(--blue)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px;margin:12px 0}
+.card{display:block;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:12px;text-decoration:none;color:var(--ink)}
+.card:hover{border-color:var(--gold);background:var(--panel2)}
+.card b{display:block;color:var(--gold)}.card span{font-size:.85rem;color:var(--dim)}
+table{width:100%;border-collapse:collapse;margin:10px 0;font-size:.93rem}
+th,td{border:1px solid var(--line);padding:6px 8px;text-align:left;vertical-align:top}
+th{background:var(--panel2);font:700 .78rem system-ui,sans-serif;text-transform:uppercase;letter-spacing:.06em}
+.scroll{overflow-x:auto}
+.quest{background:var(--panel);border:1px solid var(--line);border-radius:8px;margin:14px 0;padding:0 14px 8px}
+.quest>h3{margin:0 -14px 8px;padding:8px 14px;background:var(--panel2);border-radius:8px 8px 0 0;color:var(--ink)}
+.quest>h3 small{font:600 .72rem system-ui,sans-serif;color:var(--dim);margin-left:8px}
+.badge{display:inline-block;font:700 .68rem system-ui,sans-serif;padding:1px 7px;border-radius:9px;background:var(--gold);color:#201505;margin-left:4px;vertical-align:middle}
+.badge.main{background:var(--red);color:#fff}.badge.comp{background:var(--jade);color:#08210f}.badge.stuff{background:var(--blue);color:#fff}
+dl{margin:6px 0}dt{font:700 .75rem system-ui,sans-serif;text-transform:uppercase;letter-spacing:.07em;color:var(--dim);margin-top:8px}dd{margin:2px 0 0 0}
+svg.board{width:min(100%,420px);display:block;margin:8px 0;background:#fffaf0;border:1px solid var(--line);border-radius:6px}details{margin:8px 0}summary{cursor:pointer;color:var(--gold);font-weight:600}ol.steps{padding-left:22px}ol.steps li{margin:6px 0}.pl-bar{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:6px 0}.pl-bar[hidden]{display:none}.pl-bar button,.pl-bar select{font:inherit;min-height:38px;padding:4px 12px;border:1px solid var(--line);border-radius:6px;background:var(--panel2);color:var(--ink);cursor:pointer}.pl-bar .pl-play{background:var(--gold);color:var(--bg);font-weight:700;min-width:7.5em}.pl-bar label{display:flex;gap:6px;align-items:center;color:var(--dim)}.pl-status{margin:6px 0;font-weight:600;min-height:2.8em}.pl ol.steps li{cursor:pointer;padding:2px 6px;border-radius:4px}.pl ol.steps li.done{opacity:.55}.pl ol.steps li.cur{background:var(--panel2);outline:2px solid var(--gold);opacity:1}.pl details{max-height:none}
+.shot{margin:10px 0}.shotbox{position:relative;border:2px solid var(--line);border-radius:6px;overflow:hidden;line-height:0}
+.shotbox img{width:100%;height:auto;display:block}
+.ring{position:absolute;transform:translate(-50%,-50%);border:3px solid #ff1f1f;border-radius:50%;box-shadow:0 0 0 2px #fff,inset 0 0 0 2px #fff;pointer-events:none}
+.ring i{position:absolute;right:-6px;top:-10px;min-width:17px;height:17px;border-radius:9px;background:#ff1f1f;color:#fff;font:700 11px/17px system-ui,sans-serif;text-align:center;font-style:normal;box-shadow:0 0 0 1px #fff}
+.ring.exit{border-color:#1f8bff;border-radius:10px}.ring.exit i{background:#1f8bff}.ring.door{border-color:#ffb020}.ring.door i{background:#d98a00}
+.shotbox{cursor:zoom-in}
+.lb{position:fixed;inset:0;z-index:1000;background:#0a0705;overflow:hidden;touch-action:none;user-select:none;-webkit-user-select:none}
+.lb[hidden]{display:none}
+.lb-stage{position:absolute;left:0;top:0;transform-origin:0 0;line-height:0;cursor:grab;will-change:transform}
+.lb.drag .lb-stage{cursor:grabbing}
+.lb-stage .shotbox{border:0;border-radius:0;cursor:inherit;max-width:none!important}
+.lb-stage img{width:100%;pointer-events:none;-webkit-user-drag:none}
+.lb-btn{position:absolute;width:44px;height:44px;border-radius:50%;border:2px solid #fff4dc;background:rgba(30,22,16,.85);color:#fff4dc;font:700 24px/1 system-ui,sans-serif;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0}
+.lb-btn:hover,.lb-btn:focus-visible{background:#d9553f;outline:none}
+.lb-close{top:calc(12px + env(safe-area-inset-top,0px));right:calc(12px + env(safe-area-inset-right,0px))}
+.lb-tools{position:absolute;bottom:calc(14px + env(safe-area-inset-bottom,0px));left:50%;transform:translateX(-50%);display:flex;gap:10px}
+.lb-tools .lb-btn{position:static}
+.lb-cap{position:absolute;left:12px;right:70px;top:calc(14px + env(safe-area-inset-top,0px));color:#fff4dc;font:.85rem system-ui,sans-serif;pointer-events:none;text-shadow:0 1px 3px #000}
+.lb-cap small{display:none}
+.lb-cap b{color:#ff7a6a}
+.shot figcaption{font:.82rem system-ui,sans-serif;color:var(--dim);margin-top:4px}
+.shot figcaption b{color:#ff5a4a}
+.phones{display:flex;flex-wrap:wrap;gap:12px;margin:10px 0}.phones figure{margin:0;flex:1 1 170px;max-width:250px}.phones img{width:100%;height:auto;border:2px solid var(--line);border-radius:8px}.phones figcaption,.wide figcaption{font:.82rem system-ui,sans-serif;color:var(--dim);margin-top:4px}.wide{margin:10px 0}.wide img{max-width:100%;height:auto;border:2px solid var(--line);border-radius:8px}
+.tablewrap{overflow-x:auto}
+.tile-ico svg{width:26px;height:26px;vertical-align:middle;margin-right:4px;background:#efe7ff;border-radius:5px;padding:1px}
+ul.enemy{margin:4px 0;padding-left:20px;font-size:.92rem}
+.dot{display:inline-block;width:.7em;height:.7em;border-radius:50%;margin-right:4px;border:1px solid rgba(0,0,0,.4)}
+.search{width:100%;padding:10px 12px;font:1rem system-ui,sans-serif;border-radius:8px;border:2px solid var(--line);background:var(--panel);color:var(--ink)}
+#results a{display:block;padding:6px 4px;border-bottom:1px solid var(--line);text-decoration:none}
+#results small{color:var(--dim)}
+footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-serif;color:var(--dim);border-top:1px solid var(--line)}
+@media (max-width:560px){h2{font-size:1.15rem}table{font-size:.85rem}}
+</style>
+</head>
+<body>
+<header class="top"><div class="in"><h1>Soluce complète<small>La Légende de Hou Yi</small></h1><nav class="menu"><a href="../soluce.html">Accueil</a><a href="parcours.html">Parcours principal</a><a href="zones.html">Zones et jonctions</a><a href="bases.html">Bases du combat</a><a href="compagnons.html">Esprits gardiens</a><a href="equipe.html" class="on">Compagnons de combat</a><a href="quetes.html">Quêtes</a><a href="sorts.html">Sorts</a><a href="ultimes.html">Ultimes</a><a href="stuff.html">Stuff d’exception</a><a href="enigmes.html">Énigmes et armures</a><a href="bestiaire.html">Bestiaire</a><a href="royaume-des-ames.html">Royaume des âmes</a><a href="fete-des-lanternes.html">Fête des lanternes</a><a href="change.html">Chang’e</a></nav></div></header>
+<main>
+<div class="crumbs"><a href="../soluce.html">Accueil</a> › Compagnons de combat</div>
+<h2>Les 6 compagnons de combat</h2>
+<p class="lead">Hou Yi est le Chasseur. Les six autres classes sont portées par des figures de la mythologie chinoise qui vous attendent sur la route, près du passage du village vers la zone sauvage : approchez-vous d’elles, ou essayez de quitter le village, et la rencontre s’ouvre toute seule (elles rejoignent alors l’équipe, puis un petit combat vous les fait découvrir) : un dans les Rizières, deux dans le Volcan, puis un par région (Gobi, Fleuve, Bambous). Votre équipe de combat compte Hou Yi et 3 compagnons au plus, choisis hors combat dans l’onglet Compétences, où chacun équipe aussi son arme.</p>
+<div class="grid"><a class="card" href="equipe.html#barbarian"><b>Sun Wukong</b><span>Guerrier · Roi Singe, égal au Ciel</span></a><a class="card" href="equipe.html#templar"><b>Nezha</b><span>Commandant · Prince aux roues de feu</span></a><a class="card" href="equipe.html#sorcerer"><b>Longwang</b><span>Mage · Roi Dragon des eaux</span></a><a class="card" href="equipe.html#monk"><b>Fuxi</b><span>Moine · Sage des huit trigrammes</span></a><a class="card" href="equipe.html#alchemist"><b>Shennong</b><span>Alchimiste · Paysan divin, goûteur d'herbes</span></a><a class="card" href="equipe.html#shaman"><b>Jingwei</b><span>Chamane · Oiseau des flots</span></a></div>
+<div class="scroll"><table><tr><th>Compagnon</th><th>Classe</th><th>Région</th><th>Quête</th><th>Barre de vie</th><th>Arme</th><th>Xiūxiān</th></tr><tr id="barbarian"><td><b>Sun Wukong</b><br><small>Roi Singe, égal au Ciel</small></td><td>Guerrier</td><td>Gorges du Volcan</td><td><a href="quetes-volcan.html#q-q_class_barbarian">La voie du Guerrier</a></td><td>360 PV pour 400 PV à Hou Yi</td><td>bâton</td><td><b>Soixante-douze Transformations</b><br><small>Les dégâts de l'arme et des crânes sont doublés</small></td></tr><tr id="templar"><td><b>Nezha</b><br><small>Prince aux roues de feu</small></td><td>Commandant</td><td>Désert de Gobi</td><td><a href="quetes-gobi.html#q-q_class_templar">La voie du Commandant</a></td><td>400 PV pour 400 PV à Hou Yi</td><td>épée</td><td><b>Roues de Feu</b><br><small>Défense +25 et 30 % des dégâts subis sont renvoyés</small></td></tr><tr id="sorcerer"><td><b>Longwang</b><br><small>Roi Dragon des eaux</small></td><td>Mage</td><td>Lit du Fleuve Jaune</td><td><a href="quetes-fleuve.html#q-q_class_sorcerer">La voie du Mage</a></td><td>200 PV pour 400 PV à Hou Yi</td><td>hache</td><td><b>Colère du Roi Dragon</b><br><small>Deux sorts par tour ; l'ultime peut être lancé</small></td></tr><tr id="monk"><td><b>Fuxi</b><br><small>Sage des huit trigrammes</small></td><td>Moine</td><td>Rizières Desséchées</td><td><a href="quetes-rizieres.html#q-q_class_monk">La voie du Moine</a></td><td>280 PV pour 400 PV à Hou Yi</td><td>masse</td><td><b>Huit Trigrammes</b><br><small>Soigne 10 % des PV max à chaque tour</small></td></tr><tr id="alchemist"><td><b>Shennong</b><br><small>Paysan divin, goûteur d'herbes</small></td><td>Alchimiste</td><td>Gorges du Volcan</td><td><a href="quetes-volcan.html#q-q_class_alchemist">La voie du Alchimiste</a></td><td>220 PV pour 400 PV à Hou Yi</td><td>dague</td><td><b>Cent Herbes</b><br><small>Des vapeurs rongent l'ennemi (6 % de ses PV max) et rendent 2 qì de chaque couleur, à chaque tour</small></td></tr><tr id="shaman"><td><b>Jingwei</b><br><small>Oiseau des flots</small></td><td>Chamane</td><td>Forêt de Bambous Calcinée</td><td><a href="quetes-bambous.html#q-q_class_shaman">La voie du Chamane</a></td><td>240 PV pour 400 PV à Hou Yi</td><td>éventail</td><td><b>Pierre de la Mer</b><br><small>+1 point d'action et Défense +10 par tour ; les PA gagnés à la victoire sont doublés</small></td></tr></table></div>
+<div class="box tip"><b class="t">Conseil</b>Les compagnons partagent le qì de Hou Yi mais chacun a sa propre barre de vie, sa barre de chargement et sa jauge de Xiūxiān, juste sous sa barre de vie. Elle se remplit quand il encaisse des coups ; pleine, touchez-la à votre tour pour déclencher sa Xiūxiān, dont l’effet profite à toute l’équipe pendant trois tours. Un clic long sur un personnage affiche le détail de la Xiūxiān en cours. Une action ennemie sur quatre vise un compagnon vivant ; à 0 PV il est hors de combat jusqu’à la fin du combat, puis il est de nouveau en pleine forme au suivant.</div>
+<div class="box tip"><b class="t">Si Hou Yi tombe</b>Le combat continue tant qu’un compagnon tient debout : les coups visent alors les compagnons. La défaite n’arrive que quand toute l’équipe est à terre.</div>
+<h2>Objets pour l’équipe</h2>
+<p class="lead">Choisissez l’équipier visé dans la fenêtre « sur qui ? », qui montre la barre de vie de chacun. Les objets de ranimation relèvent un équipier hors de combat, Hou Yi compris, même au milieu d’un combat. Les objets à usage unique disparaissent après emploi.</p>
+<div class="scroll"><table><tr><th>Objet</th><th>Niveau</th><th>Rareté</th><th>Effet</th></tr><tr><td><b>Plume de Grue Immortelle</b></td><td>6</td><td>peu commune</td><td>Soigne un équipier de 40 % de ses PV max (usage unique)</td></tr><tr><td><b>Baume de la Tortue Noire</b></td><td>25</td><td>rare</td><td>Soigne un équipier de 75 % de ses PV max (usage unique)</td></tr><tr><td><b>Griffe du Tigre Blanc</b></td><td>12</td><td>peu commune</td><td>Un équipier gagne la Hâte 4 tours : chargement de ses actions 50 % plus rapide (usage unique)</td></tr><tr><td><b>Écaille du Dragon Azur</b></td><td>30</td><td>rare</td><td>Un équipier récupère 20 % de ses PV max et gagne l'Élan 3 tours : chargement deux fois plus rapide (usage unique)</td></tr><tr><td><b>Poil de Qilin</b></td><td>15</td><td>rare</td><td>Ranime un équipier hors de combat (Hou Yi compris) avec 50 % de ses PV max (usage unique)</td></tr><tr><td><b>Corne de Qilin</b></td><td>40</td><td>légendaire</td><td>Ranime un équipier hors de combat (Hou Yi compris) avec tous ses PV (usage unique)</td></tr></table></div>
+<h2>Armes de compagnon</h2>
+<p class="lead">Chaque compagnon porte une arme de son type, que vous trouvez dans les coffres, sur les ennemis vaincus ou chez les marchands. Hou Yi ne peut pas les manier. L’arme équipée ajoute des dégâts à tous les sorts du compagnon.</p>
+<h3>Sun Wukong — bâton</h3><div class="scroll"><table><tr><th>Arme</th><th>Niveau</th><th>Rareté</th><th>Bonus aux sorts</th><th>Description</th></tr><tr><td>Bâton de Bambou</td><td>1</td><td>commune</td><td>+3</td><td>Un bâton de voyage, léger et droit</td></tr><tr><td>Bâton de Saule</td><td>9</td><td>commune</td><td>+12</td><td>Souple, il plie sans rompre</td></tr><tr><td>Bâton du Lettré</td><td>17</td><td>peu commune</td><td>+23</td><td>Les sceaux gravés guident le qì</td></tr><tr><td>Gun de Jade</td><td>27</td><td>peu commune</td><td>+36</td><td>Une perle de jade au sommet</td></tr><tr><td>Bâton des Neuf Anneaux</td><td>37</td><td>rare</td><td>+52</td><td>Il tinte à chaque mouvement</td></tr><tr><td>Sceptre de l'Aïeule</td><td>47</td><td>rare</td><td>+66</td><td>Orné de plumes et d'os de grue</td></tr><tr><td>Bâton du Roi Singe</td><td>59</td><td>légendaire</td><td>+89</td><td>Il grandit ou rétrécit selon l'envie</td></tr><tr><td>Sceptre des Cinq Éléments</td><td>71</td><td>légendaire</td><td>+107</td><td>Cinq pierres, cinq forces, un seul geste</td></tr></table></div><h3>Nezha — épée</h3><div class="scroll"><table><tr><th>Arme</th><th>Niveau</th><th>Rareté</th><th>Bonus aux sorts</th><th>Description</th></tr><tr><td>Jian de Bronze</td><td>1</td><td>commune</td><td>+3</td><td>Une lame droite de bronze, bien équilibrée</td></tr><tr><td>Épée du Garde Rizicole</td><td>8</td><td>commune</td><td>+11</td><td>Forgée pour les gardes des digues</td></tr><tr><td>Jian du Pavillon Brisé</td><td>16</td><td>peu commune</td><td>+22</td><td>Sa garde porte l'ancien sceau d'un pavillon</td></tr><tr><td>Épée de Jade Vert</td><td>26</td><td>peu commune</td><td>+35</td><td>Un fil de jade court le long de la lame</td></tr><tr><td>Lame des Mille Plis</td><td>36</td><td>rare</td><td>+51</td><td>Acier replié mille fois, il chante à chaque coup</td></tr><tr><td>Jian du Dragon Dormant</td><td>46</td><td>rare</td><td>+64</td><td>Un dragon gravé s'éveille quand le sang coule</td></tr><tr><td>Épée des Neuf Soleils</td><td>58</td><td>légendaire</td><td>+88</td><td>Un éclat de soleil abattu est serti dans la garde</td></tr><tr><td>Lame de la Lune Pâle</td><td>70</td><td>légendaire</td><td>+105</td><td>Elle tranche l'ombre autant que la chair</td></tr></table></div><h3>Longwang — hache</h3><div class="scroll"><table><tr><th>Arme</th><th>Niveau</th><th>Rareté</th><th>Bonus aux sorts</th><th>Description</th></tr><tr><td>Hache de Bûcheron</td><td>1</td><td>commune</td><td>+3</td><td>Elle fendait le bambou avant de fendre des crânes</td></tr><tr><td>Hache de Basalte</td><td>9</td><td>commune</td><td>+12</td><td>Un tranchant de pierre volcanique</td></tr><tr><td>Fu des Remparts</td><td>17</td><td>peu commune</td><td>+23</td><td>Lourde hache des gardes des murailles</td></tr><tr><td>Hache du Buffle Rouge</td><td>27</td><td>peu commune</td><td>+36</td><td>Ornée de cornes de buffle</td></tr><tr><td>Fendeuse de Tonnerre</td><td>37</td><td>rare</td><td>+52</td><td>Elle claque comme l'orage à chaque impact</td></tr><tr><td>Hache du Mont Brisé</td><td>47</td><td>rare</td><td>+66</td><td>Taillée dans un éclat de falaise</td></tr><tr><td>Fu du Géant Pangu</td><td>59</td><td>légendaire</td><td>+89</td><td>On dit qu'elle a séparé le ciel de la terre</td></tr><tr><td>Hache des Quatre Vents</td><td>71</td><td>légendaire</td><td>+107</td><td>Elle tranche tout ce qu'elle frôle</td></tr></table></div><h3>Fuxi — masse</h3><div class="scroll"><table><tr><th>Arme</th><th>Niveau</th><th>Rareté</th><th>Bonus aux sorts</th><th>Description</th></tr><tr><td>Masse de Chêne</td><td>1</td><td>commune</td><td>+3</td><td>Un gourdin cerclé de fer</td></tr><tr><td>Masse du Moine Errant</td><td>10</td><td>commune</td><td>+13</td><td>Sa tête est polie par les pèlerinages</td></tr><tr><td>Marteau du Temple</td><td>18</td><td>peu commune</td><td>+25</td><td>Frappé aux cloches du temple</td></tr><tr><td>Masse de Cendre Sainte</td><td>28</td><td>peu commune</td><td>+37</td><td>Chargée de braises bénies</td></tr><tr><td>Marteau de la Cloche Ardente</td><td>38</td><td>rare</td><td>+53</td><td>Chaque coup sonne comme un glas</td></tr><tr><td>Masse du Gardien de Pierre</td><td>48</td><td>rare</td><td>+67</td><td>Taillée dans une statue de gardien</td></tr><tr><td>Marteau du Mont Kunlun</td><td>60</td><td>légendaire</td><td>+91</td><td>Il pèse comme une montagne sacrée</td></tr><tr><td>Masse du Tonnerre Sourd</td><td>72</td><td>légendaire</td><td>+108</td><td>Chaque impact fait trembler le sol</td></tr></table></div><h3>Shennong — dague</h3><div class="scroll"><table><tr><th>Arme</th><th>Niveau</th><th>Rareté</th><th>Bonus aux sorts</th><th>Description</th></tr><tr><td>Couteau de Cuisine Aiguisé</td><td>1</td><td>commune</td><td>+3</td><td>Pas fait pour ça, mais il coupe</td></tr><tr><td>Dague des Marais</td><td>8</td><td>commune</td><td>+11</td><td>Une lame fine, discrète et sale</td></tr><tr><td>Bishou de Cuivre</td><td>16</td><td>peu commune</td><td>+22</td><td>Légère, elle part avant d'être vue</td></tr><tr><td>Dague du Serpent Jaune</td><td>25</td><td>peu commune</td><td>+33</td><td>Sa lame ondule comme un serpent</td></tr><tr><td>Épingle de Poison</td><td>35</td><td>rare</td><td>+49</td><td>Un fiel d'alchimiste enduit la pointe</td></tr><tr><td>Dague de l'Éclair Noir</td><td>45</td><td>rare</td><td>+63</td><td>Elle disparaît dans la main qui frappe</td></tr><tr><td>Bishou des Mille Fioles</td><td>57</td><td>légendaire</td><td>+86</td><td>Chaque entaille porte un philtre différent</td></tr><tr><td>Dague du Dernier Soupir</td><td>69</td><td>légendaire</td><td>+104</td><td>On ne sent pas la lame ; on sent le froid</td></tr></table></div><h3>Jingwei — éventail</h3><div class="scroll"><table><tr><th>Arme</th><th>Niveau</th><th>Rareté</th><th>Bonus aux sorts</th><th>Description</th></tr><tr><td>Éventail de Papier</td><td>1</td><td>commune</td><td>+3</td><td>Léger, mais le vent s'y plie</td></tr><tr><td>Éventail de Bambou</td><td>9</td><td>commune</td><td>+12</td><td>Ses baleines claquent comme des lames</td></tr><tr><td>Éventail de la Brise</td><td>17</td><td>peu commune</td><td>+23</td><td>Il attire les vents favorables</td></tr><tr><td>Shan des Cendres</td><td>27</td><td>peu commune</td><td>+36</td><td>Des plumes noircies par un feu ancien</td></tr><tr><td>Éventail de Plume de Grue</td><td>37</td><td>rare</td><td>+52</td><td>Chaque coup lève un tourbillon</td></tr><tr><td>Éventail des Esprits</td><td>47</td><td>rare</td><td>+66</td><td>Peint d'ancêtres qui murmurent</td></tr><tr><td>Éventail de Feuille de Bananier</td><td>59</td><td>légendaire</td><td>+89</td><td>Il éteint les flammes et attise les tempêtes</td></tr><tr><td>Éventail du Vent des Morts</td><td>71</td><td>légendaire</td><td>+107</td><td>Les âmes l'accompagnent en tourbillon</td></tr></table></div>
+</main>
+<div class="lb" id="lb" role="dialog" aria-modal="true" aria-label="Carte agrandie" hidden>
+<div class="lb-stage" id="lb-stage"></div>
+<div class="lb-cap" id="lb-cap"></div>
+<button class="lb-btn lb-close" id="lb-close" type="button" aria-label="Fermer l’aperçu">&times;</button>
+<div class="lb-tools"><button class="lb-btn" id="lb-out" type="button" aria-label="Zoom arrière">&minus;</button><button class="lb-btn" id="lb-fit" type="button" aria-label="Ajuster à l’écran" style="font-size:15px">Ajuster</button><button class="lb-btn" id="lb-in" type="button" aria-label="Zoom avant">+</button></div>
+</div>
+<script>
+(function(){
+var lb=document.getElementById('lb'),stage=document.getElementById('lb-stage'),cap=document.getElementById('lb-cap');
+var S=1,TX=0,TY=0,FIT=1,W=1,H=1,pts={},pinch=0,moved=0,lastTap=0,opener=null,onStage=false;
+function vw(){return lb.clientWidth;}function vh(){return lb.clientHeight;}
+function apply(){stage.style.transform='translate('+TX+'px,'+TY+'px) scale('+S+')';}
+function clampPan(){
+  var w=W*S,h=H*S,m=60;
+  TX=w<=vw()?(vw()-w)/2:Math.min(m,Math.max(vw()-w-m,TX));
+  TY=h<=vh()?(vh()-h)/2:Math.min(m,Math.max(vh()-h-m,TY));
+}
+function zoomAt(f,cx,cy){
+  var ns=Math.min(10,Math.max(FIT*0.95,S*f));f=ns/S;
+  TX=cx-(cx-TX)*f;TY=cy-(cy-TY)*f;S=ns;clampPan();apply();
+}
+function fit(){S=FIT;TX=(vw()-W*S)/2;TY=(vh()-H*S)/2;apply();}
+function open(box){
+  opener=box;
+  var c=box.cloneNode(true);c.removeAttribute('style');
+  var img=c.querySelector('img');
+  var fig=box.closest('figure'),t=fig&&fig.querySelector('figcaption');
+  cap.innerHTML=t?t.innerHTML:'';
+  stage.innerHTML='';stage.appendChild(c);
+  lb.hidden=false;document.body.style.overflow='hidden';
+  function go(){
+    W=img.naturalWidth||1200;H=img.naturalHeight||(W*0.5);
+    stage.style.width=W+'px';
+    FIT=Math.min(vw()/W,vh()/H)*0.96;fit();
+  }
+  if(img.complete&&img.naturalWidth)go();else{img.onload=go;W=1200;H=600;stage.style.width=W+'px';FIT=Math.min(vw()/W,vh()/H)*0.96;fit();}
+  document.getElementById('lb-close').focus();
+}
+function close(){lb.hidden=true;stage.innerHTML='';document.body.style.overflow='';pts={};if(opener&&opener.scrollIntoView){}}
+document.addEventListener('click',function(e){var b=e.target.closest&&e.target.closest('.shotbox');if(b&&!lb.contains(b))open(b);});
+document.getElementById('lb-close').addEventListener('click',close);
+document.getElementById('lb-in').addEventListener('click',function(){zoomAt(1.5,vw()/2,vh()/2);});
+document.getElementById('lb-out').addEventListener('click',function(){zoomAt(1/1.5,vw()/2,vh()/2);});
+document.getElementById('lb-fit').addEventListener('click',fit);
+document.addEventListener('keydown',function(e){
+  if(lb.hidden)return;
+  if(e.key==='Escape')close();
+  else if(e.key==='+'||e.key==='=')zoomAt(1.4,vw()/2,vh()/2);
+  else if(e.key==='-')zoomAt(1/1.4,vw()/2,vh()/2);
+  else if(e.key==='0')fit();
+});
+lb.addEventListener('wheel',function(e){e.preventDefault();zoomAt(Math.exp(-e.deltaY*0.0015),e.clientX,e.clientY);},{passive:false});
+lb.addEventListener('pointerdown',function(e){
+  if(e.target.closest('.lb-btn'))return;
+  onStage=!!e.target.closest('.lb-stage');pts[e.pointerId]={x:e.clientX,y:e.clientY};moved=0;lb.setPointerCapture(e.pointerId);lb.classList.add('drag');
+  var k=Object.keys(pts);if(k.length===2){var a=pts[k[0]],b=pts[k[1]];pinch=Math.hypot(a.x-b.x,a.y-b.y);}
+});
+lb.addEventListener('pointermove',function(e){
+  var p=pts[e.pointerId];if(!p)return;
+  var k=Object.keys(pts);
+  if(k.length===2){
+    var a=pts[k[0]],b=pts[k[1]];
+    pts[e.pointerId]={x:e.clientX,y:e.clientY};
+    var a2=pts[k[0]],b2=pts[k[1]],d=Math.hypot(a2.x-b2.x,a2.y-b2.y);
+    if(pinch>0)zoomAt(d/pinch,(a2.x+b2.x)/2,(a2.y+b2.y)/2);
+    pinch=d;moved=9;return;
+  }
+  moved+=Math.abs(e.clientX-p.x)+Math.abs(e.clientY-p.y);
+  TX+=e.clientX-p.x;TY+=e.clientY-p.y;pts[e.pointerId]={x:e.clientX,y:e.clientY};clampPan();apply();
+});
+function up(e){
+  var had=pts[e.pointerId];delete pts[e.pointerId];pinch=0;
+  if(!Object.keys(pts).length)lb.classList.remove('drag');
+  if(had&&moved<6&&!e.target.closest('.lb-btn')){
+    var now=Date.now();
+    if(now-lastTap<350){if(S>FIT*1.2)fit();else zoomAt(3,e.clientX,e.clientY);lastTap=0;}else lastTap=now;
+    if(!onStage)close();
+  }
+}
+lb.addEventListener('pointerup',up);lb.addEventListener('pointercancel',function(e){delete pts[e.pointerId];pinch=0;lb.classList.remove('drag');});
+window.addEventListener('resize',function(){if(!lb.hidden){FIT=Math.min(vw()/W,vh()/H)*0.96;if(S<FIT)fit();else{clampPan();apply();}}});
+})();
+</script>
+<footer>Soluce officielle. Attention : contient de nombreux spoilers. Page non listée, ne pas diffuser sans l’avis de l’auteur.</footer>
+</body>
+</html>

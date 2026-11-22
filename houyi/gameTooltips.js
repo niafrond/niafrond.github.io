@@ -1,5 +1,6 @@
 // Infobulles du combat (sorts, armes, objets, équipement du joueur, ennemi) et pastilles de statut.
 // Extrait de game.js pour alléger ce fichier ; game.js ré-exporte ce qui était public.
+import { spellTargetLine, weaponTargetLine } from './gameCardUi.js';
 import { reuseLabel, isSingleUse } from './itemReuse.js';
 import { literalTranslation } from './bestiaryNames.js';
 import { escapeHtml } from "./escapeHtml.js";
@@ -12,12 +13,33 @@ import { isWeaknessShown } from "./combatFlow.js";
 import { describeRecharge } from "./items.js";
 import { icon as svgIcon, manaIcon } from "./icons.js";
 import { activeStatuses, statusTooltipHtml, statusLinesHtml } from "./statusBadges.js";
-import { MANA_COLOR_ORDER, MANA_COLOR_META, player, enemy, updateStats } from "./game.js";
+import { MANA_COLOR_ORDER, MANA_COLOR_META, player, enemy, updateStats, gameState } from "./game.js";
+import { isInTranse, TRANSE_EFFECTS } from "./transe.js";
+import { allyEquippedWeapon } from "./allyWeapons.js";
+import { allyWeaponBonus } from "./weapons.js";
 import { shieldStats } from "./gameInventoryTabs.js";
 
 // Infobulle d'un sort / d'une arme / d'un objet : au survol à la souris, au focus clavier, ou par appui long au doigt
 // (un appui bref sert à utiliser l'élément et ne doit pas afficher l'infobulle).
 export const TOOLTIP_LONG_PRESS_MS = 400;
+
+// Tant que le doigt (ou la souris) reste appuyé après un appui long, l'infobulle ne disparaît pas : ni redessin du combat, ni annulation du toucher
+// par le navigateur. Elle part quand le doigt se lève (écoute sur le document : le bouton appuyé a pu être redessiné entre-temps).
+let pressHeld = false;
+let pressHideCb = null;
+/** Un appui long vient d'afficher une infobulle : elle reste jusqu'au relâchement. `onRelease` : action de fermeture propre à cette infobulle (par défaut, hideSpellTooltip). */
+export function markPressHeld(onRelease = null) { pressHeld = true; pressHideCb = onRelease; }
+export const isPressHeld = () => pressHeld;
+function releasePress() {
+    if(!pressHeld) return;
+    pressHeld = false;
+    const cb = pressHideCb; pressHideCb = null;
+    (cb || hideSpellTooltip)();
+}
+if(typeof document !== 'undefined') {
+    ['pointerup', 'touchend', 'touchcancel', 'mouseup', 'pointerdown'].forEach(t => document.addEventListener(t, releasePress, true));   // pointerdown : garde-fou si un relâchement s'est perdu
+    window.addEventListener('blur', releasePress);
+}
 // Pastilles de bonus/malus : survol ou appui long = explication de l'effet.
 export function bindStatusBadges(container, entity) {
     const list = activeStatuses(entity);
@@ -43,7 +65,7 @@ export function bindTooltip(el, show, hide) {
     el.addEventListener('pointerdown', e => {
         if(e.pointerType === 'mouse') return;
         cancel();
-        timer = setTimeout(() => { timer = null; shownByPress = true; show(); }, TOOLTIP_LONG_PRESS_MS);
+        timer = setTimeout(() => { timer = null; shownByPress = true; markPressHeld(); show(); }, TOOLTIP_LONG_PRESS_MS);
     });
     // Relâcher un appui long ne doit pas utiliser l'élément : on avale le clic qui suit.
     el.addEventListener('click', e => {
@@ -52,7 +74,9 @@ export function bindTooltip(el, show, hide) {
         e.preventDefault();
         e.stopImmediatePropagation();
     }, true);
-    ['pointerup', 'pointercancel'].forEach(type => el.addEventListener(type, () => { cancel(); hide(); }));
+    el.addEventListener('pointerup', () => { cancel(); hide(); });
+    el.addEventListener('pointercancel', () => { cancel(); if(!pressHeld) hide(); });   // toucher annulé par le navigateur : l'infobulle reste jusqu'à ce que le doigt se lève (document : touchend)
+    el.addEventListener('contextmenu', e => { if(e.pointerType !== 'mouse' && (shownByPress || timer)) e.preventDefault(); });
     el.addEventListener('focus', () => { if(el.matches?.(':focus-visible')) show(); });
     el.addEventListener('blur', () => { cancel(); hide(); });
 }
@@ -86,12 +110,14 @@ export function getSpellTooltipHtml(spell) {
         effectText = spell.description;
     }
 
-    return `<div class="spell-tooltip-line">${effectText}</div>`;
+    const targetLine = spellTargetLine(spell);
+    return `<div class="spell-tooltip-line">${effectText}</div>${targetLine ? `<div class="spell-tooltip-line">${targetLine}</div>` : ''}`;
 }
 
 function getWeaponTooltipHtml(weapon) {
     let html = `<div class="spell-tooltip-title">${weapon.name}</div>`;
     html += `<div class="spell-tooltip-line">${weapon.damage} ${svgIcon('skull')} • ${weapon.actionPoints} ${svgIcon('arrow')}</div>`;
+    html += `<div class="spell-tooltip-line">${weaponTargetLine(weapon)}</div>`;
     if(weapon.description) html += `<div class="spell-tooltip-line">${weapon.description}</div>`;
     if(weapon.biome) html += `<div class="spell-tooltip-line">Bonus de dégâts en ${BIOME_LABELS[weapon.biome]}${enemy?.biome === weapon.biome ? ' (actif)' : ''}</div>`;
     return html;
@@ -169,20 +195,44 @@ export function showSpellTooltip(button, spell, costHtml = '') {
     placeTooltip(tooltip, button, 260);
 }
 
-// Équipement du joueur (arme, bouclier, stuff) : appui long sur sa carte en combat.
-function getPlayerGearTooltipHtml() {
+// Fiche d'un personnage (appui long sur son bouton de la barre d'action) : son équipement, ses altérations, et l'effet de sa Xiūxiān si elle est en cours.
+// Hou Yi : arme, bouclier, stuff. Compagnon : son arme (et son bonus).
+function getMemberTooltipHtml(classId = 'assassin') {
     const line = (label, text) => `<div class="spell-tooltip-line"><strong>${label} :</strong> ${text}</div>`;
-    const weapon = player.equippedWeapon;
-    const shield = player.equipment?.leftHand?.type === 'shield' ? player.equipment.leftHand : null;
-    let html = `<div class="spell-tooltip-title">${escapeHtml(player.name || 'Hou Yi')}</div>`;
-    html += line('Arme', weapon ? `${weapon.name} (${weapon.damage} ${svgIcon('skull')})` : 'aucune');
-    html += line('Bouclier', shield ? `${shield.name} (${shieldStats(shield)})` : 'aucun');
-    normalizeStuff(player);
-    Object.entries(STUFF_SLOT_LABELS).forEach(([slot, label]) => {
-        const piece = getStuffById(player.stuff[slot]);
-        html += line(label, piece ? piece.name : '—');
-    });
-    return html + statusLinesHtml(player);
+    const hero = classId === 'assassin';
+    const member = hero ? player : gameState.allies?.[classId];
+    if(!member) return '';
+    let html = `<div class="spell-tooltip-title">${escapeHtml(hero ? (player.name || 'Hou Yi') : member.name)}</div>`;
+    if(hero) {
+        const weapon = player.equippedWeapon;
+        const shield = player.equipment?.leftHand?.type === 'shield' ? player.equipment.leftHand : null;
+        html += line('Arme', weapon ? `${weapon.name} (${weapon.damage} ${svgIcon('skull')})` : 'aucune');
+        html += line('Bouclier', shield ? `${shield.name} (${shieldStats(shield)})` : 'aucun');
+        normalizeStuff(player);
+        Object.entries(STUFF_SLOT_LABELS).forEach(([slot, label]) => {
+            const piece = getStuffById(player.stuff[slot]);
+            html += line(label, piece ? piece.name : '—');
+        });
+    } else {
+        const w = allyEquippedWeapon(player, classId);
+        html += line('Arme', w ? `${w.name} (+${allyWeaponBonus(w)})` : '—');
+    }
+    html += statusLinesHtml(member);
+    if(isInTranse(member)) {
+        const eff = TRANSE_EFFECTS[hero ? (member.transeClass || 'assassin') : classId];
+        const turns = Math.max(1, Math.floor(member.transe || 1));
+        html += `<div class="spell-tooltip-line"><strong>Xiūxiān en cours${eff ? ` · ${escapeHtml(eff.name)}` : ''} :</strong> ${eff ? escapeHtml(eff.text) : ''} (${turns} tour${turns > 1 ? 's' : ''} restant${turns > 1 ? 's' : ''})</div>`;
+    }
+    return html;
+}
+const getPlayerGearTooltipHtml = () => getMemberTooltipHtml('assassin');
+
+export function showMemberTooltip(targetEl, classId) {
+    if(!targetEl) return;
+    const tooltip = ensureSpellTooltip();
+    tooltip.innerHTML = getMemberTooltipHtml(classId);
+    tooltip.classList.add('visible');
+    placeTooltip(tooltip, targetEl, 260);
 }
 
 export function showPlayerGearTooltip(targetEl) {
@@ -203,6 +253,7 @@ export function showItemTooltip(button, item, options = {}) {
 }
 
 export function hideSpellTooltip() {
+    if(pressHeld && pressHideCb === null) return;   // appui long en cours : l'infobulle reste jusqu'au relâchement (releasePress)
     const tooltip = document.getElementById('spell-detail-tooltip');
     if(tooltip){
         tooltip.classList.remove('visible');
@@ -291,12 +342,6 @@ const STUFF_RARITY_LABEL = { common: 'Commun', uncommon: 'Peu commun', rare: 'Ra
 export function getEnemyStuffTooltipHtml(fullName, enemyEntity) {
     // Appui long : force, faiblesse (toujours montrée) et stuff réunis.
     const lines = [getEnemyNameTooltipHtml(escapeHtml(fullName), enemyEntity, { showAll: true })];
-    // Talisman de Résonance (calibrage combatBalance.js) : visible seulement ici, à l'appui long sur l'ennemi.
-    const power = enemyEntity?.spellAmplifier?.mult || enemyEntity?.skullMult || 1;
-    if(power !== 1) {
-        const mult = (Math.round(power * 10) / 10).toFixed(1);
-        lines.push(`<div class="enemy-tooltip-row"><strong>${escapeHtml(enemyEntity.spellAmplifier?.name || 'Talisman de Résonance')}</strong> : dégâts x${mult}</div>`);
-    }
     const pieces = enemyStuffPieces(enemyEntity);
     if(!pieces.length) {
         lines.push('<div class="enemy-tooltip-row">Aucun stuff équipé.</div>');
@@ -327,6 +372,7 @@ export function bindEnemyStuffLongPress(nameEl, fullName, enemyEntity = enemy) {
     let timer = null;
     let shown = false;
     const cancel = () => { clearTimeout(timer); timer = null; };
+    const scheduleHide = () => { clearTimeout(enemyTapTimer); enemyTapTimer = setTimeout(() => { delete nameEl.dataset.stuffShown; hideEnemyNameTooltip(); }, ENEMY_TAP_TOOLTIP_MS + 1500); };
     nameEl.addEventListener('pointerdown', () => {
         cancel();
         shown = false;
@@ -335,8 +381,8 @@ export function bindEnemyStuffLongPress(nameEl, fullName, enemyEntity = enemy) {
             timer = null; shown = true;
             nameEl.dataset.stuffShown = '1';
             showEnemyStuffTooltip(nameEl, resolve(fullName), resolve(enemyEntity));
-            clearTimeout(enemyTapTimer);
-            enemyTapTimer = setTimeout(() => { delete nameEl.dataset.stuffShown; hideEnemyNameTooltip(); }, ENEMY_TAP_TOOLTIP_MS + 1500);
+            clearTimeout(enemyTapTimer);   // tant que le doigt reste appuyé, l'infobulle ne se ferme pas ; le délai ne court qu'après le relâchement
+            markPressHeld(scheduleHide);
         }, ENEMY_STUFF_LONG_PRESS_MS);
     });
     ['pointerup', 'pointerleave', 'pointercancel'].forEach(t => nameEl.addEventListener(t, cancel));

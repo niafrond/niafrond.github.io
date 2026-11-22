@@ -56,7 +56,7 @@ function sourceNumber(file, regex, label) {
     return Number(m[1]);
 }
 export const LEVEL_UP_MAX_HP_GAIN = sourceNumber('game.js', /const LEVEL_UP_MAX_HP_GAIN = (\d+)/, 'LEVEL_UP_MAX_HP_GAIN');
-export const BASE_MANA_CAP = sourceNumber('game.js', /const BASE_MANA_CAP = (\d+)/, 'BASE_MANA_CAP');
+export const BASE_MANA_CAP = sourceNumber('constants.js', /const BASE_MANA_CAP = (\d+)/, 'BASE_MANA_CAP');
 export const HIGH_SPELL_FROM_LEVEL = sourceNumber('game.js', /const HIGH_SPELL_FROM_LEVEL = (\d+)/, 'HIGH_SPELL_FROM_LEVEL');
 export const NEW_PLAYER_HP = sourceNumber('game.js', /export let player = \{[\s\S]*?\bmaxHp:\s*(\d+)/, 'maxHp du joueur neuf');
 export const NEW_PLAYER_ATTACK = sourceNumber('game.js', /export let player = \{[\s\S]*?\battack:\s*(\d+)/, 'attack du joueur neuf');

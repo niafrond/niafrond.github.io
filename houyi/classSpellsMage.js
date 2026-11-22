@@ -14,7 +14,7 @@ export function applyMageStrike(spell) {
     let totalDmg = spell.baseDmg + bonusDmg;
     applyDamage(enemy, totalDmg, { sourceSpell: spell });
     totalDmg = lastSpellDamage(totalDmg);
-    showCombatAnimation({ icon: 'fire', title: "FRAPPE DU MAÎTRE TAOÏSTE", damage: `-${totalDmg} dégâts`, target: `→ ${enemy.name}` }, true);
+    showCombatAnimation({ icon: 'fire', title: (spell.name || "FRAPPE DU MAÎTRE TAOÏSTE").toUpperCase(), damage: `-${totalDmg} dégâts`, target: `→ ${enemy.name}` }, true);
     log(`Frappe du Maître Taoïste inflige ${totalDmg} dégâts (${spell.baseDmg} base + ${bonusDmg} bonus)`);
     return true;
 }
@@ -36,7 +36,7 @@ export function applyWildMana(spell) {
 
             board[index] = JOKER_TILE;
             setBoardTargetingMode(null);
-            showCombatAnimation({ icon: 'star', title: "QI SAUVAGE", damage: 'Joker créé !', target: '→ Plateau' }, true);
+            showCombatAnimation({ icon: 'star', title: (spell.name || "QI SAUVAGE").toUpperCase(), damage: 'Joker créé !', target: '→ Plateau' }, true);
             log(`Qi Sauvage transforme la gemme choisie en joker !`);
             saveUpdate();
             checkMatches(true);
@@ -57,8 +57,8 @@ export function applyShadowCurse(spell) {
         enemy.statusEffects.weakened = Math.max(enemy.statusEffects.weakened || 0, turns);
         enemy.statusEffects.weakenedAmount = Math.max(enemy.statusEffects.weakenedAmount || 0, malus);
     }
-    showCombatAnimation({ icon: 'moon', title: "TALISMAN DE SCELLEMENT", damage: `Armes et objets scellés${malus ? ` • -${malus} attaque` : ''}`, target: `→ ${enemy.name} (${turns} tours)` }, true);
-    log(`Talisman de Scellement empêche ${enemy.name} d'utiliser armes et objets pendant ${turns} tours${malus ? ` et lui retire ${malus} d'attaque` : ''}.`);
+    showCombatAnimation({ icon: 'moon', title: (spell.name || "TALISMAN DE SCELLEMENT").toUpperCase(), damage: `Armes et objets scellés${malus ? ` • -${malus} attaque` : ''}`, target: `→ ${enemy.name} (${turns} tours)` }, true);
+    log(`${spell.name} empêche ${enemy.name} d'utiliser armes et objets pendant ${turns} tours${malus ? ` et lui retire ${malus} d'attaque` : ''}.`);
     return true;
 }
 
@@ -112,7 +112,7 @@ export function applyDarkChannels(spell) {
                     const manaCollected = collectDestroyedColorTilesMana(caster, destroyedTiles);
                     // renderBoard applique la gravite (descente) puis genere les nouvelles tuiles.
                     renderBoard();
-                    showCombatAnimation({ icon: 'swirl', title: "MÉRIDIENS OBSCURS", damage: `${count} gâteaux de lune détruits`, target: `+${manaCollected.total} qì récupéré` }, true);
+                    showCombatAnimation({ icon: 'swirl', title: (spell.name || "MÉRIDIENS OBSCURS").toUpperCase(), damage: `${count} gâteaux de lune détruits`, target: `+${manaCollected.total} qì récupéré` }, true);
                     log(`Méridiens Obscurs détruit ${count} gâteaux de lune ${targetColor} et ${escapeHtml(caster.name)} récupère ${manaCollected.total} qì.`);
                     saveUpdate();
                     checkMatches(true);
@@ -148,8 +148,8 @@ export function applyFlameBolts(spell) {
         applyDamage(enemy, totalDmg, { sourceSpell: spell });
         totalDmg = lastSpellDamage(totalDmg);
         player.mana.yellow = 0;
-        showCombatAnimation({ icon: 'bolt', title: "TALISMANS ENFLAMMÉS", damage: `${projectiles} × 5 = ${totalDmg} dégâts`, target: `→ ${enemy.name}` }, true);
-        log(`Talismans Enflammés tire ${projectiles} projectiles pour ${totalDmg} dégâts !`);
+        showCombatAnimation({ icon: 'bolt', title: (spell.name || "TALISMANS ENFLAMMÉS").toUpperCase(), damage: `${projectiles} × 5 = ${totalDmg} dégâts`, target: `→ ${enemy.name}` }, true);
+        log(`${spell.name} tire ${projectiles} projectiles pour ${totalDmg} dégâts !`);
         return true;
     }
     log(`Pas assez de qì jaune pour tirer des projectiles`);
@@ -159,8 +159,8 @@ export function applyFlameBolts(spell) {
 export function applyIceShield(spell) {
     const turns = spell.duration || 1;
     player.statusEffects.manaShield = { color: 'blue', turns };
-    showCombatAnimation({ icon: 'snow', title: "BARRIÈRE DE GIVRE", damage: 'Dégâts -> qì bleu', target: `→ Vous (${turns} tour${turns > 1 ? 's' : ''})` }, true);
-    log(`Rempart de Jade de Givre actif: les prochains dégâts sont absorbés par le qì bleu.`);
+    showCombatAnimation({ icon: 'snow', title: (spell.name || "BARRIÈRE DE GIVRE").toUpperCase(), damage: 'Dégâts -> qì bleu', target: `→ Vous (${turns} tour${turns > 1 ? 's' : ''})` }, true);
+    log(`${spell.name} actif : les prochains dégâts sont absorbés par le qì bleu.`);
     return true;
 }
 
@@ -168,7 +168,7 @@ export function applyFlameblade(spell) {
     const redMana = player.mana.red;
     player.statusEffects.flameblade = redMana;
     player.mana.red = 0;
-    showCombatAnimation({ icon: 'fire', title: "LAME DE FEU POURPRE", damage: `+${redMana} dégâts bonus`, target: '→ Arme enchantée' }, true);
+    showCombatAnimation({ icon: 'fire', title: (spell.name || "LAME DE FEU POURPRE").toUpperCase(), damage: `+${redMana} dégâts bonus`, target: '→ Arme enchantée' }, true);
     log(`Lame de Feu Pourpre enchante votre arme avec ${redMana} points de dégâts bonus !`);
     return true;
 }
@@ -178,8 +178,8 @@ export function applyWeakness(spell) {
     const duration = Math.max(1, Math.floor(spell.duration || 1));
     enemy.statusEffects.weakened = duration;
     enemy.statusEffects.weakenedAmount = reduction;
-    showCombatAnimation({ icon: 'web', title: "SCEAU D'AFFAIBLISSEMENT", damage: `-${reduction} attaque`, target: `→ ${enemy.name} (${duration} tours)` }, true);
-    log(`Sceau d'Affaiblissement réduit l'attaque ennemie de ${reduction} pendant ${duration} tours.`);
+    showCombatAnimation({ icon: 'web', title: (spell.name || "SCEAU D'AFFAIBLISSEMENT").toUpperCase(), damage: `-${reduction} attaque`, target: `→ ${enemy.name} (${duration} tours)` }, true);
+    log(`${spell.name} réduit l'attaque ennemie de ${reduction} pendant ${duration} tours.`);
     return true;
 }
 
@@ -190,7 +190,7 @@ export function applyHandOfIce(spell) {
     const stun = inflictTurnLoss(enemy, 'stunned', turns);
     const chilled = inflictAlteration(enemy, 'chilled', turns);
     const parts = [stun.landed ? `Étourdi ${stun.turns} tours` : '', chilled ? `Ralenti ${turns} tours` : ''].filter(Boolean);
-    showCombatAnimation({ icon: 'snow', title: "PAUME DE GIVRE", damage: parts.join(' • ') || 'Résisté', target: `→ ${enemy.name}` }, true);
+    showCombatAnimation({ icon: 'snow', title: (spell.name || "PAUME DE GIVRE").toUpperCase(), damage: parts.join(' • ') || 'Résisté', target: `→ ${enemy.name}` }, true);
     log(parts.length
         ? `Paume de Givre : ${enemy.name} est ${[stun.landed ? 'étourdi' : '', chilled ? 'ralenti' : ''].filter(Boolean).join(' et ')} pendant ${turns} tours.`
         : `${enemy.name} résiste à la Paume de Givre (immunisé aux effets négatifs).`);
@@ -210,7 +210,7 @@ export function applyFingerOfDeath(spell) {
         highlightPredicate: (_index, tile) => colors.includes(tile),
         onTileClick: (index, tile) => {
             if(!colors.includes(tile)) {
-                log(`Choisissez une gemme de couleur pour Doigt de la Mort.`);
+                log(`Choisissez une gemme de couleur pour ${spell.name}.`);
                 return true;
             }
 
@@ -219,20 +219,20 @@ export function applyFingerOfDeath(spell) {
             renderBoard();
 
             if(created < maxTargets) {
-                log(`Doigt de la Mort: choisissez encore ${maxTargets - created} cible(s).`);
+                log(`${spell.name}: choisissez encore ${maxTargets - created} cible(s).`);
                 return true;
             }
 
             setBoardTargetingMode(null);
-            showCombatAnimation({ icon: 'skull', title: "DOIGT DE LA MORT", damage: `${created} crânes créés`, target: '→ Plateau' }, true);
-            log(`Doigt de la Mort crée ${created} crânes !`);
+            showCombatAnimation({ icon: 'skull', title: (spell.name || "DOIGT DE LA MORT").toUpperCase(), damage: `${created} crânes créés`, target: '→ Plateau' }, true);
+            log(`${spell.name} crée ${created} crânes !`);
             saveUpdate();
             checkMatches(true);
             return true;
         }
     });
 
-    log(`Doigt de la Mort: choisissez ${maxTargets} gâteau(x) de lune à transformer en crâne.`);
+    log(`${spell.name}: choisissez ${maxTargets} gâteau(x) de lune à transformer en crâne.`);
     return false;
 }
 
@@ -260,7 +260,7 @@ export function applyChasm(spell) {
 
             setBoardTargetingMode(null);
             renderBoard();
-            showCombatAnimation({ icon: 'fire', title: "FISSURE DU FLEUVE JAUNE", damage: 'Zone 5×5 détruite', target: `+${manaCollected.total} qì récupéré` }, true);
+            showCombatAnimation({ icon: 'fire', title: (spell.name || "FISSURE DU FLEUVE JAUNE").toUpperCase(), damage: 'Zone 5×5 détruite', target: `+${manaCollected.total} qì récupéré` }, true);
             log(`Abîme détruit une zone 5×5 et ${escapeHtml(caster.name)} récupère ${manaCollected.total} qì.`);
             saveUpdate();
             checkMatches(true);
@@ -297,14 +297,14 @@ export function applyFireballArea(spell) {
             applyDamage(enemy, spell.dmg, { sourceSpell: spell });
             const sphereDmg = lastSpellDamage(spell.dmg);
             renderBoard();
-            showCombatAnimation({ icon: 'fire', title: "SPHÈRE DE FLAMMES", damage: `-${sphereDmg} dégâts`, target: `+${manaCollected.total} qì récupéré` }, true);
-            log(`Sphère de Flammes détruit une zone 3×3, inflige ${sphereDmg} dégâts et fait récupérer ${manaCollected.total} qì à ${escapeHtml(caster.name)}.`);
+            showCombatAnimation({ icon: 'fire', title: (spell.name || "SPHÈRE DE FLAMMES").toUpperCase(), damage: `-${sphereDmg} dégâts`, target: `+${manaCollected.total} qì récupéré` }, true);
+            log(`${spell.name} détruit une zone 3×3, inflige ${sphereDmg} dégâts et fait récupérer ${manaCollected.total} qì à ${escapeHtml(caster.name)}.`);
             saveUpdate();
             checkMatches(true);
             return true;
         }
     });
 
-    log(`Sphère de Flammes: choisissez le centre de la zone à détruire.`);
+    log(`${spell.name}: choisissez le centre de la zone à détruire.`);
     return false;
 }

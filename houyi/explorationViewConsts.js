@@ -20,7 +20,7 @@ export const PREBUILD_RANGE = 14;
 export const PREBUILD_BUDGET_MS = 8;
 export const ARRIVAL_BUDGET_MS = 24;   // à l'arrivée sur une carte dont le sol n'est pas fini : tranche par image
 
-export const MIN_TILE = 44;    // en dessous, la carte défile avec le héros au lieu de rétrécir
+export const MIN_TILE = 68;    // en dessous, la carte défile avec le héros au lieu de rétrécir (68 : environ 6,6 cases en largeur sur un téléphone, zoom choisi par l'utilisateur)
 export const MAX_TILE = 96;
 export const HUD_TOP = 64;     // bandeau du haut (titre, objectif, boutons)
 export const HUD_BOTTOM = 8;

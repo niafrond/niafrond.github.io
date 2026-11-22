@@ -551,7 +551,7 @@ export const BASE_QUESTS = [
         hint: ["Les deux pixiu de magma gardent la veine au nord-est des gorges, passé le défilé. Ils chargent la tête baissée."],
         complete: [
             "Voilà la veine libre ! Mes pioches vont chanter.",
-            "Voici l'obsidienne vive que je vous avais promise. Elle tranche le feu, dit-on. Et mon or : ne le dépensez pas en gâteaux, ma femme les fait mieux."
+            "Voici l'obsidienne vive que je vous avais promise. Elle tranche le feu, dit-on. Et mes zhu : ne les dépensez pas en gâteaux, ma femme les fait mieux."
         ],
         reward: { gold: 110, fragment: 'Obsidienne vive' }
     },
@@ -638,7 +638,7 @@ export const BASE_QUESTS = [
         hint: ["La perle est dans le coin sud-ouest de la grève, juste au-dessus de la ligne d'eau. Aucun ennemi ne la garde."],
         complete: [
             "La perle ! Elle est intacte ! Le Roi-Dragon vous en sera redevable dix mille ans.",
-            "En gage de sa gratitude, voici une écaille de dragon, détachée de sa propre barbe. Vos flèches voleront aussi droit que la mer. Et ces pièces d'or."
+            "En gage de sa gratitude, voici une écaille de dragon, détachée de sa propre barbe. Vos flèches voleront aussi droit que la mer. Et ces zhu."
         ],
         reward: { gold: 140, fragment: 'Écaille de dragon' }
     },
@@ -656,7 +656,7 @@ export const BASE_QUESTS = [
         hint: ["Le nid est dans le coin nord-ouest du Fusang, derrière le pavillon. Aucun ennemi ne le garde."],
         complete: [
             "Elles sont intactes… et chaudes. Ma sœur vous remercie, à sa manière : par ce cri que vous entendrez cette nuit.",
-            "Voici une plume de grue, choisie pour vous : elle guide la flèche, même dans le vent. Et ces pièces d'or, de la part de la Reine Mère."
+            "Voici une plume de grue, choisie pour vous : elle guide la flèche, même dans le vent. Et ces zhu, de la part de la Reine Mère."
         ],
         reward: { gold: 70, fragment: 'Plume de grue' }
     }

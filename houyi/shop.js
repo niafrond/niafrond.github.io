@@ -79,7 +79,7 @@ function shopCard(key, obj, kindOfOffer, rarity, { primary, extraMore = '', icon
         badges: (rarity === 'rare' || rarity === 'legendary' ? badgeHtml(RARITY_LABEL[rarity]) : '') + (tooLow ? badgeHtml(`Niv. ${obj.minLevel}`, 'rc-badge-warn') : ''),
         sub: `<div class="rc-attrs">${attrs.join('')}</div>${effect}${deltas ? `<div class="rc-deltas-row">${deltas}</div>` : ''}`,
         primary, more: extraMore, attrs: special ? '' : compareAttrs(kind, obj.id),
-        tip: cardTipHtml(escapeHtml(obj.name), [`${RARITY_LABEL[rarity] || ''} • ${price} pièces d'or`], escapeHtml(obj.description || ''))
+        tip: cardTipHtml(escapeHtml(obj.name), [`${RARITY_LABEL[rarity] || ''} • ${price} zhu`], escapeHtml(obj.description || ''))
     });
 }
 
@@ -89,7 +89,7 @@ function offerRow(offer, gold) {
     const canAfford = gold >= offer.price;
     return shopCard(offer.key, obj, offer.kind, offer.rarity, {
         iconHtml: offer.kind === 'weapon' ? getWeaponIcon(obj.type) : getItemIcon({ ...obj, rarity: offer.rarity }), price: offer.price,
-        primary: `<button type="button" class="rc-btn rc-buy" data-buy="${offer.key}" ${canAfford ? '' : 'disabled'} title="${canAfford ? 'Acheter' : 'Pas assez d\'or'}">${offer.price} ${svgIcon('coin')}</button>`,
+        primary: `<button type="button" class="rc-btn rc-buy" data-buy="${offer.key}" ${canAfford ? '' : 'disabled'} title="${canAfford ? 'Acheter' : 'Pas assez de zhu'}">${offer.price} ${svgIcon('coin')}</button>`,
         extraMore: isComparable(offer.kind, obj) ? `<button type="button" class="compare-btn" data-preview="${offer.key}" title="Voir l'effet sur vos stats par rapport à la pièce équipée">Comparer à l'équipé</button>` : ''
     });
 }
@@ -163,7 +163,7 @@ export function renderMerchant(npc, card, hooks = {}) {
             <h3>${svgIcon('coin')} ${escapeHtml(npc.name)}</h3>
             ${tabs('fuse')}
             <p class="shop-subtitle">Deux armes fondues en une seule, plus puissante. Les armes en main ne peuvent pas être fondues.</p>
-            <div class="shop-gold-display">${svgIcon('coin')} Or disponible : <strong>${player.gold || 0}</strong></div>
+            <div class="shop-gold-display">${svgIcon('coin')} Zhu disponibles : <strong>${player.gold || 0}</strong></div>
             ${note ? `<p class="merchant-note">${escapeHtml(note)}</p>` : ''}
             ${offers.map(fuseRow).join('')}
             <button type="button" class="primary merchant-close">Fermer</button>`;
@@ -176,7 +176,7 @@ export function renderMerchant(npc, card, hooks = {}) {
             <h3>${svgIcon('coin')} ${escapeHtml(npc.name)}</h3>
             ${tabs('sell')}
             <p class="shop-subtitle">Le matériel activé reste dans votre sac.</p>
-            <div class="shop-gold-display">${svgIcon('coin')} Or disponible : <strong>${player.gold || 0}</strong></div>
+            <div class="shop-gold-display">${svgIcon('coin')} Zhu disponibles : <strong>${player.gold || 0}</strong></div>
             ${note ? `<p class="merchant-note">${escapeHtml(note)}</p>` : ''}
             ${surplusPopup(pending)}
             ${dupes.length ? `<button type="button" class="weapon-action sell-dupes" data-sell-dupes title="Garde un exemplaire de chaque objet">Vendre les doublons (+${dupes.reduce((n, e) => n + e.price * e.qty, 0)} ${svgIcon('coin')})</button>` : ''}
@@ -197,7 +197,7 @@ export function renderMerchant(npc, card, hooks = {}) {
             <h3>${svgIcon('coin')} ${escapeHtml(npc.name)}</h3>
             ${tabs('buy')}
             <p class="shop-subtitle">${escapeHtml(npc.title || 'Marchand')}</p>
-            <div class="shop-gold-display">${svgIcon('coin')} Or disponible : <strong>${player.gold || 0}</strong></div>
+            <div class="shop-gold-display">${svgIcon('coin')} Zhu disponibles : <strong>${player.gold || 0}</strong></div>
             ${note ? `<p class="merchant-note">${escapeHtml(note)}</p>` : ''}
             ${surplusPopup(pending)}
             ${previewPanel(offers.find(o => o.key === previewKey))}
@@ -238,7 +238,7 @@ export function renderMerchant(npc, card, hooks = {}) {
         if (ev.target.closest('[data-surplus-all]')) {
             const results = [...pending].map(settle).filter(r => r.ok);
             refresh();
-            draw(results.length ? `${results.reduce((n, r) => n + r.gain, 0)} pièces d'or gagnées.` : '');
+            draw(results.length ? `${results.reduce((n, r) => n + r.gain, 0)} zhu gagnés.` : '');
             return;
         }
         if (ev.target.closest('[data-sell-dupes]')) {

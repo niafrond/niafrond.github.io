@@ -559,6 +559,11 @@ body.rt .enemy-name-tooltip {
 }
 
 body.rt .tutorial-card h3 { font-family: var(--rt-title); font-size: 11px; }
+/* Bouton « – » : petit (le style des boutons rétro le grossit) et le titre lui laisse la place, sans jamais passer dessous */
+body.rt .tutorial-toggle { width: 24px; height: 22px; min-height: 0; min-width: 0; padding: 0; border-width: 2px; box-shadow: none; font-size: 14px; line-height: 1; }
+body.rt .tutorial-card p { color: var(--rt-text); opacity: 1; font-size: 12px; line-height: 1.35; }   /* explications du tutoriel lisibles sur le papier */
+body.rt .tutorial-card p strong { color: inherit; font-weight: 800; }
+body.rt .tutorial-actions button.tutorial-next { background: #2e7d32; color: #fff; }   /* « Compris » lisible */
 body.rt .tutorial-step-badge {
     font-family: var(--rt-title);
     font-size: 9px;
@@ -776,3 +781,43 @@ body.rt .explore-objective {
     border-color: rgba(42, 15, 16, 0.55);
     box-shadow: none;
 }
+
+/* ── Bandeau de l'ennemi à la hauteur du bouton de Hou Yi (≈ 42 px) : deux lignes ─────────────────────────────
+   1re ligne : nom et altérations ; 2e ligne : barre de PV fine. Le qì de l'ennemi est dans sa propre barre en dessous (#enemy-qi),
+   en miroir de la barre de qì de Hou Yi placée au-dessus de son bouton. Chargé en dernier : l'emporte sur style-hud.css et les règles plus haut. */
+body.rt .stats-container > #enemy-stats {
+    display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-rows: auto auto; grid-row: auto;   /* nom tronqué en premier */
+    align-items: center; column-gap: 6px; row-gap: 2px; padding: 2px 6px 3px; min-height: 0;
+}
+body.rt #enemy-stats > .row-name { grid-area: 1 / 1; min-width: 0; margin: 0; overflow: hidden; }
+body.rt #enemy-stats > .status-badges { grid-area: 1 / 2; margin: 0; min-height: 0; flex-wrap: nowrap; }
+body.rt #enemy-stats > .status-badges-empty { display: none; }
+body.rt #enemy-stats > .row-hp { grid-area: 2 / 1 / 3 / -1; margin: 0; }
+body.rt .stats-container #enemy-stats .enemy-combat-name { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; -webkit-line-clamp: unset; }   /* une seule ligne, coupée par « … » */
+body.rt #enemy-stats .hp-bar-container { height: 14px; min-height: 0; }
+body.rt #enemy-stats .hp-bar-container progress { height: 14px; display: block; }
+body.rt #enemy-stats .hp-text { font-size: 9px; line-height: 14px; }
+body.rt #enemy-stats.pool-only { display: none; }   /* groupe d'ennemis : seul le qì commun reste, dans #enemy-qi */
+/* Portrait de l'ennemi : réduit à la hauteur du bandeau, la place est réservée à droite */
+body.rt #enemy-stats::after { width: 36px; height: 36px; top: 2px; right: 4px; }
+body.rt .stats-container > #enemy-stats[style*="--portrait"] { padding-right: 44px; }
+body.rt #enemy-stats[style*="--portrait"] .stat:nth-child(-n+2),
+body.rt #enemy-stats[style*="--portrait"] .status-badges,
+body.rt #enemy-stats[style*="--portrait"] .row-name { margin-right: 0; }
+
+/* Barre de qì de l'ennemi, sous son bandeau : même forme que celle de Hou Yi */
+body.rt #enemy-qi {
+    display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 4px 8px; padding: 2px 4px; margin: 0;
+    background: var(--team-enemy-bg); color: var(--rt-text); border: 2px solid var(--rt-ink); border-radius: 5px; box-shadow: 0 4px 0 var(--rt-ink);
+}
+body.rt #enemy-qi .stat { margin: 0; }
+body.rt #enemy-qi .row-pills, body.rt #enemy-qi .mana-dots { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 4px 6px; }
+body.rt #enemy-qi .mana-dots .cost-badge { font-size: 13px; height: 20px; min-width: 20px; padding: 0; margin-right: 2px; }   /* mêmes pastilles que la barre de qì de Hou Yi */
+body.rt #enemy-qi .stat-chip.pa-stat { font-size: 13px; padding: 0 3px; }
+body.rt .stats-container > #enemy-qi { grid-column: 1 / -1; grid-row: auto; }
+@media (orientation: landscape) { body.rt .stats-container > #enemy-qi { grid-area: espells; } }   /* paysage : en haut de la colonne de l'ennemi, sous son bandeau */
+
+/* Personnage choisi en combat : le cadre des actions prend la couleur du bouton éclairé (style-hud.css) */
+body.rt #player-spells[data-member] { border-color: var(--mc, var(--rt-ink)); box-shadow: 0 4px 0 var(--rt-ink), inset 0 4px 0 var(--mc, transparent); }
+/* Le survol (qui reste collé après un toucher) ne repeint pas le bouton du personnage : son texte clair reste lisible */
+body.rt .class-picker .class-pick:hover:not(:disabled):not(.disabled) { background: #1d2530; }

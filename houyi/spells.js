@@ -124,7 +124,7 @@ function deriveSpells(className, recipes) {
 }
 
 export const monkSpells = deriveSpells('monk', [
-    { from: 'stoneskin', id: 'monkIronRobe', name: 'Robe de Fer', cost: { green: 6 }, minLevel: 1, description: 'Une robe de moine tissée de qì : défense en hausse quelques tours' },
+    { from: 'stoneskin', id: 'monkIronRobe', name: 'Robe de Fer', cost: { green: 6 }, minLevel: 1 },
     { from: 'defensiveWall', id: 'monkSutraWall', name: 'Murmure du Sutra', minLevel: 2 },
     { from: 'reinforce', id: 'monkLotusBreath', name: 'Souffle du Lotus', minLevel: 6 },
     { from: 'counterAttack', id: 'monkReturningPalm', name: 'Paume de Retour', minLevel: 8 },

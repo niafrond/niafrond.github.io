@@ -27,9 +27,10 @@ describe('fin de tour après un sort qui modifie le plateau', () => {
 describe('Tir Furtif : tour bonus pour celui qui le lance', () => {
     const game = readGameSource();
 
-    test('le lanceur (joueur ou ennemi) reçoit le tour bonus dans applyStandardSpellEffects', () => {
+    test('le lanceur (joueur ou ennemi) reçoit le bonus (barre remplie, ou tour bonus en tutoriel / duel) dans applyStandardSpellEffects', () => {
         const fn = game.slice(game.indexOf('function applyStandardSpellEffects'));
         const body = fn.slice(0, fn.indexOf('\n}\n'));
-        expect(body).toMatch(/spell\.effect === 'bonusTurn'[\s\S]*addBonusTurn\(caster, 1\)/);
+        expect(body).toMatch(/spell\.effect === 'bonusTurn'[\s\S]*grantActionBonus\(caster, spell\)/);
+        expect(game).toMatch(/export function grantActionBonus[\s\S]*addBonusTurn\(caster, 1\)[\s\S]*refillActionBar/);
     });
 });

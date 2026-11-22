@@ -50,7 +50,7 @@ export function fusionOffers(hero) {
         else if (!owned) reason = 'Il vous manque une arme';
         else if (heldWeapon) reason = `${heldWeapon.name} est en main`;
         else if ((hero.level || 1) < result.minLevel) reason = `Niveau ${result.minLevel} requis`;
-        else if ((hero.gold || 0) < fee) reason = `Il faut ${fee} pièces d'or`;
+        else if ((hero.gold || 0) < fee) reason = `Il faut ${fee} zhu`;
         return { fusion, a, b, result, fee, owned, held: heldWeapon?.name || null, have, ready: reason === null, reason };
     });
 }
@@ -63,5 +63,5 @@ export function fuseWeapons(hero, fusionId) {
     hero.weapons = (hero.weapons || []).filter(w => w.id !== offer.a.id && w.id !== offer.b.id);
     hero.weapons.push(offer.result);
     hero.gold -= offer.fee;
-    return { ok: true, message: `${offer.a.name} et ${offer.b.name} fondus en ${offer.result.name} pour ${offer.fee} pièces d'or !`, weapon: offer.result, offer };
+    return { ok: true, message: `${offer.a.name} et ${offer.b.name} fondus en ${offer.result.name} pour ${offer.fee} zhu !`, weapon: offer.result, offer };
 }

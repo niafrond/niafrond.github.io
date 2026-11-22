@@ -190,7 +190,7 @@ export default {
     },
     incense_chest: {
       label: "Coffre à encens",
-      openText: "Dans le coffret de cèdre, de l'encens précieux et des pièces d'or fin.",
+      openText: "Dans le coffret de cèdre, de l'encens précieux et des zhu de bronze fin.",
     },
     loom_chest: {
       label: "Coffre du métier à tisser",

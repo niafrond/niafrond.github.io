@@ -20,6 +20,7 @@ import { getRandomItem, getRarityIcon, applyArtifactEffects, tickReusableRecharg
 import { rollCompanionPowers } from './companionPowers.js';
 import { MANA_COLOR_LABELS } from './attributes.js';
 import { calculateXPGain } from './experience.js';
+import { victoryHealPct, victoryHealAmount } from './victoryHeal.js';
 import { playSfx } from './sound.js';
 import { RAGE_MAX, addRage, resetRage } from './ultimates.js';
 import { tickTranse } from './transe.js';
@@ -33,9 +34,12 @@ import { log, logActiveAction, saveUpdate, updateEnemySpells, updateStats } from
 import { companionIconHtml, foxIconHtml, showCombatAnimation, showStrikeAnimation } from './gameStatsTab.js';
 import { finishCombatRecord, recordEnemyTurn, recordPlayerTurn, saveCombatRecord } from './combatBalance.js';
 import { showAttributeMenu } from './gameLevelUp.js';
-import { updateAvailableSpells, enemyActionReady, spendEnemyAction, getTurnClass, chooseEnemyAction, runBoundaryAction, resumeAfterBoundary, withCaster } from './gameSpellList.js';
+import { updateAvailableSpells, enemyActionReady, spendEnemyAction, getTurnClass, chooseEnemyAction, decoupled, runBoundaryAction, resumeAfterBoundary, withCaster } from './gameSpellList.js';
 import { CLASS_SHORT } from './classRoster.js';
-import { currentTurn, activeCompanionIds, addBonusTurn, addManaForColor, applyCombatXPAtEnd, applyDamage, applyStandardSpellEffects, canEntityCastSpell, combatHooks, combatRewards, consumeSpellMana, enemy, gameState, getWeaponIcon, grantStuffPiece, handlePlayerDeath, normalizeActiveInventoryIndex, sellDuplicateItem, normalizeBonusTurnValue, player, queueCombatXP, showEndCombatAnimation, turnFlags, setCurrentTurn, resetTranseTurn, applyTranseClassEffect, syncGauge, endXiuxianAtCombatEnd, xiuEffect } from './game.js';
+import { pickEnemyTarget } from './allies.js';
+import { advanceAfterFoeDefeat } from './foes.js';
+import { runFoePhase } from './foeTurns.js';
+import { partyWiped, currentTurn, activeCompanionIds, addBonusTurn, addManaForColor, applyCombatXPAtEnd, applyDamage, applyStandardSpellEffects, canEntityCastSpell, combatHooks, combatRewards, consumeSpellMana, enemy, gameState, getWeaponIcon, grantStuffPiece, handlePlayerDeath, normalizeActiveInventoryIndex, sellDuplicateItem, normalizeBonusTurnValue, player, queueCombatXP, showEndCombatAnimation, turnFlags, setCurrentTurn, resetTranseTurn, applyTranseClassEffect, syncGauge, endXiuxianAtCombatEnd, xiuEffect } from './game.js';
 
 // Applique les pouvoirs de fin de tour des compagnons présents (soin, jet d'eau, qì, mirage). Renvoie { skipEnemy, enemyDown }.
 export const COMPANION_NAMES = { zhi: 'Zhi', dawa: 'Dawa', yu: 'Yu', etincelle: 'Leigong', braise: 'Braise', jian: 'Jian', tou: 'Tou' };
@@ -97,9 +101,12 @@ function playCompanionAnnouncements(list, done){
 function endOfPlayerTurnTranse(){
     resetTranseTurn();
     if(tickTranse(player)){   // la jauge de la classe de la Xiūxiān est consommée
-        log('La Xiūxiān s\'achève.');
+        log('La Xiūxiān de Hou Yi s\'achève.');
         updateStats();
     }
+    Object.values(gameState.allies || {}).forEach(a => {   // chaque compagnon a sa propre Xiūxiān, qui décompte aussi
+        if(tickTranse(a)){ log(`La Xiūxiān de ${a.name} s'achève.`); updateStats(); }
+    });
 }
 
 export function finishPlayerTurn(){
@@ -113,7 +120,7 @@ export function finishPlayerTurn(){
     endOfPlayerTurnTranse();
 
     // Vérifier si le joueur est mort
-    if(player.hp<=0){
+    if(partyWiped()){
         handlePlayerDeath();
         return;
     }
@@ -177,14 +184,14 @@ export function finishPlayerTurn(){
     updateStats();
     afterPlayerAnimations(() => {
         if(gameState.combatState !== 'active') return;
-        if(player.hp <= 0){ handlePlayerDeath(); return; }
+        if(partyWiped()){ handlePlayerDeath(); return; }
         const burn = advanceBiomeTurn();
         // « Case brûlante - 3 dégâts » s'affiche sur chaque case avant que les dégâts ne tombent.
         const warnMs = announceBurningCells() * animationFactor();
         setTimeout(() => {
             if(gameState.combatState !== 'active') return;
             if(burn > 0){ applyDamage(player, burn); log(`Cases brûlantes : -${burn} PV.`); updateStats(); }
-            if(player.hp <= 0){ handlePlayerDeath(); return; }
+            if(partyWiped()){ handlePlayerDeath(); return; }
             if(!applyDuelRulesBeforeEnemyTurn()) return;
             enemyTurn();
         }, warnMs);
@@ -218,7 +225,7 @@ function applyDuelRulesBeforeEnemyTurn(){
     enemy.duelTrapLaid = false;
     setTrappedCells([]);
     updateStats();
-    if(player.hp <= 0){
+    if(partyWiped()){
         handlePlayerDeath();
         return false;
     }
@@ -266,7 +273,7 @@ function performEnemyAction(decision){
 }
 
 /** Choix d'une action de l'ennemi : validation et paiement (qì d'un sort, PA d'une arme). Renvoie false s'il ne peut pas la payer. */
-function payEnemyAction(decision){
+export function payEnemyAction(decision){
     if(decision.action === 'spell'){
         const spell = decision.data.spell;
         logActiveAction(`lance le sort ${spell.name}`);
@@ -283,7 +290,33 @@ function payEnemyAction(decision){
 }
 
 /** Effet d'une action de l'ennemi déjà choisie et payée. Renvoie true si terminée, false si la suite dépend du plateau (sort de plateau). */
-function applyEnemyAction(decision){
+/**
+ * IA de l'ennemi, indépendante du plateau : dès que sa barre est pleine, qu'aucune de ses actions n'attend et qu'il peut agir (ni étourdi, ni endormi),
+ * il choisit son action (même IA que sur le plateau : makeDecision) et, si c'est un sort ou une arme, la paie et la met dans la file. Appelée en continu
+ * par le ticker de chargement : l'ennemi n'attend plus son prochain tour de plateau pour lancer une action.
+ */
+export function enemyProactiveAction(){
+    if(!decoupled() || enemy.isTutorialEnemy || enemy.duel || gameState.combatState !== 'active') return;
+    if(!enemyActionReady() || gameState.actionQueue.some(it => it.owner === 'enemy')) return;
+    if(isAsleep(enemy) || (enemy.statusEffects?.stunned || 0) > 0) return;
+    const decision = makeDecision();
+    if(!(decision.action === 'spell' || decision.action === 'weapon')) return;   // il préfère jouer sur le plateau
+    if(!payEnemyAction(decision)) return;
+    if(decision.action === 'spell' && decision.data?.spell?.boardSpell){   // sort de plateau : choisi et payé tout de suite, il part avec les autres actions de plateau (fin du tour de plateau en cours)
+        const chosen = decision;
+        chooseEnemyAction(() => withCaster('enemy', async () => { playSfx('spellCast', { isPlayer: false, spellId: chosen.data.spell.id }); await castEnemyBoardSpell(chosen.data.spell); }), true);
+        return;
+    }
+    chooseEnemyAction(() => runEnemyActionOutOfTurn(decision));
+}
+
+export function applyEnemyAction(decision){
+    // Une action ennemie sur quatre vise un compagnon vivant (allies.js) : il encaisse à la place de Hou Yi (voir applyDamage, game.js).
+    gameState.allyShield = enemy.isTutorialEnemy ? null : pickEnemyTarget(gameState.allies, Math.random, (player.hp || 0) / Math.max(1, player.maxHp || 1));
+    try { return applyEnemyActionNow(decision); } finally { gameState.allyShield = null; }
+}
+
+export function applyEnemyActionNow(decision){
     if(decision.action === 'spell'){
         const spell = decision.data.spell;
         playSfx('spellCast', { isPlayer: false, spellId: spell.id });
@@ -315,7 +348,7 @@ function applyEnemyAction(decision){
     }
     playSfx('weaponHit', { isPlayer: false, rarity: enemy.weapon.rarity });
     const icon = getWeaponIcon(enemy.weapon.type);
-    showStrikeAnimation({ icon, title: enemy.weapon.name, source: enemy.name, target: '→ Vous' }, strike, false, dmg);
+    showStrikeAnimation({ icon, title: enemy.weapon.name, source: enemy.name, target: '→ Vous', projectile: enemy.weapon.type === 'bow' ? 'arrow' : 'melee' }, strike, false, dmg);
     log(`${icon} ${enemy.name} utilise ${enemy.weapon.name} ! ${dmg} dégâts.${strike.crit ? ' Coup critique !' : ''}${strike.unblockable ? ' Coup inblocable !' : ''}${strike.block === 'total' ? ' Vous bloquez entièrement le coup.' : strike.block === 'partial' ? ' Vous parez le coup.' : ''}`);
     return true;
 }
@@ -327,7 +360,7 @@ function runEnemyActionOutOfTurn(decision){
     updateStats();
     saveUpdate();
     if(gameState.combatState !== 'active') return;
-    if(player.hp <= 0){ handlePlayerDeath(); return; }
+    if(partyWiped()){ handlePlayerDeath(); return; }
     if(enemy.hp <= 0) handleEnemyDefeated();
 }
 
@@ -337,7 +370,7 @@ export function enemyTurn(){
     }
 
     recordEnemyTurn();
-    if(enemy.hp<=0){ handleEnemyDefeated(); return; }
+    if(enemy.hp<=0){ if(handleEnemyDefeated()) finishEnemyTurn(); return; }
 
     if((enemy.statusEffects?.poisoned || 0) > 0) {
         // le stuff de l'ennemi peut le protéger du poison (comme celui du héros)
@@ -351,7 +384,7 @@ export function enemyTurn(){
             log(`Le poison sur ${enemy.name} se dissipe.`);
         }
         if(enemy.hp <= 0) {
-            handleEnemyDefeated();
+            if(handleEnemyDefeated()) finishEnemyTurn();
             return;
         }
     }
@@ -539,7 +572,9 @@ export function finishEnemyTurn(){
         return;
     }
 
-    if(player.hp<=0){
+    runFoePhase();   // les autres ennemis du groupe frappent ou invoquent (foeTurns.js)
+
+    if(partyWiped()){
         handlePlayerDeath();
         return;
     }
@@ -602,7 +637,7 @@ export function finishEnemyTurn(){
                 log('Le poison se dissipe.');
             }
             updateStats();
-            if(player.hp <= 0){ handlePlayerDeath(); return; }
+            if(partyWiped()){ handlePlayerDeath(); return; }
         }
         if((player.statusEffects?.burning || 0) > 0){   // Brûlé (Souffle de braise) : dégâts de feu à chaque tour
             const burnDmg = Math.max(1, Math.floor(player.statusEffects.burnDamage || 1));
@@ -611,7 +646,7 @@ export function finishEnemyTurn(){
             log(`Brûlure : vous subissez ${burnDmg} dégâts.`);
             flashStatusDamage(true, 'burning');
             updateStats();
-            if(player.hp <= 0){ handlePlayerDeath(); return; }
+            if(partyWiped()){ handlePlayerDeath(); return; }
         }
         for(const [key, info] of Object.entries(ENVIRONMENT_STATUSES)){   // Noyade / Enflammé : dégâts réguliers, sans fin avant la fin du combat
             const dmg = Math.floor(player.statusEffects?.[key] || 0);
@@ -621,7 +656,7 @@ export function finishEnemyTurn(){
             log(info.log(dmg));
             flashStatusDamage(true, key);
             updateStats();
-            if(player.hp <= 0){ handlePlayerDeath(); return; }
+            if(partyWiped()){ handlePlayerDeath(); return; }
         }
         applyAncientTurnPowers();
         const skillRegen = skillBonus(player, 'regenPct');   // compétence de soutien « Souffle régénérant »
@@ -760,7 +795,9 @@ export function finishEnemyTurn(){
 
 // -------------------------------------
 // progression
+/** Un ennemi est tombé. Renvoie true si le combat continue (d'autres ennemis tiennent debout), false s'il est gagné. */
 export function handleEnemyDefeated(){
+    if(advanceAfterFoeDefeat()){ updateStats(); saveUpdate(); return true; }
     const levelGap = (enemy.level || 0) - (player.level || 0);   // avant le gain de niveau de fin de combat
     log(`${enemy.name} est vaincu !`);
     const xiuPaMult = xiuEffect().paMult || 1;   // Offrande aux Ancêtres (Xiūxiān du Chamane) : PA doublés
@@ -773,6 +810,13 @@ export function handleEnemyDefeated(){
     const xpGain = calculateXPGain(enemy, player.level);
     queueCombatXP(xpGain);
     log(`Vous gagnez ${xpGain} XP !`);
+
+    // Soin de victoire : une part des PV max (niveau et Stamina), pour un héros resté debout.
+    if(!gameState.heroKo && player.hp > 0 && player.hp < player.maxHp){
+        const before = player.hp;
+        player.hp = Math.min(player.maxHp, before + victoryHealAmount(player));   // soin direct : même Corrompu, la victoire ne fait pas de mal
+        log(`La victoire vous revigore : +${player.hp - before} PV (${victoryHealPct(player.level, player.attributes?.stamina)} % des PV max).`);
+    }
 
     // PA : l'équipement porté enseigne des compétences (skills.js) ; chaque victoire les fait progresser.
     const apGain = apForVictory(enemy.level) * xiuPaMult;
@@ -788,7 +832,7 @@ export function handleEnemyDefeated(){
     const goldEarned = goldBase + goldBonus;
     player.gold = (player.gold || 0) + goldEarned;
     combatRewards.gold = goldEarned;
-    log(`Vous ramassez ${goldEarned} pièce${goldEarned > 1 ? 's' : ''} d'or !`);
+    log(`Vous ramassez ${goldEarned} zhu !`);
 
     // Prime de l'Arène des Mille Flèches (arena.js) : or et XP en plus, croissants avec le cercle et le combat,
     // et grosse prime quand un cercle est terminé pour la première fois (son maître vaincu : `firstClear`).
@@ -798,13 +842,13 @@ export function handleEnemyDefeated(){
         player.gold += bonus.gold;
         combatRewards.gold += bonus.gold;
         queueCombatXP(bonus.xp);
-        log(`Prime d'arène (combat ${wave}/${enemy.arena.waves}) : +${bonus.gold} or, +${bonus.xp} XP !`);
+        log(`Prime d'arène (combat ${wave}/${enemy.arena.waves}) : +${bonus.gold} zhu, +${bonus.xp} XP !`);
         const tier = arenaTier(tierId);
         if(tier && enemy.arena.firstClear) {
             player.gold += tier.clearGold;
             combatRewards.gold += tier.clearGold;
             queueCombatXP(tier.clearXp);
-            log(`${tier.name} terminé pour la première fois : +${tier.clearGold} or, +${tier.clearXp} XP !`);
+            log(`${tier.name} terminé pour la première fois : +${tier.clearGold} zhu, +${tier.clearXp} XP !`);
         }
     }
 
@@ -832,7 +876,7 @@ export function handleEnemyDefeated(){
             // chance d'obtenir un objet (1 - weaponChance)
             const droppedItem = getRandomItem(player.level);
             if(droppedItem && sellDuplicateItem(droppedItem)) {
-                // déjà possédé : converti en or, sans le dire
+                // déjà possédé : converti en zhu, sans le dire
             } else if(droppedItem) {
                 player.inventory.push({...droppedItem, applied: false});
                 normalizeActiveInventoryIndex();
@@ -881,7 +925,7 @@ export function handleEnemyDefeated(){
             updateAvailableWeapons();
             log(`${rarityEmoji} ${enemy.name} était plus fort que vous : vous obtenez ${entry.weapon.name} !`);
         } else if(sellDuplicateItem(entry.item)) {
-            // déjà possédé : converti en or, sans le dire
+            // déjà possédé : converti en zhu, sans le dire
         } else {
             player.inventory.push({...entry.item, applied: false});
             normalizeActiveInventoryIndex();

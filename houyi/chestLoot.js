@@ -12,7 +12,7 @@
 // Module pur (sans DOM) : `rollChestLoot` tire le butin, game.js (`grantChestLoot`) le met dans le sac.
 
 import { lootableItems } from './items.js';
-import { allWeapons, weaponRarity } from './weapons.js';
+import { lootableWeapons, weaponRarity } from './weapons.js';
 import { REGION_ORDER, REGION_LEVEL } from './world/index.js';
 
 const LOCATION_BONUS = { house: 0, village: 0, wild: 0.5, sanctuary: 1 };
@@ -89,7 +89,7 @@ export function rollChestLoot(chest, screen = {}, owner = {}, rng = Math.random)
         if (rng() >= chance) return;
         const rarity = pickWeighted(cfg.rarity, rng);
         if (rng() < cfg.weaponChance) {
-            const weapons = allWeapons.filter(w => !w.fusionOnly && w.minLevel <= maxLevel && !ownedWeapons.has(w.id));
+            const weapons = lootableWeapons().filter(w => !w.fusionOnly && w.minLevel <= maxLevel && !ownedWeapons.has(w.id));
             const weapon = pickByRarity(weapons, weaponRarity, rarity, rng);
             if (weapon) {
                 ownedWeapons.add(weapon.id);

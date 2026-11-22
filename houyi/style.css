@@ -18,6 +18,7 @@ body {
     text-align: center;
 }
 #board {
+    touch-action: none;   /* glisser une tuile pour l'échanger (swipe.js) : la page ne défile pas sous le doigt */
     display: grid;
     grid-template-columns: repeat(var(--board-cols, 8), var(--tile-size));
     grid-gap: 6px;
@@ -1565,16 +1566,6 @@ progress.enemy-bar::-webkit-progress-value {
     line-height: 1.2;
 }
 
-/* Blocage / parade : 2e animation, bouclier et vibration (1re animation = dégâts prévus) */
-.block-shield { font-size: 72px; line-height: 1; margin-bottom: 6px; filter: drop-shadow(0 0 10px rgba(255,255,255,.7)); animation: block-vibrate .09s linear 8, block-shield-pop .35s ease-out; }
-.block-shield.block-partial { opacity: .85; }
-.block-shield.block-partial .ic { filter: saturate(.6); }
-.attack-animation:has(.block-shield) .attack-damage { animation: block-vibrate .09s linear 10; }
-.attack-animation:has(.block-shield) .attack-icon { display: none; }
-@keyframes block-vibrate { 0%, 100% { transform: translate(0, 0); } 25% { transform: translate(-4px, 2px) rotate(-2deg); } 50% { transform: translate(4px, -2px) rotate(2deg); } 75% { transform: translate(-3px, -2px) rotate(-1deg); } }
-@keyframes block-shield-pop { 0% { transform: scale(2.2); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
-@media (prefers-reduced-motion: reduce) { .block-shield, .attack-animation:has(.block-shield) .attack-damage { animation: none; } }
-
 /* Options : onglets par catégorie (Affichage, Son et confort, Jeu, Partie) */
 .options-tabs { display: flex; gap: 4px; margin: 8px 0 4px; flex-wrap: wrap; }
 .options-tab { flex: 1 1 auto; cursor: pointer; border: 2px solid #5a3e1b; background: #f3e3b8; color: #3b2a20; border-radius: 8px 8px 0 0; padding: 6px 8px; font: inherit; font-size: 0.85em; }
@@ -1596,3 +1587,48 @@ progress.enemy-bar::-webkit-progress-value {
 .zh-listen { cursor: pointer; font: inherit; font-size: 0.85em; padding: 3px 8px; border: 2px solid #7b1f14; border-radius: 6px; background: #ffd6cc; color: #7b1f14; }
 .zh-listen:disabled { opacity: .55; cursor: default; }
 .zh-known { display: flex; align-items: center; gap: 4px; cursor: pointer; white-space: nowrap; }
+
+/* Scène d'un sort : lanceur à gauche, sort au milieu, cible à droite ; le sort file vers la cible qui clignote à l'impact */
+.spell-stage { position: relative; display: flex; align-items: flex-end; justify-content: space-between; width: min(94%, 440px); min-height: 110px; margin: 0 auto 6px; }
+.stage-fighter { width: clamp(56px, 22%, 96px); height: auto; image-rendering: pixelated; position: relative; z-index: 1; filter: drop-shadow(0 3px 3px rgba(0,0,0,.45)); }
+.stage-mid { position: absolute; left: 50%; bottom: 14px; z-index: 2; transform: translateX(-50%); pointer-events: none; }
+.stage-mid .attack-icon { font-size: 40px; margin: 0; }
+.stage-mid .spellfx { max-width: 40vw; }
+.stage-ltr .stage-mid { animation: stage-fly-ltr .5s ease-in .15s both; }
+.stage-rtl .stage-mid { animation: stage-fly-rtl .5s ease-in .15s both; }
+.stage-ltr .stage-hurt, .stage-rtl .stage-hurt { animation: stage-blink .6s steps(1) .65s 3; }
+.stage-self .stage-cast { animation: stage-glow 1s ease-in-out infinite; }
+.stage-solo { justify-content: center; }   /* soin sur soi : le lanceur est seul, sans l'ennemi */
+.stage-solo .stage-mid { bottom: 30%; }
+.stage-support .stage-cast { animation: stage-glow 1s ease-in-out .65s 2; }
+@keyframes stage-fly-ltr { from { left: 50%; } to { left: 72%; } }
+@keyframes stage-fly-rtl { from { left: 50%; } to { left: 28%; } }
+@keyframes stage-blink { 0%, 100% { opacity: 1; filter: brightness(1); } 25% { opacity: .2; } 50% { opacity: 1; filter: brightness(2.2) saturate(0); } 75% { opacity: .35; } }
+@keyframes stage-glow { 50% { filter: drop-shadow(0 0 10px #fff) brightness(1.3); } }
+body.no-anim .stage-mid, body.no-anim .stage-fighter { animation: none !important; }
+@media (prefers-reduced-motion: reduce) { .stage-mid, .stage-fighter { animation: none !important; } }
+.attack-damage .stopped { display: block; font-size: .55em; margin-top: 4px; opacity: .95; }
+/* Coup bloqué ou paré : la cible esquive en reculant brusquement (elle ne clignote pas) */
+.stage-ltr .stage-right.stage-dodge { animation: stage-dodge-right .35s cubic-bezier(.1,.9,.2,1) .65s both; }
+.stage-rtl .stage-left.stage-dodge { animation: stage-dodge-left .35s cubic-bezier(.1,.9,.2,1) .65s both; }
+@keyframes stage-dodge-right { from { transform: translateX(0); } to { transform: translateX(34%); } }
+@keyframes stage-dodge-left { from { transform: translateX(0); } to { transform: translateX(-34%); } }
+@media (prefers-reduced-motion: reduce) { .stage-dodge { animation: none !important; } }
+/* Attaque à l'arc : une flèche part du tireur vers la cible (pointe dans le sens du trajet) */
+.stage-mid .stage-arrow { font-size: 0; }
+.stage-mid .stage-arrow svg, .stage-mid .stage-arrow .ic { width: 44px; height: 44px; }
+.stage-ltr .stage-arrow { transform: rotate(45deg); }
+.stage-rtl .stage-arrow { transform: rotate(-135deg); }
+.stage-ltr .stage-mid:has(.stage-arrow) { animation-duration: .35s; }
+.stage-rtl .stage-mid:has(.stage-arrow) { animation-duration: .35s; }
+/* Attaque de mêlée : le lanceur fonce sur la cible (l'arme file en même temps) puis revient */
+.stage-ltr .stage-left.stage-lunge { animation: stage-lunge-r .45s ease-in-out .15s both; }
+.stage-rtl .stage-right.stage-lunge { animation: stage-lunge-l .45s ease-in-out .15s both; }
+@keyframes stage-lunge-r { 0%, 100% { transform: translateX(0); } 45% { transform: translateX(120%); } }
+@keyframes stage-lunge-l { 0%, 100% { transform: translateX(0); } 45% { transform: translateX(-120%); } }
+@media (prefers-reduced-motion: reduce) { .stage-lunge { animation: none !important; } }
+
+/* Pause d'une seconde en fin d'animation d'attaque : l'overlay reste (invisible, sans clic) pour que le jeu patiente. */
+.attack-overlay.attack-pause { visibility: hidden; pointer-events: none; animation: none; background: none; }
+.battle-result-known-note { font-size: 0.78em; color: #2e7d32; font-weight: 700; }
+.battle-result-known-note[hidden] { display: none; }

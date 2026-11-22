@@ -1,3 +1,7 @@
+// Chaque compagnon a SA Xiūxiān : sa jauge (`ally.rage`, remplie quand il subit des dégâts, conservée d'un combat à l'autre dans `hero.rages`),
+// son déclenchement et sa durée (`ally.transe`) ; Hou Yi n'a que la sienne (Attaque des Dix Soleils). Tant qu'elle dure, son effet profite à l'équipe
+// (`mergeTranseEffects`). Wukong : Soixante-douze Transformations ; Nezha : Roues de Feu ; Longwang : Colère du Roi Dragon ; Fuxi : Huit Trigrammes ;
+// Shennong : Cent Herbes ; Jingwei : Pierre de la Mer.
 // Xiūxiān (ex-« rage ») : UNE JAUGE PAR CLASSE. Subir des dégâts remplit la jauge de la classe choisie pour le tour ; chaque jauge se CONSERVE
 // d'un combat à l'autre. Pleine, le joueur déclenche VOLONTAIREMENT la Xiūxiān de cette classe (toucher la jauge, au début de son tour,
 // sans perdre le tour) : elle dure TRANSE_TURNS tours du joueur, avec l'effet de SA classe (même si l'on change de classe ensuite), puis la
@@ -9,20 +13,20 @@
 export const TRANSE_TURNS = 3;
 
 export const TRANSE_EFFECTS = {
-    // Chasseur : l'archer divin lâche une volée gratuite à chaque tour (techniques spéciales offensives).
-    assassin: { name: 'Volée des Dix Soleils', strikePct: 50, actionPoints: 1, text: 'une volée gratuite (la moitié des dégâts de l\'arme) et +1 point d\'action à chaque tour' },
+    // Chasseur : l'archer divin porte une attaque gratuite à chaque tour (techniques spéciales offensives).
+    assassin: { name: 'Attaque des Dix Soleils', strikePct: 50, actionPoints: 1, text: 'une attaque gratuite (la moitié des dégâts de l\'arme) et +1 point d\'action à chaque tour' },
     // Mage : deux sorts par tour (le second ne prend pas le tour) ; seule voie qui permet de lancer l'ultime.
-    sorcerer: { name: 'Double Talisman', doubleCast: true, ultimate: true, text: 'deux sorts par tour ; l\'ultime peut être lancé' },
+    sorcerer: { name: 'Colère du Roi Dragon', doubleCast: true, ultimate: true, text: 'deux sorts par tour ; l\'ultime peut être lancé' },
     // Alchimiste : le fourneau des huit trigrammes exhale des vapeurs qui rongent l'ennemi et rendent du qì.
-    alchemist: { name: 'Fourneau des Huit Trigrammes', dotPct: 6, mana: 2, text: 'des vapeurs rongent l\'ennemi (6 % de ses PV max) et rendent 2 qì de chaque couleur, à chaque tour' },
+    alchemist: { name: 'Cent Herbes', dotPct: 6, mana: 2, text: 'des vapeurs rongent l\'ennemi (6 % de ses PV max) et rendent 2 qì de chaque couleur, à chaque tour' },
     // Guerrier : la force physique doublée (armes et crânes).
-    barbarian: { name: 'Fureur du Tigre Blanc', physMult: 2, text: 'les dégâts de l\'arme et des crânes sont doublés' },
+    barbarian: { name: 'Soixante-douze Transformations', physMult: 2, text: 'les dégâts de l\'arme et des crânes sont doublés' },
     // Commandant : rempart qui renvoie une partie des coups (équilibre attaque / défense).
-    templar: { name: 'Muraille de Jade', defense: 25, reflectPct: 30, text: 'Défense +25 et 30 % des dégâts subis sont renvoyés' },
+    templar: { name: 'Roues de Feu', defense: 25, reflectPct: 30, text: 'Défense +25 et 30 % des dégâts subis sont renvoyés' },
     // Moine : soins renforcés (régénération).
-    monk: { name: 'Souffle du Lotus d\'Or', healPct: 10, text: 'soigne 10 % des PV max à chaque tour' },
+    monk: { name: 'Huit Trigrammes', healPct: 10, text: 'soigne 10 % des PV max à chaque tour' },
     // Chamane : l'offrande aux ancêtres facilite l'apprentissage (PA doublés à la victoire) et protège.
-    shaman: { name: 'Offrande aux Ancêtres', actionPoints: 1, defense: 10, paMult: 2, text: '+1 point d\'action et Défense +10 par tour ; les PA gagnés à la victoire sont doublés' }
+    shaman: { name: 'Pierre de la Mer', actionPoints: 1, defense: 10, paMult: 2, text: '+1 point d\'action et Défense +10 par tour ; les PA gagnés à la victoire sont doublés' }
 };
 
 /** La classe du tour permet-elle de lancer l'ultime ? (sorcier uniquement) */
@@ -83,4 +87,20 @@ export function switchGauge(entity, cls) {
     storeGauge(entity);
     entity.gaugeClass = cls;
     entity.rage = clampGauge(entity.rages?.[cls]);
+}
+
+/** Effets de plusieurs Xiūxiān simultanées (une par membre de l'équipe) : multiplicateurs multipliés, valeurs additionnées, drapeaux cumulés. */
+export function mergeTranseEffects(classIds) {
+    const out = {};
+    (classIds || []).forEach(id => {
+        const e = TRANSE_EFFECTS[id];
+        if (!e) return;
+        Object.entries(e).forEach(([k, v]) => {
+            if (k === 'name' || k === 'text') return;
+            if (typeof v === 'boolean') out[k] = out[k] || v;
+            else if (k === 'physMult' || k === 'paMult') out[k] = (out[k] || 1) * v;
+            else out[k] = (out[k] || 0) + v;
+        });
+    });
+    return out;
 }

@@ -38,6 +38,7 @@ export default {
         ],
         npcs: [
             { id: 'merchant_rizieres', x: 19, y: 10 },
+            { id: 'trainer_monk', x: 14, y: 9 },
             { id: 'xiaobao', x: 24, y: 12 },
             { id: 'hua_riz', x: 11, y: 10 },
             { id: 'scarecrow_cao', x: 27, y: 9 },

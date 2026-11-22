@@ -1102,3 +1102,150 @@ body.charge-paused .class-pick::before { animation-play-state: paused; }
 .action-beads .bead-foe { background: #d4473f; }
 body.a11y-colorblind .action-beads .bead-hero { background: #2f7bbd; }
 body.a11y-colorblind .action-beads .bead-foe { background: #e08a1e; }
+
+/* Barre des compagnons : une carte par compagnon de l'équipe (portrait, nom, barre de vie). */
+.ally-bar { display: flex; gap: 4px; margin: 0 0 4px; }
+.ally-bar[hidden] { display: none; }
+.ally-card { flex: 1 1 0; min-width: 0; display: grid; grid-template-columns: 30px 1fr; grid-template-rows: auto auto; column-gap: 5px; align-items: center; padding: 3px 5px; border-radius: 6px; border: 1px solid rgba(120, 100, 90, 0.5); background: rgba(0, 0, 0, 0.28); color: #f1e7df; font-size: 0.7rem; }
+.ally-card .ally-portrait { grid-row: 1 / 3; width: 30px; height: 30px; image-rendering: auto; }   /* dessin 64×64 réduit : lissé */
+.ally-card .ally-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 700; }
+.ally-card .ally-hp { display: block; height: 5px; border-radius: 3px; background: rgba(255, 255, 255, 0.15); overflow: hidden; }
+.ally-card .ally-hp i { display: block; height: 100%; background: #3fae6a; transition: width 0.3s; }
+.ally-card.ko { opacity: 0.45; filter: grayscale(1); }
+.ally-card.ko .ally-hp i { background: #777; }
+.class-picker .class-pick.ko { opacity: 0.4; text-decoration: line-through; }
+/* Hou Yi à terre : la ligne des qì (partagée par l'équipe) reste en couleur */
+
+/* Jauge de Xiūxiān de Hou Yi : toujours visible, en barre horizontale sous sa barre de vie (les compagnons gardent la leur au clic long) */
+#player-stats:has(.rage-stat) { display: block; }
+#player-stats .rage-stat { display: flex; flex-direction: row; align-items: center; gap: 4px; margin: 2px 0; height: 14px; }
+#player-stats .rage-stat .rage-bar-container { width: auto; flex: 1; min-width: 0; height: 100%; }
+#player-stats .rage-stat .rage-bar { width: 100%; height: 100%; display: block; position: relative; overflow: hidden; border-radius: 6px; background: rgba(0,0,0,.35); }
+#player-stats .rage-stat .rage-fill { height: 100%; width: var(--g, 0%); transition: width .3s ease; }
+
+/* Xiūxiān d'un compagnon : zone cachée, visible au clic long sur sa carte (ou pendant sa Xiūxiān) */
+.ally-card { position: relative; }
+.ally-card .ally-portrait { grid-row: 1 / 4; }
+.ally-card .ally-xiu { grid-column: 2; display: block; position: relative; overflow: visible; margin-top: 4px; height: 10px; padding: 0; background: rgba(0,0,0,.35); border: 1px solid rgba(255,255,255,.25); border-radius: 3px; }
+.ally-xiu::before { content: ''; position: absolute; inset: -12px -6px; }   /* zone tactile élargie, invisible */
+.ally-xiu i { position: absolute; inset: 0 auto 0 0; border-radius: 2px; background: #6a4bd8; opacity: .8; }
+.ally-xiu.ready { border-color: #ffd54a; animation: xiu-ready-pulse 1s ease-in-out infinite; cursor: pointer; }
+.ally-xiu.in-xiu i { background: #d8a24b; }
+.ally-card.xiu-on { box-shadow: 0 0 6px #d8a24b; }
+@keyframes xiu-ready-pulse { 50% { box-shadow: 0 0 6px #ffd54a; } }
+@media (prefers-reduced-motion: reduce) { .ally-xiu.ready { animation: none; } }
+
+/* Texte de la Xiūxiān (effet, tours restants) : caché, visible quelques secondes après un clic long sur un personnage ; plus de texte dans les jauges */
+#xiu-banner { display: none; }
+body.show-xiu-text #xiu-banner { display: block; }
+#player-stats .rage-stat .rage-text { display: none; }
+#player-stats .rage-stat { height: 9px; }
+
+/* L'ennemi ne montre ni arme, ni objet, ni sorts */
+#enemy-spells { display: none; }
+
+/* Menu Objet ouvert : seuls les objets (et « Retour ») restent affichés */
+#player-spells.object-menu > #weapon-button, #player-spells.object-menu > #item-button, #player-spells.object-menu > #spell-buttons, #player-spells.object-menu > #xiu-button { display: none; }
+
+/* Jauge de Xiūxiān / d'ultime de Hou Yi : plus épaisse et zone tactile élargie (invisible) pour être facile à déclencher. */
+#player-stats .rage-stat { height: 12px; }
+#player-stats .rage-bar-container.xiu-ready::before, #player-stats .rage-bar-container.ultimate-ready::before { content: ''; position: absolute; inset: -12px -6px; }
+
+/* Bouton Xiūxiān (sous les objets) : jauge de rage, mini-barre de qì de l'ultime ; touchable quand la jauge est pleine. */
+.xiu-btn { position: relative; display: flex; flex-direction: column; gap: 2px; }
+.xiu-btn .xiu-gauge { height: 8px; border-radius: 4px; background: rgba(0, 0, 0, .35); overflow: hidden; }
+.xiu-btn .xiu-gauge i { display: block; height: 100%; background: linear-gradient(180deg, #e0556f, #a8153a 60%, #6e0c26); transition: width .4s; }
+.xiu-btn.full .xiu-gauge i { background: linear-gradient(180deg, #ffd56a, #f2a61a); }
+.xiu-btn.in-transe { filter: grayscale(1); opacity: .55; box-shadow: none; outline: none; cursor: default; }   /* Xiūxiān déclenchée : bouton grisé jusqu'à la fin de la transe */
+.xiu-btn.in-transe .xiu-gauge i { background: #8a8f94; }
+.xiu-btn.xiu-ready { cursor: pointer; box-shadow: 0 0 8px #f2c14e; outline: 1px solid #f2c14e; touch-action: manipulation; -webkit-tap-highlight-color: transparent; user-select: none; -webkit-user-select: none; }
+.xiu-btn.xiu-ready:active { transform: scale(0.97); }
+.xiu-btn.mana-reached .ult-mana-bar { animation: rage-pulse 0.9s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) { .xiu-btn.mana-reached .ult-mana-bar { animation: none; } }
+
+.spell-tag { font-size: .8em; font-weight: bold; color: #f2c14e; text-transform: uppercase; letter-spacing: .05em; }
+
+/* Barre d'action : un bouton par personnage, avec ses PV et sa Xiūxiān (plus de barre des compagnons en haut). Seul le personnage choisi montre ses boutons. */
+.ally-bar { display: none !important; }
+.class-picker .class-pick { height: 34px; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; padding: 2px 6px 0; line-height: 1.15; }
+.class-pick .cp-name { position: relative; z-index: 1; max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
+.class-pick .cp-bars { position: absolute; z-index: 1; left: 4px; right: 4px; bottom: 2px; display: grid; gap: 1px; }
+.class-pick .cp-bars i { display: block; height: 4px; border-radius: 2px; background: rgba(255, 255, 255, .22); overflow: hidden; }
+.class-pick .cp-bars b { display: block; height: 100%; transition: width .3s; }
+.class-pick .cp-hp b { background: #3fae6a; }
+.class-pick .cp-xiu b { background: #e0556f; }
+.class-pick .cp-xiu.full b { background: #ffd56a; }
+.class-pick .cp-xiu.on b { background: #b58cff; }
+
+/* Écran de combat simplifié : en haut l'ennemi seul ; sous le plateau le qì accumulé (#player-stats), puis la barre d'action avec une zone par personnage. */
+@media (orientation: portrait) {
+    .stats-container:not([style*="none"]) { grid-template-columns: minmax(0, 1fr); }
+    .stats-container > #enemy-stats { grid-column: 1; }
+}
+#player-stats.qi-strip { display: flex !important; flex-wrap: wrap; align-items: center; justify-content: center; gap: 4px 8px; padding: 4px 6px; margin: 4px 0; flex: 0 0 auto; align-self: auto; }   /* hauteur = son contenu : ne jamais s'étirer pour remplir la place libre (style-tutorial.css donne `flex: 1 1 0` aux fiches) */
+#player-stats.qi-strip::after { display: none !important; }
+#player-stats.qi-strip .stat { margin: 0 !important; }
+#player-stats.qi-strip .row-pills, #player-stats.qi-strip .mana-dots { display: flex; align-items: center; gap: 6px; }
+
+/* Altérations d'un personnage : pastilles dans son propre bouton de la barre d'action (en haut à droite). */
+.class-pick .cp-hint { position: absolute; z-index: 2; top: 3px; left: 3px; width: 8px; height: 8px; border-radius: 50%; background: #ffd35a; box-shadow: 0 0 0 1px #2b1b17, 0 0 6px #ffd35a; pointer-events: none; animation: cp-hint-pulse 1.4s ease-in-out infinite; }
+@keyframes cp-hint-pulse { 50% { transform: scale(1.4); opacity: .75; } }
+@media (prefers-reduced-motion: reduce) { .class-pick .cp-hint { animation: none; } }
+.class-pick .cp-status { position: absolute; z-index: 2; top: 1px; right: 2px; display: flex; gap: 1px; margin: 0; }
+.class-pick .cp-status .status-badge { padding: 0 2px; min-height: 0; font-size: .6rem; line-height: 1; border-radius: 3px; }
+.class-pick .cp-status .status-badge svg { width: 10px; height: 10px; }
+
+/* Barre de PV lisible dans le bouton de chaque personnage (Hou Yi comme les compagnons). */
+.class-picker .class-pick { height: 42px; }
+.class-pick .cp-bars i.cp-hp { position: relative; height: 12px; }
+.class-pick .cp-hp em { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font: 700 .58rem/1 Inter, system-ui, sans-serif; font-style: normal; color: #fff; text-shadow: 0 0 2px #000; }
+
+/* Ennemis du combat (foesView.js) : une pastille par ennemi, la cible est cerclée. */
+.foe-bar { display: flex; gap: 4px; margin: 0 0 4px; }
+.foe-bar[hidden] { display: none; }
+.foe-chip { flex: 1 1 0; min-width: 0; padding: 4px 6px; border: 2px solid var(--team-enemy-edge, #7a2a22); border-radius: 6px; background: var(--team-enemy-bg, #3a1612); color: inherit; font: inherit; font-size: .85em; text-align: left; cursor: pointer; }
+.foe-chip.down { opacity: .4; filter: grayscale(1); cursor: default; }
+.foe-chip .foe-name { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.foe-chip .foe-hp { display: block; height: 6px; margin-top: 3px; background: rgba(0,0,0,.45); border-radius: 3px; overflow: hidden; }
+.foe-chip .foe-hp > span { display: block; height: 100%; background: #d9452e; transition: width .3s; }
+/* Choix de la cible : après une attaque ciblée, les ennemis vivants clignotent et se touchent. */
+.foe-chip.pickable { border-color: #f2c14e; animation: foe-pick 0.9s ease-in-out infinite alternate; }
+@keyframes foe-pick { from { box-shadow: 0 0 0 1px #f2c14e; } to { box-shadow: 0 0 8px 2px #f2c14e; } }
+@media (prefers-reduced-motion: reduce) { .foe-chip.pickable { animation: none; box-shadow: 0 0 0 2px #f2c14e; } }
+/* Barre de chargement propre à chaque ennemi (foesView.js) : fine, sous la barre de vie. */
+.foe-chip .foe-charge { display: block; height: 4px; margin-top: 2px; background: var(--hp-back, rgba(0,0,0,.45)); border-radius: 2px; overflow: hidden; }
+.foe-chip .foe-charge > span { display: block; height: 100%; background: #4aa3d8; }
+/* Nom chinois sur une pastille d'ennemi : plus grand, comme sur la fiche de l'ennemi. */
+.foe-chip .foe-name.name-hanzi { font-size: 1.2em; line-height: 1.15; }
+/* Xiūxiān : sous le bloc d'actions, sur toute la largeur (grille compacte comme liste verticale). */
+#player-spells > #xiu-button { order: 10; grid-column: 1 / -1; width: 100%; }
+#player-spells > #xiu-button > * { width: 100%; box-sizing: border-box; }
+/* Pleine largeur : une seule ligne (nom, jauge, valeur) pour que le plateau garde la place. */
+#player-spells > #xiu-button > .xiu-btn { flex-direction: row; align-items: center; gap: 8px; padding-top: 3px; padding-bottom: 3px; text-align: left; }
+#player-spells > #xiu-button > .xiu-btn .xiu-gauge { flex: 1 1 auto; min-width: 0; }
+#player-spells > #xiu-button > .xiu-btn .spell-name, #player-spells > #xiu-button > .xiu-btn .spell-cost { flex: 0 0 auto; white-space: nowrap; }
+/* Plusieurs ennemis : ligne des pastilles (noms, vies, chargements), puis seulement la ligne de qì et de PA communs ; plus de grande fiche ni de sprite. */
+#enemy-stats.pool-only { min-height: 0; padding-top: 4px; padding-bottom: 4px; }
+#enemy-stats.pool-only::after { display: none; }
+#enemy-stats.pool-only .row-name, #enemy-stats.pool-only .status-badges, #enemy-stats.pool-only .row-hp { display: none; }
+#enemy-stats.pool-only .stat { margin-right: 0 !important; }
+.foe-chip .status-badges { gap: 2px; margin: 2px 0 0; }
+.foe-chip .status-badge { padding: 0 3px; font-size: .75em; }
+.foe-chip .status-badge svg { width: 1em; height: 1em; }
+
+/* ── Personnage choisi en combat : on voit tout de suite lequel est actif ───────────────────────────────────────
+   Son bouton prend sa couleur (--mc) avec un anneau blanc, un halo et une flèche qui descend vers les actions ; les autres sont atténués ;
+   le cadre des actions (#player-spells[data-member]) reprend la même couleur : « ces actions sont celles du bouton éclairé ». */
+.class-picker .class-pick { overflow: visible; }
+.class-pick::before { border-radius: inherit; }   /* la jauge de chargement reste dans les coins arrondis, sans que le bouton rogne la flèche */
+.class-picker .class-pick:not(.on):not(.ko) { filter: brightness(0.7) saturate(0.75); }
+.class-picker .class-pick.on {
+    border: 2px solid var(--mc, #fff); outline: 2px solid #fff; outline-offset: 0;
+    box-shadow: 0 0 10px 2px var(--mc, #b58cff); z-index: 2; font-weight: 800;
+}
+.class-picker .class-pick.on::after {
+    content: ""; position: absolute; left: 50%; bottom: -10px; transform: translateX(-50%); z-index: 3;
+    border: 7px solid transparent; border-top: 8px solid var(--mc, #fff); border-bottom: 0;
+    filter: drop-shadow(0 1px 0 #fff) drop-shadow(0 0 2px #000);
+}
+#player-spells[data-member] { border-color: var(--mc, currentColor); box-shadow: inset 0 3px 0 var(--mc, transparent), 0 0 0 1px var(--mc, transparent); }

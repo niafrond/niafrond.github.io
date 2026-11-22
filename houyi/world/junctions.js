@@ -286,7 +286,7 @@ export function wallGuard(screen, door, enemy) {
 }
 
 // Première case libre près d'un passage : à côté de la bouche du passage (écart latéral ≥ 2), 1 à 3 pas à l'intérieur.
-function placeNearGate(screen, gate, occ, depths, laterals) {
+export function placeNearGate(screen, gate, occ, depths, laterals) {
     const [ix, iy] = inward(gate), [ax, ay] = along(gate);
     for (const d of depths) for (const l of laterals) {
         const x = gate.x + ix * d + ax * l, y = gate.y + iy * d + ay * l;

@@ -19,7 +19,8 @@ export const REALM = {
     entrance: 'Sanctuaire des âmes errantes',
     exitLabel: 'Quitter le royaume',
     closedMessage: 'Le chemin des âmes est rétabli et le vieux sanctuaire est refermé. Les morts y marchent en paix : laissez-les dormir.',
-    // Annonce affichée une seule fois, à la première arrivée dans le royaume (data.eventNotices).
+    // Rumeur affichée une seule fois par partie (data.eventNotices) : à la première arrivée sur une zone qui porte une porte du royaume
+    // (`eventDoorNotices`), sinon à la première arrivée dans le royaume lui-même (`eventNotice`).
     notice: {
         id: 'wanderingSouls',
         title: 'La Nuit des âmes errantes',

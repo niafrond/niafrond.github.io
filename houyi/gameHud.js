@@ -2,31 +2,31 @@
 // Extrait de game.js.
 import { cappedEnemyHit } from './combatBalance.js';
 import { escapeHtml } from "./escapeHtml.js";
-import { enemyNameLabel } from './bestiaryNames.js';
+import { enemyNameLabel, enemyNameAsHanzi, toggleEnemyNameAsHanzi, enemyNameIsHanzi } from './bestiaryNames.js';
 import { heroSprite, enemySprite, spriteUri, gbaSprite, gbaAttackFrames } from './sprites/index.js';
 import { hpBarTiming, hpShieldSegment } from './combatFlow.js';
 import { setAIDifficulty, getAIDifficulty } from './enemyAI.js';
 import { icon as svgIcon } from './icons.js';
-import { RAGE_MAX, getEquippedUltimate, isRageFull, canCastUltimateMana } from './ultimates.js';
+import { normalizeRoster } from './classRoster.js';
+import { ULTIMATE_CLASS, RAGE_MAX, getEquippedUltimate, isRageFull, canCastUltimateMana } from './ultimates.js';
 import { statusBadgesHtml } from './statusBadges.js';
 import { signatureDamage } from './bossScript.js';
 // Sans altération, la ligne des états reste réservée (vide) : la barre de PV passe toujours sous le portrait, sur toute la largeur de la fiche.
 const STATUS_ROW_PLACEHOLDER = '<div class="status-badges status-badges-empty" aria-hidden="true"></div>';
 import { animationFactor } from './gameOptions.js';
 import { announce, notify } from './a11y.js';
-import { bindStatusBadges, bindTooltip, ensureSpellTooltip, placeTooltip, showSpellTooltip, showPlayerGearTooltip, showPlayerGearTooltipBriefly, showItemTooltip, hideSpellTooltip, bindEnemyStuffLongPress } from './gameTooltips.js';
+import { bindStatusBadges, markPressHeld, bindTooltip, ensureSpellTooltip, placeTooltip, showSpellTooltip, showPlayerGearTooltip, showPlayerGearTooltipBriefly, showItemTooltip, hideSpellTooltip, bindEnemyStuffLongPress } from './gameTooltips.js';
 import { createWeaponButton, statValueHtml } from './gameInventoryTabs.js';
 import { updatePlayerStatsTab } from './gameStatsTab.js';
 import { updateLevelHud } from './gameLevelUp.js';
-import { createSpellButtons, getTurnClass } from './gameSpellList.js';
+import { createSpellButtons, getTurnClass, decoupled, memberGauge, refreshClassPicker } from './gameSpellList.js';
+import { renderAllyBar, showXiuText } from './alliesView.js';
+import { renderFoeBar } from './foesView.js';
 import { isInTranse, classAllowsUltimate, storeGauge, TRANSE_TURNS } from './transe.js';
-import { bonusTurnBadge, canEntityCastSpell, castUltimate, activateXiuxian, syncGauge, clampManaToCaps, classIcon, currentTurn, enemy, gameState, getUltimateTooltipHtml, transeTooltipHtml, getWeaponIcon, markMultiManaSpell, player, spellCostHtml, spellEffectIcon, syncPlayerControlsLock, ultimateManaBarHtml } from './game.js';
+import { bonusTurnBadge, canEntityCastSpell, castUltimate, activateXiuxian, allyInXiuxian, syncGauge, clampManaToCaps, classIcon, currentTurn, enemy, gameState, getUltimateTooltipHtml, transeTooltipHtml, getWeaponIcon, markMultiManaSpell, player, spellCostHtml, spellEffectIcon, syncPlayerControlsLock, ultimateManaBarHtml } from './game.js';
 
 // Nom de l'ennemi dans la barre de stats : caractères chinois simplifiés par défaut (bestiaryNames.js), pinyin après un clic sur l'ennemi (et inversement).
 // Le choix est gardé pour toute la session de jeu ; sans entrée pour le gabarit, le nom du gabarit reste affiché.
-let enemyNameAsHanzi = true;
-// Le nom affiché est-il en caractères chinois ? (agrandi par .name-hanzi : les hanzi sont illisibles à la taille du texte latin)
-const enemyNameIsHanzi = (e, asHanzi) => /[\u3400-\u9fff]/.test(enemyNameLabel(e, asHanzi));
 
 // --- Animation compteur (tick 1 par 1) ---
 export const _activeCounters = {};
@@ -92,26 +92,6 @@ function _animateCounter(id, from, to) {
 // Animation d'attaque jouée sur le portrait : les images défilent puis le portrait de face revient.
 const attackPlaying = new Set();
 export const ATTACK_FRAME_MS = 90;
-// Flèche qui vole du portrait de Hou Yi à celui de l'ennemi (élément posé sur la page, retiré à l'arrivée).
-function shootArrow(fromEl, toEl){
-    if(!fromEl || !toEl) return;
-    const center = el => { const r = el.getBoundingClientRect(); const w = r.width ? Math.min(64, r.width) : 64; return { x: r.right - 4 - w / 2, y: r.top + 2 + w * 0.5 }; };
-    const a = center(fromEl), b = center(toEl);
-    const arrow = document.createElement('div');
-    arrow.className = 'hero-arrow';
-    arrow.style.left = `${a.x}px`;
-    arrow.style.top = `${a.y}px`;
-    const angle = Math.atan2(b.y - a.y, b.x - a.x);
-    arrow.style.setProperty('--angle', `${angle}rad`);
-    document.body.appendChild(arrow);
-    const dx = b.x - a.x, dy = b.y - a.y, dur = 360 * animationFactor();
-    const anim = arrow.animate ? arrow.animate([
-        { transform: `translate(0px, 0px) rotate(${angle}rad)`, opacity: 1 },
-        { transform: `translate(${dx}px, ${dy}px) rotate(${angle}rad)`, opacity: 1 }
-    ], { duration: dur, easing: 'ease-in', fill: 'forwards' }) : null;
-    setTimeout(() => arrow.remove(), dur + 60);
-    if(anim) anim.onfinish = () => arrow.remove();
-}
 
 export function playFighterAttack(isPlayer){
     if(document.body.classList.contains('fx-low')) return;
@@ -123,7 +103,6 @@ export function playFighterAttack(isPlayer){
     attackPlaying.add(id);
     const ms = (isPlayer ? 130 : ATTACK_FRAME_MS) * animationFactor();
     frames.forEach((uri, i) => setTimeout(() => el.style.setProperty('--portrait', `url("${uri}")`), i * ms));
-    if(isPlayer) setTimeout(() => shootArrow(el, document.getElementById('enemy-stats')), (frames.length - 1) * ms);   // la flèche part quand la corde est lâchée
     setTimeout(() => { attackPlaying.delete(id); updateFighterPortraits(); }, frames.length * ms);
 }
 
@@ -141,6 +120,53 @@ function updateFighterPortraits(){
     const eKey = enemy.spriteKey || enemy.id;
     const terrainSprite = gbaSprite(eKey, 'left') || gbaSprite(enemy.templateId, 'left');   // l'ennemi regarde vers Hou Yi (à gauche)
     set('enemy-stats', terrainSprite || enemySprite(eKey, enemy.templateId, enemy.biome));
+}
+
+// Bouton Xiūxiān sous les objets du personnage (colonne de gauche) :
+//  - Xiūxiān (la transe) : la jauge de rage ; elle se touche quand elle est pleine ;
+// Les invocations (anciens ultimes) ne sont plus un bouton : ce sont des sorts de la liste du Mage invocateur (gameSpellList.js : combatSpellList).
+// Fiche (effet, règle) : survol, appui long au doigt ou maintien de la souris (400 ms), sans rien déclencher.
+function holdTooltip(btn, html){
+    const show = () => { const t = ensureSpellTooltip(); t.innerHTML = html(); t.classList.add('visible'); placeTooltip(t, btn, 260); };
+    bindTooltip(btn, show, () => hideSpellTooltip());
+    let held = null, shown = false;
+    btn.addEventListener('pointerdown', ev => { if(ev.pointerType !== 'mouse') return; held = setTimeout(() => { held = null; shown = true; markPressHeld(); show(); }, 400); });
+    btn.addEventListener('click', ev => { if(!shown) return; shown = false; ev.preventDefault(); ev.stopImmediatePropagation(); }, true);
+    ['pointerup', 'pointerleave', 'pointercancel'].forEach(t => btn.addEventListener(t, () => { clearTimeout(held); held = null; }));
+}
+function actionCard(className, usable, onFire){
+    const btn = document.createElement('div');
+    btn.className = `enemy-spell-item xiu-btn ${className}${usable ? ' xiu-ready' : ' disabled'}`;
+    btn.tabIndex = usable ? 0 : -1;
+    btn.setAttribute('role', 'button');
+    btn.setAttribute('aria-disabled', String(!usable));
+    if(usable){
+        btn.onclick = onFire;
+        btn.onkeydown = ev => { if(ev.key === 'Enter' || ev.key === ' '){ ev.preventDefault(); onFire(); } };
+    }
+    return btn;
+}
+function renderXiuButton({ inTranse, canActivate, gaugeLevel }){
+    const box = document.getElementById('xiu-button');
+    if(!box) return;
+    box.innerHTML = '';
+    if(gameState.combatState !== 'active') return;
+    // La Xiūxiān est celle du PERSONNAGE CHOISI (nom touché dans la barre d'action) : Hou Yi ou un compagnon.
+    const cls = getTurnClass();
+    const g = memberGauge(cls);
+    if(!g) return;
+    const mine = g.hero;
+    const active = mine ? inTranse : g.inXiu;
+    const usable = mine ? canActivate : (!g.ko && !g.inXiu && g.full && (currentTurn === 'player' || decoupled()));
+    const level = mine ? gaugeLevel : g.gauge;
+    const xiu = actionCard(`xiu-transe${g.full && !active ? ' full' : ''}${active ? ' in-transe' : ''}`, usable, () => activateXiuxian(cls));
+    const turns = Math.max(1, Math.floor(g.entity.transe || 1));
+    const label = usable ? 'Déclencher' : active ? `Transe · ${turns} t.` : `${g.rage} / ${RAGE_MAX}`;
+    xiu.innerHTML = `<div class="spell-name">Xiūxiān</div>`
+        + `<div class="xiu-gauge" role="progressbar" aria-valuemin="0" aria-valuemax="${RAGE_MAX}" aria-valuenow="${g.rage}"><i style="width:${Math.min(100, Math.max(0, level))}%"></i></div>`
+        + `<div class="spell-cost">${label}</div>`;
+    holdTooltip(xiu, () => transeTooltipHtml(g.entity, null));
+    box.appendChild(xiu);
 }
 
 export function updateStats(){
@@ -184,39 +210,23 @@ export function updateStats(){
         });
     }
     // Pas de jauge de rage sans ultime débloqué (classe sans ultime ou niveau minimum non atteint).
-    // Jauge pleine : le texte devient « ULTIME » et la barre se lance l'ultime choisi (compte comme un tour).
+    // Xiūxiān et Invocation (ancien ultime) : deux boutons distincts sous les objets (renderXiuButton).
     syncGauge();   // une jauge de Xiūxiān par classe : celle de la classe du tour
     const equippedUltimate = getEquippedUltimate(player);
     // Xiūxiān : la jauge est toujours visible ; l'ultime se lance pendant la Xiūxiān, si la classe choisie pour le tour est le sorcier.
     const inTranse = isInTranse(player);
     // Pendant sa Xiūxiān, la jauge se vide d'un tiers à chaque tour : elle montre ce qu'il reste de la durée.
     const gaugeLevel = inTranse && player.transeClass && player.transeClass === player.gaugeClass ? (Math.floor(player.transe || 0) / TRANSE_TURNS * 100) : (player.rage || 0) / RAGE_MAX * 100;
-    const canActivate = !inTranse && isRageFull(player) && gameState.combatState === 'active' && currentTurn === 'player';   // jauge pleine : on déclenche la Xiūxiān en la touchant
-    const ultimateReady = !!equippedUltimate && inTranse && (player.cheatMaxRage === true || player.transeClass === 'sorcerer') && classAllowsUltimate(getTurnClass()) && gameState.combatState === 'active';
+    const canActivate = !inTranse && isRageFull(player) && gameState.combatState === 'active' && (currentTurn === 'player' || decoupled());   // jauge pleine : on déclenche la Xiūxiān en la touchant
+    const ultimateReady = false;   // plus d'ultime à jauge : les invocations sont des sorts du Mage (gameSpellList.js)
     const ultimateManaReached = !!equippedUltimate && (player.cheatFreeSpells === true || canCastUltimateMana(player, equippedUltimate));   // clignote seulement si le qì collecté suffit aussi
+    renderXiuButton({ equippedUltimate, inTranse, canActivate, ultimateReady, ultimateManaReached, gaugeLevel });
     // Héros avec jauge de rage : sa fiche est déjà bien remplie, la fiche ennemie reçoit plus de largeur (style.css `.has-rage`).
     document.querySelector('.stats-container')?.classList.toggle('has-rage', true);
     // Affichage de la classe si définie
     Promise.resolve(classIcon(player.class)).then(emoji => {
         playerDiv.innerHTML = `
-            <div class="stat row-name"><span class="enemy-combat-name" title="${escapeHtml(player.name || 'Hou Yi')}">${emoji} ${escapeHtml((player.name || 'Hou Yi').split(' ')[0])}</span>${bonusTurnBadge(player)}</div>
-            ${statusBadgesHtml(player) || STATUS_ROW_PLACEHOLDER}
-            <div class="stat row-hp">
-                <div class="hp-bar-container">
-                    <progress value="${initPlayerHp}" max="${playerShield.max}"></progress>${playerShield.bar}
-                    <span class="hp-text"><span id="player-hp-current">${targetPlayerHp}</span>/${player.maxHp}${playerShield.text}</span>
-                </div>
-            </div>
-            ${true ? `
-            <div class="stat rage-stat row-rage">
-                <div class="rage-bar-container${isRageFull(player) ? ' full' : ''}${inTranse ? ' in-transe' : ''}${canActivate ? ' xiu-ready' : ''}${ultimateReady ? ' ultimate-ready' : ''}${ultimateReady && ultimateManaReached ? ' mana-reached' : ''}"${ultimateReady || canActivate ? ' role="button" tabindex="0"' : ''}>
-                    <div class="rage-bar" role="progressbar" aria-valuemin="0" aria-valuemax="${RAGE_MAX}" aria-valuenow="${Math.floor(player.rage || 0)}"><div class="rage-fill" style="height:${Math.min(100, Math.max(0, gaugeLevel))}%"></div></div>
-                    <span class="rage-text" title="${ultimateReady ? 'ULTIME' : canActivate ? 'DÉCLENCHER LA XIŪXIĀN' : inTranse ? 'XIŪXIĀN' : `XIŪXIĀN ${Math.floor(player.rage || 0)}`}">${ultimateReady ? '★' : canActivate ? '!' : inTranse ? `T${Math.max(1, Math.floor(player.transe || 1))}` : Math.floor(player.rage || 0)}</span>
-                </div>
-                ${equippedUltimate ? ultimateManaBarHtml(player, equippedUltimate) : ''}
-            </div>
-            ` : ''}
-            <div class="stat stat-row row-stats"><span class="level-pill" title="Niveau ${player.level}">${player.level}</span><span class="stat-chip" title="Attaque"><strong>Att.</strong> ${statValueHtml(player, 'attack')}</span><span class="stat-chip" title="Défense"><strong>Déf.</strong> ${statValueHtml(player, 'defense')}</span></div>
+            ${bonusTurnBadge(player) ? `<div class="stat row-name">${bonusTurnBadge(player)}</div>` : ''}
             <div class="stat row-pills">
                 <div class="mana-dots">
                     <span id="player-mana-red" class="cost-badge mana-red" title="red">${targetPlayerMana.red}</span>
@@ -228,26 +238,7 @@ export function updateStats(){
                 </div>
             </div>`;
         
-        {
-            const rageBar = playerDiv.querySelector('.rage-bar-container');
-            if(ultimateReady || canActivate){
-                const fire = () => { if(ultimateReady) castUltimate(equippedUltimate.id); else activateXiuxian(); };
-                rageBar.onclick = fire;
-                rageBar.onkeydown = (event) => {
-                    if(event.key === 'Enter' || event.key === ' ') {
-                        event.preventDefault();
-                        fire();
-                    }
-                };
-            }
-            // Fiche (nom, qì requis, effet) : survol, ou appui long au doigt (qui ne lance pas l'ultime).
-            bindTooltip(rageBar, () => { const t = ensureSpellTooltip(); t.innerHTML = ultimateReady ? getUltimateTooltipHtml(player, equippedUltimate) : transeTooltipHtml(player, equippedUltimate); t.classList.add('visible'); placeTooltip(t, rageBar, 260); }, () => hideSpellTooltip());
-        }
-
         // Animer les compteurs si les valeurs ont changé
-        const playerProgressEl = playerDiv.querySelector('.hp-bar-container progress');
-        syncHpShield(playerProgressEl);
-        _animateHpBar('player-hp-current', initPlayerHp, targetPlayerHp, playerProgressEl);
         for (const c of ['red','blue','green','yellow','purple']) {
             _animateCounter(`player-mana-${c}`, snapPlayerMana[c], targetPlayerMana[c]);
         }
@@ -260,25 +251,31 @@ export function updateStats(){
     
     const enemyDiv=document.getElementById('enemy-stats');
     enemyDiv.classList.toggle('active-turn', currentTurn === 'enemy');
+    // Plusieurs ennemis : leur ligne de pastilles (foesView.js) porte noms et vies ; la fiche ne montre plus que la réserve commune de qì et de PA.
+    enemyDiv.classList.toggle('pool-only', gameState.combatState === 'active' && (gameState.foes || []).filter(f => f.hp > 0).length > 1);
     
     // Icône de la classe de l'ennemi
     const enemyClassEmoji = classIcon(enemy.playerClass);
     
-    // Afficher un indicateur visuel si l'ennemi est plus fort
-    const levelIndicator = enemy.level > player.level ? 
-        `<span class="level-pill level-pill-danger" title="Niveau ${enemy.level} : plus fort que vous">${enemy.level}</span>` : 
-        `<span class="level-pill" title="Niveau ${enemy.level}">${enemy.level}</span>`;
-    
     enemyDiv.innerHTML = `
-        <div class="stat row-name"><span class="enemy-combat-name${enemyNameIsHanzi(enemy, enemyNameAsHanzi) ? ' name-hanzi' : ''}" data-full-name="${enemy.name}" aria-label="Nom complet: ${enemy.name}">${enemyClassEmoji} ${escapeHtml(enemyNameLabel(enemy, enemyNameAsHanzi))}</span>${enemy.personality === 'aggressive' ? '<span class="enemy-mood">en colère</span>' : ''}${bonusTurnBadge(enemy)}</div>
+        <div class="stat row-name"><span class="enemy-combat-name${enemyNameIsHanzi(enemy) ? ' name-hanzi' : ''}" data-full-name="${enemy.name}" aria-label="Nom complet: ${enemy.name}">${enemyClassEmoji} ${escapeHtml(enemyNameLabel(enemy, enemyNameAsHanzi()))}</span>${enemy.personality === 'aggressive' ? '<span class="enemy-mood">en colère</span>' : ''}${bonusTurnBadge(enemy)}</div>
         ${statusBadgesHtml(enemy) || STATUS_ROW_PLACEHOLDER}
         <div class="stat row-hp">
             <div class="hp-bar-container">
                 <progress class="enemy-bar" value="${initEnemyHp}" max="${enemy.maxHp}"></progress>
                 <span class="hp-text"><span id="enemy-hp-current">${targetEnemyHp}</span>/${enemy.maxHp}</span>
             </div>
-        </div>
-        <div class="stat stat-row row-stats">${levelIndicator}<span class="stat-chip" title="Attaque"><strong>Att.</strong> ${statValueHtml(enemy, 'attack')}</span><span class="stat-chip" title="Défense"><strong>Déf.</strong> ${statValueHtml(enemy, 'defense')}</span></div>
+        </div>`;
+    // Qì de l'ennemi : sa propre barre SOUS son bandeau (miroir de la barre de qì de Hou Yi, au-dessus de son bouton).
+    let enemyQi = document.getElementById('enemy-qi');
+    if(!enemyQi){
+        enemyQi = document.createElement('div');
+        enemyQi.id = 'enemy-qi';
+        enemyQi.className = 'qi-strip enemy-qi';
+        enemyQi.setAttribute('aria-label', "Qì de l'ennemi");
+        enemyDiv.after(enemyQi);
+    }
+    enemyQi.innerHTML = `
         <div class="stat row-pills">
             <div class="mana-dots">
                 <span id="enemy-mana-red" class="cost-badge mana-red" title="red">${targetEnemyMana.red}</span>
@@ -305,15 +302,20 @@ export function updateStats(){
     if(!enemyDiv.dataset.nameToggleBound) {
         enemyDiv.dataset.nameToggleBound = '1';
         enemyDiv.addEventListener('click', () => {
-            enemyNameAsHanzi = !enemyNameAsHanzi;
+            toggleEnemyNameAsHanzi();
             const el = enemyDiv.querySelector('.enemy-combat-name');
             if(el){
-                el.innerHTML = `${classIcon(enemy.playerClass)} ${escapeHtml(enemyNameLabel(enemy, enemyNameAsHanzi))}`;
-                el.classList.toggle('name-hanzi', enemyNameIsHanzi(enemy, enemyNameAsHanzi));
+                el.innerHTML = `${classIcon(enemy.playerClass)} ${escapeHtml(enemyNameLabel(enemy, enemyNameAsHanzi()))}`;
+                el.classList.toggle('name-hanzi', enemyNameIsHanzi(enemy));
+            renderFoeBar();   // les pastilles du groupe suivent le même choix
             }
         });
     }
     
+    renderFoeBar();   // ennemis du combat (foesView.js), masquée contre un seul ennemi
+    renderAllyBar();   // (masquée : plus de doublon des compagnons en haut)
+    refreshClassPicker();   // PV, Xiūxiān et chargement de chaque personnage, dans sa barre d'action
+    document.getElementById('player-stats')?.classList.toggle('hero-ko', !!gameState.heroKo);   // Hou Yi à terre
     updateEnemySpells();
 }
 
@@ -333,7 +335,12 @@ export function enemySpellAsShown(sp){
     return shown;
 }
 
+const ENEMY_LISTS_VISIBLE = false;   // faux : aucune ligne sur les capacités de l'ennemi
+
 export function updateEnemySpells(){
+    // L'ennemi ne montre rien de ce qu'il peut faire (arme, objet, sorts) : le joueur le découvre en combattant.
+    ['enemy-weapon-button', 'enemy-spell-list'].forEach(id => { const el = document.getElementById(id); if(el) el.innerHTML = ''; });
+    if(!ENEMY_LISTS_VISIBLE) return;
     // Afficher l'arme ennemie (au-dessus des sorts, comme le joueur)
     const weaponContainer = document.getElementById('enemy-weapon-button');
     if (weaponContainer) {
@@ -451,6 +458,8 @@ export function getCurrentAIDifficulty() {
 
 let lastSaveErrorNotice = 0;
 export function saveUpdate(){
+    // Un compagnon tombé reste à terre d'un combat à l'autre (jusqu'à un point de repos ou une résurrection) : sa chute est mémorisée dans la sauvegarde.
+    if(gameState.allies && !enemy?.isTutorialEnemy && !enemy?.duel) player.downAllies = Object.values(gameState.allies).filter(a => a?.ko).map(a => a.classId);
     clampManaToCaps(player);
     storeGauge(player);   // une jauge de Xiūxiān par classe : la jauge affichée est rangée avant l'écriture
     try {

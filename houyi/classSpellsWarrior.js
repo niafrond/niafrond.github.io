@@ -2,7 +2,7 @@
 import { escapeHtml } from "./escapeHtml.js";
 import { flyManaGain, flyManaSteal, flyHeal } from './manaFlight.js';
 import { healEntity, inflictTurnLoss } from './alterations.js';
-import { player, enemy, log, saveUpdate, showCombatAnimation, applyDamage, lastSpellDamage, addBonusTurn } from './game.js';
+import { player, enemy, log, saveUpdate, showCombatAnimation, applyDamage, lastSpellDamage, addBonusTurn, grantActionBonus } from './game.js';
 import { board, renderBoard, setBoardTargetingMode, checkMatches } from './board.js';
 import { stackStatusEffect, addStatBuff, describeStatBuff } from './combatStats.js';
 import { isJokerTile, skullValue } from './joker.js';
@@ -22,8 +22,8 @@ export function applyStoneskin(spell) {
     const turns = Math.max(1, Math.floor(spell.duration || 1));
     stackStatusEffect(player.statusEffects, 'stoneskin', 'stoneskinDefense', turns, bonus);
     player.defense = (player.defense || 0) + bonus;
-    showCombatAnimation({ icon: 'rock', title: "PEAU DE JADE", heal: `+${bonus} défense`, target: `→ Vous (${turns} tours)` }, true);
-    log(`Peau de Jade augmente la défense de ${bonus} pendant ${turns} tours.`);
+    showCombatAnimation({ icon: 'rock', title: (spell.name || "PEAU DE JADE").toUpperCase(), heal: `+${bonus} défense`, target: `→ Vous (${turns} tours)` }, true);
+    log(`${spell.name} augmente la défense de ${bonus} pendant ${turns} tours.`);
     return true;
 }
 
@@ -32,7 +32,7 @@ export function applyStrength(spell) {
     const turns = Math.max(1, Math.floor(spell.duration || 1));
     stackStatusEffect(player.statusEffects, 'strength', 'strengthBonus', turns, bonus);
     player.attack += bonus;
-    showCombatAnimation({ icon: 'muscle', title: "FORCE DU TIGRE", damage: `+${bonus} attaque`, target: `→ Vous (${turns} tours)` }, true);
+    showCombatAnimation({ icon: 'muscle', title: (spell.name || "FORCE DU TIGRE").toUpperCase(), damage: `+${bonus} attaque`, target: `→ Vous (${turns} tours)` }, true);
     log(`Force augmente l'attaque physique de ${bonus} pendant ${turns} tours.`);
     return true;
 }
@@ -41,7 +41,7 @@ export function applyMirrorShield(spell) {
     const percent = Math.max(0, Math.floor(spell.reflectPercent || 0));
     const turns = Math.max(1, Math.floor(spell.duration || 1));
     stackStatusEffect(player.statusEffects, 'reflectDamage', 'reflectDamagePercent', turns, percent, 100);
-    showCombatAnimation({ icon: 'mirror', title: "MIROIR DE BRONZE", damage: `${percent}% renvoyés`, target: `→ Vous (${turns} tours)` }, true);
+    showCombatAnimation({ icon: 'mirror', title: (spell.name || "MIROIR DE BRONZE").toUpperCase(), damage: `${percent}% renvoyés`, target: `→ Vous (${turns} tours)` }, true);
     log(`Miroir de Bronze renverra ${percent}% des dégâts pendant ${turns} tours.`);
     return true;
 }
@@ -49,7 +49,7 @@ export function applyMirrorShield(spell) {
 export function applyManaSiphon(spell) {
     const stealTotal = Math.max(0, Math.floor(spell.manaSteal || 0));
     if(stealTotal <= 0) {
-        log(`Aspiration du Qi n'a aucun effet (manaSteal invalide).`);
+        log(`${spell.name} n'a aucun effet (manaSteal invalide).`);
         return false;
     }
 
@@ -69,8 +69,8 @@ export function applyManaSiphon(spell) {
     });
 
     flyManaSteal(true, stolen);
-    showCombatAnimation({ icon: 'swirl', title: "ASPIRATION DU QI", damage: `-${drained} qì ennemi`, target: '→ Vous' }, true);
-    log(`Aspiration du Qi absorbe ${drained} qì ennemi.`);
+    showCombatAnimation({ icon: 'swirl', title: (spell.name || "ASPIRATION DU QI").toUpperCase(), damage: `-${drained} qì ennemi`, target: '→ Vous' }, true);
+    log(`${spell.name} absorbe ${drained} qì ennemi.`);
     return true;
 }
 
@@ -78,9 +78,9 @@ export function applyManaSiphon(spell) {
 export function applySneakAttack(spell) {
     applyDamage(enemy, spell.dmg, { sourceSpell: spell });
     const sneakDmg = lastSpellDamage(spell.dmg);
-    addBonusTurn(player);
-    showCombatAnimation({ icon: 'sword', title: "TIR FURTIF", damage: `-${sneakDmg} dégâts · TOUR BONUS`, target: `→ ${enemy.name} · vous rejouez !` }, true);
-    log(`Tir Furtif inflige ${sneakDmg} dégâts et vous donne un tour bonus !`);
+    const refilled = grantActionBonus(player, spell);   // actions indépendantes du plateau : la barre d'action se remplit aussitôt
+    showCombatAnimation({ icon: 'sword', title: (spell.name || "TIR FURTIF").toUpperCase(), damage: `-${sneakDmg} dégâts · ${refilled ? 'BARRE REMPLIE' : 'TOUR BONUS'}`, target: `→ ${enemy.name} · ${refilled ? 'vous pouvez agir de nouveau !' : 'vous rejouez !'}` }, true);
+    log(refilled ? `Tir Furtif inflige ${sneakDmg} dégâts et remplit aussitôt votre barre d'action !` : `Tir Furtif inflige ${sneakDmg} dégâts et vous donne un tour bonus !`);
     return true;
 }
 
@@ -96,14 +96,14 @@ export function applySwiftStrike(spell) {
     applyDamage(enemy, dmg, { sourceSpell: spell });
     dmg = lastSpellDamage(dmg);
     renderBoard();
-    showCombatAnimation({ icon: 'bolt', title: "TIR RAPIDE", damage: `-${dmg} dégâts`, target: `→ ${enemy.name}` }, true);
+    showCombatAnimation({ icon: 'bolt', title: (spell.name || "TIR RAPIDE").toUpperCase(), damage: `-${dmg} dégâts`, target: `→ ${enemy.name}` }, true);
     log(`Tir Rapide convertit ${count} gâteaux de lune jaunes et inflige ${dmg} dégâts !`);
     return true;
 }
 
 export function applyConfuse(spell) {
     enemy.statusEffects.confused = spell.duration;
-    showCombatAnimation({ icon: 'dizzy', title: "FLÈCHE DE BRUME", damage: '−qì/combo', target: `→ ${enemy.name} (${spell.duration} tours)` }, true);
+    showCombatAnimation({ icon: 'dizzy', title: (spell.name || "FLÈCHE DE BRUME").toUpperCase(), damage: '−qì/combo', target: `→ ${enemy.name} (${spell.duration} tours)` }, true);
     log(`Flèche de Brume : l'ennemi est confus pendant ${spell.duration} tours : 1 qì par combinaison, et ses attaques peuvent se retourner contre lui !`);
     return true;
 }
@@ -111,16 +111,16 @@ export function applyConfuse(spell) {
 export function applyStealth(spell) {
     const turns = spell.duration || 1;
     player.statusEffects.manaShield = { color: 'purple', turns };
-    showCombatAnimation({ icon: 'eye', title: "VOILE DE BRUME", damage: 'Dégâts -> qì violet', target: `→ Vous (${turns} tour${turns > 1 ? 's' : ''})` }, true);
-    log(`Voile de Brume active: les prochains dégâts sont absorbés par le qì violet.`);
+    showCombatAnimation({ icon: 'eye', title: (spell.name || "VOILE DE BRUME").toUpperCase(), damage: 'Dégâts -> qì violet', target: `→ Vous (${turns} tour${turns > 1 ? 's' : ''})` }, true);
+    log(`${spell.name} active: les prochains dégâts sont absorbés par le qì violet.`);
     return true;
 }
 
 export function applyPoison(spell) {
     enemy.statusEffects.poisoned = spell.duration;
     enemy.statusEffects.poisonDamage = spell.poisonDmg;
-    showCombatAnimation({ icon: 'poison', title: "FLÈCHE EMPOISONNÉE", damage: `${spell.poisonDmg} dégâts/tour`, target: `→ ${enemy.name} (${spell.duration} tours)` }, true);
-    log(`Flèche Empoisonnée applique un poison de ${spell.poisonDmg} dégâts/tour pendant ${spell.duration} tours !`);
+    showCombatAnimation({ icon: 'poison', title: (spell.name || "FLÈCHE EMPOISONNÉE").toUpperCase(), damage: `${spell.poisonDmg} dégâts/tour`, target: `→ ${enemy.name} (${spell.duration} tours)` }, true);
+    log(`${spell.name} applique un poison de ${spell.poisonDmg} dégâts/tour pendant ${spell.duration} tours !`);
     return true;
 }
 
@@ -140,13 +140,13 @@ export function applyShadowStrike(spell) {
     applyDamage(enemy, dmg, { sourceSpell: spell });
     dmg = lastSpellDamage(dmg);
     renderBoard();
-    showCombatAnimation({ icon: 'moon', title: "FLÈCHE D'OMBRE", damage: `-${dmg} dégâts`, target: `→ ${enemy.name}` }, true);
+    showCombatAnimation({ icon: 'moon', title: (spell.name || "FLÈCHE D'OMBRE").toUpperCase(), damage: `-${dmg} dégâts`, target: `→ ${enemy.name}` }, true);
     log(`Flèche d'Ombre détruit ${count} gâteaux de lune violettes, inflige ${dmg} dégâts et fait récupérer ${manaCollected.total} qì à ${escapeHtml(caster.name)}.`);
     return true;
 }
 
 export function applyDualShot(spell) {
-    const weapons = Array.isArray(player.weapons) ? player.weapons : [];
+    const weapons = Array.isArray(player.weapons) ? player.weapons.filter(w => !w.companion) : [];
     if(weapons.length < 2) {
         log(`Flèches Jumelles nécessite au moins 2 armes dans l'inventaire.`);
         return false;
@@ -156,7 +156,7 @@ export function applyDualShot(spell) {
     let totalDmg = Math.max(1, Math.floor((sorted[0].damage || 0) + (sorted[1].damage || 0)));
     applyDamage(enemy, totalDmg, { sourceSpell: spell });
     totalDmg = lastSpellDamage(totalDmg);
-    showCombatAnimation({ icon: 'target', title: "FLÈCHES JUMELLES", damage: `-${totalDmg} dégâts`, target: `→ ${enemy.name}` }, true);
+    showCombatAnimation({ icon: 'target', title: (spell.name || "FLÈCHES JUMELLES").toUpperCase(), damage: `-${totalDmg} dégâts`, target: `→ ${enemy.name}` }, true);
     log(`Flèches Jumelles inflige ${totalDmg} dégâts (2 meilleures armes + attaque).`);
     return true;
 }
@@ -177,8 +177,8 @@ export function applyDefensiveWall(spell) {
     const defenseGain = count * 5;
     player.defense = (player.defense || 0) + defenseGain;
     renderBoard();
-    showCombatAnimation({ icon: 'shield', title: "MURAILLE IMPÉRIALE", heal: `+${defenseGain} défense`, target: '→ Vous' }, true);
-    log(`Muraille Impériale détruit ${count} gâteaux de lune violettes: +${defenseGain} défense et +${manaCollected.total} qì pour ${escapeHtml(caster.name)}.`);
+    showCombatAnimation({ icon: 'shield', title: (spell.name || "MURAILLE IMPÉRIALE").toUpperCase(), heal: `+${defenseGain} défense`, target: '→ Vous' }, true);
+    log(`${spell.name} détruit ${count} gâteaux de lune violettes: +${defenseGain} défense et +${manaCollected.total} qì pour ${escapeHtml(caster.name)}.`);
     return true;
 }
 
@@ -192,7 +192,7 @@ export function applyShieldBash(spell) {
     delete player.statusEffects.poisoned;
     delete player.statusEffects.stunned;
     delete player.statusEffects.weakened;
-    showCombatAnimation({ icon: 'shield', title: "COUP DE BOUCLIER ROND", damage: `-${totalDmg} dégâts`, target: `→ ${enemy.name}` }, true);
+    showCombatAnimation({ icon: 'shield', title: (spell.name || "COUP DE BOUCLIER ROND").toUpperCase(), damage: `-${totalDmg} dégâts`, target: `→ ${enemy.name}` }, true);
     log(`Coup de Bouclier Rond inflige ${totalDmg} dégâts et retire les statuts négatifs !`);
     return true;
 }
@@ -215,7 +215,7 @@ export function applyFocus(spell) {
             board[index] = 'combat';
             setBoardTargetingMode(null);
             renderBoard();
-            showCombatAnimation({ icon: 'sword', title: "CONCENTRATION DU QI", damage: 'Flèche créée', target: '→ Plateau' }, true);
+            showCombatAnimation({ icon: 'sword', title: (spell.name || "CONCENTRATION DU QI").toUpperCase(), damage: 'Flèche créée', target: '→ Plateau' }, true);
             log(`Concentration du Qi transforme la gemme choisie en Action Gem.`);
             saveUpdate();
             checkMatches(true);
@@ -231,7 +231,7 @@ export function applyIntimidate(spell) {
     const stolen = Math.min(spell.cpSteal, enemy.combatPoints);
     enemy.combatPoints -= stolen;
     player.combatPoints += stolen;
-    showCombatAnimation({ icon: 'anger', title: "REGARD IMPÉRIAL", damage: `-${stolen} PA`, target: `→ ${enemy.name}` }, true);
+    showCombatAnimation({ icon: 'anger', title: (spell.name || "REGARD IMPÉRIAL").toUpperCase(), damage: `-${stolen} PA`, target: `→ ${enemy.name}` }, true);
     log(`Regard Impérial vole ${stolen} points de combat à l'ennemi !`);
     return true;
 }
@@ -239,12 +239,12 @@ export function applyIntimidate(spell) {
 export function applyRush(spell) {
     const stun = inflictTurnLoss(enemy, 'stunned', 2);   // plafonné à 2 tours ; ne se cumule pas avec un autre étourdissement ou sommeil
     if(!stun.landed) {
-        showCombatAnimation({ icon: 'wind', title: "CHARGE DE CAVALERIE", damage: 'Résisté', target: `→ ${enemy.name}` }, true);
-        log(stun.reason === 'immune' ? `${enemy.name} est immunisé contre la Charge de Cavalerie.` : `${enemy.name} résiste à la Charge de Cavalerie (résistance aux contrôles).`);
+        showCombatAnimation({ icon: 'wind', title: (spell.name || "CHARGE DE CAVALERIE").toUpperCase(), damage: 'Résisté', target: `→ ${enemy.name}` }, true);
+        log(stun.reason === 'immune' ? `${enemy.name} est immunisé contre « ${spell.name} ».` : `${enemy.name} résiste à « ${spell.name} » (résistance aux contrôles).`);
         return true;
     }
-    showCombatAnimation({ icon: 'wind', title: "CHARGE DE CAVALERIE", damage: `Étourdi ${stun.turns} tours`, target: `→ ${enemy.name}` }, true);
-    log(`Charge de Cavalerie étourdit l'ennemi pour ${stun.turns} tours !`);
+    showCombatAnimation({ icon: 'wind', title: (spell.name || "CHARGE DE CAVALERIE").toUpperCase(), damage: `Étourdi ${stun.turns} tours`, target: `→ ${enemy.name}` }, true);
+    log(`${spell.name} étourdit l'ennemi pour ${stun.turns} tours !`);
     return true;
 }
 
@@ -253,8 +253,8 @@ export function applyCounterAttack(spell) {
     const counterDmg = Math.max(1, Math.floor(spell.counterDmg || 1));
     player.statusEffects.counterOnBlock = turns;
     player.statusEffects.counterOnBlockDmg = counterDmg;
-    showCombatAnimation({ icon: 'shield', title: "RIPOSTE DU GARDE", damage: `${counterDmg} dégâts de riposte`, target: `→ Vous (${turns} tours)` }, true);
-    log(`Riposte du Garde active: ${counterDmg} dégâts renvoyés en blocage pendant ${turns} tours.`);
+    showCombatAnimation({ icon: 'shield', title: (spell.name || "RIPOSTE DU GARDE").toUpperCase(), damage: `${counterDmg} dégâts de riposte`, target: `→ Vous (${turns} tours)` }, true);
+    log(`${spell.name} active: ${counterDmg} dégâts renvoyés en blocage pendant ${turns} tours.`);
     return true;
 }
 
@@ -268,7 +268,7 @@ export function applyReinforce(spell) {
     }
 
     if(count <= 0) {
-        log(`Aucune Action Gem à détruire pour Renfort des Troupes.`);
+        log(`Aucune Action Gem à détruire pour ${spell.name}.`);
         return false;
     }
 
@@ -276,16 +276,16 @@ export function applyReinforce(spell) {
     healEntity(player, heal);   // Corrompu : le soin blesse
     flyHeal(true, heal);
     renderBoard();
-    showCombatAnimation({ icon: 'spark', title: "RENFORT DES TROUPES", heal: `+${heal} HP`, target: '→ Vous' }, true);
-    log(`Renfort des Troupes détruit ${count} Action Gem(s) et soigne ${heal} HP.`);
+    showCombatAnimation({ icon: 'spark', title: (spell.name || "RENFORT DES TROUPES").toUpperCase(), heal: `+${heal} HP`, target: '→ Vous' }, true);
+    log(`${spell.name} détruit ${count} Action Gem(s) et soigne ${heal} HP.`);
     return true;
 }
 
 export function applyBarrier(spell) {
     stackStatusEffect(player.statusEffects, 'barrier', 'barrierDefense', spell.duration, spell.defenseBonus);
     player.defense = (player.defense || 0) + spell.defenseBonus;
-    showCombatAnimation({ icon: 'shield', title: "REMPART DE JADE", heal: `+${spell.defenseBonus} défense`, target: `→ Vous (${spell.duration} tours)` }, true);
-    log(`Rempart de Jade augmente la défense de ${spell.defenseBonus} pendant ${spell.duration} tours !`);
+    showCombatAnimation({ icon: 'shield', title: (spell.name || "REMPART DE JADE").toUpperCase(), heal: `+${spell.defenseBonus} défense`, target: `→ Vous (${spell.duration} tours)` }, true);
+    log(`${spell.name} augmente la défense de ${spell.defenseBonus} pendant ${spell.duration} tours !`);
     return true;
 }
 
@@ -299,7 +299,7 @@ export function applyDivinePower(spell) {
 
     player.mana.yellow = Math.min(getManaCap('yellow'), player.mana.yellow + yellowGain);
     flyManaGain(true, { yellow: yellowGain });
-    showCombatAnimation({ icon: 'star', title: "MANDAT DU CIEL", heal: `+${yellowGain} qì jaune`, target: '→ Vous' }, true);
+    showCombatAnimation({ icon: 'star', title: (spell.name || "MANDAT DU CIEL").toUpperCase(), heal: `+${yellowGain} qì jaune`, target: '→ Vous' }, true);
     log(`Mandat du Ciel convertit la défense en +${yellowGain} qì jaune.`);
     return true;
 }
@@ -307,15 +307,15 @@ export function applyDivinePower(spell) {
 export function applyHoldTheLine(spell) {
     const turns = Math.max(1, Math.floor(spell.duration || 1));
     player.statusEffects.immunityEffects = turns;
-    showCombatAnimation({ icon: 'shield', title: "FORMATION DE LA TORTUE", damage: 'Immunité aux effets', target: `→ Vous (${turns} tours)` }, true);
-    log(`Formation de la Tortue: immunité aux effets négatifs pendant ${turns} tours.`);
+    showCombatAnimation({ icon: 'shield', title: (spell.name || "FORMATION DE LA TORTUE").toUpperCase(), damage: 'Immunité aux effets', target: `→ Vous (${turns} tours)` }, true);
+    log(`${spell.name}: immunité aux effets négatifs pendant ${turns} tours.`);
     return true;
 }
 
 export function applyBlockAll(spell) {
     const turns = Math.max(1, Math.floor(spell.duration || 1));
     player.statusEffects.shieldWall = Math.max(player.statusEffects.shieldWall || 0, turns);
-    showCombatAnimation({ icon: 'shield', title: "BASTION INFRANCHISSABLE", damage: 'Blocage total', target: `→ Vous (${turns} tours)` }, true);
+    showCombatAnimation({ icon: 'shield', title: (spell.name || "BASTION INFRANCHISSABLE").toUpperCase(), damage: 'Blocage total', target: `→ Vous (${turns} tours)` }, true);
     log(`Bastion Infranchissable: toutes les attaques sont bloquées pendant ${turns} tours.`);
     return true;
 }
@@ -339,7 +339,7 @@ export function applyHeavensWrath(spell) {
     applyDamage(enemy, totalDmg, { sourceSpell: spell });
     totalDmg = lastSpellDamage(totalDmg);
     renderBoard();
-    showCombatAnimation({ icon: 'bolt', title: "COURROUX DU CIEL", damage: `-${totalDmg} dégâts`, target: `→ ${enemy.name}` }, true);
+    showCombatAnimation({ icon: 'bolt', title: (spell.name || "COURROUX DU CIEL").toUpperCase(), damage: `-${totalDmg} dégâts`, target: `→ ${enemy.name}` }, true);
     log(`Courroux du Ciel fait exploser ${count} Action Gem(s) pour ${totalDmg} dégâts.`);
     return true;
 }
@@ -347,8 +347,8 @@ export function applyHeavensWrath(spell) {
 // BARBARIAN SPELLS
 export function applyEnrage(spell) {
     stackStatusEffect(player.statusEffects, 'enraged', 'enragedBonus', spell.duration, spell.atkBonus);
-    addBonusTurn(player);
-    showCombatAnimation({ icon: 'anger', title: "FUREUR DES STEPPES", damage: `+${spell.atkBonus} dégâts`, target: `→ Vous (${spell.duration} tours)` }, true);
+    grantActionBonus(player, spell);   // la barre d'action se remplit aussitôt (tour bonus d'avant)
+    showCombatAnimation({ icon: 'anger', title: (spell.name || "FUREUR DES STEPPES").toUpperCase(), damage: `+${spell.atkBonus} dégâts`, target: `→ Vous (${spell.duration} tours)` }, true);
     log(`Fureur des Steppes augmente de ${spell.atkBonus} tous vos dégâts (crânes, armes, sorts) pendant ${spell.duration} tours !`);
     return true;
 }
@@ -369,7 +369,7 @@ export function applyCleave(spell) {
     applyDamage(enemy, dmg, { sourceSpell: spell });
     dmg = lastSpellDamage(dmg);
     renderBoard();
-    showCombatAnimation({ icon: 'axe', title: "ENTAILLE DE LA HORDE", damage: `-${dmg} dégâts`, target: `→ ${enemy.name}` }, true);
+    showCombatAnimation({ icon: 'axe', title: (spell.name || "ENTAILLE DE LA HORDE").toUpperCase(), damage: `-${dmg} dégâts`, target: `→ ${enemy.name}` }, true);
     log(`Entaille de la Horde détruit ${count} gâteaux de lune jaunes, inflige ${dmg} dégâts et récupère ${manaCollected.total} qì pour ${escapeHtml(caster.name)}.`);
     return true;
 }
@@ -392,7 +392,7 @@ export function applyThrowAxe(spell) {
 export function applyBloodlust(spell) {
     player.mana.red = Math.min(getManaCap('red'), player.mana.red + spell.manaGain);
     flyManaGain(true, { red: spell.manaGain });
-    showCombatAnimation({ icon: 'blood', title: "SOIF DE BATAILLE", heal: `+${spell.manaGain} qì rouge`, target: '→ Vous' }, true);
+    showCombatAnimation({ icon: 'blood', title: (spell.name || "SOIF DE BATAILLE").toUpperCase(), heal: `+${spell.manaGain} qì rouge`, target: '→ Vous' }, true);
     log(`Soif de Bataille donne +${spell.manaGain} qì rouge !`);
     return true;
 }

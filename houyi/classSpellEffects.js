@@ -98,7 +98,7 @@ function collectDestroyedSpecialTiles(caster, destroyedTiles = []) {
             addBonusTurn(caster);
             playSfx('turnBonus');
             log(`${skulls} crânes détruits : tour bonus gagné par ${caster === player ? 'le joueur' : "l'ennemi"}`);
-            showCombatAnimation({ icon: 'gift', title: 'TOUR BONUS !', damage: `${skulls} crânes détruits`, target: caster === player ? 'Vous rejouez !' : "L'ennemi rejoue !" }, caster === player);
+            showCombatAnimation({ icon: 'gift', title: 'TOUR BONUS !', plain: true, damage: `${skulls} crânes détruits`, target: caster === player ? 'Vous rejouez !' : "L'ennemi rejoue !" }, caster === player);
         }
         if(skulls >= 4 && caster === player) {
             const bonusXp = grantBigMatchXP(skulls);

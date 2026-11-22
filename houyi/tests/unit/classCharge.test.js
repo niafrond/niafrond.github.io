@@ -1,12 +1,12 @@
 import { describe, test, expect } from '@jest/globals';
-import { CHARGE_BASE, CHARGE_MIN, classChargeTime, enemyChargeTime, newCharge, classChargeMs, enemyChargeMs, chargeTick, isClassReady, classProgress, classRemainingMs, spendClass, spendEnemy, isEnemyReady, chargeRunning, chargeSpeed, BOARD_IDLE_PAUSE_MS, initCharge, startChargePctOf, newActionQueue, enqueueAction, takeNextDue, hasQueuedAction, upcomingBeads } from '../../classCharge.js';
+import { ENEMY_CHARGE_FACTOR, CHARGE_BASE, CHARGE_MIN, classChargeTime, enemyChargeTime, newCharge, classChargeMs, enemyChargeMs, chargeTick, isClassReady, classProgress, classRemainingMs, spendClass, spendEnemy, isEnemyReady, chargeRunning, chargeSpeed, BOARD_IDLE_PAUSE_MS, initCharge, startChargePctOf, newActionQueue, enqueueAction, takeNextDue, hasQueuedAction, upcomingBeads } from '../../classCharge.js';
 
 const hero = (extra = {}) => ({ attributes: {}, mana: {}, skills: {}, ...extra });
 
 describe('classCharge : temps de chargement des classes', () => {
     test('sans bonus : temps de base', () => {
         expect(classChargeTime(hero(), 'assassin')).toBe(CHARGE_BASE);
-        expect(enemyChargeTime({ level: 0 })).toBe(CHARGE_BASE);
+        expect(enemyChargeTime({ level: 0 })).toBe(Math.round(CHARGE_BASE * ENEMY_CHARGE_FACTOR));   // l'ennemi est plus lent à bonus égal
     });
     test('agilité, moral, attribut propre et qì réduisent le chargement', () => {
         const slow = classChargeTime(hero(), 'assassin');
@@ -78,11 +78,11 @@ describe('classCharge : temps de chargement des classes', () => {
     });
     test('tempo : plateau inactif depuis 5 s, les chargements se mettent en pause ; un combo les relance', () => {
         expect(BOARD_IDLE_PAUSE_MS).toBe(5000);
-        expect(chargeRunning(1000, 0)).toBe(true);
+        expect(chargeRunning(100, 0)).toBe(true);
         expect(chargeRunning(4999, 0)).toBe(true);
         expect(chargeRunning(5000, 0)).toBe(false);
         expect(chargeRunning(9000, 0)).toBe(false);
-        expect(chargeRunning(9000, 8500)).toBe(true);   // un combo vient d'avoir lieu
+        expect(chargeRunning(9000, 4500)).toBe(true);   // un combo vient d'avoir lieu
     });
 
     test('début de combat : toutes les barres (classes et ennemi) sont vides', () => {

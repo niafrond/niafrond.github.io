@@ -48,3 +48,40 @@ describe('un mot de chinois', () => {
         expect(() => nextLesson({ getItem() { throw new Error('x'); }, setItem() { throw new Error('x'); } })).not.toThrow();
     });
 });
+
+describe('mot déclaré connu en fin de combat', () => {
+    const mem = () => { const m = new Map(); return { getItem: k => m.get(k) ?? null, setItem: (k, v) => m.set(k, String(v)) }; };
+    test("il n'est plus jamais reproposé et ne fait sauter aucun autre mot du lot", () => {
+        const st = mem(), lot = LESSON_LOTS[0];
+        const a = nextLesson(st);
+        expect(a.hanzi).toBe(lot[0].hanzi);
+        setKnown(a.hanzi, true, st);   // la coche de la carte
+        expect(nextLesson(st).hanzi).toBe(lot[1].hanzi);   // le suivant, pas le deuxième d'après
+        expect(nextLesson(st).hanzi).toBe(lot[2].hanzi);
+        const seen = Array.from({ length: 40 }, () => nextLesson(st).hanzi);
+        expect(seen).not.toContain(lot[0].hanzi);
+    });
+    test("plusieurs mots déclarés connus d'affilée : jamais reproposés, même après plusieurs passes", () => {
+        const st = mem(), proposed = [];
+        for (let i = 0; i < 300; i++) {
+            const l = nextLesson(st);
+            if (!l) break;
+            expect(knownWords(st).has(l.hanzi)).toBe(false);
+            proposed.push(l.hanzi);
+            if (i % 2 === 0) setKnown(l.hanzi, true, st);
+        }
+        expect(proposed.length).toBeGreaterThan(100);
+    });
+    test('ancien format de sauvegarde (rang) : la progression est reprise sans erreur', () => {
+        const st = mem();
+        st.setItem(LESSON_STORAGE_KEY, JSON.stringify({ lot: 0, pos: 2, passes: 0, known: [] }));
+        expect(nextLesson(st).hanzi).toBe(LESSON_LOTS[0][2].hanzi);
+    });
+    test('la carte confirme la coche (« ce mot ne reviendra plus »)', async () => {
+        const { readFileSync } = await import('node:fs');
+        const src = readFileSync(new URL('../../chineseLessonsView.js', import.meta.url), 'utf8');
+        expect(src).toMatch(/Noté : ce mot ne reviendra plus\./);
+        expect(src).toMatch(/battle-result-known-note/);
+    });
+});
+

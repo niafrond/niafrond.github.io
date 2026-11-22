@@ -133,7 +133,7 @@ Objectif : localiser un module sans lire de gros fichiers. Consulter cette carte
 - `tilePainterBuildings.js` — Bâtiments de la vue d exploration (maisons, toits, portes). Extrait de tilePainter.js.
 - `tilePainterDecor.js` — Décors de bordure de la vue d exploration : pins, arbres de bordure, rochers, murs. Extrait de tilePainter.js.
 - `tilePainterTerrain.js` — Détails de sol de la vue d exploration : terre, eau, planches, tapis, dalles, détails propres à chaque région. Extrait de tilePainter.js.
-- `tutorial.js` — (sans description)
+- `tutorial.js` — duel d'entraînement scripté en 21 étapes : coups imposés, découvertes (qì, barre d'action, adversaire, altérations), sort, Xiūxiān, potion, arme
 - `ultimateCinematics.js` — Cinématiques plein écran des ultimes, façon invocations de FF9 : 4 plans portrait (incantation, apparition de l'entité,
 - `ultimates.js` — Sorts ultimes (« rage ») : une jauge se charge quand le joueur subit des dégâts ; pleine, elle permet de lancer un
 - `version.js` — (sans description)

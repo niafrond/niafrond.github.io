@@ -76,10 +76,11 @@ describe('variété et visibilité des compétences', () => {
     });
     test('une compétence jamais vue reste cachée ; celle que l\'arme enseigne devient visible, puis le reste visible', () => {
         const h = hero({ equippedWeapon: null });
-        expect(visibleSkills(h)).toEqual([]);
+        const base = 'cl_assassin_brume';   // compétence de base du Chasseur : apprise et visible d'office
+        expect(visibleSkills(h).map(s => s.id)).toEqual([base]);
         const taught = skillsTaughtBy({ id: 'arc_de_bronze', rarity: 'common' });
-        expect(visibleSkills(h, taught).map(s => s.id).sort()).toEqual([...taught].sort());
+        expect(visibleSkills(h, taught).map(s => s.id).sort()).toEqual([...taught, base].sort());
         markSeen(h, taught);
-        expect(visibleSkills(h).map(s => s.id).sort()).toEqual([...taught].sort());
+        expect(visibleSkills(h).map(s => s.id).sort()).toEqual([...taught, base].sort());
     });
 });

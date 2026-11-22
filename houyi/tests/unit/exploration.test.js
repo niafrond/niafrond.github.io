@@ -185,6 +185,7 @@ function walkTo(s, x, y) {
             last = tryMove(s, step.x - s.data.x, step.y - s.data.y, { playerLevel: WORLD_LEVEL });
             if (last.type === 'combat') { fights.push(...markEnemyDefeated(s, last.enemyId)); interrupted = true; break; }
             if (last.type === 'illusion') { interrupted = true; break; }
+            if (last.type === 'talk' && last.recruit) { talkToNpc(s, last.npcId); interrupted = true; break; }   // une recrue attend sur la route : on lui parle, puis le trajet reprend
             if (last.type !== 'moved') break;
         }
         if (!interrupted) return { ...last, fights };
@@ -288,6 +289,7 @@ function playQuest(s, id) {
     try {
         const q = s.quests.find(x => x.id === id);
         q.requires.forEach(r => playQuest(s, r));
+        if (q.startWhen?.quest && !s.data.quests[q.startWhen.quest]) talkTo(s, s.quests.find(x => x.id === q.startWhen.quest).giver);   // le maître de la 1re région n'apparaît qu'après le décret du doyen
         for (let i = 0; i < 8 && q.giver && !s.data.quests[id]; i++) talkTo(s, q.giver);   // un PNJ peut proposer une autre quête d'abord
         if (q.autoStart) checkAutoQuests(s);
         for (const o of q.objectives) {
@@ -1126,13 +1128,14 @@ describe('histoire complète', () => {
         expect(talk.lines).toEqual(quest('q_sun_1').offer);
         expect(s.data.quests.q_sun_1).toBe('active');
         expect(talkToNpc(s, 'elder_wen').lines).toEqual(quest('q_sun_1').hint);   // pas de suite tant que le soleil vit
-        expect(currentObjectiveText(s)).toContain('Soleil Ardent');
+        expect(currentObjectiveText(s)).toContain('Fuxi');   // le maître de la 1re région : un compagnon avant que le premier soleil n'apparaisse
 
         // Traversée du village, de la zone sauvage (gate : le gardien de la digue) puis duel d'entraînement : scène de Fengmeng, puis le premier soleil
         travel(s, 'rizieres');
         expect(s.data.defeated).toContain('rizieres_warden');
         let events = markEnemyDefeated(s, 'fengmeng_1');
         expect(events.map(e => e.type)).toEqual(['scene']);
+        playQuest(s, CLASS_TRIAL_GATES.rizieres[1]);   // 1re région : Fuxi (Moine) rejoint l'équipe avant que le premier soleil n'apparaisse
         events = markEnemyDefeated(s, 'sun_1');
         // victoire, interlude avec Chang'e (scènes), puis la quête suivante
         expect(events.filter(e => e.type !== 'scene').map(e => e.type)).toEqual(['questCompleted', 'questStarted']);
@@ -1151,7 +1154,8 @@ describe('histoire complète', () => {
                 expect(scene.map(e => e.type)).toEqual(['scene']);
             }
             if (CLASS_TRIAL_GATES[ORDER[n - 1]]) {   // maître de classe : le soleil n'apparaît qu'une fois l'entraînement rendu
-                expect(currentObjectiveText(s)).toContain('parlez à');
+                // la recrue attend sur la route : en traversant le village la discussion s'est déjà ouverte ; sinon le journal indique de lui parler
+                if (s.data.quests[CLASS_TRIAL_GATES[ORDER[n - 1]][1]] !== 'done') expect(currentObjectiveText(s)).toContain('parlez à');
                 playQuest(s, CLASS_TRIAL_GATES[ORDER[n - 1]][1]);
             }
             expect(s.data.quests[`q_${SUN_ID[n - 1]}`]).toBe('active');
@@ -1903,7 +1907,7 @@ describe('Nouvelle Partie +', () => {
         expect(isExitLocked(s, exitsOf(SCREENS.rizieres_wild, SCREENS).find(e => e.to === 'rizieres'))).toBe(true);
         // les ennemis d'histoire sont de retour, et l'autel est de nouveau caché
         teleportToScreen(s, 'rizieres');
-        expect(aliveEnemies(s).map(e => e.def.id)).toEqual(expect.arrayContaining(['fengmeng_1', 'sun_1']));
+        expect(aliveEnemies(s).map(e => e.def.id)).toEqual(expect.arrayContaining(['fengmeng_1']));   // le premier soleil réapparaît une fois le compagnon de la 1re région recruté
         teleportToScreen(s, 'lune');
         expect(visibleChests(s).map(c => c.id)).not.toContain('moon_altar');
     });
@@ -2198,6 +2202,7 @@ describe('indicateurs de quête : maisons et direction', () => {
         const s = createSession({});
         talkTo(s, 'elder_wen');
         expect(questStatus(s, s.quests.find(q => q.id === 'q_sun_1'))).toBe('active');
+        playQuest(s, 'q_class_monk');   // le premier soleil n'apparaît qu'une fois Fuxi recruté
         const target = s.screens[s.quests.find(q => q.id === 'q_sun_1').objectives[0] && Object.values(s.screens).find(sc => sc.enemies.some(e => e.id === 'sun_1')).id];
         travel(s, START_SCREEN);
         const dir = questDirection(s);

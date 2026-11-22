@@ -157,7 +157,6 @@ export default {
             { id: 'gobi_wild_cliff_chest', x: 43, y: 20, gold: 120 }
         ],
         enemies: [
-            { id: 'train_templar', x: 13, y: 12, templateId: 'brigand_sables', name: "Brigand de mêlée", kind: 'sentinel', offset: -1, permanent: true, training: 'templar' },
             { id: 'gobi_dune_warlord', x: 45, y: 15, templateId: 'chef_de_dune', name: 'Chef de dune, Bras-de-Sable', kind: 'sentinel', offset: 1, permanent: true, boss: { name: 'Chef de dune, Bras-de-Sable', level: 6 } },
             { id: 'gobi_golem_a', x: 18, y: 14, templateId: 'hundun', name: 'Colosse des dunes', kind: 'sentinel', offset: 0, permanent: true, group: 'dune_golems' },
             { id: 'gobi_golem_b', x: 27, y: 15, templateId: 'hundun', name: 'Colosse des dunes', kind: 'sentinel', offset: 0, permanent: true, group: 'dune_golems' },

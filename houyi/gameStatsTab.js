@@ -1,7 +1,7 @@
 // Onglet Stats détaillées du joueur et animations d'annonce (sorts, attaques) du combat.
 // Extrait de game.js.
 import { escapeHtml } from "./escapeHtml.js";
-import { spriteUri } from './sprites/index.js';
+import { spriteUri, gbaSprite, heroSprite, enemySprite } from './sprites/index.js';
 import { spellFxHtml, spellFxDurationMs, preloadSpellFx } from './spellFx.js';
 import { icon as svgIcon, manaIcon } from './icons.js';
 import { npcSprite } from './sprites/index.js';
@@ -14,10 +14,35 @@ import { isHeavyHit } from './combatStats.js';
 import { statValueHtml } from './gameInventoryTabs.js';
 import { playFighterAttack, log, saveUpdate } from './gameHud.js';
 import { resetAttributePoints, showAttributeMenu } from './gameLevelUp.js';
+import { charTabsHtml, getCharTab, bindCharTabs } from './charTabs.js';
+import { START_CLASS, CLASS_SHORT } from './classRoster.js';
+import { ALLIES, buildAlly } from './allies.js';
+import { allyEquippedWeapon } from './allyWeapons.js';
+import { allyWeaponBonus } from './weapons.js';
+import { RAGE_MAX } from './ultimates.js';
 import { COMPANION_NAMES, classIcon, companionMenuHooks, enemy, gameState, getPrimaryAttributeEffect, player } from './game.js';
 
+// Statistiques d'un compagnon (onglet Stats, un onglet par personnage) : ce que le combat utilise, tiré de la même fiche (allies.js : buildAlly).
+function allyStatsHtml(charId){
+    const ally = ALLIES[charId];
+    if(!ally) return '';
+    const a = buildAlly(player, charId);
+    const weapon = allyEquippedWeapon(player, charId);
+    const line = (icon, label, value, hint = '') => `<div class="stat-line"><span class="stat-label">${svgIcon(icon)} ${label}</span><span class="stat-value">${value}</span>${hint ? `<span class="stat-effect">${hint}</span>` : ''}</div>`;
+    return `<div class="stats-section"><h3>${escapeHtml(ally.name)}</h3>`
+        + line('idCard', 'Titre :', escapeHtml(ally.title))
+        + line('mask', 'Classe :', escapeHtml(CLASS_SHORT[charId] || charId))
+        + line('star', 'Niveau :', a.level)
+        + line('heart', 'PV max :', a.maxHp, `${Math.round(ally.hpPct * 100)} % de ceux de Hou Yi`)
+        + line('shield', 'Défense :', a.defense, `${Math.round(ally.defensePct * 100)} % de celle de Hou Yi`)
+        + line('sword', 'Attaque :', a.attack, 'La moitié de celle de Hou Yi')
+        + line('sword', 'Arme :', weapon ? `${escapeHtml(weapon.name)} (${weapon.damage} dégâts, ${weapon.actionPoints} PA, +${allyWeaponBonus(weapon)} aux sorts)` : '—')
+        + line('bolt', 'Xiūxiān :', `${Math.floor(a.rage)} / ${RAGE_MAX}`, 'Sa propre jauge, conservée d\'un combat à l\'autre')
+        + '<div class="stat-line"><span class="stat-effect">Il partage le qì de Hou Yi et a sa propre barre de vie et de chargement.</span></div></div>';
+}
+
 // mise à jour de l'onglet stats détaillées
-// Section « Compagnon » de l'onglet Stats : un seul compagnon actif à la fois, choisi parmi les recrutés (hors combat).
+// Section « Esprit gardien » (ex-compagnon) de l'onglet Stats : un seul esprit gardien actif à la fois, choisi parmi les recrutés (hors combat).
 function companionSectionHtml(){
     const choices = companionMenuHooks.getChoices?.();
     if(!choices || !choices.companions.length) return '';
@@ -27,7 +52,7 @@ function companionSectionHtml(){
         const on = choices.activeId === c.id;
         return `<div class="stat-line"><button type="button" data-companion="${c.id}" class="${on ? 'active' : 'secondary'}" aria-pressed="${on}"${locked}>${c.name}${on ? ' (actif)' : ''}</button><span class="stat-effect">${c.title}${power ? ` · ${power.name} : ${power.text}` : ''}</span></div>`;
     }).join('');
-    return `<div class="stats-section"><h3>Compagnon actif</h3>${buttons}<div class="stat-line"><span class="stat-effect">Un seul compagnon à la fois ; le changer se fait hors combat.</span></div></div>`;
+    return `<div class="stats-section"><h3>Esprit gardien actif</h3>${buttons}<div class="stat-line"><span class="stat-effect">Un seul esprit gardien à la fois ; le changer se fait hors combat.</span></div></div>`;
 }
 
 // Section « Style de Hou Yi » de l'onglet Stats : cartes au style du jeu (comme le choix de classe), modifiables hors combat.
@@ -35,7 +60,12 @@ function companionSectionHtml(){
 export function updatePlayerStatsTab(){
     const statsContent = document.getElementById('stats-content');
     if(!statsContent) return;
-    
+    // Un onglet par personnage : Hou Yi (tout ce qui suit) ou un compagnon (sa fiche)
+    const statsChar = getCharTab('stats', player);
+    const statsTabs = charTabsHtml('stats', player, 'Statistiques par personnage');
+    bindCharTabs(statsContent, 'stats', updatePlayerStatsTab);
+    if(statsChar !== START_CLASS){ statsContent.innerHTML = statsTabs + allyStatsHtml(statsChar); return; }
+
     // Import de la classe pour afficher le nom
     import('./classes.js').then(module => {
         const classData = player.class ? module.playerClasses[player.class] : null;
@@ -45,7 +75,7 @@ export function updatePlayerStatsTab(){
         const xpProgress = getXPProgress(player);
         const xpRemaining = getXPToNextLevel(player);
         
-        statsContent.innerHTML = `
+        statsContent.innerHTML = statsTabs + `
             <div class="stats-section">
                 <h3>Informations</h3>
                 <div class="stat-line">
@@ -184,7 +214,33 @@ export function foxIconHtml(){
     return uri ? `<img class="fox-portrait" src="${uri}" alt="Xiao Gui" style="width:96px;height:96px;max-width:40vw;max-height:40vw;object-fit:contain;image-rendering:pixelated">` : svgIcon('star');
 }
 
-export function showCombatAnimation({ icon, title, damage = null, heal = null, source = null, target = null }, isPlayerAttack = true, options = {}) {
+/** Scène de l'annonce d'un sort : lanceur à gauche, sort au milieu, cible à droite (Hou Yi / son équipier à gauche, l'ennemi à droite).
+ *  Le sort file vers la cible, qui clignote quand il la touche ; les sorts lancés par l'ennemi font le trajet inverse. `hit` : le sort inflige des dégâts. */
+export function spellStageHtml(fxHtml, isPlayerAttack, hit, dodged = false, lunge = false, healTarget = null) {
+    const memberSrc = id => {   // dessin d'un personnage de l'équipe : Hou Yi (« assassin ») ou un compagnon
+        const m = id && id !== START_CLASS ? gameState.allies?.[id] : null;
+        return (m && gbaSprite(m.sprite, 'right')) || gbaSprite(player.class, 'right') || heroSprite(player.class) || heroSprite('assassin');
+    };
+    const casterId = gameState.turnClass || START_CLASS;
+    const heroSrc = memberSrc(casterId);
+    const key = enemy.spriteKey || enemy.id;
+    const foeSrc = gbaSprite(key, 'left') || gbaSprite(enemy.templateId, 'left') || enemySprite(key, enemy.templateId, enemy.biome);
+    if(!heroSrc || !foeSrc) return null;
+    const img = (src, cls) => `<img class="stage-fighter ${cls}" src="${spriteUri(src)}" alt="" aria-hidden="true">`;
+    const casterHero = isPlayerAttack;
+    // Soin ou soutien sans cible hostile : l'ennemi n'a rien à faire dans la scène. Le lanceur est seul (soin sur soi) ou face au personnage soigné (soin d'un autre).
+    if(!hit) {
+        const otherSrc = casterHero && healTarget && healTarget !== casterId ? memberSrc(healTarget) : null;
+        if(otherSrc) return `<div class="spell-stage stage-ltr stage-support">${img(heroSrc, 'stage-left')}<div class="stage-mid">${fxHtml}</div>${img(otherSrc, 'stage-right stage-cast')}</div>`;
+        return `<div class="spell-stage stage-self stage-solo${casterHero ? '' : ' stage-foe'}"><div class="stage-mid">${fxHtml}</div>${img(casterHero ? heroSrc : foeSrc, 'stage-left stage-cast')}</div>`;
+    }
+    const left = img(heroSrc, 'stage-left' + (lunge && casterHero ? ' stage-lunge' : '') + (hit && !casterHero ? (dodged ? ' stage-dodge' : ' stage-hurt') : ''));
+    const right = img(foeSrc, 'stage-right' + (lunge && !casterHero ? ' stage-lunge' : '') + (hit && casterHero ? (dodged ? ' stage-dodge' : ' stage-hurt') : ''));
+    const dir = casterHero ? 'ltr' : 'rtl';
+    return `<div class="spell-stage stage-${dir}${casterHero ? '' : ' stage-foe'}">${left}<div class="stage-mid">${fxHtml}</div>${right}</div>`;
+}
+
+export function showCombatAnimation({ icon, title, damage = null, heal = null, source = null, target = null, projectile = null, plain = false, healTarget = null }, isPlayerAttack = true, options = {}) {
     // Les annonces de critique / blocage / parade restent affichées jusqu'au clic du joueur.
     if(options.requireClick === undefined && options.autoHideMs === undefined && /CRITIQUE|BLOQUÉ|paré/.test(String(damage ?? ''))) options = { ...options, requireClick: true };
     // Coup d'arme ou sort offensif : le combattant joue aussi son animation d'attaque (tir à l'arc, coup d'arme…)
@@ -192,11 +248,15 @@ export function showCombatAnimation({ icon, title, damage = null, heal = null, s
     const boardEl = document.getElementById('board');   // zone intérieure (l'overlay est dans le padding du plateau)
     const boardPx = boardEl ? Math.min(boardEl.clientWidth, boardEl.clientHeight) || Infinity : Infinity;
     const fx = spellFxHtml(title, Number.isFinite(boardPx) ? boardPx : 0);   // les sorts très chers s'étalent sur le plateau ; mini-animation pixel art du sort (plus riche pour les sorts chers), sinon l'icône
-    if(fx && options.requireClick === undefined && options.autoHideMs === undefined) options = { ...options, autoHideMs: Math.max(1000 * animationFactor(), spellFxDurationMs(title) * 2 + 500) };   // l'animation tourne en boucle : au moins deux passages
+    if(fx && options.requireClick === undefined && options.autoHideMs === undefined) options = { ...options, autoHideMs: Math.max(1600 * animationFactor(), spellFxDurationMs(title) * 2 + 500) };   // l'animation tourne en boucle : au moins deux passages
     const bigFx = Boolean(fx && fx.includes('spellfx-big'));
     let html = `<div class="attack-icon${fx ? ' has-spellfx' : ''}${bigFx ? ' has-spellfx-big' : ''}">${fx || svgIcon(icon) || icon}</div>`;
+    const casterAlly = isPlayerAttack ? gameState.allies?.[gameState.turnClass] : null;   // un compagnon frappe avec son arme (jamais l'arc de Hou Yi)
+    if(casterAlly?.weapon && !fx && damage !== null && heal === null && !projectile) { icon = casterAlly.weapon; projectile = casterAlly.weapon === 'bow' ? 'arrow' : 'melee'; }
+    const midIcon = projectile === 'melee' && typeof icon === 'string' && !icon.includes('<') ? svgIcon(icon) : (svgIcon(icon) || icon);
+    const stage = !bigFx ? spellStageHtml(fx || (projectile === 'arrow' ? `<div class="attack-icon stage-arrow">${svgIcon('arrow')}</div>` : `<div class="attack-icon">${svgIcon(icon) || icon}</div>`), isPlayerAttack, damage !== null && heal === null, Boolean(options.blocked), projectile === 'melee', healTarget) : null;
+    if(stage && !plain) html = stage;   // `plain` : simple annonce (ex. tour bonus), sans la scène héros / ennemi
     // 2e temps d'un blocage / d'une parade : gros bouclier (plein = bloqué, fendu = paré) et texte qui vibre.
-    if(options.blocked) html = `<div class="block-shield block-${options.blocked}">${svgIcon('wickershield')}</div>` + html;
     let caption = `<div class="attack-title">${String(title).toUpperCase()}</div>`;
     if (damage !== null) caption += `<div class="attack-damage">${damage}</div>`;
     if (heal   !== null) caption += `<div class="attack-heal">${heal}</div>`;
@@ -210,7 +270,9 @@ export function showCombatAnimation({ icon, title, damage = null, heal = null, s
 // Attaque en deux temps quand la cible bloque ou pare : 1) dégâts annoncés, 2) dégâts réellement subis avec bouclier et vibration.
 // `strike` vient de resolveStrike ({ damage, crit, block, intended }) ; `params` = paramètres de showCombatAnimation sans `damage`.
 // Durée d'affichage d'une annonce de coup : plus longue pour un critique et surtout pour un coup très puissant (≥ 30 % des PV max de la cible).
-export function strikeHoldMs(strike, isPlayerAttack, damage, base = 1100) {
+export const ATTACK_HOLD_MS = 1800;   // durée d'affichage d'une annonce d'attaque (avant : 1,1 s)
+export const ATTACK_END_PAUSE_MS = 1000;   // petite pause d'une seconde une fois l'animation partie, avant que le jeu ne continue
+export function strikeHoldMs(strike, isPlayerAttack, damage, base = ATTACK_HOLD_MS) {
     const heavy = strike.heavy || strike.unblockable || isHeavyHit(damage, isPlayerAttack ? enemy : player);
     return (heavy ? base * 2.2 : strike.crit ? base * 1.45 : base) * animationFactor();
 }
@@ -224,14 +286,10 @@ export function showStrikeAnimation(params, strike, isPlayerAttack = true, final
         showCombatAnimation({ ...params, damage: `-${real} dégâts${crit}` }, isPlayerAttack, options);
         return;
     }
-    const label = strike.block === 'total' ? 'BLOQUÉ ! ' : 'PARÉ ! ';
-    const shield = strike.block;
-    showCombatAnimation({ ...params, damage: `-${intended} dégâts${crit}` }, isPlayerAttack, {
-        ...options, requireClick: false, autoHideMs: strikeHoldMs(strike, isPlayerAttack, intended, 1000),
-        onContinue: () => showCombatAnimation(
-            { ...params, damage: `${label}${real > 0 ? `-${real} dégâts` : 'aucun dégât'}`, title: params.title },
-            isPlayerAttack, { ...options, blocked: shield, requireClick: true, onContinue: options.onContinue })
-    });
+    // Blocage / parade : un seul écran (bouclier) qui montre les dégâts subis et ce que la défense a retenu.
+    const stopped = Math.max(0, intended - real);
+    showCombatAnimation({ ...params, damage: `${real} dégât${real > 1 ? 's' : ''}${crit}<br><span class="stopped">${stopped} dégât${stopped > 1 ? 's' : ''} ${strike.block === 'total' ? (stopped > 1 ? 'bloqués' : 'bloqué') : (stopped > 1 ? 'parés' : 'paré')}</span>` }, isPlayerAttack, {
+        ...options, blocked: strike.block, requireClick: true, onContinue: options.onContinue });
 }
 
 // Mécanisme DOM bas niveau pour afficher un overlay d'animation sur la grille
@@ -240,7 +298,7 @@ export function showAttackAnimation(text, isPlayerAttack = true, options = {}) {
         requireClick = false,
         continueText = 'Cliquez pour continuer',
         onContinue = null,
-        autoHideMs = 1000 * animationFactor()
+        autoHideMs = 1600 * animationFactor()
     } = options;
 
     const boardDiv = document.getElementById('board');
@@ -289,12 +347,16 @@ export function showAttackAnimation(text, isPlayerAttack = true, options = {}) {
         caption?.remove();   // la légende part en même temps que le clic « pour continuer » (ou la fin du délai)
         overlay.classList.add('fade-out');
         setTimeout(() => {
-            if(overlay.parentNode) {
-                overlay.parentNode.removeChild(overlay);
-            }
-            if(typeof onContinue === 'function') {
-                onContinue();
-            }
+            // Pause d'une seconde : l'overlay reste dans le DOM (invisible) et tout ce qui attend la fin des animations (action suivante, tour de l'ennemi…) patiente encore.
+            overlay.classList.add('attack-pause');
+            setTimeout(() => {
+                if(overlay.parentNode) {
+                    overlay.parentNode.removeChild(overlay);
+                }
+                if(typeof onContinue === 'function') {
+                    onContinue();
+                }
+            }, ATTACK_END_PAUSE_MS * animationFactor());
         }, 500);
     };
 

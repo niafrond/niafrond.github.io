@@ -1,3 +1,250 @@
+## [3.20.2](https://github.com/niafrond/niafrond.github.io/compare/v3.20.1...v3.20.2) (2026-11-22)
+
+### Bug Fixes
+
+* **houyi:** passe Gameplay : potions en file, équipement deux mains, grimoires ennemis ([#778](https://github.com/niafrond/niafrond.github.io/issues/778)) ([81574bb](https://github.com/niafrond/niafrond.github.io/commit/81574bb23cada57b7dd4f27954cfd261735b1935))
+
+## [3.20.1](https://github.com/niafrond/niafrond.github.io/compare/v3.20.0...v3.20.1) (2026-11-22)
+
+### Bug Fixes
+
+* **houyi:** attaque gratuite de la Xiūxiān de Hou Yi et infobulles maintenues pendant l'appui long ([#777](https://github.com/niafrond/niafrond.github.io/issues/777)) ([3a22d97](https://github.com/niafrond/niafrond.github.io/commit/3a22d974bc58af0747c79128ed7d745653992d1f))
+
+## [3.20.0](https://github.com/niafrond/niafrond.github.io/compare/v3.19.0...v3.20.0) (2026-11-21)
+
+### Features
+
+* **houyi:** petite potion moins chère, soin de victoire, équipe restaurée après une défaite ([#776](https://github.com/niafrond/niafrond.github.io/issues/776)) ([f0ae910](https://github.com/niafrond/niafrond.github.io/commit/f0ae9104a97a479cfd22960b1e36592a771e8359))
+
+## [3.19.0](https://github.com/niafrond/niafrond.github.io/compare/v3.18.0...v3.19.0) (2026-11-21)
+
+### Features
+
+* **houyi:** armes des compagnons offensives avec coût en PA, annonces de soin sans l'ennemi, Xiūxiān grisée ([#775](https://github.com/niafrond/niafrond.github.io/issues/775)) ([bbadd13](https://github.com/niafrond/niafrond.github.io/commit/bbadd13d004d36670d3e329d2f28d61c70d2b1c3))
+
+## [3.18.0](https://github.com/niafrond/niafrond.github.io/compare/v3.17.1...v3.18.0) (2026-11-21)
+
+### Features
+
+* **houyi:** masquer le talisman à l'appui long et signaler les personnages prêts à agir ([#774](https://github.com/niafrond/niafrond.github.io/issues/774)) ([7f9a6d1](https://github.com/niafrond/niafrond.github.io/commit/7f9a6d104c79ed008e45274f080fc00f1346759b))
+
+## [3.17.1](https://github.com/niafrond/niafrond.github.io/compare/v3.17.0...v3.17.1) (2026-11-21)
+
+### Bug Fixes
+
+* **houyi:** vrais noms des personnages, tutoriel des barres de chargement, specs allégées ([#773](https://github.com/niafrond/niafrond.github.io/issues/773)) ([e62e1e9](https://github.com/niafrond/niafrond.github.io/commit/e62e1e986bbd7080984a81ce36a211b237c7095a))
+
+## [3.17.0](https://github.com/niafrond/niafrond.github.io/compare/v3.16.2...v3.17.0) (2026-11-20)
+
+### Features
+
+* **houyi:** mort persistante, fiche d'objet, noms de sorts dérivés, ligne des qì stable ([#772](https://github.com/niafrond/niafrond.github.io/issues/772)) ([18602f6](https://github.com/niafrond/niafrond.github.io/commit/18602f618fd567882b33717435efc23db1848444))
+
+## [3.16.2](https://github.com/niafrond/niafrond.github.io/compare/v3.16.1...v3.16.2) (2026-11-20)
+
+### Bug Fixes
+
+* **houyi:** file d'actions en pause de charge, ligne des qì sans bande Xiūxiān ni grisé ([#771](https://github.com/niafrond/niafrond.github.io/issues/771)) ([3be2889](https://github.com/niafrond/niafrond.github.io/commit/3be28896d26e9e40a21a9374a1578d6624498223))
+
+## [3.16.1](https://github.com/niafrond/niafrond.github.io/compare/v3.16.0...v3.16.1) (2026-11-20)
+
+### Bug Fixes
+
+* **houyi:** afficher l'arme du compagnon choisi en combat ([#770](https://github.com/niafrond/niafrond.github.io/issues/770)) ([8190669](https://github.com/niafrond/niafrond.github.io/commit/819066902c5faac1fec85d517460703e87771a9c))
+
+## [3.16.0](https://github.com/niafrond/niafrond.github.io/compare/v3.15.0...v3.16.0) (2026-11-20)
+
+### Features
+
+* **houyi:** personnage choisi bien visible en combat, plus de mains nues, mot connu jamais reproposé ([cc9ca99](https://github.com/niafrond/niafrond.github.io/commit/cc9ca991f4826d69a019ee425b1e97ffd1805d62))
+
+## [3.15.0](https://github.com/niafrond/niafrond.github.io/compare/v3.14.0...v3.15.0) (2026-11-20)
+
+### Features
+
+* **houyi:** glisser une tuile vers sa voisine pour les échanger ([6488290](https://github.com/niafrond/niafrond.github.io/commit/6488290810246a9d9d52e8f6ea80af4884503473))
+* **houyi:** les maîtres de classe attendent le héros sur sa route et le rejoignent après un petit combat ([adcccf8](https://github.com/niafrond/niafrond.github.io/commit/adcccf84ad3fbbdbe5d755a473714739bd29a053))
+
+### Bug Fixes
+
+* **houyi:** stabiliser la barre de chargement du tutoriel et dégager le titre du bouton replier ([e6c7c94](https://github.com/niafrond/niafrond.github.io/commit/e6c7c942e83361134e9130d8e11cb40cabe8337e))
+
+## [3.14.0](https://github.com/niafrond/niafrond.github.io/compare/v3.13.0...v3.14.0) (2026-11-20)
+
+### Features
+
+* **houyi:** afficher la rumeur des villages d'événement à la première arrivée sur une zone avec leur porte ([dd28dba](https://github.com/niafrond/niafrond.github.io/commit/dd28dbadb99fa9928d32b455b7d3c3a6427a5fcc))
+* **houyi:** griser le reste du combat quand le tutoriel demande une tâche ([044b730](https://github.com/niafrond/niafrond.github.io/commit/044b7303ccff985f37c59d3a77e7c33ed9acb6f4))
+
+### Bug Fixes
+
+* **houyi:** garder en couleur les tuiles du combo demandé par le tutoriel ([7d6bc66](https://github.com/niafrond/niafrond.github.io/commit/7d6bc66ca114cf859d15a20b11398d99546bd738))
+* **houyi:** garder le plateau en pleine largeur en passant les boutons en grille compacte ([071ec94](https://github.com/niafrond/niafrond.github.io/commit/071ec94835ba58a36b25511056ff09a78c614b51))
+* **houyi:** griser le bouton Objet quand rien n'est utilisable ([a466449](https://github.com/niafrond/niafrond.github.io/commit/a4664492e6790e2ba55afc41c5a25c450d8aafb9))
+
+## [3.13.0](https://github.com/niafrond/niafrond.github.io/compare/v3.12.0...v3.13.0) (2026-11-20)
+
+### Features
+
+* **houyi:** déplacer la fenêtre du tutoriel et affiner le bandeau ennemi ([6bc712f](https://github.com/niafrond/niafrond.github.io/commit/6bc712f27ed57ead49431cad775cc03577d4ef02))
+* **houyi:** montrer toutes les mécaniques du combat dans le tutoriel ([11bf9ba](https://github.com/niafrond/niafrond.github.io/commit/11bf9badc95afa882d9c19869ae3c95f666913b2))
+
+### Bug Fixes
+
+* **houyi:** raccourcir les explications du tutoriel à une phrase ([0cc525e](https://github.com/niafrond/niafrond.github.io/commit/0cc525e4cdaa83efba1fde0fe80c0dc0e50f9a43))
+
+## [3.12.0](https://github.com/niafrond/niafrond.github.io/compare/v3.11.0...v3.12.0) (2026-11-19)
+
+### Features
+
+* **houyi:** un panel de sorts par compagnon, équiper et retirer par personnage ([5efedac](https://github.com/niafrond/niafrond.github.io/commit/5efedac8bb4be7d7104bfb6e1fd2e34e85c1fdf8))
+* **houyi:** zoom de la carte d'exploration (cases de 68 px au minimum) ([0bf5953](https://github.com/niafrond/niafrond.github.io/commit/0bf5953e61c22c2e142ea024229092a80af3c4fd))
+
+## [3.11.0](https://github.com/niafrond/niafrond.github.io/compare/v3.10.0...v3.11.0) (2026-11-19)
+
+### Features
+
+* **houyi:** ligne des ennemis puis ligne de qì et PA communs, sans fiche de l'ennemi principal ([37d1033](https://github.com/niafrond/niafrond.github.io/commit/37d1033442024ac076b45a29bc9af9eb8ce4348a))
+
+## [3.10.0](https://github.com/niafrond/niafrond.github.io/compare/v3.9.0...v3.10.0) (2026-11-19)
+
+### Features
+
+* **houyi:** un onglet par personnage dans les menus Armes, Compétences et Stats ([68981ef](https://github.com/niafrond/niafrond.github.io/commit/68981ef7848a189f88b39f9292cbf34b38e93b51))
+* **houyi:** un onglet par personnage dans les sorts actifs ([b62b48a](https://github.com/niafrond/niafrond.github.io/commit/b62b48a3aaba765485bc65d765f49dc50dcde4d0))
+
+## [3.9.0](https://github.com/niafrond/niafrond.github.io/compare/v3.8.2...v3.9.0) (2026-11-19)
+
+### Features
+
+* **houyi:** chaque compagnon reçoit et équipe une arme dès son recrutement ([6b465f5](https://github.com/niafrond/niafrond.github.io/commit/6b465f518b7ff952032657d4dc43611b58b8d5a4))
+
+## [3.8.2](https://github.com/niafrond/niafrond.github.io/compare/v3.8.1...v3.8.2) (2026-11-19)
+
+### Bug Fixes
+
+* **houyi:** griser le bouton Objet tant que le personnage n'est pas chargé ([249c9a1](https://github.com/niafrond/niafrond.github.io/commit/249c9a11e27b0016aa10ad6371c42a444d41410b))
+
+## [3.8.1](https://github.com/niafrond/niafrond.github.io/compare/v3.8.0...v3.8.1) (2026-11-19)
+
+### Bug Fixes
+
+* **houyi:** retirer le texte explicatif de l'infobulle de Xiūxiān ([9b374de](https://github.com/niafrond/niafrond.github.io/commit/9b374dea7cd6b8591b0745d50cfeae0257a9d78a))
+
+## [3.8.0](https://github.com/niafrond/niafrond.github.io/compare/v3.7.1...v3.8.0) (2026-11-19)
+
+### Features
+
+* **houyi:** noms chinois des ennemis sur les pastilles, bascule au clic et traduction à l'appui long ([6554d06](https://github.com/niafrond/niafrond.github.io/commit/6554d06777027b1717fd5d94b6a070145769746b))
+* **houyi:** Xiūxiān sur toute la largeur sous le bloc d'actions ([48eac88](https://github.com/niafrond/niafrond.github.io/commit/48eac880066c4b72e599cb9375738ae58c304405))
+
+### Bug Fixes
+
+* **houyi:** garder le bouton Objet actif pendant le tour de plateau adverse ([ba07868](https://github.com/niafrond/niafrond.github.io/commit/ba0786819f4004078183087489153fa9a244191f))
+* **houyi:** ne plus écraser les boutons Objet et Xiūxiān dans la grille d'actions compacte ([d411df4](https://github.com/niafrond/niafrond.github.io/commit/d411df404385a006988e886e74e990dc7fd94d78))
+
+## [3.7.1](https://github.com/niafrond/niafrond.github.io/compare/v3.7.0...v3.7.1) (2026-11-19)
+
+### Bug Fixes
+
+* **houyi:** ne plus planter au chargement du sélecteur de personnages ([a46fe4f](https://github.com/niafrond/niafrond.github.io/commit/a46fe4f587954772893d54807759fa6675a4498f))
+
+## [3.7.0](https://github.com/niafrond/niafrond.github.io/compare/v3.6.0...v3.7.0) (2026-11-19)
+
+### Features
+
+* **houyi:** choisir l'ennemi visé après l'attaque, sans mémoriser la cible ([9344d9b](https://github.com/niafrond/niafrond.github.io/commit/9344d9b8bffe618a5efa53a8367c8869db3648c5))
+* **houyi:** combats à plusieurs ennemis, invocation de renforts et dégâts de zone ([83843b3](https://github.com/niafrond/niafrond.github.io/commit/83843b30b028330ff8475082bf052c08f376cdf3))
+* **houyi:** effets de zone sur tous les ennemis, mention Zone/Ciblé et chargement propre à chaque ennemi ([1fbfb6e](https://github.com/niafrond/niafrond.github.io/commit/1fbfb6ea11762df73aea9cf7501f5c4e6771625a))
+* **houyi:** qì et PA mutualisés entre les ennemis du groupe ([5f635b4](https://github.com/niafrond/niafrond.github.io/commit/5f635b4e0d7db6a8682aaa64d0514e38182e8b76))
+
+### Bug Fixes
+
+* **houyi:** copies d'ennemis invocateurs, carte d'import et pas d'invocation par un boss ([6c8ff9e](https://github.com/niafrond/niafrond.github.io/commit/6c8ff9ea05191d832dc615771345304f9ff275c0))
+
+## [3.6.0](https://github.com/niafrond/niafrond.github.io/compare/v3.5.0...v3.6.0) (2026-11-18)
+
+### Features
+
+* **houyi:** barre d'action remplie par les sorts à tour bonus, altérations et PV dans le bouton de chaque personnage ([cebea3c](https://github.com/niafrond/niafrond.github.io/commit/cebea3c2e67983e059d66acd2ca2e6fb9a9099fa))
+* **houyi:** clarifier le menu des compétences (base, origine, activation à tout moment) ([4cf1791](https://github.com/niafrond/niafrond.github.io/commit/4cf1791f29c6df0bf6220d7d4514861223fca45d))
+* **houyi:** ennemi seul en haut, qì sous le plateau, sans niveau ni Att./Déf., sans flèche d'envoi ([fc232fd](https://github.com/niafrond/niafrond.github.io/commit/fc232fde42136021c7f7f2ed47c94b08857c72a9))
+* **houyi:** fiche du personnage au clic long, régénérer l'instantané du monde ([1f6c916](https://github.com/niafrond/niafrond.github.io/commit/1f6c9167fbb320891b7aa427abaa8f320011be69))
+* **houyi:** séparer les compétences en soutien et actions, retirer l'éclair ([26b1a58](https://github.com/niafrond/niafrond.github.io/commit/26b1a589ff6467acc18a33104b5dfe4ce45c19af))
+* **houyi:** un bouton d'action par personnage avec ses données, animation d'attaque plus longue ([233760c](https://github.com/niafrond/niafrond.github.io/commit/233760c0fcae35b07341524890e9c3f462c9cee3))
+
+### Bug Fixes
+
+* **houyi:** retirer l'encadré explicatif du menu des compétences ([d560dd4](https://github.com/niafrond/niafrond.github.io/commit/d560dd42b087cda8958eefc5c15147922b452a6c))
+
+## [3.5.0](https://github.com/niafrond/niafrond.github.io/compare/v3.4.2...v3.5.0) (2026-11-18)
+
+### Features
+
+* **houyi:** choisir classe et Xiūxiān à tout moment, sorts de plateau ennemis hors tour, points de repos ([0b8858e](https://github.com/niafrond/niafrond.github.io/commit/0b8858e7f634657623b2b86f23c7b9a9a4e4a058))
+* **houyi:** intégrer les invocations à la liste de sorts du Mage invocateur ([59536af](https://github.com/niafrond/niafrond.github.io/commit/59536af62919bb3056c2172d101f4264084a3f82))
+* **houyi:** placer le bouton Xiūxiān sous les objets avec sa description en infobulle ([f2830e2](https://github.com/niafrond/niafrond.github.io/commit/f2830e23e2d6115a974152403429c0a414c53b1e))
+* **houyi:** séparer Xiūxiān et invocation en deux boutons, invocation réservée au Mage ([af4f8fa](https://github.com/niafrond/niafrond.github.io/commit/af4f8fa057b27b8ffeb74bd01e0995fa91380d0d))
+* **match3-quest:** ajouter des points de récupération des PV (pierres, auberges, fontaines) ([4a3653f](https://github.com/niafrond/niafrond.github.io/commit/4a3653fdf211f9c4bcbf0e842a646af39863187e))
+* **match3-quest:** mettre en file les sorts de plateau, ultimes et objets choisis hors tour ([6fc0f70](https://github.com/niafrond/niafrond.github.io/commit/6fc0f700b0e2e49132f6562b117c4a1461c9c7c8))
+* **match3-quest:** permettre les actions hors tour quand une barre est chargée ([93df273](https://github.com/niafrond/niafrond.github.io/commit/93df273291535e9b07d3320c87f01bdc76717c1d))
+
+### Reverts
+
+* **match3-quest:** annuler les actions hors tour et les points de repos (ils visaient houyi) ([e4da86b](https://github.com/niafrond/niafrond.github.io/commit/e4da86b941be82cfc0dac1d0f3a5463a4821f3d4))
+
+## [3.4.2](https://github.com/niafrond/niafrond.github.io/compare/v3.4.1...v3.4.2) (2026-11-18)
+
+### Bug Fixes
+
+* **houyi:** porter la pause du chargement à 5 s ([809ea5e](https://github.com/niafrond/niafrond.github.io/commit/809ea5ecea7e653feb40fea0b0012e8344e9b69d))
+
+## [3.4.1](https://github.com/niafrond/niafrond.github.io/compare/v3.4.0...v3.4.1) (2026-11-18)
+
+### Bug Fixes
+
+* **houyi:** élargir la zone tactile de la jauge Xiūxiān de Hou Yi ([aacc078](https://github.com/niafrond/niafrond.github.io/commit/aacc078cba2e69ea13c0349105dc967444febf99))
+* **houyi:** élargir la zone tactile de la jauge Xiūxiān des compagnons ([1baa1b9](https://github.com/niafrond/niafrond.github.io/commit/1baa1b9ed51433f2f27b85c60bc378d68e6fcf4c))
+* **houyi:** porter l'appui long de la Xiūxiān à 3 s ([231f19c](https://github.com/niafrond/niafrond.github.io/commit/231f19ce105b0db3f8750a28cfc7b53ede3f3d5f))
+* **houyi:** porter la pause du chargement à 3 s et rétablir l'appui long à 450 ms ([92a4c01](https://github.com/niafrond/niafrond.github.io/commit/92a4c0141b8e62917278bb0fb316ca8974c9dcdc))
+* **houyi:** retirer la scène héros / ennemi de l'annonce du tour bonus ([491c511](https://github.com/niafrond/niafrond.github.io/commit/491c5118d8859e3223ccb6ff20070b1fa9bf1940))
+
+## [3.4.0](https://github.com/niafrond/niafrond.github.io/compare/v3.3.0...v3.4.0) (2026-11-18)
+
+### Features
+
+* **houyi:** menu Objet seul à l'écran et potions en quantité ×0 masquées ([f2e26b9](https://github.com/niafrond/niafrond.github.io/commit/f2e26b9f88401af5fa6a1dae60c1c294b3ad0d74))
+* **houyi:** pause du chargement après 500 ms d'inactivité, l'ennemi ne montre plus ses capacités ([877bf1d](https://github.com/niafrond/niafrond.github.io/commit/877bf1db287d404d62e64bdb5d3699d79227073e))
+* **houyi:** remplacer l'or par le zhu (銖) comme monnaie ([cc5b21e](https://github.com/niafrond/niafrond.github.io/commit/cc5b21e9049ce811c4553861bc6125f70012ed78))
+
+## [3.3.0](https://github.com/niafrond/niafrond.github.io/compare/v3.2.0...v3.3.0) (2026-11-18)
+
+### Features
+
+* **houyi:** afficher dégâts et parade sur un seul écran, sans animation de bouclier ([3da0218](https://github.com/niafrond/niafrond.github.io/commit/3da0218cac5481c28f00d32922cac9d63fd4c649))
+* **houyi:** armes de compagnon équipables (48 variantes), en butin et chez les marchands ([9898bad](https://github.com/niafrond/niafrond.github.io/commit/9898baddacb397f4ead72253a441182276aeaf3a))
+* **houyi:** attaques de mêlée animées et armes propres aux compagnons ([8bf0d1a](https://github.com/niafrond/niafrond.github.io/commit/8bf0d1ad0b0ff1b6cc202d084f699d8e52e0e1f4))
+* **houyi:** compagnons issus de la mythologie chinoise (Fuxi, Sun Wukong, Shennong, Nezha, Longwang, Jingwei) ([6f47400](https://github.com/niafrond/niafrond.github.io/commit/6f474009d7040fddf1d79dbdff1a1ea84e6acead))
+* **houyi:** flèche qui part vers la cible lors d'une attaque à l'arc ([c671838](https://github.com/niafrond/niafrond.github.io/commit/c671838e115e534763fedee7573b591da1f2927b))
+* **houyi:** la cible esquive en reculant quand le coup est bloqué ou paré ([8a0acd3](https://github.com/niafrond/niafrond.github.io/commit/8a0acd321b8c91ed6e9c8b9afc9b36e67625cef1))
+* **houyi:** scène d'animation des sorts avec lanceur, sort et cible qui clignote ([5673938](https://github.com/niafrond/niafrond.github.io/commit/567393876636731e9fd52fc614fc5123f04fd8be))
+* **houyi:** vrais profils des sprites de compagnons via Pixel Lab ([c75e04d](https://github.com/niafrond/niafrond.github.io/commit/c75e04d7c331dda4f58369a51580d9b172cf6c60))
+* **houyi:** Xiūxiān propre à chaque compagnon, profils des sprites de compagnons repris de la vue de face ([42e3e7c](https://github.com/niafrond/niafrond.github.io/commit/42e3e7ce049d3bc50e6d5bd1d52e1a6ea8a4dc6c))
+* **houyi:** zone de Xiūxiān au clic long et choix du personnage avec barre de vie pour les objets ([96ce8ab](https://github.com/niafrond/niafrond.github.io/commit/96ce8abb398016192b9f092c1076322e65011b17))
+
+### Bug Fixes
+
+* **houyi:** jauges de Xiūxiān toujours visibles sous les barres de vie, texte de Xiūxiān au clic long ([0c781f2](https://github.com/niafrond/niafrond.github.io/commit/0c781f2ee1ab5f84e048e758f17da26410e38133))
+
+## [3.2.0](https://github.com/niafrond/niafrond.github.io/compare/v3.1.0...v3.2.0) (2026-11-18)
+
+### Features
+
+* **houyi:** compagnons de combat à la place des classes, anciens compagnons renommés esprits gardiens ([854bfa7](https://github.com/niafrond/niafrond.github.io/commit/854bfa7a496ff1eb445437bd37962ab418e1b9eb))
+* **houyi:** objets d'équipe (ranimer, soigner, renforcer), Hou Yi à terre sans fin de combat, IA de l'ennemi proactive et ciblage affiné, équilibrage du chargement ennemi ([f918feb](https://github.com/niafrond/niafrond.github.io/commit/f918feb38e2d0c8b83f8ae6a7ecdf5b36b96ff20))
+* **houyi:** recrutement des compagnons 1 / 2 / 1 / 1 / 1 par région, préparation Pixel Lab pour les sprites ([bcc9ab9](https://github.com/niafrond/niafrond.github.io/commit/bcc9ab9e1a8d757433d60f874581c41ed663b6c7))
+* **houyi:** sprites des compagnons en 64x64, plus détaillés, générés en local ([8048377](https://github.com/niafrond/niafrond.github.io/commit/8048377aa93bcf9b3045a32544458abde6167ae9))
+
 ## [3.1.0](https://github.com/niafrond/niafrond.github.io/compare/v3.0.0...v3.1.0) (2026-11-17)
 
 ### Features

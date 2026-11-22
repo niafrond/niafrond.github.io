@@ -48,17 +48,17 @@ import { weakColorOfTemplate } from './enemies.js';
 import { isLowObstacle } from './decor.js';
 import { approachOf, FACE_FRONT, faceFromStep, spotAt, buildPrep, observationTarget } from './terrain.js';
 import { crossBorder, onSide, dirOfStep, overlapOf } from './mapConnections.js';
-import { launchNotices } from './events/engine.js';
 import { defaultChangeData, normalizeChangeData } from './change/state.js';
-import { EVENT_MODULES } from './events/registry.js';
 import { ARENA_HALL, ARENA_TIERS, arenaTier, arenaEncounterInfo, normalizeArenaData } from './arena.js';
 import { MIMIC_NAME, MIMIC_SPRITE, clearMarker, isMimicChest, markerOf, reclosePastChests, revealFog } from './explorationSenses.js';
 export * from './explorationSenses.js';
+export { restOf } from './explorationRest.js';
 import { checkAutoQuests, objectiveDone, progressReached, questById, questStatus } from './explorationQuests.js';
 export * from './explorationQuests.js';
 export * from './explorationDialogue.js';
 export * from './explorationGuide.js';
 import { activateWaypoint, discoverVillageWaypoint, recordBestiary } from './explorationTravel.js';
+import { buildRestPoints, restOf, REST_KINDS } from './explorationRest.js';
 export * from './explorationTravel.js';
 export * from './explorationChange.js';
 
@@ -159,13 +159,16 @@ export function takeWildIntro(session) {
     return WILD_INTRO;
 }
 
-// Annonces de lancement des événements activés (events/engine.js `launchNotices`) pas encore lues dans cette partie : une seule fois chacune
-// (`data.eventNotices`), au premier chargement du jeu ; renvoie [] ensuite.
-export function takeLaunchNotices(session) {
-    const fresh = launchNotices(session.screens, EVENT_MODULES).filter(n => !session.data.eventNotices.includes(n.id));
+// Rumeurs d'événements de la zone où se trouve le héros (`screen.eventDoorNotices`, posées par les événements qui ouvrent une porte dans cette zone) :
+// une seule fois par partie chacune (`data.eventNotices`), la première fois qu'il y arrive ; renvoie [] ensuite et partout ailleurs.
+// Appelée au chargement (sauvegarde reprise sur une telle zone) et après un voyage rapide ; les passages de carte les lisent dans `transitionTo`.
+function unreadNotices(session, screen) {
+    const fresh = [...(screen?.eventDoorNotices || []), ...(screen?.eventNotice ? [screen.eventNotice] : [])]
+        .filter((n, i, all) => !session.data.eventNotices.includes(n.id) && all.findIndex(m => m.id === n.id) === i);
     fresh.forEach(n => session.data.eventNotices.push(n.id));
     return fresh;
 }
+export const takeDoorNotices = session => unreadNotices(session, session.screens[session.data.screenId]);
 
 // Quête qui enseigne le « Pas de Yu » (yubu) : une fois terminée, le héros marche sur les eaux.
 export const YUBU_QUEST = 'sq_pas_de_yu';
@@ -312,6 +315,7 @@ export function createSession(saved, screens = SCREENS, quests = QUESTS) {
         data,
         screens,
         quests,
+        rest: buildRestPoints(screens),   // auberges et fontaines (explorationRest.js) : au plus un point de repos par zone
         // grassSteps / wildSeq / wildDefs / wildIntro* : hautes herbes (volatil, jamais sauvegardé)
         rt: {
             enemies: {}, patrolTimer: 0, grace: GRACE_MOVES, facing: { dx: 0, dy: 1 }, enemyIndex,
@@ -618,6 +622,8 @@ export function entityAt(session, x, y) {
     if (chest) return { type: 'chest', chest, opened: session.data.openedChests.includes(chest.id) };
     const wp = session.rt.changeMode ? null : currentScreen(session).waypoint;
     if (wp && wp.x === x && wp.y === y) return { type: 'waypoint', screenId: session.data.screenId };
+    const rest = restOf(session, currentScreen(session));
+    if (rest && rest.x === x && rest.y === y) return { type: 'rest', rest };
     const enemy = aliveEnemies(session).find(e => e.x === x && e.y === y);
     if (enemy) return { type: 'enemy', enemy };
     return null;
@@ -730,12 +736,10 @@ function transitionTo(session, screen, toId, pos, playerLevel, extra = {}) {
     // Texte du Narrateur affiché seulement à la toute première visite de l'écran.
     if (firstVisit && !target.interior && target.arrival?.length) res.arrival = target.arrival;
     if (warning) res.warning = warning;
-    // Annonce d'événement : une seule fois par partie (data.eventNotices), à la première arrivée dans l'écran qui la porte.
-    const notice = target.eventNotice;
-    if (notice && !session.data.eventNotices.includes(notice.id)) {
-        session.data.eventNotices.push(notice.id);
-        res.notice = notice;
-    }
+    // Rumeurs d'événements : une seule fois par partie chacune (data.eventNotices), à la première arrivée dans la zone qui porte la porte (`eventDoorNotices`)
+    // ou, à défaut, dans l'écran de l'événement lui-même (`eventNotice`).
+    const notices = unreadNotices(session, target);
+    if (notices.length) res.notices = notices;
     return res;
 }
 
@@ -746,6 +750,9 @@ function crossMapBorder(session, screen, dx, dy, playerLevel, from = session.dat
         (s, x, y) => isTerrainBlocked(s, x, y, canWalkOnWater(session)));
     if (!hit || hit.x === null) return { type: 'blocked' };
     const target = session.screens[hit.to];
+    // Une recrue attend sur la route : essayer de gagner la zone suivante (même si le passage est fermé) ouvre d'abord la discussion avec elle, sans quitter la carte.
+    const waiting = pendingRecruits(session, screen)[0];
+    if (waiting) return { type: 'talk', npcId: waiting.id, recruit: true };
     if (isExitLocked(session, hit.conn)) {
         return {
             type: 'exitBlocked', reason: 'quest', label: hit.conn.label, regionName: target.name,
@@ -781,6 +788,7 @@ export function tryMove(session, dx, dy, ctx = {}) {
         if (ent.type === 'npc') return { type: 'talk', npcId: ent.npc.id };
         if (ent.type === 'chest') return ent.opened ? { type: 'blocked' } : { type: 'chest', chestId: ent.chest.id };
         if (ent.type === 'waypoint') return activateWaypoint(session, ent.screenId);
+        if (ent.type === 'rest') return { type: 'rest', kind: ent.rest.kind, name: ent.rest.name, message: REST_KINDS[ent.rest.kind].message };
         return contactEvent(session, ent.enemy.def);
     }
     if (isTerrainBlocked(screen, nx, ny, canWalkOnWater(session))) return { type: 'blocked' };
@@ -833,7 +841,28 @@ export function tryMove(session, dx, dy, ctx = {}) {
     if (onGrass) session.rt.grassSteps = (session.rt.grassSteps || 0) + 1;
     const out = cm ? { type: 'moved' } : checkAura(session) || (onGrass && rollWildEncounter(session, ctx)) || { type: 'moved', ...(jumped ? { jumped: true } : {}) };
     if (markerReached) out.markerReached = true;
+    // Une recrue à côté (case voisine) : la discussion s'ouvre d'elle-même une fois le pas fait.
+    if (out.type === 'moved' && !cm) {
+        const beside = pendingRecruits(session, screen).find(n => Math.abs(n.x - nx) + Math.abs(n.y - ny) === 1);
+        if (beside) out.autoTalk = beside.id;
+    }
     return out;
+}
+
+// Recrues qui attendent le héros sur sa route (PNJ `recruit` : { quest, classId, foe }) : visibles, et leur quête de rencontre n'est ni verrouillée ni terminée.
+export function pendingRecruits(session, screen = currentScreen(session)) {
+    if (session.rt.changeMode) return [];
+    return screen.npcs.filter(n => {
+        const quest = n.recruit && session.quests.find(q => q.id === n.recruit.quest);
+        return quest && isEntityVisible(session, n) && ['available', 'active'].includes(questStatus(session, quest));
+    });
+}
+
+// Combat de découverte d'une recrue : un petit ennemi « synthétique » (même mécanisme que les créatures d'herbe), SANS embuscade ni piège. Renvoie son identifiant.
+export function registerFriendlyFoe(session, screenId, key, foe) {
+    const id = `${WILD_PREFIX}${screenId}:${key}`;
+    session.rt.wildDefs[id] = { screenId, def: { id, templateId: foe.templateId, name: foe.name, kind: 'wild', offset: foe.offset, wild: true, friendly: true }, ground: null };
+    return id;
 }
 
 // Sol du héros pour la phrase d'embuscade : 'water' ou 'lava' (volcan) s'il est sur un liquide, null sinon (herbes, roseaux).
@@ -950,6 +979,8 @@ export function findPath(session, tx, ty, { avoidLiquid = false } = {}) {
     aliveEnemies(session).forEach(e => occupied.add(key(e.x, e.y)));
     bossWallCells(session).forEach(([wx, wy]) => occupied.add(key(wx, wy)));
     if (screen.waypoint) occupied.add(key(screen.waypoint.x, screen.waypoint.y));
+    const restHere = restOf(session, screen);
+    if (restHere) occupied.add(key(restHere.x, restHere.y));
     const exits = new Set(screen.exits.map(e => key(e.x, e.y)));
     // Passages de bord (connexions) : y poser le pied dans le sens de sortie déclenche la transition, donc jamais un point de passage
     // (sinon, sur l'eau, le plus court chemin longerait la couronne par une case de passage et changerait de carte en route).
@@ -1077,7 +1108,7 @@ function wildEncounter(session, { def, screenId, ground }) {
     const screen = session.screens[screenId];
     const level = levelFor(session, def);
     return {
-        prep: buildPrep({ mimic: Boolean(def.mimic), grassAmbush: !def.mimic, ambushGround: ground }),   // mimique démasquée ou créature des hautes herbes : attaque par surprise (terrain.js)
+        prep: def.friendly ? buildPrep() : buildPrep({ mimic: Boolean(def.mimic), grassAmbush: !def.mimic, ambushGround: ground }),   // combat de découverte d'une recrue : aucune embuscade   // mimique démasquée ou créature des hautes herbes : attaque par surprise (terrain.js)
         biome: screen?.biome || null,
         enemyId: def.id,
         spriteKey: def.spriteKey || def.templateId,
@@ -1089,7 +1120,8 @@ function wildEncounter(session, { def, screenId, ground }) {
         duel: null,
         carryHp: false,
         training: null,
-        wild: true
+        wild: true,
+        friendly: Boolean(def.friendly)   // combat de découverte d'une recrue : adversaire à PV réduits (game.js, newEnemy)
     };
 }
 

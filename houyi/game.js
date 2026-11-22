@@ -6,7 +6,7 @@ import { createBehavior, adjustDamageTaken, damageKindOf } from './enemyBehavior
 import { runCasualAutopilot, noteCasualOutcome } from "./casualPilot.js";
 import { abandonCombatRecord, annotateCombatRecord, beginCombatRecord, BOSS_ADJUST, calibrateEnemy, cappedEnemyHit, enemySpellCost, expertCatchUpPoints, isExpertMode, finishCombatRecord, saveCombatRecord, enemyCategory, loadCombatRecords, pauseCombatRecord, recordDamageDealt, recordDamageTaken, resumeCombatRecord } from './combatBalance.js';
 import { escapeHtml } from "./escapeHtml.js";
-import { setBoardSize, BASE_BOARD_SIZE, BOSS_BOARD_SIZE, MAX_ACTIVE_SPELLS, MAX_WEAPONS } from "./constants.js";
+import { setBoardSize, BASE_BOARD_SIZE, BOSS_BOARD_SIZE, MAX_ACTIVE_SPELLS, MAX_WEAPONS, BASE_MANA_CAP } from "./constants.js";
 import { enemyCatalogList, generateRandomEnemy } from "./enemies.js";
 import { tutorialCallbacks } from "./tutorial.js";
 import { allWeapons, getWeaponById, weaponBiomeBonus, BIOME_LABELS } from "./weapons.js";
@@ -16,11 +16,16 @@ import { setGameStarted, isBoardResolving, setBiomeRule, boostBoardColor, captur
 import { actionGuard } from "./actionGuard.js";
 
 import { protectsFromBiome, collarForBiome, stuffTotals, normalizeStuff, grantStuff, inflictPoison, wornStuff } from "./stuff.js";
-import { isInTranse, endTranse, startTranse, transeEffectFor, classAllowsUltimate, describeTranse, switchGauge, storeGauge } from "./transe.js";
-import { POTIONS, normalizePotions, potionHeal, drinkPotion, drinkBlockReason } from "./potions.js";
+import { isInTranse, endTranse, startTranse, transeEffectFor, mergeTranseEffects, classAllowsUltimate, describeTranse, switchGauge, storeGauge } from "./transe.js";
+import { POTIONS, normalizePotions, potionHeal, drinkPotion, drinkBlockReason, applyQueuedPotion } from "./potions.js";
 import { normalizeSkills, skillBonus, actionSpells } from "./skills.js";
 import { normalizeRoster, usableClasses, grantClass, CLASS_SHORT } from "./classRoster.js";
 import { newCharge, newActionQueue, initCharge } from "./classCharge.js";
+import { allyWeaponBonus } from "./weapons.js";
+import { allyEquippedWeapon, ensureAllyWeapon, ensureAllyWeapons } from "./allyWeapons.js";
+import { buildTeam, teamAllies, allyMaxHp, damageAlly, ALLIES, livingAllies, pickAnyAlly, reviveAlly, healAlly } from "./allies.js";
+import { inflictBuff, ALTERATION_LABELS } from "./alterations.js";
+import { prepareAllyPortraits } from "./alliesView.js";
 import { boostedDamageDealt, resistedDamageTaken, parryQiGain } from "./gearEffects.js";
 
 
@@ -68,12 +73,14 @@ import { showCombatAnimation, showStrikeAnimation } from './gameStatsTab.js';
 export * from './gameStatsTab.js';
 import { showAttributeMenu, updateLevelHud } from './gameLevelUp.js';
 export * from './gameLevelUp.js';
-import { updateAvailableSpells, combatSpellList, getTurnClass, chooseAction, classCanAct, spendActionCharge, chargeFactor, decoupled, withCaster, resumeAfterBoundary } from './gameSpellList.js';
+import { updateAvailableSpells, combatSpellList, getTurnClass, chooseAction, classCanAct, spendActionCharge, chargeFactor, decoupled, withCaster, resumeAfterBoundary, refillActionBar } from './gameSpellList.js';
+import { setupFoeGroup, targetGate, snapshotFoe, spreadAreaEffects } from './foes.js';
+import { isAreaSpell, isAreaWeapon, spellNeedsTarget } from './targeting.js';
+import { livingFoes } from './enemyGroup.js';
 import { applyDuelRulesAtCombatStart, enemyTurn, finishPlayerTurn, handleEnemyDefeated } from './gameTurnFlow.js';
 export * from './gameTurnFlow.js';
 export * from './gameSpellList.js';
 
-const BASE_MANA_CAP = 50;
 const EMPTY_MANA_POOL = { red:0, blue:0, green:0, yellow:0, purple:0 };
 const WEAPON_ICONS = {
     sword: 'sword',
@@ -81,7 +88,8 @@ const WEAPON_ICONS = {
     dagger: 'dagger',
     mace: 'mace',
     bow: 'bow',
-    staff: 'staff'
+    staff: 'staff',
+    fan: 'fan'
 };
 // Icône de la classe (sprites/icons) : affichée devant le nom des combattants et des sorts de classe.
 const CLASS_ICONS = { sorcerer: 'yinyang', assassin: 'bow', templar: 'shield', barbarian: 'axe' };
@@ -208,6 +216,14 @@ export function normalizeBonusTurnValue(value){
 }
 
 // Pastille « cadeau ×N » affichée à côté du nom tant qu'il reste des tours bonus accumulés.
+/**
+ * Bonus d'un sort qui donnait « un tour bonus » : quand les actions sont indépendantes du plateau (il n'y a plus de tour à gagner), il REMPLIT AUSSITÔT
+ * la barre d'action du lanceur (sa classe, ou l'ennemi) ; tutoriel et duels gardent l'ancien tour bonus. Renvoie true si la barre a été remplie.
+ */
+export function grantActionBonus(caster, spell = null){
+    if(!decoupled()){ addBonusTurn(caster, 1); return false; }
+    return refillActionBar(caster, spell?.class || null);
+}
 export function bonusTurnBadge(entity){
     const n = normalizeBonusTurnValue(entity?.bonusTurn);
     if(n <= 0) return '';
@@ -252,13 +268,12 @@ export function ultimateManaBarHtml(entity, spell){
     return parts.length ? `<div class="ult-mana-bar" aria-hidden="true">${parts.join('')}</div>` : '';
 }
 
-// Fiche de la jauge de Xiūxiān : remplissage, effet de la classe du tour, rappel de la règle de l'ultime.
+// Fiche de la jauge de Xiūxiān : remplissage et effet de la classe du tour (plus de texte explicatif sur la jauge), rappel de la règle de l'ultime.
 export function transeTooltipHtml(entity, ultimate){
     const filled = Math.floor(entity?.rage || 0);
     return `<div class="spell-tooltip-title">XIŪXIĀN · ${isInTranse(entity) ? `${Math.max(1, Math.floor(entity.transe || 1))} tour(s) restant(s)` : `${filled} / 100`}</div>`
-        + `<div class="spell-tooltip-line">Jauge du ${CLASS_SHORT[getTurnClass()] || 'héros'} : chaque classe a la sienne. Elle se remplit quand vous subissez des dégâts avec cette classe et se conserve d'un combat à l'autre. Pleine, touchez-la pour déclencher sa Xiūxiān (3 tours).</div>`
         + `<div class="spell-tooltip-line">${describeTranse(isInTranse(entity) ? entity.transeClass : getTurnClass())}</div>`
-        + (ultimate ? `<div class="spell-tooltip-line">Ultime « ${ultimate.name} » : seulement pendant la Xiūxiān, avec la classe Mage antique choisie pour le tour.</div>` : '');
+        + (ultimate ? `<div class="spell-tooltip-line">Les invocations du Mage sont de simples sorts de sa liste : aucune jauge requise.</div>` : '');
 }
 
 // Fiche de l'ultime (appui long / survol de la jauge) : nom, coût en qì avec le qì possédé, effet.
@@ -267,7 +282,7 @@ export function getUltimateTooltipHtml(entity, spell){
         const have = entity?.cheatFreeSpells === true ? need : collectedUltimateMana(entity, color);
         return `<span class="ult-cost${have >= need ? '' : ' missing'}">${costBadge(color, `${Math.min(have, need)}/${need}`)}</span>`;
     }).join(' ');
-    return `<div class="spell-tooltip-title">ULTIME · ${spell.name}</div>`
+    return `<div class="spell-tooltip-title">INVOCATION · ${spell.name}</div>`
         + `<div class="spell-tooltip-line">Qì : ${cost}</div>`
         + getSpellTooltipHtml(spell);
 }
@@ -376,8 +391,50 @@ export function lastSpellDamage(fallback){
     return lastSpellStrike ? lastSpellStrike.damage : fallback;
 }
 
+/**
+ * Dégâts à `target`. Un sort ou une arme DE ZONE (targeting.js) qui touche l'ennemi ciblé touche aussi tous les autres ennemis vivants
+ * (chacun avec sa propre défense et ses résistances) ; un coup ciblé ne touche que l'ennemi visé.
+ */
+const isAreaHit = options => Boolean(options.area) || Boolean(options.sourceSpell && isAreaSpell(options.sourceSpell));
+
 export function applyDamage(target, damage, options = {}){
+    const others = (target === enemy && !options.splash && damage > 0 && isAreaHit(options)) ? livingFoes(gameState.foes).filter(f => f !== enemy) : [];
+    const focus = enemy;
+    let dealt = applyDamageCore(target, damage, options);
+    if(others.length && gameState.combatState === 'active'){
+        log(`Zone : ${others.length > 1 ? 'les autres ennemis sont touchés' : `${others[0].name} est touché`} aussi.`);
+        for(const foe of others){
+            if(gameState.combatState !== 'active' || foe.hp <= 0) continue;
+            enemy = foe;   // le temps du coup : les règles « ennemi » (résistances, comportement, récompenses) visent ce combattant
+            dealt += applyDamageCore(foe, damage, { ...options, splash: true });
+        }
+        if(gameState.combatState === 'active' && focus.hp > 0) enemy = focus;   // la cible choisie reste la cible (sauf si elle est tombée)
+        else if(gameState.combatState === 'active' && enemy.hp <= 0){ const next = livingFoes(gameState.foes)[0]; if(next) enemy = next; }
+    }
+    return dealt;
+}
+
+function applyDamageCore(target, damage, options = {}){
     if(!target) return 0;
+    // Action ennemie qui vise un compagnon, ou Hou Yi à terre : un compagnon vivant encaisse à la place (barre de vie propre ; hors de combat à 0 PV).
+    let shield = gameState.allyShield && !gameState.allyShield.ko ? gameState.allyShield : null;
+    if(!shield && target === player && gameState.heroKo) shield = pickAnyAlly(gameState.allies);
+    if(target === player && shield){
+        const ally = shield;
+        const result = damageAlly(ally, Math.max(0, Math.floor(damage || 0)));
+        log(`${ally.name} encaisse ${result.damage} dégâts (${ally.hp}/${ally.maxHp} PV).`);
+        const reflectPct = Math.floor(ally.transe || 0) > 0 ? (transeEffectFor(ally.transeClass).reflectPct || 0) : 0;   // Roues de Feu de Nezha : il renvoie une part des coups
+        if(reflectPct > 0 && result.damage > 0 && enemy.hp > 0){
+            const reflected = Math.floor(result.damage * reflectPct / 100);
+            if(reflected > 0){ enemy.hp = Math.max(0, enemy.hp - reflected); log(`Roues de Feu : ${reflected} dégâts renvoyés à ${enemy.name}.`); }
+        }
+        if(result.ko){
+            log(`${ally.name} est hors de combat !`);
+            if(gameState.heroKo && !livingAllies(gameState.allies).length && gameState.combatState === 'active') handlePlayerDeath();   // toute l'équipe est à terre
+        }
+        updateStats();
+        return result.damage;
+    }
     let normalizedDamage = Math.max(0, Math.floor(damage || 0));
     // Fureur du Tigre Blanc (Xiūxiān du Guerrier) : les dégâts de l'arme et des crânes sont multipliés.
     if(target === enemy && (options.damageSource === 'weapon' || options.damageSource === 'skull')) normalizedDamage *= xiuEffect().physMult || 1;
@@ -499,7 +556,7 @@ export function applyDamage(target, damage, options = {}){
             const reflected = Math.floor((normalizedDamage * ancientReflect) / 100);
             if(reflected > 0) {
                 enemy.hp = Math.max(0, enemy.hp - reflected);
-                log(`${xiuEffect().reflectPct ? 'Muraille de Jade' : 'Gorgerin antique'} : ${reflected} dégâts renvoyés à ${enemy.name}.`);
+                log(`${xiuEffect().reflectPct ? 'Roues de Feu' : 'Gorgerin antique'} : ${reflected} dégâts renvoyés à ${enemy.name}.`);
             }
         }
         const reflectTurns = Math.max(0, Math.floor(player.statusEffects?.reflectDamage || 0));
@@ -546,7 +603,9 @@ export function applyDamage(target, damage, options = {}){
     }
 
     if(gameState.combatState === 'active') {
-        if(player.hp <= 0) {
+        if(player.hp <= 0 && !gameState.heroKo) {
+            handlePlayerDeath();   // première chute : Hou Yi à terre (un compagnon tient) ou défaite
+        } else if(partyWiped()) {
             handlePlayerDeath();
         } else if(enemy.hp <= 0) {
             handleEnemyDefeated();
@@ -684,7 +743,8 @@ export function applyStandardSpellEffects(caster, target, spell, isPlayerCaster)
         const targetResistance = spellColors.length
             ? spellColors.reduce((sum, c) => sum + (target.resistances?.[c] || 0), 0) / spellColors.length   // multi-qì : résistance moyenne
             : (target.resistances?.[spell.color] || 0);
-        let dmg = Math.floor((spell.dmg + intelligenceBonus) * (1 - targetResistance));
+        const allyBonus = isPlayerCaster && gameState.turnClass && gameState.turnClass !== 'assassin' ? allyWeaponBonus(allyEquippedWeapon(player, gameState.turnClass)) : 0;   // arme équipée du compagnon qui lance le sort
+        let dmg = Math.floor((spell.dmg + intelligenceBonus + allyBonus) * (1 - targetResistance));
         if(isPlayerCaster && target.prep?.weaknessRevealed){
             dmg = weaknessDamage(dmg, spellColors.includes(target.weakColor) ? target.weakColor : spell.color, target.weakColor, true);
         }
@@ -719,8 +779,7 @@ export function applyStandardSpellEffects(caster, target, spell, isPlayerCaster)
     }
 
     if(spell.effect === 'bonusTurn'){   // Tir Furtif : le lanceur rejoue, quel qu'il soit
-        addBonusTurn(caster, 1);
-        log(`${spell.name} : ${escapeHtml(caster.name)} gagne un tour bonus !`);
+        log(grantActionBonus(caster, spell) ? `${spell.name} : la barre d'action de ${escapeHtml(caster.name)} se remplit aussitôt !` : `${spell.name} : ${escapeHtml(caster.name)} gagne un tour bonus !`);
     }
 
     if(spell.heal){
@@ -741,7 +800,7 @@ export function applyStandardSpellEffects(caster, target, spell, isPlayerCaster)
 
     // Tout sort lancé par l'ennemi (tour bonus, défense, statut…) doit montrer son animation, même sans dégâts ni soin.
     if(!isPlayerCaster && !enemyAnimShown){
-        const detail = spell.effect === 'bonusTurn' ? 'Rejoue !' : (opsText.join(' • ') || null);
+        const detail = spell.effect === 'bonusTurn' ? (decoupled() ? 'Barre remplie !' : 'Rejoue !') : (opsText.join(' • ') || null);
         showCombatAnimation({ icon: 'spark', title: spell.name, heal: detail, source: caster.name, target: `→ ${caster.name}` }, false);
     }
 }
@@ -788,7 +847,7 @@ export let player = {
     hasRevive: false,  // possède un effet de résurrection
     revivePercent: 0,  // pourcentage de HP à la résurrection
     unspentLevelPoints: 0, // points d'attribut a depenser apres les gains de niveaux
-    gold: 0,  // pièces d'or accumulées
+    gold: 0,  // zhu accumulés
     torch: false,  // torche achetée : éclaire les souterrains (world/underground.js)
     mount: null,  // monture achetée ('horse') : déplacements plus rapides sur les cartes
     defeatedBossTiers: [], // paliers de boss déjà nettoyés (5, 10, 15, ...)
@@ -818,7 +877,7 @@ export function grantStartingWeapon(weaponId){
     return weapon;
 }
 
-// Un butin déjà possédé (même id dans le sac) est converti en or au prix de revente, sans message. Retourne vrai si converti.
+// Un butin déjà possédé (même id dans le sac) est converti en zhu au prix de revente, sans message. Retourne vrai si converti.
 export function sellDuplicateItem(item){
     if(!item || !Array.isArray(player.inventory) || !player.inventory.some(i => i?.id === item.id)) return false;
     player.gold = (player.gold || 0) + sellPriceOf('item', item);
@@ -842,7 +901,7 @@ export function grantChestLoot({ loot = [] } = {}){
             labels.push(`${entry.weapon.name} (${rarityText}${lvl})`);
             log(`${getWeaponIcon(entry.weapon.type)} Trouvé dans un coffre : ${entry.weapon.name} !`);
         } else if(entry.kind === 'item' && entry.item) {
-            if(sellDuplicateItem(entry.item)) return;   // déjà possédé : converti en or, sans le dire
+            if(sellDuplicateItem(entry.item)) return;   // déjà possédé : converti en zhu, sans le dire
             player.inventory.push({ ...entry.item, applied: false });
             // Une relique n'a pas d'emplacement : on dit où elle va (bonus permanent, listée dans l'onglet Stuff).
             labels.push(entry.item.type === 'artifact' ? `${entry.item.name} (relique permanente, ${rarityText}, onglet Stuff)` : `${entry.item.name} (${rarityText})`);
@@ -917,6 +976,11 @@ export const gameState = {
     charge: newCharge(),  // temps de chargement des classes et de l'ennemi (classCharge.js)
     actionQueue: newActionQueue(),   // actions (sort, compétence, objet, arme) en attente de chargement ; l'ordre n'est jamais montré
     enemyPending: null,   // (ancien) sort de plateau de l'ennemi en attente
+    foePool: null,        // qì et PA mutualisés des ennemis (foes.js)
+    foes: [],             // ennemis du combat (foes.js) : jusqu'à MAX_ENEMIES ; `enemy` est celui qui est ciblé
+    allies: {},           // compagnons de l'équipe de combat : { classId: entité avec PV } (allies.js), reconstruits à chaque combat
+    heroKo: false,        // Hou Yi est à terre mais un compagnon tient encore : le combat continue (défaite quand toute l'équipe est à terre)
+    allyShield: null,     // compagnon visé par l'action ennemie en cours : il reçoit les dégâts à la place de Hou Yi
     boundaryResume: null, // fin de tour à relancer si l'action de plateau en cours ne le fait pas
     boundaryToken: 0,
     casterOverride: null  // 'player' | 'enemy' : lanceur d'un sort de la file quand ce n'est pas le camp du tour de plateau en cours
@@ -928,11 +992,11 @@ export const gameState = {
 /** Une jauge de Xiūxiān par classe : la jauge affichée est celle de la classe du tour. */
 export function syncGauge(){
     player.turnClassId = getTurnClass();   // les compétences de classe (skills.js) ne jouent que pour cette classe
-    switchGauge(player, getTurnClass());
+    switchGauge(player, 'assassin');   // la jauge de Hou Yi ne change plus avec la classe du tour : chaque compagnon a la sienne
 }
 
 export function setTurnClass(classId){
-    if(gameState.combatState !== 'active' || currentTurn !== 'player') return false;
+    if(gameState.combatState !== 'active' || (currentTurn !== 'player' && !decoupled())) return false;   // actions indépendantes du plateau : on choisit la classe (dont la barre est chargée) même pendant le tour de plateau adverse
     if(!usableClasses(player, enemy?.biome, gameState.forcedClass).includes(classId)) return false;   // classes de combat, hors biome bridé, ou classe imposée
     gameState.turnClass = classId;
     syncGauge();
@@ -944,68 +1008,128 @@ export function setTurnClass(classId){
 export function grantClassReward(classId, origin = 'Récompense de quête'){
     const res = grantClass(player, classId);
     if(!res.added) return null;
-    log(`✦ ${origin} : nouvelle classe « ${CLASS_SHORT[classId]} »${res.inLoadout ? ' (ajoutée à vos classes de combat)' : ' (vos 4 classes de combat sont pleines : échangez-les dans l\'onglet Compétences)'} !`);
+    const ally = ALLIES[classId];
+    log(`✦ ${origin} : ${ally ? ally.name : CLASS_SHORT[classId]} rejoint votre équipe${res.inLoadout ? ' de combat' : ' (l\'équipe de combat est pleine : changez de compagnons dans l\'onglet Compétences)'} !`);
+    const armed = ensureAllyWeapon(player, classId);   // chaque personnage a au moins une arme quand il est obtenu
+    if(ally && (armed.given || armed.equipped)) log(`${ally.name} reçoit ${(armed.given || armed.equipped).name}.`);
     saveUpdate();
     return classId;
 }
 
 // Effet de Xiūxiān de la classe du tour, appliqué une seule fois par tour et par classe.
 export function applyTranseClassEffect(){
-    if(!isInTranse(player) || gameState.combatState !== 'active') return;
-    const cls = player.transeClass || getTurnClass();   // l'effet est celui de la classe dont c'est la Xiūxiān, quelle que soit la classe choisie ensuite
-    const effect = transeEffectFor(cls);
+    if(gameState.combatState !== 'active') return;
+    const members = xiuMembers();
+    if(player.cheatMaxRage === true && !members.some(m => m.entity === player)) members.push({ entity: player, classId: getTurnClass() });
     gameState.transeApplied = gameState.transeApplied || [];
-    if(!cls || !effect.name || gameState.transeApplied.includes(cls)) return;
-    gameState.transeApplied.push(cls);
-    log(`${effect.name} : ${effect.text}.`);
-    if(effect.strikePct && enemy.hp > 1){   // volée gratuite (jamais mortelle : le combat se finit par un vrai coup)
-        const volley = Math.min(enemy.hp - 1, Math.max(1, Math.round((player.equippedWeapon?.damage || player.attack || 10) * effect.strikePct / 100)));
-        applyDamage(enemy, volley, { damageSource: 'other' });
-        log(`Volée des Dix Soleils : ${volley} dégâts à ${enemy.name}.`);
-    }
-    if(effect.dotPct && enemy.hp > 1){   // vapeurs du fourneau
-        const vapor = Math.min(enemy.hp - 1, Math.max(1, Math.round(enemy.maxHp * effect.dotPct / 100)));
-        applyDamage(enemy, vapor, { damageSource: 'other' });
-    }
-    if(effect.actionPoints){ player.combatPoints = (player.combatPoints || 0) + effect.actionPoints; }
-    if(effect.attack || effect.defense){ addStatBuff(player, { attack: effect.attack || 0, defense: effect.defense || 0, turns: 1 }); }
-    if(effect.healPct){ const heal = Math.max(1, Math.round(player.maxHp * effect.healPct / 100)); healEntity(player, heal); flyHeal(true, heal); }
-    if(effect.mana){ Object.keys(player.mana).forEach(color => addManaForColor(player, color, effect.mana, { applyGainBonus: false })); }
+    members.forEach(({ classId: cls }) => {
+        const effect = transeEffectFor(cls);
+        if(!cls || !effect.name || gameState.transeApplied.includes(cls)) return;
+        gameState.transeApplied.push(cls);
+        log(`${effect.name} : ${effect.text}.`);
+        if(effect.strikePct && enemy.hp > 1){   // attaque gratuite de l'arme : vraie attaque (animation, critique, blocage), sans PA ; jamais mortelle (le combat se finit par un vrai coup)
+            const weapon = player.equippedWeapon;
+            if(weapon) strikeWithWeapon(weapon, { free: true, pct: effect.strikePct, nonLethal: true });
+            else { const hit = Math.min(enemy.hp - 1, Math.max(1, Math.round((player.attack || 10) * effect.strikePct / 100))); applyDamage(enemy, hit, { damageSource: 'other' }); log(`${effect.name} : ${hit} dégâts à ${enemy.name}.`); }
+        }
+        if(effect.dotPct && enemy.hp > 1){   // vapeurs de Shennong
+            const vapor = Math.min(enemy.hp - 1, Math.max(1, Math.round(enemy.maxHp * effect.dotPct / 100)));
+            applyDamage(enemy, vapor, { damageSource: 'other' });
+        }
+        if(effect.actionPoints){ player.combatPoints = (player.combatPoints || 0) + effect.actionPoints; }
+        if(effect.attack || effect.defense){ addStatBuff(player, { attack: effect.attack || 0, defense: effect.defense || 0, turns: 1 }); }
+        if(effect.healPct){   // Fuxi : soigne toute l'équipe (Hou Yi et les compagnons debout)
+            const heal = Math.max(1, Math.round(player.maxHp * effect.healPct / 100));
+            if(!gameState.heroKo){ healEntity(player, heal); flyHeal(true, heal); }
+            Object.values(gameState.allies || {}).forEach(a => healAlly(a, Math.max(1, Math.round(a.maxHp * effect.healPct / 100))));
+        }
+        if(effect.mana){ Object.keys(player.mana).forEach(color => addManaForColor(player, color, effect.mana, { applyGainBonus: false })); }
+    });
 }
 
-/** Effet de la Xiūxiān en cours (celui de la classe qui l'a déclenchée), objet vide si aucune. */
+/** Membres de l'équipe en Xiūxiān : [{ entity, classId }] (Hou Yi et chaque compagnon vivant, chacun avec sa propre Xiūxiān). */
+export function xiuMembers(){
+    const out = [];
+    if(Math.floor(player.transe || 0) > 0 && player.transeClass) out.push({ entity: player, classId: player.transeClass });
+    Object.values(gameState.allies || {}).forEach(a => { if(!a.ko && Math.floor(a.transe || 0) > 0 && a.transeClass) out.push({ entity: a, classId: a.transeClass }); });
+    return out;
+}
+
+/** Effet cumulé des Xiūxiān en cours dans l'équipe (objet vide si aucune). */
 export function xiuEffect(){
-    return Math.floor(player.transe || 0) > 0 ? transeEffectFor(player.transeClass) : {};
+    return mergeTranseEffects(xiuMembers().map(m => m.classId));
 }
 
-// Déclenchement VOLONTAIRE de la Xiūxiān : jauge pleine, en combat, au tour du joueur (toucher la jauge). Gratuit : ne prend pas le tour.
-export function activateXiuxian(){
-    if(gameState.combatState !== 'active' || currentTurn !== 'player') return false;
-    if(isInTranse(player)){ log('La Xiūxiān est déjà en cours.'); return false; }
-    if(!isRageFull(player)){ log("La jauge de Xiūxiān n'est pas pleine !"); return false; }
-    if(!startTranse(player)) return false;
-    log(`✦ XIŪXIĀN du ${CLASS_SHORT[player.transeClass] || 'héros'} ! ${describeTranse(player.transeClass)}`);
-    gameState.transeApplied = [];
+/** Xiūxiān du compagnon donné en cours ? (Longwang : l'ultime) */
+export const allyInXiuxian = classId => { const a = gameState.allies?.[classId]; return !!a && !a.ko && Math.floor(a.transe || 0) > 0; };
+
+// Déclenchement VOLONTAIRE de la Xiūxiān : jauge pleine, en combat, à tout moment (toucher la jauge). Gratuit : ne prend pas le tour.
+export function activateXiuxian(classId = 'assassin'){
+    if(gameState.combatState !== 'active' || (currentTurn !== 'player' && !decoupled())) return false;   // jauge pleine : à tout moment, même pendant le tour de plateau adverse
+    if(tutorialCallbacks.allowXiuxian && !tutorialCallbacks.allowXiuxian()) return false;   // tutoriel : la Xiūxiān n'est acceptée qu'à l'étape prévue
+    const member = classId === 'assassin' ? player : gameState.allies?.[classId];
+    if(!member || (classId !== 'assassin' && member.ko)){ log('Ce compagnon ne peut pas déclencher sa Xiūxiān.'); return false; }
+    const name = classId === 'assassin' ? 'Hou Yi' : member.name;
+    if(isInTranse(member)){ log(`La Xiūxiān de ${name} est déjà en cours.`); return false; }
+    if(!isRageFull(member)){ log(`La jauge de Xiūxiān de ${name} n'est pas pleine !`); return false; }
+    if(!startTranse(member)) return false;
+    log(`✦ XIŪXIĀN de ${name} ! ${describeTranse(member.transeClass)}`);
     applyTranseClassEffect();
     updateStats();
     saveUpdate();
+    tutorialCallbacks.onXiuxian?.();   // tutoriel scripté : étape suivante
     return true;
 }
 
 // Fin de combat : une Xiūxiān encore en cours s'éteint (la jauge est consommée) ; sinon la jauge est conservée telle quelle pour le prochain combat.
 export function endXiuxianAtCombatEnd(){
     if(Math.floor(player.transe || 0) > 0) endTranse(player);   // consomme la jauge de la classe de la Xiūxiān
+    // Chaque compagnon : sa Xiūxiān en cours s'éteint (jauge consommée) et sa jauge est conservée pour le prochain combat.
+    Object.values(gameState.allies || {}).forEach(a => {
+        if(Math.floor(a.transe || 0) > 0) endTranse(a);
+        player.rages = { ...(player.rages || {}), [a.classId]: Math.max(0, Math.min(100, Math.floor(a.rage || 0))) };
+    });
     gameState.transeApplied = null;
 }
 
-// ── Potions (potions.js) : à usage unique, 1 / 2 / 3 PA en combat selon la taille ──
-export function drinkPotionAction(size){
+// ── Potions (potions.js) : à usage unique, 0 PA en combat (payées en or chez le marchand) ──
+/** Potion donnée à un compagnon (choisi dans « sur qui ? ») : elle rend une part des PV max du compagnon. */
+function drinkPotionForAlly(size, classId){
+    const ally = gameState.allies?.[classId];
+    if(gameState.combatState !== 'active' || !ally) return false;
+    if(!decoupled() && currentTurn !== 'player'){ log("Ce n'est pas votre tour."); return false; }
+    if(rejectRushedAction()) return false;
+    if((player.statusEffects?.sealed || 0) > 0){ log("Vous êtes scellé : impossible d'utiliser un objet."); return false; }
+    if(!classCanAct()) return false;
+    if(ally.ko){ log(`${ally.name} est hors de combat : une potion ne le relève pas.`); return false; }
+    if(ally.hp >= ally.maxHp){ log(`${ally.name} est en pleine forme.`); return false; }
+    const potion = POTIONS[size];
+    if(!potion || (player.potions?.[size] || 0) <= 0){ log(`Aucune ${potion ? potion.name.toLowerCase() : 'potion'}.`); return false; }
+    player.potions[size] -= 1;
+    actionGuard.markPlayerAction();
+    const effect = () => {
+        const healed = healAlly(ally, potionHeal(ally, size));
+        log(`${potion.name} : ${ally.name} récupère ${healed} PV.`);
+        logActiveAction(`donne une ${potion.name.toLowerCase()} à ${ally.name}`);
+        showCombatAnimation({ icon: 'potion', title: potion.name, heal: `+${healed} PV`, target: `→ ${ally.name}`, healTarget: ally.classId }, true);
+        document.dispatchEvent(new Event('potions-changed'));
+        updateStats();
+        endAction();
+    };
+    if(decoupled()) chooseAction(effect); else { spendActionCharge(); effect(); }
+    return true;
+}
+
+export function drinkPotionAction(size, targetClass = null){
+    if(targetClass && targetClass !== 'assassin') return drinkPotionForAlly(size, targetClass);
     const inCombat = gameState.combatState === 'active';
     if(inCombat){
+        if(tutorialCallbacks.allowPotion && !tutorialCallbacks.allowPotion()) return false;   // tutoriel : la potion n'est acceptée qu'à l'étape prévue
         if(!decoupled() && currentTurn !== 'player'){ log("Ce n'est pas votre tour."); return false; }
         if(rejectRushedAction()) return false;
         if((player.statusEffects?.sealed || 0) > 0){ log("Vous êtes scellé : impossible d'utiliser un objet."); return false; }
         if(!classCanAct()) return false;   // la classe du tour doit être chargée (barre pleine) pour choisir une action
+        if(gameState.heroKo){ log('Hou Yi est à terre : il ne peut pas boire.'); return false; }
     }
     if(inCombat && decoupled()){
         // Actions indépendantes du plateau : la potion est validée et payée au choix, puis son effet part (tout de suite ou depuis la file).
@@ -1017,9 +1141,8 @@ export function drinkPotionAction(size){
         if(!free) player.combatPoints -= potion.actionPoints;
         actionGuard.markPlayerAction();
         const effect = () => {
-            const before = player.hp;
-            player.hp = Math.min(player.maxHp, player.hp + potionHeal(player, size));
-            const healed = player.hp - before;
+            const { ok, healed } = applyQueuedPotion(player, size, gameState.heroKo);
+            if(!ok){ log(`Hou Yi est à terre : la ${potion.name.toLowerCase()} est rendue au sac.`); document.dispatchEvent(new Event('potions-changed')); endAction(); return; }
             flyHeal(true, healed);
             log(`${potion.name} : +${healed} PV.`);
             logActiveAction(`boit une ${potion.name.toLowerCase()}`);
@@ -1039,8 +1162,10 @@ export function drinkPotionAction(size){
     if(inCombat){
         logActiveAction(`boit une ${POTIONS[size].name.toLowerCase()}`);
         showCombatAnimation({ icon: 'potion', title: POTIONS[size].name, heal: `+${res.healed} PV`, target: '→ Vous' }, true);
+        document.dispatchEvent(new Event('potions-changed'));
         updateStats();
         saveUpdate();
+        tutorialCallbacks.onPotionUsed?.();   // tutoriel scripté : étape suivante, avant la fin du tour
         endAction();
     } else {
         updateStats();
@@ -1110,7 +1235,7 @@ function applyLevelUpRewards(levelUpResult){
 
         const beforeHeal = player.hp;
         const healAmount = levelsGained * LEVEL_UP_HEAL_GAIN;
-        if(healAmount > 0 || maxHpGained > 0) {
+        if((healAmount > 0 || maxHpGained > 0) && beforeHeal > 0) {   // un Hou Yi à terre n'est pas relevé par un niveau : il lui faut un point de repos ou une résurrection
             // Le gain de HP max est aussi applique aux HP actuels pour eviter une perte relative.
             player.hp = Math.min(player.maxHp, player.hp + healAmount + maxHpGained);
             hpRecovered = Math.max(0, player.hp - beforeHeal);
@@ -1217,7 +1342,7 @@ function showCombatResultScreen(isVictory){
     summary.innerHTML = `
         ${tip ? `<p class="battle-result-tip">${svgIcon('scroll')} <strong>Conseil :</strong> ${tip}</p>` : ''}
         ${section('xp', 'star', 'Expérience', `<div class="battle-result-xp">+${combatRewards.xpGained} XP</div>${levelLine}`)}
-        ${section('gold', 'coin', 'Pièces', `<div class="battle-result-gold">${gold > 0 ? `+${gold} pièce${gold > 1 ? 's' : ''}` : 'Aucune pièce'}</div>`)}
+        ${section('gold', 'coin', 'Zhu', `<div class="battle-result-gold">${gold > 0 ? `+${gold} zhu` : 'Aucun zhu'}</div>`)}
         ${section('items', 'bag', 'Objets', `<ul class="battle-result-loot">${lootLines}</ul>`)}
         ${lesson ? section('zh', 'scroll', 'Un mot de chinois', lessonBodyHtml(lesson)) : ''}
     `;
@@ -1334,6 +1459,7 @@ function revealCombatEndUI(isVictory){
         log(`Cliquez sur "Retour à l'exploration" pour continuer.`);
     } else {
         log("Cliquez sur \"Retour à l'exploration\" : vous reprenez vos esprits à l'entrée de la zone.");
+        restoreTeamAfterDefeat();
     }
     combatHooks.onEnd?.(isVictory);
 }
@@ -1375,6 +1501,25 @@ export const skullDamage = 1;           // dégâts infligés par crâne lors d'
 export let enemy = { name:"Ennemi", hp:50, maxHp:50, attack:10, resistances:{}, combatPoints:0, mana: { red:0, blue:0, green:0, yellow:0, purple:0 }, spells:[], weapon: null, abilities: [], statusEffects: {}, bonusTurn: 0, inventoryItem: null };
 
 // si le joueur meurt, on restaure ses PV et réinitialise le combat ; `keepHp` : phase enchaînée d'un duel, les PV restent ceux du combat précédent
+/** Point de repos (pierre de voyage, fontaine, couche d'hôte) : tous les personnages à terre se relèvent en pleine forme. Renvoie les PV rendus aux compagnons relevés. */
+export function reviveTeamAtRest(){
+    let gained = 0;
+    (player.downAllies || []).forEach(id => { if(ALLIES[id]) gained += allyMaxHp(player, id); });
+    player.downAllies = [];
+    Object.values(gameState.allies || {}).forEach(a => { if(a?.ko){ a.ko = false; a.hp = a.maxHp; } });
+    gameState.heroKo = false;
+    return gained;
+}
+
+/** Combat perdu : tous les personnages (Hou Yi et compagnons, morts compris) se relèvent à 100 % de leurs PV, une fois l'écran de défaite affiché. */
+export function restoreTeamAfterDefeat(){
+    player.hp = player.maxHp;
+    reviveTeamAtRest();
+    Object.values(gameState.allies || {}).forEach(a => { if(a){ a.ko = false; a.hp = a.maxHp; } });
+    updateStats();
+    saveUpdate();
+}
+
 export function restartCombat({ keepHp = true } = {}){
     actionGuard.reset();
     introToken++;
@@ -1390,17 +1535,30 @@ export function restartCombat({ keepHp = true } = {}){
 
     // Les PV ne reviennent plus tout seuls : le héros entre dans le combat avec les PV qu'il avait en sortant du précédent (potions : potions.js).
     // Un héros tombé au combat précédent est relevé à la moitié de ses PV max. `keepHp: false` : réinitialisation complète (tests, outils).
-    player.hp = !keepHp ? player.maxHp : (player.hp <= 0 ? Math.max(1, Math.ceil(player.maxHp * DEFEAT_REVIVE_PCT)) : Math.max(1, Math.min(player.hp, player.maxHp)));
+    // Un personnage tombé au combat précédent reste à terre (Hou Yi : 0 PV ; un compagnon : `downAllies`) jusqu'à un point de repos ou un objet de résurrection.
+    // Seule une défaite (toute l'équipe à terre) relève tout le monde : Hou Yi à la moitié de ses PV, les compagnons en pleine forme.
+    const roster = teamAllies(player);
+    let downIds = keepHp ? (Array.isArray(player.downAllies) ? player.downAllies : []).filter(id => roster.includes(id)) : [];
+    const heroDead = keepHp && player.hp <= 0;
+    const wholeTeamDown = heroDead && downIds.length >= roster.length;
+    if(wholeTeamDown) downIds = [];
+    const heroDown = heroDead && !wholeTeamDown;
+    player.downAllies = downIds;
+    player.hp = !keepHp ? player.maxHp : (heroDown ? 0 : (player.hp <= 0 ? Math.max(1, Math.ceil(player.maxHp * DEFEAT_REVIVE_PCT)) : Math.max(1, Math.min(player.hp, player.maxHp))));
     player.combatPoints = 0;
     player.bonusTurn = 0;
     // La jauge de Xiūxiān est conservée d'un combat à l'autre ; seul son état actif (3 tours) ne l'est pas. Les points de Bataille la remontent au moins à leur niveau.
     player.transe = 0; player.transeClass = null;
     gameState.turnClass = null;   // la classe du tour revient à celle du héros
+    gameState.foes = [];   // groupe d'ennemis reconstruit par newEnemy (foes.js)
     gameState.charge = newCharge();   // les barres sont initialisées plus bas (initCharge), une fois l'ennemi en place
     gameState.actionQueue = newActionQueue(); gameState.enemyPending = null;
+    gameState.allies = buildTeam(player); gameState.allyShield = null; gameState.heroKo = heroDown;   // équipe de combat : pleine forme, sauf les personnages restés à terre
+    downIds.forEach(id => { const a = gameState.allies[id]; if(a){ a.ko = true; a.hp = 0; } });
+    prepareAllyPortraits();               // dessins des compagnons puis barres de vie
     gameState.playedClasses = new Set();   // classes jouées ce combat (PA de classe)
     gameState.forcedClass = enemy?.training || null;   // entraînement : une seule classe, imposée par le maître
-    if(gameState.forcedClass) log(`Entraînement : ce combat se mène uniquement en ${CLASS_SHORT[gameState.forcedClass] || gameState.forcedClass}.`);
+    if(gameState.forcedClass) log(`Entraînement : ce combat se mène avec ${ALLIES[gameState.forcedClass] ? ALLIES[gameState.forcedClass].name : 'Hou Yi'} seul.`);
     gameState.transeApplied = null;
     gameState.doubleCastUsed = false;
     syncGauge();   // une jauge par classe : on affiche celle de la classe du tour
@@ -1446,6 +1604,44 @@ export function restartCombat({ keepHp = true } = {}){
 }
 
 // Gérer la mort du joueur
+/** Toute l'équipe est à terre : Hou Yi à 0 PV et plus aucun compagnon debout (la défaite). Tant qu'un compagnon tient, le combat continue. */
+export function partyWiped(){
+    return (player.hp || 0) <= 0 && !livingAllies(gameState.allies).length;
+}
+
+/** Soin, ranimation ou bonus d'un objet sur un membre de l'équipe (`classId` : le Chasseur est Hou Yi). Renvoie { ok, message }. */
+export function applyAllyItemEffect(effect, classId){
+    const isHero = classId === 'assassin';
+    const ally = isHero ? null : gameState.allies?.[classId];
+    if(!isHero && !ally) return { ok: false, message: 'Choisissez un équipier.' };
+    const name = isHero ? 'Hou Yi' : ally.name;
+    const down = isHero ? gameState.heroKo : ally.ko;
+    if(effect.revive){
+        if(!down) return { ok: false, message: `${name} est encore debout.` };
+        if(isHero){ gameState.heroKo = false; player.hp = Math.max(1, Math.round(player.maxHp * effect.revive.pct)); log(`${name} se relève avec ${player.hp} PV !`); }
+        else { reviveAlly(ally, effect.revive.pct); log(`${name} se relève avec ${ally.hp} PV !`); }
+        updateStats();
+        return { ok: true, message: `${name} est ranimé. ` };
+    }
+    if(down) return { ok: false, message: `${name} est hors de combat : il faut d'abord le ranimer.` };
+    let message = '';
+    if(effect.allyHeal){
+        const target = isHero ? player : ally;
+        const amount = Math.round(target.maxHp * effect.allyHeal.pct);
+        if(target.hp >= target.maxHp) return { ok: false, message: `${name} est en pleine forme.` };
+        const healed = isHero ? healEntity(player, amount).healed : healAlly(ally, amount);
+        log(`${name} récupère ${healed} PV.`);
+        message += `${name} récupère ${healed} PV. `;
+    }
+    if(effect.allyBuff){
+        const { key, turns } = effect.allyBuff;
+        const target = isHero ? player : ally;
+        if(inflictBuff(target, key, turns)){ log(`${name} : ${ALTERATION_LABELS[key].name} pendant ${turns} tours.`); message += `${name} : ${ALTERATION_LABELS[key].name} pendant ${turns} tours. `; }
+    }
+    updateStats();
+    return { ok: true, message };
+}
+
 export function handlePlayerDeath(){
     if(gameState.combatState === 'finished') {
         return;
@@ -1460,6 +1656,18 @@ export function handlePlayerDeath(){
         log(`Vous êtes ressuscité avec ${reviveHp} HP !`);
         updateStats();
         saveUpdate();
+        return;
+    }
+
+    // Des compagnons tiennent encore debout : Hou Yi est à terre, mais le combat continue.
+    if(livingAllies(gameState.allies).length){
+        if(!gameState.heroKo){
+            gameState.heroKo = true;
+            player.hp = 0;
+            log('Hou Yi est à terre ! Ses compagnons continuent le combat.');
+            if(gameState.turnClass === 'assassin') gameState.turnClass = null;
+            updateStats();
+        }
         return;
     }
     saveCombatRecord(finishCombatRecord('defeat'));   // mesure d'équilibrage : les défaites comptent autant que les victoires
@@ -1641,6 +1849,10 @@ export function loadGameData() {
             player.inventory = loaded.inventory ?? player.inventory;
             player.equipment = { rightHand: null, leftHand: null, item: null, ...(loaded.equipment || {}) };
             player.equipment.rightHand = player.equippedWeapon;
+            player.allySpells = loaded.allySpells && typeof loaded.allySpells === 'object' ? Object.fromEntries(Object.entries(loaded.allySpells).filter(([, ids]) => Array.isArray(ids)).map(([id, ids]) => [id, ids.filter(x => typeof x === 'string')])) : {};   // sorts choisis pour chaque compagnon (allySpells.js)
+            player.downAllies = Array.isArray(loaded.downAllies) ? loaded.downAllies.filter(x => typeof x === 'string') : [];   // compagnons restés à terre
+            player.allyWeapons = loaded.allyWeapons && typeof loaded.allyWeapons === 'object' ? { ...loaded.allyWeapons } : {};   // armes portées par les compagnons
+            ensureAllyWeapons(player);   // un compagnon déjà recruté sans arme en reçoit une
             player.stuffOwned = loaded.stuffOwned ?? [];
             player.stuff = loaded.stuff ?? player.stuff;
             migrateShadowCollar(player);   // avant normalizeStuff, qui oublie les ids inconnus
@@ -1771,7 +1983,7 @@ export function endAction(){
     saveUpdate();
     if(gameState.combatState !== 'active') return;
     if(enemy.hp <= 0){ handleEnemyDefeated(); return; }
-    if(player.hp <= 0) handlePlayerDeath();
+    if(partyWiped()) handlePlayerDeath();
 }
 
 // Dès que le joueur ne joue plus (tour adverse, écran de début de combat), TOUS ses boutons sont désactivés :
@@ -1804,26 +2016,31 @@ export function useWeapon(hand = 'right'){
     if(gameState.combatState !== 'active'){ log("Aucun combat en cours."); return; }
     if(!decoupled() && currentTurn !== 'player'){ log("Seul le joueur actif peut utiliser une attaque."); return; }
     if(rejectRushedAction()) return;
+    const cls = getTurnClass();
+    const ally = cls !== 'assassin' ? gameState.allies?.[cls] : null;   // le personnage choisi manie SON arme : Hou Yi son arc, un compagnon son arme de type
+    if(cls !== 'assassin' && !ally){ log("L'arme est celle de Hou Yi : choisissez-le dans la barre d'action."); return; }
     if(tutorialCallbacks.allowWeapon && !tutorialCallbacks.allowWeapon()) return;   // tutoriel : l'arme n'est acceptée qu'à l'étape prévue
     if(!classCanAct()) return;   // la classe du tour doit être chargée (barre pleine) pour choisir une action
-    const weapon = hand === 'left' ? getLeftHandWeapon() : player.equippedWeapon;
+    if(ally ? ally.ko : gameState.heroKo){ log(`${ally ? ally.name : 'Hou Yi'} est à terre : il ne peut plus manier son arme.`); return; }
+    const weapon = ally ? allyEquippedWeapon(player, cls) : hand === 'left' ? getLeftHandWeapon() : player.equippedWeapon;
     if(!weapon){ log("Aucune arme équipée !"); return; }
     if((player.statusEffects?.sealed || 0) > 0){ log("Vous êtes scellé : impossible d'utiliser une arme."); return; }
     if(player.combatPoints < weapon.actionPoints){ 
         log(`Il faut ${weapon.actionPoints} points d'action pour utiliser ${weapon.name}.`); 
         return; 
     }
-    if(player.hp<=0){ handlePlayerDeath(); return; }
+    if(partyWiped()){ handlePlayerDeath(); return; }
     if(player.level < weapon.minLevel){ 
         log(`Nécessite niveau ${weapon.minLevel} pour utiliser ${weapon.name}`); 
         return; 
     }
     
+    if(targetGate(isAreaWeapon(weapon), () => useWeapon(hand))) return;   // plusieurs ennemis : on touche l'ennemi visé après avoir choisi l'attaque (foes.js)
     actionGuard.markPlayerAction();
     player.combatPoints -= weapon.actionPoints;   // payé au choix
-    logActiveAction(`utilise l'arme ${weapon.name} (cout ${weapon.actionPoints} PA)`);
+    logActiveAction(`${ally ? `(${ally.name}) ` : ''}utilise l'arme ${weapon.name} (cout ${weapon.actionPoints} PA)`);
     const effect = () => {
-        strikeWithWeapon(weapon);
+        strikeWithWeapon(weapon, { ally });
         tutorialCallbacks.onWeaponUsed?.();
         endAction();
     };
@@ -1832,15 +2049,16 @@ export function useWeapon(hand = 'right'){
 }
 
 // Coup d'arme du joueur sur l'ennemi (dégâts, critique, vol de vie, animation) ; ne consomme ni PA ni tour.
-function strikeWithWeapon(weapon, { free = false } = {}){
-    let dmg = weapon.damage;
+function strikeWithWeapon(weapon, { free = false, ally = null, pct = 100, nonLethal = false } = {}){
+    const who = ally || player;   // l'attaquant : Hou Yi ou le compagnon qui manie l'arme
+    let dmg = Math.max(1, Math.round(weapon.damage * pct / 100));   // `pct` : attaque partielle (Xiūxiān de Hou Yi : 50 %)
     const biomeBonus = weaponBiomeBonus(weapon, enemy.biome);
     if(biomeBonus > 0) {
         dmg += biomeBonus;
         log(`${weapon.name} est dans son biome (${BIOME_LABELS[weapon.biome]}) : +${biomeBonus} dégâts.`);
     }
 
-    if((player.statusEffects?.flameblade || 0) > 0) {
+    if(!ally && (player.statusEffects?.flameblade || 0) > 0) {
         const flameBonus = Math.max(0, Math.floor(player.statusEffects.flameblade));
         dmg += flameBonus;
         delete player.statusEffects.flameblade;
@@ -1848,18 +2066,19 @@ function strikeWithWeapon(weapon, { free = false } = {}){
     }
 
     // Attaque = chance de critique, défense de l'ennemi = chance de blocage (voir combatStats.js)
-    const selfHit = confusedSelfHit(player);   // Confus : le coup se retourne contre le héros
-    const strike = resolveStrike(dmg, player, selfHit ? player : enemy);
+    const selfHit = !ally && confusedSelfHit(player);   // Confus : le coup se retourne contre le héros
+    const strike = resolveStrike(dmg, who, selfHit ? player : enemy);
     const isCrit = strike.crit;
     const blockText = blockLabel(strike.block);
     dmg = strike.damage;
+    if(nonLethal && !selfHit) dmg = Math.min(dmg, Math.max(0, enemy.hp - 1));   // jamais mortelle
 
     if(selfHit) log(`Vous êtes confus : ${weapon.name} se retourne contre vous !`);
-    applyDamage(selfHit ? player : enemy, dmg, { damageSource: 'weapon' });
+    applyDamage(selfHit ? player : enemy, dmg, { damageSource: 'weapon', area: !selfHit && isAreaWeapon(weapon) });
     playSfx('weaponHit', { isPlayer: true, rarity: weapon.rarity });
 
     // Vol de vie
-    if(player.lifesteal > 0) {
+    if(!ally && player.lifesteal > 0) {
         const heal = Math.floor(dmg * player.lifesteal);
         if(healEntity(player, heal).harmed === 0){
             flyHeal(true, heal);
@@ -1869,8 +2088,8 @@ function strikeWithWeapon(weapon, { free = false } = {}){
 
     const icon = getWeaponIcon(weapon.type);
 
-    showStrikeAnimation({ icon, title: weapon.name, target: `→ ${enemy.name}` }, strike, true, dmg);
-    log(`${icon} Vous utilisez ${weapon.name}${free ? ' gratuitement' : ''} et infligez ${dmg} dégâts.${isCrit ? ' Coup critique !' : ''}${strike.unblockable ? ' Coup inblocable !' : ''}${blockText ? ` L'ennemi ${blockText === 'BLOQUÉ !' ? 'bloque le coup' : 'pare le coup'}.` : ''}`);
+    showStrikeAnimation({ icon, title: weapon.name, target: `→ ${enemy.name}`, projectile: weapon.type === 'bow' ? 'arrow' : 'melee' }, strike, true, dmg);
+    log(`${icon} ${ally ? escapeHtml(ally.name) + ' utilise' : 'Vous utilisez'} ${weapon.name}${free ? ' gratuitement' : ''} et inflig${ally ? 'e' : 'ez'} ${dmg} dégâts.${isCrit ? ' Coup critique !' : ''}${strike.unblockable ? ' Coup inblocable !' : ''}${blockText ? ` L'ennemi ${blockText === 'BLOQUÉ !' ? 'bloque le coup' : 'pare le coup'}.` : ''}`);
 }
 
 
@@ -1885,7 +2104,10 @@ async function castEffectSpellDecoupled(spell){
         pay();
         chooseAction(() => withCaster('player', async () => {
             announce();
+            if(spell.cinematic) await playUltimateCinematic(spell);   // invocation : scène plein écran avant l'effet
+            const foeBefore = snapshotFoe(enemy), foeFocus = enemy;
             const ok = await module.applyClassSpellEffect(spell);
+            spreadAreaEffects(spell, foeFocus, foeBefore);   // sort de zone : altérations et pertes de qì aussi chez les autres ennemis
             saveUpdate();
             if(ok){ tutorialCallbacks.onSpellCast?.(); endAction(); }
         }));
@@ -1893,9 +2115,12 @@ async function castEffectSpellDecoupled(spell){
     }
     const run = (index, config) => () => withCaster('player', async () => {
         announce();
+        if(spell.cinematic) await playUltimateCinematic(spell);   // invocation : scène plein écran avant l'effet
         if(config){ await config.onTileClick(index, board[index]); return; }   // position mémorisée : le sort part sur elle, quelle que soit la tuile qui s'y trouve
         const before = module.snapshotBoard();
+        const foeBefore = snapshotFoe(enemy), foeFocus = enemy;
         const ok = await module.applyClassSpellEffect(spell);
+        spreadAreaEffects(spell, foeFocus, foeBefore);   // sort de zone : altérations et pertes de qì aussi chez les autres ennemis
         saveUpdate();
         if(ok) module.endPlayerSpellTurn(before); else resumeAfterBoundary();
     });
@@ -1928,13 +2153,14 @@ export function castSpell(spellId){
         log(missingColor ? `Pas assez de qì ${missingColor} !` : "Pas assez de qì !");
         return;
     }
+    if(spellNeedsTarget(spell) && targetGate(isAreaSpell(spell), () => castSpell(spellId))) return;   // plusieurs ennemis : on touche l'ennemi visé après avoir choisi le sort (foes.js)
     if(decoupled() && spell.effect){ castEffectSpellDecoupled(spell); return; }   // sorts à effet : soutiens tout de suite, sorts de plateau en fin de tour de plateau
     actionGuard.markPlayerAction();
     consumeSpellMana(player, spell);   // coût payé au choix
     if(!decoupled() && xiuEffect().doubleCast && !gameState.doubleCastUsed){   // Double Talisman : un second sort sans perdre le tour (tutoriel et duels ; sans objet quand les actions ne prennent pas le tour)
         gameState.doubleCastUsed = true;
         addBonusTurn(player, 1);
-        log('Double Talisman : vous pourrez lancer un second sort ce tour.');
+        log('Colère du Roi Dragon : vous pourrez lancer un second sort ce tour.');
     }
     startSpellCooldown(spell);
     // Effet du sort : joué tout de suite ou en sortant de la file (la classe est consommée dès le choix).
@@ -1946,7 +2172,10 @@ export function castSpell(spellId){
             // Import dynamique pour éviter les dépendances circulaires
             import('./classSpellEffects.js').then(async module => {
                 const boardBefore = module.snapshotBoard();
-                if(await module.applyClassSpellEffect(spell)) {
+                const foeBefore = snapshotFoe(enemy), foeFocus = enemy;
+                const applied = await module.applyClassSpellEffect(spell);
+                spreadAreaEffects(spell, foeFocus, foeBefore);   // sort de zone : altérations et pertes de qì aussi chez les autres ennemis
+                if(applied) {
                     saveUpdate();
                     tutorialCallbacks.onSpellCast?.();
                     // Plateau modifié : on attend la régénération, les combos qui suivent profitent au lanceur.
@@ -1959,7 +2188,9 @@ export function castSpell(spellId){
         }
         // Sorts standards (dégâts ou soins)
         logActiveAction(`lance le sort ${spell.name}`);
+        const foeBefore = snapshotFoe(enemy), foeFocus = enemy;
         applyStandardSpellEffects(player, enemy, spell, true);
+        spreadAreaEffects(spell, foeFocus, foeBefore);   // sort de zone : altérations et pertes de qì aussi chez les autres ennemis
         updateStats();
         saveUpdate();
         // Notifier le tutoriel qu'un sort a été lancé
@@ -1972,6 +2203,12 @@ export function castSpell(spellId){
 
 // Lance un ultime : jauge de rage pleine + qì requis ; la jauge retombe à 0. La cinématique plein écran éventuelle
 // (voir `playUltimateCinematic`) se joue avant l'effet.
+/** L'ultime consomme la Xiūxiān de Longwang (sa jauge repart à zéro). */
+function spendUltimateXiu(){
+    const a = gameState.allies?.sorcerer;
+    if(a){ endTranse(a); a.rage = 0; }
+}
+
 export async function castUltimate(spellId){
     if(gameState.combatState !== 'active'){ log("Aucun combat en cours."); return; }
     if(!decoupled() && currentTurn !== 'player'){ log("Seul le joueur actif peut lancer un sort."); return; }
@@ -1980,9 +2217,8 @@ export async function castUltimate(spellId){
     if(!spell || getEquippedUltimate(player)?.id !== spell.id){ log("Ultime indisponible !"); return; }
     if(player.level < spell.minLevel && player.cheatAllUltimates !== true){ log(`Nécessite niveau ${spell.minLevel}`); return; }
     if(isMuted(player)){ log("Vous êtes muet : impossible de lancer un ultime."); return; }
-    if(!classAllowsUltimate(getTurnClass())){ log("L'ultime n'est lançable qu'en choisissant la classe Mage antique (sorcier) pour ce tour."); return; }
-    if(!isInTranse(player)){ log("La Xiūxiān n'est pas déclenchée : la jauge doit d'abord se remplir !"); return; }
-    if(player.cheatMaxRage !== true && player.transeClass !== 'sorcerer'){ log("L'ultime demande la Xiūxiān du Mage : remplissez la jauge du Mage, puis déclenchez-la."); return; }
+    if(!classAllowsUltimate(getTurnClass())){ log("L'ultime n'est lançable qu'en choisissant Longwang pour ce tour."); return; }
+    if(player.cheatMaxRage !== true && !allyInXiuxian('sorcerer')){ log("L'ultime demande la Xiūxiān de Longwang : remplissez sa jauge (il doit encaisser des coups), puis déclenchez-la."); return; }
     if(player.cheatFreeSpells !== true && !canCastUltimateMana(player, spell)){
         const missing = ultimateCostEntries(spell).find(([color, need]) => collectedUltimateMana(player, color) < need);
         log(missing ? `Pas assez de qì ${missing[0]} collecté !` : "Pas assez de qì !");
@@ -1993,15 +2229,17 @@ export async function castUltimate(spellId){
         if(!classCanAct()) return;
         actionGuard.markPlayerAction();
         if(player.cheatFreeSpells !== true) spendUltimateMana(player, spell);
-        resetRage(player);
+        spendUltimateXiu();
         chooseAction(() => withCaster('player', async () => {
             playSfx('spellCast', { isPlayer: true, spellId: spell.id });
-            logActiveAction(`lance l'ultime ${spell.name}`);
+            logActiveAction(`invoque ${spell.name}`);
             updateStats();
             await playUltimateCinematic(spell);
             const module = await import('./classSpellEffects.js');
             const boardBefore = module.snapshotBoard();
+            const foeBefore = snapshotFoe(enemy), foeFocus = enemy;
             const ok = await module.applyClassSpellEffect(spell);
+            spreadAreaEffects(spell, foeFocus, foeBefore);
             saveUpdate();
             if(ok) module.endPlayerSpellTurn(boardBefore); else resumeAfterBoundary();
         }), { turnBound: true });
@@ -2009,9 +2247,9 @@ export async function castUltimate(spellId){
     }
     actionGuard.markPlayerAction();
     if(player.cheatFreeSpells !== true) spendUltimateMana(player, spell);
-    resetRage(player);
+    spendUltimateXiu();
     playSfx('spellCast', { isPlayer: true, spellId: spell.id });
-    logActiveAction(`lance l'ultime ${spell.name}`);
+    logActiveAction(`invoque ${spell.name}`);
     updateStats();
     await playUltimateCinematic(spell);
     const module = await import('./classSpellEffects.js');
@@ -2227,6 +2465,40 @@ function bakeEnemyDamage(target, mult){
     target.skullMult = m;
 }
 
+/** Change l'ennemi ciblé (foes.js) : `enemy` est un binding exporté, il ne peut être réassigné que d'ici. */
+export function setActiveEnemy(next){ if(next) enemy = next; }
+
+/**
+ * Prépare un ennemi supplémentaire du groupe (renfort ou créature invoquée) comme newEnemy le fait pour le meneur, sans annonce :
+ * copie propre, limites de sorts, calibrage, tempérament, qì de départ. Les PV d'un renfort sont réduits (enemyGroup.js).
+ */
+export function prepareFoe(raw, { hpMult = 1, biome = null } = {}){
+    const foe = { ...raw };
+    foe.statusEffects = { ...(foe.statusEffects || {}) };
+    foe.spells = (Array.isArray(foe.spells) ? foe.spells : []).slice(0, MAX_ACTIVE_SPELLS);
+    if(Array.isArray(foe.weapon)) foe.weapon = foe.weapon.slice(0, MAX_WEAPONS)[0] || null;
+    if(biome) foe.biome = biome;
+    calibrateEnemyForCombat(foe);
+    if(hpMult !== 1){ foe.maxHp = Math.max(1, Math.round(foe.maxHp * hpMult)); foe.hp = foe.maxHp; }
+    foe.levelEdge = Math.max(0, (foe.level || 0) - (player.level || 0));
+    if(!enemyPersonalities[foe.personality]) foe.personality = assignPersonality(foe.templateId || foe.name);
+    foe.mana = { ...EMPTY_MANA_POOL };
+    Object.keys(foe.mana).forEach(color => {
+        const bonus = getAttributeManaBonus(foe, color, "initial");
+        if(bonus > 0) addManaForColor(foe, color, bonus, { applyGainBonus: false });
+    });
+    (foe.abilities || []).forEach(abilityId => {
+        const ability = allAbilities.find(a => a.id === abilityId);
+        Object.keys(ability?.startMana || {}).forEach(color => addManaForColor(foe, color, ability.startMana[color], { applyGainBonus: false }));
+    });
+    foe.combatPoints = 0;
+    foe.bonusTurn = 0;
+    foe.summonsMade = 0;
+    return foe;
+}
+
+const FRIENDLY_FOE_HP_SCALE = 0.4;   // part des PV calibrés qu'a l'ennemi du combat de découverte d'une recrue
+
 export function newEnemy(selectedEnemy = null){
     enemy = selectedEnemy ? { ...selectedEnemy } : generateRandomEnemy(player.level, spellsCatalog, allWeapons);
     // Copie propre des statuts (étourdi, affaibli, poison…) : les ennemis générés n'en ont pas, et les sorts écrivent dedans sans vérifier.
@@ -2239,6 +2511,9 @@ export function newEnemy(selectedEnemy = null){
     // Calibrage de la durée du combat (3 à 8 min selon la catégorie, combatBalance.js) ; remplace l'ancien plancher « plus de PV que le héros ».
     if(!enemy.isTutorialEnemy && !enemy.arena && !enemy.duel) calibrateEnemyForCombat(enemy);
     else if(!enemy.isTutorialEnemy && ENEMY_HP_FLOOR_ABOVE_HERO) raiseEnemyHpAboveHero(enemy, player);
+
+    // Combat de découverte d'une recrue (exploration.js : registerFriendlyFoe) : un petit ennemi, vaincu en quelques tours.
+    if(enemy.friendly){ enemy.maxHp = Math.max(12, Math.round(enemy.maxHp * FRIENDLY_FOE_HP_SCALE)); enemy.hp = enemy.maxHp; }
 
     // Avantage du plus haut niveau : bonus d'attaque et de défense (critiques et blocages), borné et annoncé plus bas, voir combatStats.js
     enemy.levelEdge = Math.max(0, (enemy.level || 0) - (player.level || 0));
@@ -2280,6 +2555,7 @@ export function newEnemy(selectedEnemy = null){
         log(`L'ennemi dispose de sorts : ${enemy.spells.map(s => s.name).join(", ")}`);
     }
     updateEnemySpells();
+    setupFoeGroup(enemy);   // parfois 2 ou 3 ennemis (foes.js)
     // déterminer au hasard qui commence
     decideFirstTurn();
 }

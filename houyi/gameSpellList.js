@@ -1,23 +1,29 @@
 // Sorts disponibles selon le niveau (plafond, liste débloquée), boutons de sorts, déblocage par le menu secret.
 // Extrait de game.js.
 import { MAX_ACTIVE_SPELLS } from './constants.js';
+import { activeAllySpells } from './allySpells.js';
 import { actionGuard } from './actionGuard.js';
+import { isAllyKnockedOut, isMemberKO, ALLIES, memberName, memberColor } from './allies.js';
 import { isBoardResolving } from './board.js';
 import { preloadUltimateCinematic } from './ultimateCinematics.js';
 import { getEquippedUltimate } from './ultimates.js';
 import { spellCooldownLeft } from './spellCooldown.js';
 import { isMuted } from './alterations.js';
 import { icon as svgIcon } from './icons.js';
-import { bindTooltip, showSpellTooltip, hideSpellTooltip } from './gameTooltips.js';
+import { bindTooltip, showSpellTooltip, showMemberTooltip, hideSpellTooltip } from './gameTooltips.js';
 import { updateSpellsTab } from './gameSpellsTab.js';
 import { allSpells as spellsCatalog, getSpellsByLevel } from './spells.js';
 import { getClassSpells, playerClasses } from './classes.js';
-import { usableClasses, restrictedClasses, normalizeRoster, CLASS_SHORT } from './classRoster.js';
+import { usableClasses, restrictedClasses, normalizeRoster, CLASS_SHORT, START_CLASS } from './classRoster.js';
+import { RAGE_MAX } from './ultimates.js';
+import { ULTIMATE_CLASS, getSelectableUltimates } from './ultimates.js';
+import { statusBadgesHtml } from './statusBadges.js';
 import { actionSpells } from './skills.js';
 import { classProgress, classRemainingMs, classChargeInfo, isClassReady, chargeTick, spendClass, spendEnemy, isEnemyReady, chargeRunning, chargeSpeed, enqueueAction, takeNextDue, upcomingBeads } from './classCharge.js';
 import { renderPotionButtons } from './potionsView.js';
 import { isInTranse, describeTranse, transeEffectFor, TRANSE_TURNS } from './transe.js';
-import { canEntityCastSpell, castSpell, enemy, gameState, currentTurn, markMultiManaSpell, player, setTurnClass, spellColorsOf, spellCostHtml, spellEffectIcon, log, updateStats } from './game.js';
+import { escapeHtml } from './escapeHtml.js';
+import { xiuMembers, getLeftHandWeapon, canEntityCastSpell, castSpell, enemy, gameState, currentTurn, markMultiManaSpell, player, setTurnClass, spellColorsOf, spellCostHtml, spellEffectIcon, log, updateStats } from './game.js';
 
 // sorts
 const HIGH_SPELL_FROM_LEVEL = 15;
@@ -122,7 +128,7 @@ export function getTurnClass(){
 }
 
 /** Classes de combat utilisables maintenant (biome, entraînement). */
-export const usableNow = () => usableClasses(player, combatBiome(), gameState.forcedClass);
+export const usableNow = () => usableClasses(player, combatBiome(), gameState.forcedClass).filter(id => !isMemberKO(gameState.allies, gameState.heroKo, id));   // un membre hors de combat (Hou Yi compris) ne joue plus
 
 // ── Temps de chargement des actions ─────────────────────────────────────────
 // Les actions (sort, compétence de classe, objet, arme) sont INDÉPENDANTES du plateau : elles ne prennent pas le tour, partent dès que leur classe
@@ -212,9 +218,17 @@ export function pumpActions(){
     item.run();
     renderActionBeads();
 }
+/** Remplit tout de suite la barre d'action du lanceur (effet des sorts qui donnaient un tour bonus) : classe du sort (ou du tour) pour le héros, barre de l'ennemi pour lui. */
+export function refillActionBar(caster, classId = null){
+    if(!chargeEnabled()) return false;
+    if(caster === enemy) gameState.charge.enemyReady = gameState.charge.now;
+    else { const id = classId || getTurnClass(); if(!id) return false; gameState.charge.ready[id] = gameState.charge.now; }
+    if(typeof document !== 'undefined'){ createSpellButtons(); refreshClassPicker(); }
+    return true;
+}
 /** Une action vient d'être faite avec la classe du tour : elle se recharge. */
 export function spendActionCharge(){
-    if(!chargeEnabled()) return;
+    if(!chargeEnabled() || enemy?.isTutorialEnemy) return;   // tutoriel : la barre reste pleine (elle ne bloque rien) ; seule la démonstration de l'étape 2 la vide (tutorial.js)
     const id = getTurnClass();
     if(id) spendClass(gameState.charge, player, id, chargeFactor());
     createSpellButtons();
@@ -242,7 +256,12 @@ export function renderActionBeads(){
 let _beadKey = '';
 
 // Le temps de combat avance en temps réel, fenêtre visible ; quand une classe (ou l'ennemi) devient prête, boutons et barres se rafraîchissent.
+/** Vitesse de chargement de chaque membre de l'équipe selon ses altérations (Hou Yi : celles du héros ; un compagnon : les siennes). */
+const memberSpeeds = () => Object.fromEntries(usableNow().map(id => [id, chargeSpeed(id === 'assassin' ? player : gameState.allies?.[id])]));
+
 let _chargeLast = 0, _chargeKey = '';
+let _aiModule = null;
+const aiModule = () => (_aiModule ||= import('./gameTurnFlow.js').catch(() => null));   // import différé : gameTurnFlow.js dépend de ce module
 function chargeTicker(){
     renderActionBeads();
     const now = Date.now();
@@ -253,11 +272,13 @@ function chargeTicker(){
     // Tempo : plateau inactif depuis 5 s = chargements en pause (barres figées) ; ils reprennent au prochain combo du plateau.
     const running = chargeRunning(now, actionGuard.lastComboAt());
     if(typeof document !== 'undefined') document.body?.classList.toggle('charge-paused', !running);
-    if(!running) return;
-    const heroSpeed = chargeSpeed(player), foeSpeed = chargeSpeed(enemy);
+    if(!running){ pumpActions(); return; }   // pause d'inactivité : seules les barres sont figées ; une action déjà choisie et payée (objet, sort) doit partir quand même, sinon elle reste coincée dans la file
+    const heroSpeed = memberSpeeds(), foeSpeed = chargeSpeed(enemy);
     chargeTick(gameState.charge, dt, heroSpeed, foeSpeed);
     pumpActions();   // les actions en file partent dès que possible, sans lien avec le plateau
-    const key = usableNow().map(id => isClassReady(gameState.charge, id) ? 1 : 0).join('') + (isEnemyReady(gameState.charge) ? 'e' : '') + `|${heroSpeed}`;   // la vitesse (altérations) redessine les barres
+    aiModule().then(m => m && m.enemyProactiveAction());
+    import('./foeTurns.js').then(m => m.tickFoeCharges(dt)).catch(() => {});   // chaque autre ennemi du groupe a sa barre de chargement (foeTurns.js)   // l'ennemi choisit lui aussi ses actions dès qu'il est chargé
+    const key = usableNow().map(id => isClassReady(gameState.charge, id) ? 1 : 0).join('') + (isEnemyReady(gameState.charge) ? 'e' : '') + `|${Object.values(heroSpeed).join(',')}`;   // la vitesse (altérations) redessine les barres
     if(key !== _chargeKey){
         _chargeKey = key;
         createSpellButtons();
@@ -268,16 +289,23 @@ function chargeTicker(){
 if(typeof setInterval === 'function' && typeof document !== 'undefined') setInterval(chargeTicker, 250);
 
 /** Sorts proposés ce tour : sorts génériques équipés + sorts de la classe du tour (complétés jusqu'à MAX_ACTIVE_SPELLS) + commandes des compétences apprises. */
+export const INVOCATION_COOLDOWN = 3;   // tours de recharge d'une invocation
 export function combatSpellList(){
     const cls = getTurnClass();
-    const list = (player.activeSpells || []).filter(sp => !sp.class || sp.class === cls);
-    if(cls){
+    // Un personnage = ses propres boutons : les sorts équipés sans classe sont ceux de Hou Yi ; un compagnon n'a que les sorts de sa classe.
+    // Un compagnon a SON panel de sorts (allySpells.js) : la liste réglée pour lui, sinon les premiers sorts de sa classe.
+    const list = cls && cls !== START_CLASS ? [...activeAllySpells(player, cls)]
+        : (player.activeSpells || []).filter(sp => sp.class ? sp.class === cls : cls === START_CLASS);
+    if(cls && cls === START_CLASS){
         for(const sp of getClassSpells(cls, player.level)){
             if(list.length >= MAX_ACTIVE_SPELLS) break;
             if(!list.some(s => s.id === sp.id) && !(player.archivedSpells || []).includes(sp.id)) list.push(sp);
         }
     }
-    return [...list, ...actionSpells(player).filter(sp => !sp.class || sp.class === cls)];   // les commandes de classe n'existent que pour la classe du tour
+    // Invocations (anciens ultimes) : sorts comme les autres, réservés au Mage invocateur (classe du tour = ULTIMATE_CLASS) ; coût normal en qì,
+    // petit temps de recharge, aucune jauge de Xiūxiān requise.
+    const invocations = cls === ULTIMATE_CLASS ? getSelectableUltimates(player).map(sp => ({ ...sp, invocation: true, cooldown: sp.cooldown ?? INVOCATION_COOLDOWN })) : [];
+    return [...list, ...invocations, ...actionSpells(player).filter(sp => !sp.class || sp.class === cls)];   // les commandes de classe n'existent que pour la classe du tour
 }
 
 
@@ -291,13 +319,32 @@ function renderXiuBanner(zone){
         banner.setAttribute('role', 'status');
         zone.parentElement.insertBefore(banner, zone);
     }
-    const on = gameState.combatState === 'active' && isInTranse(player) && !!player.transeClass;
-    banner.hidden = !on;
-    if(!on){ banner.innerHTML = ''; return; }
-    const cls = player.transeClass, effect = transeEffectFor(cls);
-    const left = player.cheatMaxRage === true ? null : Math.max(1, Math.min(TRANSE_TURNS, Math.floor(player.transe || 0)));
-    banner.innerHTML = `<strong>Xiūxiān · ${CLASS_SHORT[cls] || cls}${effect.name ? ` : ${effect.name}` : ''}</strong>`
-        + `<span>${effect.text ? `Effet : ${effect.text}.` : ''}${left ? ` ${left} tour${left > 1 ? 's' : ''} restant${left > 1 ? 's' : ''}.` : ''}</span>`;
+    const members = gameState.combatState === 'active' ? xiuMembers() : [];
+    banner.hidden = !members.length;
+    if(!members.length){ banner.innerHTML = ''; return; }
+    banner.innerHTML = members.map(({ entity, classId: cls }) => {   // une Xiūxiān par membre : nom du porteur, effet, tours restants
+        const effect = transeEffectFor(cls);
+        const left = Math.max(1, Math.min(TRANSE_TURNS, Math.floor(entity.transe || 0)));
+        return `<div><strong>Xiūxiān · ${escapeHtml(entity === player ? 'Hou Yi' : entity.name)}${effect.name ? ` : ${escapeHtml(effect.name)}` : ''}</strong>`
+            + `<span>${effect.text ? ` Effet : ${escapeHtml(effect.text)}.` : ''} ${left} tour${left > 1 ? 's' : ''} restant${left > 1 ? 's' : ''}.</span></div>`;
+    }).join('');
+}
+
+/** Un personnage a-t-il au moins une action (sort ou arme) utilisable maintenant, à part l'attente de son chargement ? Sert à la pastille de son bouton. */
+export function memberHasAction(id){
+    const g = memberGauge(id);
+    if(!g || g.ko) return false;
+    const castable = sp => player.level >= (sp.minLevel || 1) && canEntityCastSpell(player, sp) && !spellCooldownLeft(sp.id);
+    if(id !== START_CLASS){   // compagnon : ses sorts de classe (son arme ne fait que les renforcer)
+        return !isMuted(g.entity) && activeAllySpells(player, id).some(castable);
+    }
+    if((player.statusEffects?.sealed || 0) <= 0){
+        const weapons = [player.equippedWeapon, getLeftHandWeapon()].filter(Boolean);
+        if(weapons.some(w => player.level >= (w.minLevel || 1) && player.combatPoints >= (w.actionPoints || 0))) return true;
+    }
+    if(isMuted(player)) return false;
+    return (player.activeSpells || []).filter(sp => !sp.class || sp.class === START_CLASS)
+        .some(castable);
 }
 
 function renderClassPicker(container){
@@ -312,26 +359,71 @@ function renderClassPicker(container){
     }
     renderXiuBanner(picker);
     const active = gameState.combatState === 'active';
-    const mine = active && currentTurn === 'player';
+    const mine = active && (currentTurn === 'player' || decoupled());   // choisir un membre à tout moment : seules ses actions attendent son chargement
     const current = getTurnClass();
     const loadout = normalizeRoster(player).loadout;
     picker.hidden = !active;   // toujours là en combat, même avec une seule classe : elle porte la barre de chargement
     picker.title = isInTranse(player) ? describeTranse(current) : 'Une classe par tour : ses sorts, son effet de Xiūxiān';
     const restricted = restrictedClasses(player, combatBiome());
     const forced = gameState.forcedClass;
-    picker.innerHTML = loadout.map(id => {
-        const reason = forced && id !== forced ? 'Entraînement : classe imposée' : (restricted[id] ? `Bridée ici : ${restricted[id]}` : playerClasses[id]?.name || id);
+    const html = loadout.map(id => {
+        const reason = isMemberKO(gameState.allies, gameState.heroKo, id) ? 'Hors de combat' : forced && id !== forced ? 'Entraînement : classe imposée' : (restricted[id] ? `Bridée ici : ${restricted[id]}` : `${ALLIES[id] ? ALLIES[id].name + ' · ' : ''}${playerClasses[id]?.name || id}`);
         // Barre de chargement : se remplit en temps réel jusqu'à ce que la classe soit prête (animation CSS pour le temps restant).
         const prog = Math.round(classProgress(gameState.charge, player, id, chargeFactor()) * 100);
         const remaining = classRemainingMs(gameState.charge, id);
-        const speed = chargeSpeed(player);   // altérations : le chargement ralentit ou s'arrête
+        const speed = memberSpeeds()[id] ?? 1;   // altérations (propres à chaque membre) : le chargement ralentit, s'accélère ou s'arrête
         const animStyle = remaining > 0 ? `--from:${prog}%;--to:100%;--dur:${Math.round(remaining / Math.max(0.05, speed))}ms;${speed <= 0 ? '--play:paused;' : ''}` : '';
         const info = classChargeInfo(player, id);
         const chargeText = prog >= 100 ? `Prête (chargement ${info.time})` : `Se recharge : ${Math.ceil(remaining / 1000)} s (temps ${info.time} : Agilité/Moral -${Math.round(info.pct.agility)} %, attribut -${Math.round(info.pct.attribute)} %, qì -${Math.round(info.pct.qi)} %, compétences -${info.pct.skills} %)`;
-        const off = !mine || (forced && id !== forced) || restricted[id];   // choisir une classe reste libre : seules ses ACTIONS attendent son chargement
-        return `<button type="button" class="class-pick${id === current ? ' on' : ''}${restricted[id] ? ' limited' : ''}${prog >= 100 ? ' ready-pulse' : ' charging'}${animStyle ? ' charging-anim' : ''}" data-class="${id}" aria-pressed="${id === current}"${off ? ' disabled' : ''} style="--charge:${prog}%;${animStyle}" title="${reason} · ${chargeText}"><span>${CLASS_SHORT[id] || id}</span></button>`;
+        const ko = isMemberKO(gameState.allies, gameState.heroKo, id);   // membre hors de combat : il ne joue plus
+        const off = !mine || (forced && id !== forced) || restricted[id] || ko;   // choisir un compagnon reste libre : seules ses ACTIONS attendent son chargement
+        // Pastille dorée : ce personnage (non sélectionné) est chargé et a une action utilisable maintenant (arme ou sort) ; un clic le sélectionne.
+        const hint = id !== current && !off && prog >= 100 && memberHasAction(id) ? `<span class="cp-hint" title="${escapeHtml(memberName(id))} peut agir maintenant"></span>` : '';
+        return `<button type="button" class="class-pick${id === current ? ' on' : ''}${restricted[id] ? ' limited' : ''}${ko ? ' ko' : ''}${prog >= 100 && !ko ? ' ready-pulse' : ' charging'}${animStyle ? ' charging-anim' : ''}" data-class="${id}" aria-pressed="${id === current}"${off ? ' disabled' : ''} style="--mc:${memberColor(id)};--charge:${prog}%;${animStyle}" title="${reason} · ${chargeText}"><span class="cp-name">${memberName(id)}</span>${hint}${memberBarsHtml(id)}</button>`;
     }).join('');
-    picker.querySelectorAll('.class-pick').forEach(btn => { btn.onclick = () => { if(setTurnClass(btn.dataset.class)) createSpellButtons(); }; });
+    // Les actions en dessous sont celles du personnage choisi : leur cadre prend sa couleur et porte son nom (lecteurs d'écran, infobulle).
+    const actions = document.getElementById('player-spells');
+    if(actions){
+        actions.dataset.member = current;
+        actions.style.setProperty('--mc', memberColor(current));
+        actions.title = `Actions de ${memberName(current)}`;
+    }
+    const key = html + `|${current}`;   // `disabled` est déjà dans le html
+    if(picker._key === key) return;   // rien n'a changé : on ne redessine pas (l'animation de chargement ne repart pas de zéro)
+    picker._key = key;
+    picker.innerHTML = html;
+    picker.querySelectorAll('.class-pick').forEach(btn => bindTooltip(btn, () => showMemberTooltip(btn, btn.dataset.class), hideSpellTooltip));   // appui long / survol : équipement, altérations, Xiūxiān en cours
+    picker.querySelectorAll('.class-pick').forEach(btn => { btn.onclick = () => { if(setTurnClass(btn.dataset.class)){ createSpellButtons(); updateStats(); document.dispatchEvent(new Event('charge-changed')); } }; });
+}
+
+/** Données d'un membre de l'équipe pour sa barre d'action : PV, jauge de Xiūxiān (ou tours restants), état. Hou Yi : le héros ; sinon le compagnon. */
+export function memberGauge(id){
+    const hero = id === START_CLASS;
+    const m = hero ? player : gameState.allies?.[id];
+    if(!m) return null;
+    const inXiu = Math.floor(m.transe || 0) > 0;
+    const rage = Math.floor(m.rage || 0);
+    return {
+        id, entity: m, hero, inXiu, rage,
+        hp: Math.max(0, Math.floor(m.hp || 0)), maxHp: Math.max(1, Math.floor(m.maxHp || 1)),
+        gauge: inXiu ? Math.floor(m.transe) / TRANSE_TURNS * 100 : Math.min(100, rage / RAGE_MAX * 100),
+        full: hero ? (m.cheatMaxRage === true || rage >= RAGE_MAX) : rage >= RAGE_MAX,
+        ko: hero ? !!gameState.heroKo : !!m.ko
+    };
+}
+// Barres fines au pied du bouton d'un personnage : PV puis Xiūxiān. Les données du personnage ne sont plus dupliquées ailleurs (plus de barre des compagnons en haut).
+function memberBarsHtml(id){
+    const g = memberGauge(id);
+    if(!g) return '';
+    const pct = Math.round(g.hp / g.maxHp * 100);
+    // Altérations propres à CE personnage (bonus et malus), en pastilles dans son bouton ; rien dans la zone de qì commune.
+    const badges = statusBadgesHtml(g.entity).replace(/ tabindex="0"/g, '').replace(/^<div class="status-badges">/, '<span class="status-badges cp-status">').replace(/<\/div>$/, '</span>');
+    return `${badges}<span class="cp-bars" aria-hidden="true"><i class="cp-hp" title="${g.hp} / ${g.maxHp} PV"><b style="width:${pct}%"></b><em>${g.hp}/${g.maxHp}</em></i><i class="cp-xiu${g.full && !g.inXiu ? ' full' : ''}${g.inXiu ? ' on' : ''}"><b style="width:${Math.round(g.gauge)}%"></b></i></span>`;
+}
+/** Redessine seulement la ligne des personnages (PV, Xiūxiān, chargement) sans toucher aux boutons d'action. */
+export function refreshClassPicker(){
+    const container = typeof document !== 'undefined' ? document.getElementById('spell-buttons') : null;
+    if(container && gameState.combatState === 'active') renderClassPicker(container);
 }
 
 export function createSpellButtons(){
@@ -356,7 +448,7 @@ export function createSpellButtons(){
         const muted = isMuted(player);   // Muet : cadenas, sort inutilisable
         btn.innerHTML = `
             <div class="spell-name">${sp.name} ${muted ? svgIcon('lock') : spellEffectIcon(sp)}</div>
-            <div class="spell-cost">${costHTML}${damageText}${healText}</div>
+            <div class="spell-cost">${sp.invocation ? '<span class="spell-tag">Invocation</span> ' : ''}${costHTML}${damageText}${healText}</div>
         `;
         const coolLeft = spellCooldownLeft(sp.id);
         if(coolLeft > 0) btn.querySelector('.spell-cost').insertAdjacentHTML('beforeend', ` <span class="spell-cooldown">Recharge : ${coolLeft} tour${coolLeft > 1 ? 's' : ''}</span>`);

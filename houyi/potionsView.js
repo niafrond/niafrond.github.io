@@ -2,13 +2,16 @@
 import { player, gameState, currentTurn, drinkPotionAction, xiuEffect } from './game.js';
 import { POTION_SIZES, POTIONS, potionCount, potionHeal, drinkBlockReason } from './potions.js';
 import { escapeHtml } from './escapeHtml.js';
-import { itemUsability, useInventoryItem } from './gameInventoryTabs.js';
-import { classCanAct } from './gameSpellList.js';
+import { itemUsability, useItemChoosingTarget } from './gameInventoryTabs.js';
+import { openTargetPicker, hasLivingAlly } from './itemTargetPicker.js';
+import { classCanAct, decoupled } from './gameSpellList.js';
 import { isSingleUse } from './itemReuse.js';
+import { showItemTooltip, markPressHeld, hideSpellTooltip, ensureSpellTooltip, placeTooltip } from './gameTooltips.js';
 
 const label = size => `${POTIONS[size].name} (+${potionHeal(player, size)} PV)`;
 
-let potionMenuOpen = false;   // le menu des potions est déplié (après un clic sur « Objet »)
+let potionMenuOpen = false;
+// le menu des potions est déplié (après un clic sur « Objet »)
 
 /** Objets de l'inventaire utilisables en combat (tout objet « usage unique » ou « relique réutilisable » du sac, quel que soit son emplacement actif). */
 const usableItems = () => (player.inventory || []).map((item, index) => ({ item, index }))
@@ -22,31 +25,35 @@ const itemTag = item => (item.type === 'reusable' && !isSingleUse(item))
 export function renderPotionButtons() {
     const box = document.getElementById('potion-buttons');
     if (!box) return;
-    if (gameState.combatState !== 'active') { potionMenuOpen = false; box.innerHTML = ''; box.classList.remove('potion-menu'); return; }
-    const mine = currentTurn === 'player';
+    if (gameState.combatState !== 'active') { potionMenuOpen = false; box.innerHTML = ''; box.classList.remove('potion-menu'); document.getElementById('player-spells')?.classList.remove('object-menu'); return; }
+    const mine = currentTurn === 'player' || decoupled();   // actions indépendantes du plateau : l'objet reste disponible pendant le tour de plateau adverse
     const potions = POTION_SIZES.reduce((n, size) => n + potionCount(player, size), 0);
     const items = usableItems();
     const total = potions + items.length;
     if (!mine || !total) potionMenuOpen = false;
     box.classList.toggle('potion-menu', potionMenuOpen);   // menu déplié : sur toute la largeur
+    document.getElementById('player-spells')?.classList.toggle('object-menu', potionMenuOpen);   // menu Objet ouvert : les autres boutons d'action sont cachés
     if (!potionMenuOpen) {
-        const off = !mine || !total;
-        box.innerHTML = `<button type="button" class="enemy-spell-item potion-btn${off ? ' disabled' : ''}" data-open-potions${off ? ' disabled' : ''} title="${total ? 'Choisir une potion ou un objet' : 'Aucun objet : achetez-en chez les marchands'}">
-            <div class="spell-name">Objet</div>
-            <div class="spell-cost">${potions ? `Potions ×${potions}` : ''}${potions && items.length ? ' · ' : ''}${items.length ? `Objets ×${items.length}` : ''}${total ? '' : '—'}</div></button>`;
+        // Grisé comme les autres boutons d'action tant qu'aucune potion ni aucun objet n'est utilisable maintenant (PV pleins, PA manquants, en chargement, scellé…)
+        const free = !!xiuEffect().freePotions;
+        const ready = classCanAct();   // le personnage choisi doit avoir sa barre de chargement pleine pour agir
+        const usable = mine && ready && (POTION_SIZES.some(size => potionCount(player, size) > 0 && !drinkBlockReason(player, size, true, free)) || items.some(({ item }) => itemUsability(item).ok));
+        const off = !usable;
+        box.innerHTML = `<button type="button" class="enemy-spell-item potion-btn${off ? ' disabled' : ''}" data-open-potions${off ? ' disabled' : ''} title="${!total ? 'Aucun objet : achetez-en chez les marchands' : !ready ? 'En chargement : le personnage n\'est pas encore prêt' : off ? 'Aucun objet utilisable maintenant' : 'Choisir une potion ou un objet'}">
+            <div class="spell-name">Objet</div></button>`;
         return;
     }
     const free = !!xiuEffect().freePotions;   // Souffle du Lotus d'Or : potions sans point d'action
-    const potionTiles = POTION_SIZES.map(size => {
+    const potionTiles = POTION_SIZES.filter(size => potionCount(player, size) > 0).map(size => {   // une potion en quantité ×0 n'est pas affichée
         const p = POTIONS[size];
         const blocked = drinkBlockReason(player, size, true, free) || !classCanAct();
-        return `<button type="button" class="enemy-spell-item potion-btn${blocked ? ' disabled' : ''}" data-potion="${size}"${blocked ? ' disabled' : ''} title="${escapeHtml(label(size))}">
+        return `<button type="button" class="enemy-spell-item potion-btn${blocked ? ' disabled' : ''}" data-potion="${size}"${blocked ? ' aria-disabled="true"' : ''} title="${escapeHtml(label(size))}">
             <div class="spell-name">${escapeHtml(p.name)} ×${potionCount(player, size)}</div>
             <div class="spell-cost">${p.actionPoints > 0 && !free ? `${p.actionPoints} PA · ` : ''}${p.healPct} % des PV</div></button>`;
     }).join('');
     const itemTiles = items.map(({ item, index }) => {
         const use = itemUsability(item);
-        return `<button type="button" class="enemy-spell-item potion-btn${use.ok ? '' : ' disabled'}" data-use-item="${index}" data-item-id="${escapeHtml(item.id)}"${use.ok ? '' : ' disabled'} title="${escapeHtml(`${item.description || ''}${use.ok ? '' : ` (${use.reason})`}`)}">
+        return `<button type="button" class="enemy-spell-item potion-btn${use.ok ? '' : ' disabled'}" data-use-item="${index}" data-item-id="${escapeHtml(item.id)}"${use.ok ? '' : ' aria-disabled="true"'} title="${escapeHtml(`${item.description || ''}${use.ok ? '' : ` (${use.reason})`}`)}">
             <div class="spell-name">${escapeHtml(item.name)}</div>
             <div class="spell-cost">${item.actionPoints || 2} PA · ${itemTag(item)}${use.ok ? '' : ` · ${escapeHtml(use.reason)}`}</div></button>`;
     }).join('');
@@ -67,6 +74,36 @@ export function renderPotionsPanel() {
         }).join('');
 }
 
+const isOff = el => el.disabled || el.getAttribute('aria-disabled') === 'true';
+const HOLD_MS = 400;
+
+/** Appui long (ou survol) sur une tuile du menu « Objet » : sa description (effet, charges), sans rien utiliser. Délégué : le menu est redessiné à chaque changement. */
+function bindItemHold(box) {
+    let timer = null, shown = false;
+    const cancel = () => { clearTimeout(timer); timer = null; };
+    const show = tile => {
+        if (tile.dataset.useItem !== undefined) { const item = (player.inventory || [])[Number(tile.dataset.useItem)]; if (item) showItemTooltip(tile, item, { isEnemyItem: false }); return; }
+        const p = POTIONS[tile.dataset.potion];
+        if (!p) return;
+        const t = ensureSpellTooltip();
+        t.innerHTML = `<div class="spell-name">${escapeHtml(p.name)}</div><div class="spell-desc">${p.healPct} % des PV, à usage unique${p.actionPoints > 0 ? ` · ${p.actionPoints} PA` : ''}.</div>`;
+        t.classList.add('visible');
+        placeTooltip(t, tile, 260);
+    };
+    const tileOf = ev => ev.target.closest?.('[data-use-item], [data-potion]');
+    box.addEventListener('pointerover', ev => { const tile = ev.pointerType === 'mouse' && tileOf(ev); if (tile) show(tile); });
+    box.addEventListener('pointerout', ev => { if (ev.pointerType === 'mouse' && tileOf(ev)) hideSpellTooltip(); });
+    box.addEventListener('pointerdown', ev => {
+        const tile = ev.pointerType !== 'mouse' && tileOf(ev);
+        if (!tile) return;
+        cancel();
+        timer = setTimeout(() => { timer = null; shown = true; markPressHeld(); show(tile); }, HOLD_MS);
+    });
+    ['pointerup', 'pointercancel', 'pointerleave'].forEach(t => box.addEventListener(t, () => { cancel(); if (t !== 'pointerleave' || shown) hideSpellTooltip(); }));
+    box.addEventListener('contextmenu', ev => { if (tileOf(ev)) ev.preventDefault(); });
+    box.addEventListener('click', ev => { if (!shown) return; shown = false; ev.preventDefault(); ev.stopImmediatePropagation(); }, true);   // relâcher l'appui long n'utilise pas l'objet
+}
+
 function init() {
     document.addEventListener('stuff-changed', renderPotionsPanel);
     document.addEventListener('potions-changed', () => { renderPotionsPanel(); renderPotionButtons(); });
@@ -74,14 +111,27 @@ function init() {
         const btn = ev.target.closest('[data-drink]');
         if (btn) { drinkPotionAction(btn.dataset.drink); renderPotionsPanel(); }
     });
-    document.getElementById('potion-buttons')?.addEventListener('click', ev => {
+    const potionBox = document.getElementById('potion-buttons');
+    if (potionBox) bindItemHold(potionBox);
+    potionBox?.addEventListener('click', ev => {
         const open = ev.target.closest('[data-open-potions]');
         if (open && !open.disabled) { potionMenuOpen = true; renderPotionButtons(); return; }
         if (ev.target.closest('[data-close-potions]')) { potionMenuOpen = false; renderPotionButtons(); return; }
         const itemBtn = ev.target.closest('[data-use-item]');
-        if (itemBtn && !itemBtn.disabled) { potionMenuOpen = false; useInventoryItem(itemBtn.dataset.itemId, Number(itemBtn.dataset.useItem)); renderPotionButtons(); return; }
+        if (itemBtn && !isOff(itemBtn)) {
+            const idx = Number(itemBtn.dataset.useItem), item = (player.inventory || [])[idx];
+            potionMenuOpen = false; useItemChoosingTarget(item, idx); renderPotionButtons(); return;   // objet d'équipe ou soin : « sur qui ? » avec les barres de vie
+        }
         const btn = ev.target.closest('[data-potion]');
-        if (btn && !btn.disabled) { potionMenuOpen = false; drinkPotionAction(btn.dataset.potion); renderPotionButtons(); }
+        if (btn && !isOff(btn)) {
+            const size = btn.dataset.potion;
+            potionMenuOpen = false;
+            if (hasLivingAlly()) {   // des compagnons peuvent aussi être soignés : « sur qui ? »
+                openTargetPicker({ title: `${POTIONS[size].name} : sur qui ?`, blockReason: m => (m.ko ? 'hors de combat' : m.hp >= m.maxHp ? 'en pleine forme' : null),
+                    onPick: cls => { drinkPotionAction(size, cls); renderPotionButtons(); } });
+            } else drinkPotionAction(size);
+            renderPotionButtons();
+        }
     });
     renderPotionsPanel();
 }

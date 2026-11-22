@@ -78,28 +78,32 @@ export const SKILLS = [
 // deux de soutien (activées avec des Fulu, effet seulement quand la classe est la classe du tour) et une action (commande de combat de la classe).
 // Hors de SKILLS : la table `skillsTaughtBy` des compétences communes reste inchangée. Invisibles tant que la classe n'est pas obtenue.
 export const CLASS_SKILLS = [
-    { id: 'cl_assassin_brume', classId: 'assassin', kind: SUPPORT, name: 'Pas de brume', ap: 50, cost: 2, bonus: { chargePct: 10 }, description: 'Le Chasseur se recharge 10 % plus vite.' },
-    { id: 'cl_assassin_oeil', classId: 'assassin', kind: SUPPORT, name: 'Œil du chasseur', ap: 60, cost: 2, bonus: { attack: 6 }, description: 'Attaque +6 quand le Chasseur joue.' },
+    { id: 'cl_assassin_brume', classId: 'assassin', kind: SUPPORT, name: 'Pas de brume', ap: 50, cost: 2, bonus: { chargePct: 10 }, description: 'Hou Yi se recharge 10 % plus vite.' },
+    { id: 'cl_assassin_oeil', classId: 'assassin', kind: SUPPORT, name: 'Œil du chasseur', ap: 60, cost: 2, bonus: { attack: 6 }, description: 'Attaque +6 quand Hou Yi joue.' },
     { id: 'cl_assassin_aube', classId: 'assassin', kind: ACTION, name: 'Flèche de l\'aube', ap: 80, description: 'Une flèche lancée à la première lueur : dégâts directs.', spell: { cost: { yellow: 20 }, dmg: 70, scales: 1.5 } },
-    { id: 'cl_barbarian_loup', classId: 'barbarian', kind: SUPPORT, name: 'Peau de loup', ap: 50, cost: 2, bonus: { defense: 6 }, description: 'Défense +6 quand le Guerrier joue.' },
-    { id: 'cl_barbarian_sang', classId: 'barbarian', kind: SUPPORT, name: 'Sang chaud', ap: 70, cost: 2, bonus: { regenPct: 2 }, description: 'Le Guerrier récupère 2 % de ses PV max à chaque tour.' },
+    { id: 'cl_barbarian_loup', classId: 'barbarian', kind: SUPPORT, name: 'Peau de loup', ap: 50, cost: 2, bonus: { defense: 6 }, description: 'Défense +6 quand Sun Wukong joue.' },
+    { id: 'cl_barbarian_sang', classId: 'barbarian', kind: SUPPORT, name: 'Sang chaud', ap: 70, cost: 2, bonus: { regenPct: 2 }, description: 'Sun Wukong récupère 2 % de ses PV max à chaque tour.' },
     { id: 'cl_barbarian_hurle', classId: 'barbarian', kind: ACTION, name: 'Hurlement de la horde', ap: 90, description: 'Un cri qui ébranle l\'adversaire : dégâts directs.', spell: { cost: { red: 25 }, dmg: 75, scales: 2 } },
-    { id: 'cl_templar_formation', classId: 'templar', kind: SUPPORT, name: 'Formation serrée', ap: 60, cost: 3, bonus: { defense: 8 }, description: 'Défense +8 quand le Commandant joue.' },
-    { id: 'cl_templar_ordre', classId: 'templar', kind: SUPPORT, name: 'Ordre du jour', ap: 60, cost: 2, bonus: { chargePct: 8 }, description: 'Le Commandant se recharge 8 % plus vite.' },
+    { id: 'cl_templar_formation', classId: 'templar', kind: SUPPORT, name: 'Formation serrée', ap: 60, cost: 3, bonus: { defense: 8 }, description: 'Défense +8 quand Nezha joue.' },
+    { id: 'cl_templar_ordre', classId: 'templar', kind: SUPPORT, name: 'Ordre du jour', ap: 60, cost: 2, bonus: { chargePct: 8 }, description: 'Nezha se recharge 8 % plus vite.' },
     { id: 'cl_templar_etendard', classId: 'templar', kind: ACTION, name: 'Coup d\'étendard', ap: 80, description: 'Un coup porté avec la hampe de l\'étendard.', spell: { cost: { red: 15, purple: 10 }, dmg: 70, scales: 1.5 } },
-    { id: 'cl_sorcerer_sceau', classId: 'sorcerer', kind: SUPPORT, name: 'Sceau d\'eau claire', ap: 50, cost: 2, bonus: { poisonResist: 50 }, description: 'Le Mage résiste à moitié au poison.' },
-    { id: 'cl_sorcerer_meditation', classId: 'sorcerer', kind: SUPPORT, name: 'Méditation', ap: 60, cost: 2, bonus: { startMana: 2 }, description: 'Le Mage commence le combat avec 2 qì de chaque couleur de plus.' },
+    { id: 'cl_sorcerer_sceau', classId: 'sorcerer', kind: SUPPORT, name: 'Sceau d\'eau claire', ap: 50, cost: 2, bonus: { poisonResist: 50 }, description: 'Longwang résiste à moitié au poison.' },
+    { id: 'cl_sorcerer_meditation', classId: 'sorcerer', kind: SUPPORT, name: 'Méditation', ap: 60, cost: 2, bonus: { startMana: 2 }, description: 'Longwang commence le combat avec 2 qì de chaque couleur de plus.' },
     { id: 'cl_sorcerer_foudre', classId: 'sorcerer', kind: ACTION, name: 'Foudre intérieure', ap: 90, description: 'Le qì se fait foudre : dégâts directs.', spell: { cost: { blue: 25 }, dmg: 75, scales: 2 } },
-    { id: 'cl_monk_souffle', classId: 'monk', kind: SUPPORT, name: 'Souffle calme', ap: 70, cost: 3, bonus: { regenPct: 3 }, description: 'Le Moine récupère 3 % de ses PV max à chaque tour.' },
-    { id: 'cl_monk_paume', classId: 'monk', kind: SUPPORT, name: 'Paume légère', ap: 50, cost: 2, bonus: { chargePct: 10 }, description: 'Le Moine se recharge 10 % plus vite.' },
+    { id: 'cl_monk_souffle', classId: 'monk', kind: SUPPORT, name: 'Souffle calme', ap: 70, cost: 3, bonus: { regenPct: 3 }, description: 'Fuxi récupère 3 % de ses PV max à chaque tour.' },
+    { id: 'cl_monk_paume', classId: 'monk', kind: SUPPORT, name: 'Paume légère', ap: 50, cost: 2, bonus: { chargePct: 10 }, description: 'Fuxi se recharge 10 % plus vite.' },
     { id: 'cl_monk_soin', classId: 'monk', kind: ACTION, name: 'Paume guérisseuse', ap: 70, description: 'Une paume posée sur la plaie : soin.', spell: { cost: { green: 15 }, heal: 45, scales: 1.5 } },
-    { id: 'cl_alchemist_antidote', classId: 'alchemist', kind: SUPPORT, name: 'Antidote universel', ap: 70, cost: 3, bonus: { poisonResist: 100 }, description: 'L\'Alchimiste est immunisé contre le poison.' },
-    { id: 'cl_alchemist_cinabre', classId: 'alchemist', kind: SUPPORT, name: 'Réserve de cinabre', ap: 60, cost: 3, bonus: { startMana: 3 }, description: 'L\'Alchimiste commence le combat avec 3 qì de chaque couleur de plus.' },
+    { id: 'cl_alchemist_antidote', classId: 'alchemist', kind: SUPPORT, name: 'Antidote universel', ap: 70, cost: 3, bonus: { poisonResist: 100 }, description: 'Shennong est immunisé contre le poison.' },
+    { id: 'cl_alchemist_cinabre', classId: 'alchemist', kind: SUPPORT, name: 'Réserve de cinabre', ap: 60, cost: 3, bonus: { startMana: 3 }, description: 'Shennong commence le combat avec 3 qì de chaque couleur de plus.' },
     { id: 'cl_alchemist_fiole', classId: 'alchemist', kind: ACTION, name: 'Fiole explosive', ap: 80, description: 'Une fiole lancée qui explose : dégâts directs.', spell: { cost: { red: 10, blue: 10 }, dmg: 65, scales: 1.5 } },
-    { id: 'cl_shaman_lien', classId: 'shaman', kind: SUPPORT, name: 'Lien des esprits', ap: 60, cost: 2, bonus: { transePct: 30 }, description: 'La jauge de Xiūxiān du Chamane se remplit 30 % plus vite.' },
-    { id: 'cl_shaman_danse', classId: 'shaman', kind: SUPPORT, name: 'Danse rapide', ap: 50, cost: 2, bonus: { chargePct: 10 }, description: 'Le Chamane se recharge 10 % plus vite.' },
+    { id: 'cl_shaman_lien', classId: 'shaman', kind: SUPPORT, name: 'Lien des esprits', ap: 60, cost: 2, bonus: { transePct: 30 }, description: 'La jauge de Xiūxiān de Jingwei se remplit 30 % plus vite.' },
+    { id: 'cl_shaman_danse', classId: 'shaman', kind: SUPPORT, name: 'Danse rapide', ap: 50, cost: 2, bonus: { chargePct: 10 }, description: 'Jingwei se recharge 10 % plus vite.' },
     { id: 'cl_shaman_ancetres', classId: 'shaman', kind: ACTION, name: 'Appel des ancêtres', ap: 80, description: 'Les ancêtres referment les blessures : soin.', spell: { cost: { green: 10, purple: 10 }, heal: 50, scales: 1.5 } }
 ];
+
+/** Compétence de base d'une classe : la première de sa liste (soutien), apprise d'office dès que la classe est obtenue. */
+export const baseSkillOf = classId => CLASS_SKILLS.find(s => s.classId === classId) || null;
+export const isBaseSkill = id => CLASS_SKILLS.some(s => baseSkillOf(s.classId)?.id === id);
 
 export const getSkill = id => SKILLS.find(s => s.id === id) || CLASS_SKILLS.find(s => s.id === id) || null;
 /** Compétences affichées au héros : les communes + celles des classes qu'il a obtenues (aucun spoil sur les autres). */
@@ -171,7 +175,8 @@ export function normalizeSkills(hero) {
     Object.entries(raw.progress && typeof raw.progress === 'object' ? raw.progress : {}).forEach(([id, n]) => {
         if (getSkill(id) && Number.isFinite(n) && n > 0) progress[id] = Math.floor(n);
     });
-    const learned = [...new Set(Array.isArray(raw.learned) ? raw.learned : [])].filter(id => getSkill(id));
+    const base = normalizeRoster(hero).owned.map(baseSkillOf).filter(Boolean).map(s => s.id);   // chaque personnage obtenu a sa compétence de base, déjà apprise
+    const learned = [...new Set([...(Array.isArray(raw.learned) ? raw.learned : []), ...base])].filter(id => getSkill(id));
     const active = [...new Set(Array.isArray(raw.active) ? raw.active : [])].filter(id => learned.includes(id) && isSupport(getSkill(id)));
     const seen = [...new Set([...(Array.isArray(raw.seen) ? raw.seen : []), ...learned, ...Object.keys(progress)])].filter(id => getSkill(id));   // compétences déjà vues (apprises, en cours ou enseignées un jour par l'équipement porté)
     if (!hero.skills || typeof hero.skills !== 'object') hero.skills = {};
@@ -181,6 +186,8 @@ export function normalizeSkills(hero) {
 }
 
 export const isLearned = (hero, id) => normalizeSkills(hero).learned.includes(id);
+/** Nombre approximatif de victoires encore nécessaires (PA restants ÷ PA d'une victoire au niveau du héros). */
+export const victoriesLeft = (hero, id) => { const s = getSkill(id); return s ? Math.max(0, Math.ceil((s.ap - progressOf(hero, id)) / apForVictory(hero?.level))) : 0; };
 export const progressOf = (hero, id) => (isLearned(hero, id) ? getSkill(id).ap : Math.min(getSkill(id)?.ap || 0, normalizeSkills(hero).progress[id] || 0));
 
 // ── PA ──────────────────────────────────────────────────────────────────────

@@ -65,12 +65,12 @@ describe('contenu des classes', () => {
         });
         expect(new Set(allClassSpells.map(s => s.id)).size).toBe(allClassSpells.length);
     });
-    test('chaque nouvelle classe a un maître : quête, PNJ et ennemi d\'entraînement', () => {
+    test('chaque nouvelle classe a un maître : quête et PNJ posté sur la route', () => {
         ['barbarian', 'templar', 'sorcerer', 'monk', 'alchemist', 'shaman'].forEach(cls => {
             const q = QUESTS.find(x => x.id === `q_class_${cls}`);
             expect(q).toBeTruthy();
             expect(q.reward.class).toBe(cls);
-            expect(q.objectives[0].target).toBe(`train_${cls}`);
+            expect(q.objectives[0].target).toBe(`trainer_${cls}`);   // le maître attend sur la route : la rencontre est l'objectif
         });
         const gated = Object.values(SCREENS).flatMap(s => s.enemies).filter(e => typeof e.showWhen === 'string' && e.showWhen.startsWith('q_class_'));
         expect(gated.length).toBeGreaterThanOrEqual(6);

@@ -16,6 +16,7 @@ import { escapeHtml } from "./escapeHtml.js";
 import { getStuffById } from './stuff.js';
 import { allItems } from './items.js';
 import { STORY_TITLE } from './story.js';
+import { ALLIES } from './allies.js';
 import * as X from './exploration.js';
 import { CASUAL_ENCOUNTER_FACTOR } from './casual.js';
 import { vibrate, armVibration, getOption } from './gameOptions.js';
@@ -479,7 +480,7 @@ export function createExplorationView(cfg) {
                 const stuffText = ev.reward?.stuff ? ` · ${getStuffById(ev.reward.stuff)?.name || 'Stuff'}` : ev.reward?.relic ? ` · ${(allItems.find(i => i.id === ev.reward.relic)?.name) || 'Relique'}` : '';
                 const classText = ev.reward?.class ? ' · Nouvelle classe' : '';
                 const plus = ev.ended ? ' · Nouvelle Partie + débloquée (journal)' : '';
-                toast(`Quête terminée : ${ev.quest.title} — +${ev.gold || 0} or${ev.xp ? ` · +${ev.xp} XP` : ''}${frag}${stuffText}${classText}${plus}`, ev.ended ? 8000 : 5000);
+                toast(`Quête terminée : ${ev.quest.title} — +${ev.gold || 0} zhu${ev.xp ? ` · +${ev.xp} XP` : ''}${frag}${stuffText}${classText}${plus}`, ev.ended ? 8000 : 5000);
             } else if (ev.type === 'chestSealed') {
                 toast(`${ev.chest.label || 'Coffre'} : vous n'avez aucune raison de fouiller ici pour l'instant.`, 3500);
             } else if (ev.type === 'chestOpened') {
@@ -490,7 +491,7 @@ export function createExplorationView(cfg) {
                 const specialText = ev.questItem ? ` · Objet spécial : ${ev.questItem.name}` : '';
                 // Popup qui reste jusqu'au clic : le joueur a le temps de lire la description et le butin.
                 openDialog({ ...NARRATOR, icon: 'chest', title: ev.chest.label || 'Coffre' },
-                    [`${(ev.early && ev.chest.earlyText) || ev.chest.openText || `${ev.chest.label || 'Coffre'} ouvert !`}${ev.gold ? ` +${ev.gold} or` : ''}${lootText}${specialText}`]);
+                    [`${(ev.early && ev.chest.earlyText) || ev.chest.openText || `${ev.chest.label || 'Coffre'} ouvert !`}${ev.gold ? ` +${ev.gold} zhu` : ''}${lootText}${specialText}`]);
             }
         });
         if (gold > 0) cfg.onGold(gold);
@@ -536,7 +537,7 @@ export function createExplorationView(cfg) {
     // les adversaires sont plus coriaces. Confirmation demandée, puis export de la sauvegarde, puis départ.
     function confirmNewGamePlus() {
         const ok = window.confirm('Commencer une Nouvelle Partie + ?\n\nVotre sauvegarde sera d\'abord exportée dans un fichier. L\'histoire repart du prologue, aux Rizières Desséchées : '
-            + 'quêtes, soleils, coffres, pierres de voyage et compagnons sont remis à zéro, mais votre niveau et votre équipement sont conservés, et l\'arène est ouverte dès le début. Les ennemis seront plus puissants.');
+            + 'quêtes, soleils, coffres, pierres de voyage et esprits gardiens sont remis à zéro, mais votre niveau et votre équipement sont conservés, et l\'arène est ouverte dès le début. Les ennemis seront plus puissants.');
         if (ok) launchNewGamePlus();
     }
 
@@ -640,6 +641,8 @@ export function createExplorationView(cfg) {
     function handleResult(res) {
         if (res?.markerReached) toast('Repère atteint.', 1800);
         if (!res) return;
+        // Une recrue attend à côté du héros : la discussion s'ouvre d'elle-même, une fois le pas fait.
+        if (res.type === 'moved' && res.autoTalk) { held = null; walk = null; handleResult({ type: 'talk', npcId: res.autoTalk }); return; }
         switch (res.type) {
             case 'combat':
                 startEncounter(res.enemyId);
@@ -657,7 +660,12 @@ export function createExplorationView(cfg) {
                     () => {
                         processEvents(talk.events, spoken);
                         if (talk.npc.merchant) openMerchant(talk.npc);
-                        if (talk.combat) startEncounter(talk.combat);   // appât : l'ennemi surgit à la fin de la conversation
+                        if (talk.recruit) {
+                            // Une recrue rejoint l'équipe : petite annonce, puis le combat de découverte avec elle dans l'équipe (le clic sur l'annonce le lance).
+                            const ally = ALLIES[talk.recruit.classId];
+                            const who = ally?.name || talk.npc.name;
+                            openDialog({ sprite: npcSprite(talk.npc.id), gba: gbaSprite(talk.npc.id), name: who, title: 'Nouveau compagnon' }, [`${who} a rejoint votre équipe !`], () => { if (talk.combat) startEncounter(talk.combat); });
+                        } else if (talk.combat) startEncounter(talk.combat);   // appât : l'ennemi surgit à la fin de la conversation
                     }, talk.warp ? [
                         { label: talk.warp.label || 'Partir', run: () => { const r = X.warpNpc(session, talk.npc.id); if (r) { held = null; walk = null; handleResult(r); } } },
                         { label: talk.warp.stay || 'Rester ici', run: () => {} }
@@ -713,10 +721,17 @@ export function createExplorationView(cfg) {
                 if (res.reason === 'quest') toast(`${res.message}`, 4500);
                 else toast(`Une brume magique bloque la route vers ${res.regionName} — niveau ${res.minLevel} requis.`, 4200);
                 break;
+            case 'rest':
+                walk = null;
+                playSfx('uiClick');
+                toast(`${res.name} : ${cfg.onRest?.() > 0 ? res.message : 'vos PV sont déjà au maximum.'}`, 3600);
+                cfg.onSave();
+                refreshHud();
+                break;
             case 'waypoint':
                 walk = null;
                 playSfx('uiClick');
-                toast(res.isNew ? `${res.name} activée` : `${res.name}`, res.isNew ? 4200 : 2200);
+                { const healed = cfg.onRest?.() || 0; toast(res.isNew ? `${res.name} activée` : `${res.name}`, res.isNew ? 4200 : 2200); if(healed > 0) setTimeout(() => toast(`La pierre vous réchauffe : +${healed} PV.`, 3000), 900); }
                 cfg.onSave();
                 refreshHud();
                 if (!journalEl) showJournal('travel');   // la borne ouvre le voyage rapide
@@ -740,7 +755,7 @@ export function createExplorationView(cfg) {
                 // Tout ce qui s'affiche après l'arrivée (annonce, texte d'ambiance, alertes, quêtes) ; pour une porte d'événement, après l'animation de passage.
                 const arrivalStory = () => {
                     // Annonce d'événement (une seule fois par partie) : s'affiche avant le texte d'ambiance de l'écran.
-                    if (res.notice) openDialog({ ...NARRATOR, title: res.notice.title }, res.notice.lines);
+                    (res.notices || []).forEach(n => openDialog({ ...NARRATOR, title: n.title }, n.lines));
                     const showArrival = () => { if (res.firstVisit && res.arrival?.length && !screen.interior) openDialog({ ...NARRATOR, title: screen.name }, res.arrival); };
                     if (zone) playRegionDiscovery(zone).then(showArrival); else showArrival();
                     if (res.warning) toast(`${res.warning.regionName} : niveau ${res.warning.minLevel} recommandé — les ennemis y sont redoutables.`, 5000);
@@ -885,6 +900,9 @@ export function createExplorationView(cfg) {
         if (res.markerReached) toast('Repère atteint.', 1800);
         if (res.type !== 'moved') {
             walk = null;            // interaction, combat, changement d'écran, obstacle ou brume
+            handleResult(res);
+        } else if (res.autoTalk) {
+            walk = null;            // une recrue attend à côté : on lui parle
             handleResult(res);
         } else if (session.data.x === walk.tx && session.data.y === walk.ty) {
             walk = null;
@@ -1098,8 +1116,8 @@ export function createExplorationView(cfg) {
                 if (!prologueAnimationPlayed()) openDialog({ icon: 'scroll', name: STORY_TITLE, title: 'Prologue' }, lines, () => { cfg.onSave(); });
                 cfg.onSave();
             }
-            // Annonce d'un événement activé : une seule fois par partie, au premier chargement du jeu (après le prologue éventuel).
-            const launch = X.takeLaunchNotices(session);
+            // Rumeur d'un événement : seulement si la partie reprend sur une zone qui porte sa porte et qu'elle n'a pas encore été lue (après le prologue éventuel).
+            const launch = X.takeDoorNotices(session);
             if (launch.length) {
                 launch.forEach(n => openDialog({ ...NARRATOR, title: n.title }, n.lines, () => cfg.onSave()));
                 cfg.onSave();

@@ -206,7 +206,7 @@ describe('piliers des boss de porte', () => {
         });
         const sun = guards.find(({ e }) => /^sun_\d+$/.test(e.id));
         expect(sun).toBeDefined();
-        expect(bossWallsOf(createSession({ screenId: sun.s.id }, SCREENS)).find(w => w.def === sun.e).fire).toBe(true);
+        expect(bossWallsOf(createSession({ screenId: sun.s.id, quests: Object.fromEntries(['barbarian', 'templar', 'sorcerer', 'monk', 'alchemist', 'shaman'].map(c => [`q_class_${c}`, 'done'])) }, SCREENS)).find(w => w.def === sun.e).fire).toBe(true);   // compagnons recrutés : les soleils apparaissent
     });
 });
 

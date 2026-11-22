@@ -37,6 +37,7 @@ export default {
         ],
         npcs: [
             { id: 'trainer_barbarian', x: 20, y: 9 },
+            { id: 'trainer_alchemist', x: 19, y: 12 },
             { id: 'merchant_volcan', x: 20, y: 11 },
             { id: 'lizard_zao', x: 8, y: 10 },
             { id: 'hua_volcan', x: 23, y: 14 },
@@ -194,7 +195,6 @@ export default {
             { id: 'volcan_wild_ash_urn', x: 45, y: 5, gold: 180 }
         ],
         enemies: [
-            { id: 'train_barbarian', x: 16, y: 11, templateId: 'sanglier_flammes', name: "Sanglier d'entraînement", kind: 'sentinel', offset: -1, permanent: true, training: 'barbarian' },
             { id: 'volcan_forge_giant', x: 41, y: 11, templateId: 'forgeron_lave', name: 'Forgeron de lave', kind: 'sentinel', offset: 1, permanent: true, boss: { name: 'Forgeron de lave', level: 4 } },
             { id: 'volcan_ember_imp', x: 19, y: 8, templateId: 'huli_jing', name: 'Démon des fumées', kind: 'sentinel', offset: 0, permanent: true },
             { id: 'volcan_w_salamander', x: 19, y: 10, templateId: 'chilong', name: 'Lézard-dragon de lave', kind: 'patrol', patrol: [[19, 10], [19, 16]], offset: -1 },

@@ -9,7 +9,7 @@
 // s'ouvre qu'une fois le maître du cercle N−1 vaincu au moins une fois (drapeau `arena_cleared_<N−1>`). Dans un cercle,
 // des gardiens voient le héros de loin et le défient ; le maître (boss) n'est attaquable qu'ensuite, plus fort et doté
 // des règles de duel de Fengmeng (duel.js) aux cercles hauts. Revenir au parvis remet les gardiens en place (on peut
-// refaire un cercle). Chaque victoire rapporte l'XP, l'or et le butin d'un combat normal + une prime d'arène ; le
+// refaire un cercle). Chaque victoire rapporte l'XP, les zhu et le butin d'un combat normal + une prime d'arène ; le
 // premier maître vaincu d'un cercle paie une grosse prime. Une défaite dans l'arène ramène hors de l'arène.
 //
 // Données pures : buildArenaScreens() fabrique les écrans (fusionnés dans SCREENS par story.js), exploration.js

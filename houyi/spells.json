@@ -428,7 +428,7 @@
       "minLevel": 13,
       "heal": 50,
       "cooldown": 2,
-      "description": "Soigne 50 PV, retire les statuts négatifs et vous laisse rejouer. Recharge : 2 tours"
+      "description": "Soigne 50 PV, retire les statuts négatifs et remplit aussitôt votre barre d'action. Recharge : 2 tours"
     },
     {
       "id": "starRain",
@@ -1112,6 +1112,7 @@
         "yellow": 15
       },
       "minLevel": 15,
+      "type": "damage",
       "dmg": 150,
       "description": "Grande attaque des cinq éléments consommant beaucoup de qì"
     },
@@ -1268,7 +1269,7 @@
       "dmg": 6,
       "effect": "bonusTurn",
       "cooldown": 2,
-      "description": "6 dégâts et vous donne un tour bonus. Recharge : 2 tours"
+      "description": "6 dégâts et remplit aussitôt votre barre d'action. Recharge : 2 tours"
     },
     {
       "id": "swiftStrike",
