@@ -24,8 +24,17 @@ export const potionCount = (hero, size) => normalizePotions(hero)[size] || 0;
 /** PV rendus par une potion pour ce héros (part des PV max, arrondie, au moins 1). */
 export const potionHeal = (hero, size) => Math.max(1, Math.round((hero?.maxHp || 0) * POTIONS[size].healPct / 100));
 
-/** Prix d'une potion chez un marchand dont la région est de niveau `regionLevel` : le barème monte avec la région. */
-export const potionPrice = (size, regionLevel = 1) => Math.ceil(POTIONS[size].basePrice * (1 + Math.max(1, regionLevel) / 15));
+// Compensation STATIQUE, à l'achat (plutôt qu'une règle dynamique en combat) : chaque potion de la même taille déjà dans le sac renchérit
+// la suivante de 20 % (petite potion au niveau de région 20 : 24 zhu la 1re, 48 avec 5 en réserve, 72 avec 10). Les potions restent
+// bon marché pour un sac raisonnable, mais on ne peut plus en entasser des dizaines pour soigner chaque coup. Butin et récompenses : inchangés.
+export const POTION_STOCK_MARKUP = 0.2;
+
+/** Prix d'une potion chez un marchand de région de niveau `regionLevel`, quand le héros en porte déjà `owned` de cette taille. */
+export function potionPrice(size, regionLevel = 1, owned = 0) {
+    const regional = Math.ceil(POTIONS[size].basePrice * (1 + Math.max(1, regionLevel) / 15));   // prix affiché sans réserve
+    const markupPct = Math.round(100 * (1 + POTION_STOCK_MARKUP * Math.max(0, Math.floor(owned || 0))));   // entier : pas d'erreur d'arrondi
+    return Math.ceil(regional * markupPct / 100);
+}
 
 export function addPotions(hero, size, qty = 1) {
     if (!POTIONS[size]) return 0;
@@ -37,7 +46,7 @@ export function addPotions(hero, size, qty = 1) {
 export function buyPotion(hero, size, regionLevel = 1) {
     const potion = POTIONS[size];
     if (!potion) return { ok: false, message: 'Potion inconnue.' };
-    const price = potionPrice(size, regionLevel);
+    const price = potionPrice(size, regionLevel, potionCount(hero, size));
     if ((hero.gold || 0) < price) return { ok: false, message: `Pas assez de zhu ! Coût : ${price}, vous avez ${hero.gold || 0}.` };
     hero.gold -= price;
     addPotions(hero, size, 1);
