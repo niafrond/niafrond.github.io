@@ -33,3 +33,7 @@ App HTML autonome (`index.html`, sans build) qui indique à quelle heure sortir 
   - Stockage passé en `bus-naolib:v3:*` (anciens réglages ignorés : les codes d'arrêt ont changé).
   - Supprimé : état du trafic / ligne bloquée (fourni par l'ancienne API). Le temps réel existe en SIRI sur le même portail mais n'est pas branché.
   - Testé avec Playwright sur les vraies données (ligne 1, Commerce → Beaujoire : bus de 07:57, sortie 07:52).
+
+- 2026-11-22 (focus ligne 23) :
+  - L'app ne traite plus que la ligne 23 : champ ligne retiré des réglages (fixe), titre « Mon bus 23 ». `tools/build-data.mjs` ne garde que les lignes de `LIGNES` (défaut `23`, ex. `LIGNES=23,C3 node tools/build-data.mjs`) : `data/` passe de 3,5 Mo à ≈ 0,1 Mo.
+  - Sens : 1 → Haluchère - Batignolles, 2 → Mendès France - Bellevue. Test Playwright : Aquitaine → Terray (sens 1), bus de 07:27, sortie 07:22.

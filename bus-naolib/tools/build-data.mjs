@@ -1,5 +1,6 @@
 // Génère bus-naolib/data/ à partir du GTFS officiel Naolib (data.nantesmetropole.fr).
 // Usage : node tools/build-data.mjs [dossier-gtfs-décompressé]
+//   LIGNES=23,C3 pour choisir les lignes (défaut : 23)
 //   sans argument : télécharge et décompresse le GTFS courant (nécessite `unzip`).
 import fs from 'node:fs';
 import path from 'node:path';
@@ -33,6 +34,7 @@ async function table(file, fn) {
 }
 const toMin = t => { const [h, m] = t.split(':').map(Number); return h * 60 + m; };
 
+const LIGNES = (process.env.LIGNES || '23').split(','); // lignes conservées (défaut : 23)
 let dir = process.argv[2];
 const rec = await (await fetch(DS)).json();
 const f = rec.results[0];
@@ -105,6 +107,7 @@ fs.mkdirSync(path.join(OUT, 'l'), { recursive: true });
 const index = [];
 let total = 0;
 for (const [id, L] of Object.entries(lines)) {
+  if (!LIGNES.includes(id)) continue;
   const best = o => Object.entries(o).sort((a, b) => b[1] - a[1])[0]?.[0] || '';
   // arrêts de chaque sens, dans l'ordre moyen de passage ; indices partagés par les motifs
   const stops = L.stopsOrd.map(m => [...m.entries()].sort((a, b) => a[1].sum / a[1].n - b[1].sum / b[1].n).map(e => e[0]));

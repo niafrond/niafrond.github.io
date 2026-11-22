@@ -39,7 +39,7 @@ button.g{background:none;border:0;color:var(--mute);padding:4px 8px}
 </style>
 </head>
 <body>
-<h1><span>🚌 Mon bus</span><button class="g" id="gear">⚙️ Réglages</button></h1>
+<h1><span>🚌 Mon bus 23</span><button class="g" id="gear">⚙️ Réglages</button></h1>
 
 <section id="main" class="hide">
   <div class="card" id="today"></div>
@@ -55,9 +55,8 @@ button.g{background:none;border:0;color:var(--mute);padding:4px 8px}
   <div class="mute" id="stepno"></div>
   <div id="step1">
     <b>1 · Arrêt de départ</b>
-    <label>Ligne (numéro ou nom)</label>
-    <input type="text" id="line" list="lines" placeholder="Ex. 1, C3, 23…" autocomplete="off">
-    <datalist id="lines"></datalist>
+    <input type="hidden" id="line" value="23">
+    <div class="mute" id="lineName"></div>
     <label>Sens</label>
     <select id="sens"><option value="1">Sens 1</option><option value="2">Sens 2</option></select>
     <label>Arrêt de départ (parmi ceux de la ligne)</label>
@@ -279,15 +278,15 @@ function step(n) {
 async function openSetup() {
   $('main').classList.add('hide'); $('setup').classList.remove('hide');
   draft = cfg ? { line: cfg.line, sens: cfg.sens, code: cfg.code, label: cfg.label, dirs: cfg.dirs, arrCode: cfg.arrCode, arrLabel: cfg.arrLabel } : {};
-  $('line').value = cfg ? cfg.line : ''; $('sens').value = cfg ? cfg.sens : 1;
+  $('line').value = '23'; $('sens').value = cfg ? cfg.sens : 1;
   $('q').value = ''; $('q2').value = ''; $('stops').classList.add('hide'); $('stops2').classList.add('hide');
   $('walk').value = cfg ? cfg.walk : 5; $('walk2').value = cfg && cfg.walk2 != null ? cfg.walk2 : 5;
   weekUI(cfg ? cfg.week : defWeek());
   $('cancel').classList.toggle('hide', !(cfg && cfg.arrCode));
   pickedUI(); step(1);
   try { await getIndex(); } catch { $('serr').textContent = 'Liste des lignes Naolib indisponible (tu peux quand même saisir le numéro).'; }
-  $('lines').innerHTML = (index ? index.lines : []).map(l => `<option value="${l.id}">${l.name}</option>`).join('');
-  if (cfg) loadDirs();
+  { const li = lineInfo('23'); $('lineName').textContent = li ? 'Ligne 23 · ' + li.name : ''; }
+  loadDirs();
 }
 
 // Libellés des deux sens de la ligne saisie
@@ -330,7 +329,7 @@ $('sens').onchange = () => { resetStops(); };
 
 $('next').onclick = () => {
   const walk = parseInt($('walk').value, 10), line = realLine($('line').value) || $('line').value.trim();
-  if (!line) { $('serr').textContent = 'Indique ta ligne.'; return; }
+  if (!line) { $('serr').textContent = 'Ligne introuvable.'; return; }
   if (!draft.code) { $('serr').textContent = 'Choisis ton arrêt de départ dans la liste.'; return; }
   if (isNaN(walk)) { $('serr').textContent = 'Renseigne le temps de marche.'; return; }
   draft.line = line; draft.sens = +$('sens').value; draft.walk = walk;
