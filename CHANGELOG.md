@@ -1,3 +1,10 @@
+## [3.21.0](https://github.com/niafrond/niafrond.github.io/compare/v3.20.2...v3.21.0) (2026-11-22)
+
+### Features
+
+* **houyi:** animer les 47 nouveaux sorts de classes ([#779](https://github.com/niafrond/niafrond.github.io/issues/779)) ([979bda0](https://github.com/niafrond/niafrond.github.io/commit/979bda068509fa8076d77b5fe62ff246e830b36d))
+* **houyi:** mode calme, rythme des barres et équilibrage (compagnons, potions, défaite, synergies) ([#780](https://github.com/niafrond/niafrond.github.io/issues/780)) ([f447d30](https://github.com/niafrond/niafrond.github.io/commit/f447d30d803b62524a9faef10fe459bcde8de370))
+
 ## [3.20.2](https://github.com/niafrond/niafrond.github.io/compare/v3.20.1...v3.20.2) (2026-11-22)
 
 ### Bug Fixes
