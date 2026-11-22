@@ -13,6 +13,7 @@ Collection de mini-applications web en HTML/CSS/JavaScript, accessibles sur [nia
 | ⏱️ [Time's Up Nout Péi](times-up/) | Time's Up sur le thème de La Réunion, 100% local |
 | 🔵 [Mob Rush](mob-rush/) | Jeu arcade façon Mob Control (portes multiplicatrices, base à détruire) — sans pièces, achats ni pub. APK Android via `mob-rush-android/` |
 | 🎮 [Match3 Quest](match3-quest/) | Jeu match-3 RPG avec classes, sorts, armes et IA ennemie |
+| 🚌 [Mon bus Naolib](bus-naolib/) | Heure de sortie pour ne pas rater son bus quotidien (Open Data Naolib, temps de marche, début habituel ou décalé du jour) |
 | 📱 [Switch Enfants](lavevaisselle/) | App mobile pour gérer les tours, avec historique local et capture photo |
 | 📷 [QR Scanner](qrcode-scanner/) | Scanner QR code 100% hors ligne, historique local |
 | 📝 [Générateur de recette](generateur-recette.html) | Extraction et formatage de recettes depuis texte ou URL |

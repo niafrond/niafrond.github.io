@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#0b1d33">
+<title>Mon bus Naolib</title>
+<script async src="https://stats.fontaine.one/count.js"></script>
+<style>
+:root{--bg:#0b1d33;--card:#13294a;--line:#25416b;--txt:#eef3fa;--mute:#93a7c4;--acc:#ffc83d;--ok:#4cd08a;--bad:#ff6b6b}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--txt);font:16px/1.4 system-ui,sans-serif;padding:16px;max-width:520px;margin-inline:auto}
+h1{font-size:18px;margin:0 0 14px;display:flex;justify-content:space-between;align-items:center}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:14px}
+.mute{color:var(--mute);font-size:14px}
+.big{font-size:56px;font-weight:700;color:var(--acc);line-height:1.05;margin:4px 0}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+label{display:block;font-size:13px;color:var(--mute);margin:12px 0 4px}
+input,select,button{font:inherit;color:var(--txt);background:#0d2140;border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+input[type=text],input[type=number],select{width:100%}
+button{cursor:pointer}
+button.p{background:var(--acc);color:#1b1500;border:0;font-weight:700}
+button.g{background:none;border:0;color:var(--mute);padding:4px 8px}
+.seg{display:flex;gap:6px;margin-bottom:10px}.seg button{flex:1;padding:8px;font-size:14px}.seg .on{background:var(--acc);color:#1b1500;border:0;font-weight:700}
+.list{max-height:200px;overflow:auto;border:1px solid var(--line);border-radius:10px;margin-top:6px}
+.list div{padding:9px 12px;border-bottom:1px solid var(--line);cursor:pointer}
+.list div:last-child{border:0}.list div:hover{background:#1b3a66}
+.err,.warn{color:var(--bad);font-size:14px}.warn{font-weight:600}
+.alt{display:flex;justify-content:space-between;padding:6px 0;border-top:1px solid var(--line);font-size:15px}
+.day{padding:10px 0;border-top:1px solid var(--line);cursor:pointer}
+.day:first-child{border:0}
+.day .h{display:flex;justify-content:space-between;gap:8px}
+.tag{font-size:12px;background:var(--acc);color:#1b1500;border-radius:6px;padding:1px 6px;margin-left:6px}
+.edit{margin-top:8px;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.wk{display:flex;align-items:center;gap:10px;margin:6px 0}.wk span{width:70px}
+.hide{display:none}
+.inc{background:#3a1f1f;border:1px solid var(--bad);border-radius:10px;padding:8px 10px;margin:8px 0;font-size:14px}
+.inc.b{background:#5a1616}
+</style>
+</head>
+<body>
+<h1><span>🚌 Mon bus</span><button class="g" id="gear">⚙️ Réglages</button></h1>
+
+<section id="main" class="hide">
+  <div class="card" id="today"></div>
+  <div class="card">
+    <div class="seg"><button id="r5">5 jours à venir</button><button id="rnext">Semaine prochaine</button></div>
+    <div id="days"></div>
+    <div class="mute" style="margin-top:8px">Touche un jour pour changer son heure de début ou le mettre en repos (exception).</div>
+  </div>
+  <div class="mute" id="foot"></div>
+</section>
+
+<section id="setup" class="card hide">
+  <div class="mute" id="stepno"></div>
+  <div id="step1">
+    <b>1 · Arrêt de départ</b>
+    <label>Ligne (numéro ou nom)</label>
+    <input type="text" id="line" list="lines" placeholder="Ex. 1, C3, 23…" autocomplete="off">
+    <datalist id="lines"></datalist>
+    <label>Sens</label>
+    <select id="sens"><option value="1">Sens 1</option><option value="2">Sens 2</option></select>
+    <label>Arrêt de départ (parmi ceux de la ligne)</label>
+    <input type="text" id="q" placeholder="Taper pour filtrer…" autocomplete="off">
+    <div class="list hide" id="stops"></div>
+    <div class="mute" id="picked"></div>
+    <label>Temps de marche maison → arrêt de départ (min)</label>
+    <input type="number" id="walk" min="0" max="120" inputmode="numeric">
+  </div>
+  <div id="step2" class="hide">
+    <b>2 · Arrêt d’arrivée</b>
+    <div class="mute" id="lineRecap"></div>
+    <label>Arrêt d’arrivée (même ligne, plus loin dans le sens choisi)</label>
+    <input type="text" id="q2" placeholder="Taper pour filtrer…" autocomplete="off">
+    <div class="list hide" id="stops2"></div>
+    <div class="mute" id="picked2"></div>
+    <label>Temps de marche arrêt d’arrivée → travail (min)</label>
+    <input type="number" id="walk2" min="0" max="120" inputmode="numeric">
+    <label>Ma semaine habituelle</label>
+    <div id="week"></div>
+  </div>
+  <div class="row" style="margin-top:16px">
+    <button class="g" id="back">← Retour</button>
+    <button class="p" id="next">Suivant →</button>
+    <button class="p hide" id="save">Enregistrer</button>
+    <button class="g" id="cancel">Annuler</button>
+  </div>
+  <div class="err" id="serr"></div>
+</section>
+
+<script>
+// Données : Open Data Naolib (open.tan.fr). Stockage : localStorage uniquement.
+const API = 'https://open.tan.fr/ewp/';
+const K = 'bus-naolib:v2';
+const $ = id => document.getElementById(id);
+const pad = n => String(n).padStart(2, '0');
+const norm = s => (s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
+const ymd = d => d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+const hm = m => pad(Math.floor(m / 60) % 24) + ':' + pad(Math.round(m) % 60);
+const toMin = t => { const [h, m] = t.split(':').map(Number); return h * 60 + m; };
+const DOW = ['dim.', 'lun.', 'mar.', 'mer.', 'jeu.', 'ven.', 'sam.'];
+const WEEK_ORDER = [1, 2, 3, 4, 5, 6, 0];
+const MONTH = ['janv.', 'févr.', 'mars', 'avr.', 'mai', 'juin', 'juil.', 'août', 'sept.', 'oct.', 'nov.', 'déc.'];
+const dayLabel = d => DOW[d.getDay()] + ' ' + d.getDate() + ' ' + MONTH[d.getMonth()];
+
+const load = (k, d) => { try { const v = JSON.parse(localStorage.getItem(k)); return v ?? d; } catch { return d; } };
+const save = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} };
+const defWeek = () => { const w = {}; for (let i = 0; i < 7; i++) w[i] = { on: i >= 1 && i <= 5, start: '08:30' }; return w; };
+
+// cfg : {line, sens, dirs, code, label, arrCode, arrLabel, walk, walk2, week:{0..6:{on,start}}}
+let cfg = load(K + ':cfg', null);
+let exc = load(K + ':exc', {});          // {'YYYY-MM-DD': {off:true} | {start:'HH:MM'}}
+let range = 'five', editing = null;
+
+// Migration depuis la v1 (une seule heure de début)
+(function migrate() {
+  if (cfg) return;
+  const old = load('bus-naolib:v1:cfg', null);
+  if (!old) return;
+  cfg = { line: old.line, sens: old.sens, dirs: old.dirs, code: old.code, label: old.label, walk: old.walk, walk2: 5, week: defWeek() };
+  for (let i = 0; i < 7; i++) cfg.week[i].start = old.start;
+  save(K + ':cfg', cfg);
+})();
+// Purge des exceptions et horaires passés
+(function purge() {
+  const t = ymd(new Date());
+  Object.keys(exc).forEach(d => { if (d < t) delete exc[d]; });
+  save(K + ':exc', exc);
+  try { Object.keys(localStorage).forEach(k => { if (k.startsWith(K + ':h:') && k.split(':').pop() < t) localStorage.removeItem(k); }); } catch {}
+})();
+
+async function getJSON(path) {
+  const r = await fetch(API + path);
+  if (!r.ok) throw new Error('HTTP ' + r.status);
+  return r.json();
+}
+
+// Horaires théoriques d'un arrêt pour une date (cache par date ; la date du jour est rafraîchie après 10 min)
+const pending = {};
+async function fetchTimes(code, line, sens, date) {
+  const key = `${K}:h:${code}:${line}:${sens}:${date}`;
+  const c = load(key, null);
+  const fresh = c && (date !== ymd(new Date()) || Date.now() - (c.ts || 0) < 600000);
+  if (fresh) return c;
+  if (pending[key]) return pending[key];
+  return pending[key] = (async () => {
+    try {
+      const j = await getJSON(`horairesarret.json/${encodeURIComponent(code)}/${encodeURIComponent(line)}/${sens}/${date}`);
+      const out = [];
+      for (const h of j.horaires || []) {
+        const hh = parseInt(h.heure, 10);
+        for (const p of h.passages || []) { const mm = parseInt(p, 10); if (!isNaN(hh) && !isNaN(mm)) out.push(hh * 60 + mm); }
+      }
+      out.sort((a, b) => a - b);
+      const l = j.ligne || {};
+      const r = { ts: Date.now(), times: out, dirs: j.ligne ? [l.directionSens1, l.directionSens2] : null,
+        etat: parseInt(l.etatTrafic, 10) || 0, bloquant: l.bloquant === true || l.bloquant === 'true' };
+      save(key, r); return r;
+    } catch (e) { if (c) return c; throw e; }   // repli sur le cache si Naolib injoignable
+    finally { delete pending[key]; }
+  })();
+}
+
+// Heure de début effective d'un jour (null si repos)
+function startFor(date) {
+  const e = exc[ymd(date)];
+  if (e) return e.off ? null : e.start;
+  const w = cfg.week[date.getDay()];
+  return w && w.on ? w.start : null;
+}
+// Appariement départ ↔ arrivée d'un même bus : l'API ne donne pas d'identifiant de course, on cherche le
+// décalage d'index entre les deux listes qui donne des durées de trajet positives et les plus régulières.
+function pairTrips(dep, arr) {
+  let best = null;
+  for (let sft = -8; sft <= 8; sft++) {
+    const d = [];
+    dep.forEach((t, k) => { const a = arr[k + sft]; if (a !== undefined) d.push(a - t); });
+    if (d.length < Math.max(3, dep.length / 2)) continue;
+    if (d.filter(x => x > 0 && x <= 150).length < d.length * 0.95) continue;
+    const m = d.reduce((x, y) => x + y, 0) / d.length;
+    const score = d.reduce((x, y) => x + (y - m) ** 2, 0) / d.length + 0.5 * Math.abs(sft);
+    if (!best || score < best.score) best = { score, sft };
+  }
+  const sft = best ? best.sft : 0;
+  return dep.map((t, k) => { const a = arr[k + sft]; return a !== undefined && a > t && a - t <= 150 ? a : null; });
+}
+
+// Dernier bus dont l'arrivée + marche d'arrivée permet d'être à l'heure
+function calc(c, start) {
+  const target = toMin(start) - cfg.walk2;
+  let best = null;
+  c.times.forEach((t, k) => {
+    const a = c.arrs[k];
+    if (a != null && a <= target) best = { i: k, bus: t, arrive: a, leave: t - cfg.walk };
+  });
+  return best;
+}
+
+/* ---------- Écran principal ---------- */
+const cache = {}; // date -> {times}|'err'
+async function ensure(date) {
+  const d = ymd(date);
+  if (cache[d]) return;
+  cache[d] = 'wait';
+  try {
+    const [a, b] = await Promise.all([fetchTimes(cfg.code, cfg.line, cfg.sens, d), fetchTimes(cfg.arrCode, cfg.line, cfg.sens, d)]);
+    cache[d] = { times: a.times, arrs: pairTrips(a.times, b.times), etat: Math.max(a.etat, b.etat), bloquant: a.bloquant || b.bloquant };
+  } catch { cache[d] = 'err'; }
+  renderToday(); renderDays();
+}
+const incident = c => c.bloquant ? '<div class="inc b">⛔ Ligne bloquée : ne compte pas sur ces horaires, vérifie sur Naolib.</div>'
+  : c.etat > 0 ? '<div class="inc">⚠️ Trafic perturbé sur la ligne : prends de la marge (bus d’avant conseillé).</div>' : '';
+const ready = c => c && c !== 'wait';
+
+function renderToday() {
+  if (!cfg || $('main').classList.contains('hide')) return;
+  const now = new Date(), nowMin = now.getHours() * 60 + now.getMinutes() + now.getSeconds() / 60;
+  const start = startFor(now), c = cache[ymd(now)], box = $('today');
+  const head = `<div class="mute">Ligne ${cfg.line} ${cfg.dirs ? '→ ' + cfg.dirs[cfg.sens - 1] : ''} · ${cfg.label} ⇒ ${cfg.arrLabel}</div>`;
+  if (!start) { box.innerHTML = head + '<div style="font-size:22px;margin-top:6px">Pas de bus prévu aujourd’hui 😌</div>'; return; }
+  if (!ready(c) && c !== 'err') { box.innerHTML = head + '<div class="mute">Chargement…</div>'; return; }
+  if (c === 'err') { box.innerHTML = head + '<div class="warn">Naolib injoignable, réessaie plus tard.</div>'; return; }
+  const r = calc(c, start);
+  if (!r) { box.innerHTML = head + incident(c) + `<div class="warn">Aucun bus ne t’amène à ${start}.</div>`; return; }
+  const left = r.leave - nowMin;
+  const cd = left >= 1 ? `<span style="color:var(--ok)">dans ${left >= 60 ? Math.floor(left / 60) + ' h ' + pad(Math.floor(left % 60)) : Math.floor(left) + ' min'}</span>`
+    : left > -1 ? '<span class="warn">maintenant !</span>'
+    : `<span class="warn">déjà passé${-left < 60 ? ' (' + Math.ceil(-left) + ' min)' : ''}</span>`;
+  let html = head + incident(c) + `<div class="mute" style="margin-top:6px">Pour arriver à ${start}${exc[ymd(now)] ? ' (exception)' : ''}, sortir à</div>
+    <div class="big">${hm(r.leave)}</div><div>${cd}</div><div class="mute" style="margin-top:8px">Bus de ${hm(r.bus)} · arrivée à ${cfg.arrLabel} vers ${hm(r.arrive)}</div>`;
+  if (r.i > 0) html += `<div class="alt"><span>Bus d’avant : ${hm(c.times[r.i - 1])}</span><span>sortir à ${hm(c.times[r.i - 1] - cfg.walk)}</span></div>`;
+  if (r.i + 1 < c.times.length) html += `<div class="alt"><span>Bus suivant : ${hm(c.times[r.i + 1])}</span><span>sortir à ${hm(c.times[r.i + 1] - cfg.walk)}</span></div>`;
+  box.innerHTML = html;
+}
+
+function rangeDays() {
+  const t = new Date(); t.setHours(12, 0, 0, 0);
+  const out = [];
+  if (range === 'five') for (let k = 1; k <= 5; k++) { const d = new Date(t); d.setDate(t.getDate() + k); out.push(d); }
+  else {
+    const mon = new Date(t); mon.setDate(t.getDate() + ((8 - t.getDay()) % 7 || 7));
+    for (let k = 0; k < 7; k++) { const d = new Date(mon); d.setDate(mon.getDate() + k); out.push(d); }
+  }
+  return out;
+}
+
+function renderDays() {
+  if (!cfg || $('main').classList.contains('hide')) return;
+  $('r5').className = range === 'five' ? 'on' : ''; $('rnext').className = range === 'next' ? 'on' : '';
+  const box = $('days'); box.innerHTML = '';
+  rangeDays().forEach(d => {
+    const key = ymd(d), start = startFor(d), e = exc[key], c = cache[key];
+    let right = '';
+    if (!start) right = '<span class="mute">repos</span>';
+    else if (c === 'err') right = '<span class="warn">indisponible</span>';
+    else if (!ready(c)) right = '<span class="mute">…</span>';
+    else { const r = calc(c, start); right = r ? `sortir à <b style="color:var(--acc)">${hm(r.leave)}</b> <span class="mute">(bus ${hm(r.bus)})</span>${c.bloquant ? ' ⛔' : c.etat > 0 ? ' ⚠️' : ''}` : '<span class="warn">pas de bus</span>'; }
+    const el = document.createElement('div'); el.className = 'day';
+    el.innerHTML = `<div class="h"><span>${dayLabel(d)}${start ? ' <span class="mute">· début ' + start + '</span>' : ''}${e ? '<span class="tag">exception</span>' : ''}</span><span>${right}</span></div>`;
+    el.onclick = ev => { if (ev.target.closest('.edit')) return; editing = editing === key ? null : key; renderDays(); };
+    if (editing === key) {
+      const ed = document.createElement('div'); ed.className = 'edit';
+      ed.innerHTML = `<input type="time" value="${start || cfg.week[d.getDay()].start}"><button class="p" data-a="set">Début décalé</button><button data-a="off">Repos</button>${e ? '<button class="g" data-a="clr">Rétablir</button>' : ''}`;
+      ed.onclick = ev => {
+        const a = ev.target.dataset.a; if (!a) return;
+        if (a === 'set') { const v = ed.querySelector('input').value; if (!v) return; exc[key] = { start: v }; }
+        if (a === 'off') exc[key] = { off: true };
+        if (a === 'clr') delete exc[key];
+        save(K + ':exc', exc); editing = null; renderDays(); renderToday();
+      };
+      el.appendChild(ed);
+    }
+    box.appendChild(el);
+    if (start) ensure(d);
+  });
+}
+
+function showMain() {
+  $('setup').classList.add('hide'); $('main').classList.remove('hide');
+  $('foot').textContent = `Marche ${cfg.walk} min au départ, ${cfg.walk2} min à l’arrivée · horaires théoriques et état du trafic Naolib.`;
+  ensure(new Date()); renderToday(); renderDays();
+}
+$('r5').onclick = () => { range = 'five'; editing = null; renderDays(); };
+$('rnext').onclick = () => { range = 'next'; editing = null; renderDays(); };
+
+/* ---------- Réglages ---------- */
+let allStops = load(K + ':stops', null);   // [{codeLieu, libelle, ligne:[numLigne]}]
+let draft = {};
+
+async function getStops() {
+  if (allStops) return allStops;
+  const j = await getJSON('arrets.json');
+  allStops = j.map(s => ({ codeLieu: s.codeLieu, libelle: s.libelle, ligne: (s.ligne || []).map(l => String(l.numLigne)) }));
+  save(K + ':stops', allStops);
+  return allStops;
+}
+const lineList = () => [...new Set((allStops || []).flatMap(s => s.ligne))]
+  .sort((a, b) => a.localeCompare(b, 'fr', { numeric: true }));
+const stopsOfLine = l => (allStops || []).filter(s => s.ligne.some(x => norm(x) === norm(l)))
+  .sort((a, b) => a.libelle.localeCompare(b.libelle, 'fr'));
+const realLine = l => lineList().find(x => norm(x) === norm(l)) || null;
+
+function weekUI(week) {
+  $('week').innerHTML = WEEK_ORDER.map(i => `<div class="wk"><input type="checkbox" id="wo${i}" ${week[i].on ? 'checked' : ''}><span>${DOW[i]}</span><input type="time" id="ws${i}" value="${week[i].start}"></div>`).join('');
+}
+
+function pickedUI() {
+  $('picked').textContent = draft.code ? '✔ ' + draft.label : 'Aucun arrêt choisi';
+  $('picked2').textContent = draft.arrCode ? '✔ ' + draft.arrLabel : 'Aucun arrêt choisi';
+}
+function step(n) {
+  $('step1').classList.toggle('hide', n !== 1); $('step2').classList.toggle('hide', n !== 2);
+  $('next').classList.toggle('hide', n !== 1); $('save').classList.toggle('hide', n !== 2);
+  $('back').classList.toggle('hide', n !== 2); $('stepno').textContent = 'Étape ' + n + ' sur 2';
+  $('serr').textContent = '';
+  if (n === 2) $('lineRecap').textContent = `Ligne ${draft.line} ${draft.dirs ? '→ ' + draft.dirs[draft.sens - 1] : ''} · départ ${draft.label}`;
+}
+
+async function openSetup() {
+  $('main').classList.add('hide'); $('setup').classList.remove('hide');
+  draft = cfg ? { line: cfg.line, sens: cfg.sens, code: cfg.code, label: cfg.label, dirs: cfg.dirs, arrCode: cfg.arrCode, arrLabel: cfg.arrLabel } : {};
+  $('line').value = cfg ? cfg.line : ''; $('sens').value = cfg ? cfg.sens : 1;
+  $('q').value = ''; $('q2').value = ''; $('stops').classList.add('hide'); $('stops2').classList.add('hide');
+  $('walk').value = cfg ? cfg.walk : 5; $('walk2').value = cfg && cfg.walk2 != null ? cfg.walk2 : 5;
+  weekUI(cfg ? cfg.week : defWeek());
+  $('cancel').classList.toggle('hide', !(cfg && cfg.arrCode));
+  pickedUI(); step(1);
+  try { await getStops(); } catch { $('serr').textContent = 'Liste des lignes Naolib indisponible (tu peux quand même saisir le numéro).'; }
+  $('lines').innerHTML = lineList().map(l => `<option value="${l}">`).join('');
+  if (cfg) loadDirs();
+}
+
+// Libellés des deux sens, d'après un arrêt de la ligne
+async function loadDirs() {
+  const l = realLine($('line').value) || $('line').value.trim();
+  const code = draft.code || (stopsOfLine(l)[0] || {}).codeLieu;
+  if (!l || !code) return;
+  try {
+    const r = await fetchTimes(code, l, 1, ymd(new Date()));
+    if (r.dirs && r.dirs[0]) {
+      const cur = $('sens').value;
+      $('sens').innerHTML = `<option value="1">→ ${r.dirs[0]}</option><option value="2">→ ${r.dirs[1]}</option>`;
+      $('sens').value = cur; draft.dirs = r.dirs;
+    }
+  } catch {}
+}
+
+// Liste filtrable des arrêts de la ligne ; pick(s) est appelé au choix
+function stopPicker(inputId, boxId, pick) {
+  const input = $(inputId), box = $(boxId);
+  const show = () => {
+    const l = realLine($('line').value), q = norm(input.value);
+    if (!l) { box.classList.add('hide'); return; }
+    const hits = stopsOfLine(l).filter(s => !q || norm(s.libelle).includes(q));
+    box.innerHTML = '';
+    hits.slice(0, 60).forEach(s => {
+      const d = document.createElement('div'); d.textContent = s.libelle;
+      d.onclick = () => { pick(s); box.classList.add('hide'); input.value = ''; pickedUI(); };
+      box.appendChild(d);
+    });
+    if (!hits.length) box.innerHTML = '<div class="mute">Aucun arrêt trouvé</div>';
+    box.classList.remove('hide');
+  };
+  input.oninput = show; input.onfocus = show;
+}
+stopPicker('q', 'stops', s => { draft.code = s.codeLieu; draft.label = s.libelle; loadDirs(); });
+stopPicker('q2', 'stops2', s => { draft.arrCode = s.codeLieu; draft.arrLabel = s.libelle; });
+
+$('line').oninput = () => {
+  const ok = c => stopsOfLine($('line').value).some(s => s.codeLieu === c);
+  if (draft.code && !ok(draft.code)) { draft.code = null; }
+  if (draft.arrCode && !ok(draft.arrCode)) { draft.arrCode = null; }
+  pickedUI(); $('q').oninput(); loadDirs();
+};
+
+$('next').onclick = () => {
+  const walk = parseInt($('walk').value, 10), line = realLine($('line').value) || $('line').value.trim();
+  if (!line) { $('serr').textContent = 'Indique ta ligne.'; return; }
+  if (!draft.code) { $('serr').textContent = 'Choisis ton arrêt de départ dans la liste.'; return; }
+  if (isNaN(walk)) { $('serr').textContent = 'Renseigne le temps de marche.'; return; }
+  draft.line = line; draft.sens = +$('sens').value; draft.walk = walk;
+  step(2);
+};
+$('back').onclick = () => step(1);
+
+$('save').onclick = () => {
+  const walk2 = parseInt($('walk2').value, 10);
+  if (!draft.arrCode) { $('serr').textContent = 'Choisis ton arrêt d’arrivée dans la liste.'; return; }
+  if (isNaN(walk2)) { $('serr').textContent = 'Renseigne le temps de marche à l’arrivée.'; return; }
+  const week = {};
+  for (let i = 0; i < 7; i++) week[i] = { on: $('wo' + i).checked, start: $('ws' + i).value || '08:30' };
+  cfg = { line: draft.line, sens: draft.sens, dirs: draft.dirs || null, code: draft.code, label: draft.label,
+    arrCode: draft.arrCode, arrLabel: draft.arrLabel, walk: draft.walk, walk2, week };
+  save(K + ':cfg', cfg);
+  for (const k in cache) delete cache[k];
+  showMain();
+};
+$('cancel').onclick = () => showMain();
+$('gear').onclick = openSetup;
+
+if (cfg && cfg.arrCode) showMain(); else openSetup();
+setInterval(() => { if (cfg && !$('main').classList.contains('hide')) renderToday(); }, 15000);
+// Relecture de l'état du trafic (incidents) toutes les 5 min
+setInterval(() => { if (cfg && cfg.arrCode && !$('main').classList.contains('hide')) { delete cache[ymd(new Date())]; ensure(new Date()); } }, 300000);
+</script>
+</body>
+</html>
