@@ -6,7 +6,7 @@ import { itemUsability, useItemChoosingTarget } from './gameInventoryTabs.js';
 import { openTargetPicker, hasLivingAlly } from './itemTargetPicker.js';
 import { classCanAct, decoupled } from './gameSpellList.js';
 import { isSingleUse } from './itemReuse.js';
-import { showItemTooltip, hideSpellTooltip, ensureSpellTooltip, placeTooltip } from './gameTooltips.js';
+import { showItemTooltip, markPressHeld, hideSpellTooltip, ensureSpellTooltip, placeTooltip } from './gameTooltips.js';
 
 const label = size => `${POTIONS[size].name} (+${potionHeal(player, size)} PV)`;
 
@@ -97,7 +97,7 @@ function bindItemHold(box) {
         const tile = ev.pointerType !== 'mouse' && tileOf(ev);
         if (!tile) return;
         cancel();
-        timer = setTimeout(() => { timer = null; shown = true; show(tile); }, HOLD_MS);
+        timer = setTimeout(() => { timer = null; shown = true; markPressHeld(); show(tile); }, HOLD_MS);
     });
     ['pointerup', 'pointercancel', 'pointerleave'].forEach(t => box.addEventListener(t, () => { cancel(); if (t !== 'pointerleave' || shown) hideSpellTooltip(); }));
     box.addEventListener('contextmenu', ev => { if (tileOf(ev)) ev.preventDefault(); });

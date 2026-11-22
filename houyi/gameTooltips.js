@@ -22,6 +22,24 @@ import { shieldStats } from "./gameInventoryTabs.js";
 // Infobulle d'un sort / d'une arme / d'un objet : au survol à la souris, au focus clavier, ou par appui long au doigt
 // (un appui bref sert à utiliser l'élément et ne doit pas afficher l'infobulle).
 export const TOOLTIP_LONG_PRESS_MS = 400;
+
+// Tant que le doigt (ou la souris) reste appuyé après un appui long, l'infobulle ne disparaît pas : ni redessin du combat, ni annulation du toucher
+// par le navigateur. Elle part quand le doigt se lève (écoute sur le document : le bouton appuyé a pu être redessiné entre-temps).
+let pressHeld = false;
+let pressHideCb = null;
+/** Un appui long vient d'afficher une infobulle : elle reste jusqu'au relâchement. `onRelease` : action de fermeture propre à cette infobulle (par défaut, hideSpellTooltip). */
+export function markPressHeld(onRelease = null) { pressHeld = true; pressHideCb = onRelease; }
+export const isPressHeld = () => pressHeld;
+function releasePress() {
+    if(!pressHeld) return;
+    pressHeld = false;
+    const cb = pressHideCb; pressHideCb = null;
+    (cb || hideSpellTooltip)();
+}
+if(typeof document !== 'undefined') {
+    ['pointerup', 'touchend', 'touchcancel', 'mouseup', 'pointerdown'].forEach(t => document.addEventListener(t, releasePress, true));   // pointerdown : garde-fou si un relâchement s'est perdu
+    window.addEventListener('blur', releasePress);
+}
 // Pastilles de bonus/malus : survol ou appui long = explication de l'effet.
 export function bindStatusBadges(container, entity) {
     const list = activeStatuses(entity);
@@ -47,7 +65,7 @@ export function bindTooltip(el, show, hide) {
     el.addEventListener('pointerdown', e => {
         if(e.pointerType === 'mouse') return;
         cancel();
-        timer = setTimeout(() => { timer = null; shownByPress = true; show(); }, TOOLTIP_LONG_PRESS_MS);
+        timer = setTimeout(() => { timer = null; shownByPress = true; markPressHeld(); show(); }, TOOLTIP_LONG_PRESS_MS);
     });
     // Relâcher un appui long ne doit pas utiliser l'élément : on avale le clic qui suit.
     el.addEventListener('click', e => {
@@ -56,7 +74,9 @@ export function bindTooltip(el, show, hide) {
         e.preventDefault();
         e.stopImmediatePropagation();
     }, true);
-    ['pointerup', 'pointercancel'].forEach(type => el.addEventListener(type, () => { cancel(); hide(); }));
+    el.addEventListener('pointerup', () => { cancel(); hide(); });
+    el.addEventListener('pointercancel', () => { cancel(); if(!pressHeld) hide(); });   // toucher annulé par le navigateur : l'infobulle reste jusqu'à ce que le doigt se lève (document : touchend)
+    el.addEventListener('contextmenu', e => { if(e.pointerType !== 'mouse' && (shownByPress || timer)) e.preventDefault(); });
     el.addEventListener('focus', () => { if(el.matches?.(':focus-visible')) show(); });
     el.addEventListener('blur', () => { cancel(); hide(); });
 }
@@ -233,6 +253,7 @@ export function showItemTooltip(button, item, options = {}) {
 }
 
 export function hideSpellTooltip() {
+    if(pressHeld && pressHideCb === null) return;   // appui long en cours : l'infobulle reste jusqu'au relâchement (releasePress)
     const tooltip = document.getElementById('spell-detail-tooltip');
     if(tooltip){
         tooltip.classList.remove('visible');
@@ -351,6 +372,7 @@ export function bindEnemyStuffLongPress(nameEl, fullName, enemyEntity = enemy) {
     let timer = null;
     let shown = false;
     const cancel = () => { clearTimeout(timer); timer = null; };
+    const scheduleHide = () => { clearTimeout(enemyTapTimer); enemyTapTimer = setTimeout(() => { delete nameEl.dataset.stuffShown; hideEnemyNameTooltip(); }, ENEMY_TAP_TOOLTIP_MS + 1500); };
     nameEl.addEventListener('pointerdown', () => {
         cancel();
         shown = false;
@@ -359,8 +381,8 @@ export function bindEnemyStuffLongPress(nameEl, fullName, enemyEntity = enemy) {
             timer = null; shown = true;
             nameEl.dataset.stuffShown = '1';
             showEnemyStuffTooltip(nameEl, resolve(fullName), resolve(enemyEntity));
-            clearTimeout(enemyTapTimer);
-            enemyTapTimer = setTimeout(() => { delete nameEl.dataset.stuffShown; hideEnemyNameTooltip(); }, ENEMY_TAP_TOOLTIP_MS + 1500);
+            clearTimeout(enemyTapTimer);   // tant que le doigt reste appuyé, l'infobulle ne se ferme pas ; le délai ne court qu'après le relâchement
+            markPressHeld(scheduleHide);
         }, ENEMY_STUFF_LONG_PRESS_MS);
     });
     ['pointerup', 'pointerleave', 'pointercancel'].forEach(t => nameEl.addEventListener(t, cancel));

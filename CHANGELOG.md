@@ -1,3 +1,9 @@
+## [3.20.1](https://github.com/niafrond/niafrond.github.io/compare/v3.20.0...v3.20.1) (2026-11-22)
+
+### Bug Fixes
+
+* **houyi:** attaque gratuite de la Xiūxiān de Hou Yi et infobulles maintenues pendant l'appui long ([#777](https://github.com/niafrond/niafrond.github.io/issues/777)) ([3a22d97](https://github.com/niafrond/niafrond.github.io/commit/3a22d974bc58af0747c79128ed7d745653992d1f))
+
 ## [3.20.0](https://github.com/niafrond/niafrond.github.io/compare/v3.19.0...v3.20.0) (2026-11-21)
 
 ### Features

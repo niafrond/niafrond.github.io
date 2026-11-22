@@ -1027,10 +1027,10 @@ export function applyTranseClassEffect(){
         if(!cls || !effect.name || gameState.transeApplied.includes(cls)) return;
         gameState.transeApplied.push(cls);
         log(`${effect.name} : ${effect.text}.`);
-        if(effect.strikePct && enemy.hp > 1){   // volée gratuite (jamais mortelle : le combat se finit par un vrai coup)
-            const volley = Math.min(enemy.hp - 1, Math.max(1, Math.round((player.equippedWeapon?.damage || player.attack || 10) * effect.strikePct / 100)));
-            applyDamage(enemy, volley, { damageSource: 'other' });
-            log(`Volée des Dix Soleils : ${volley} dégâts à ${enemy.name}.`);
+        if(effect.strikePct && enemy.hp > 1){   // attaque gratuite de l'arme : vraie attaque (animation, critique, blocage), sans PA ; jamais mortelle (le combat se finit par un vrai coup)
+            const weapon = player.equippedWeapon;
+            if(weapon) strikeWithWeapon(weapon, { free: true, pct: effect.strikePct, nonLethal: true });
+            else { const hit = Math.min(enemy.hp - 1, Math.max(1, Math.round((player.attack || 10) * effect.strikePct / 100))); applyDamage(enemy, hit, { damageSource: 'other' }); log(`${effect.name} : ${hit} dégâts à ${enemy.name}.`); }
         }
         if(effect.dotPct && enemy.hp > 1){   // vapeurs de Shennong
             const vapor = Math.min(enemy.hp - 1, Math.max(1, Math.round(enemy.maxHp * effect.dotPct / 100)));
@@ -2049,9 +2049,9 @@ export function useWeapon(hand = 'right'){
 }
 
 // Coup d'arme du joueur sur l'ennemi (dégâts, critique, vol de vie, animation) ; ne consomme ni PA ni tour.
-function strikeWithWeapon(weapon, { free = false, ally = null } = {}){
+function strikeWithWeapon(weapon, { free = false, ally = null, pct = 100, nonLethal = false } = {}){
     const who = ally || player;   // l'attaquant : Hou Yi ou le compagnon qui manie l'arme
-    let dmg = weapon.damage;
+    let dmg = Math.max(1, Math.round(weapon.damage * pct / 100));   // `pct` : attaque partielle (Xiūxiān de Hou Yi : 50 %)
     const biomeBonus = weaponBiomeBonus(weapon, enemy.biome);
     if(biomeBonus > 0) {
         dmg += biomeBonus;
@@ -2071,6 +2071,7 @@ function strikeWithWeapon(weapon, { free = false, ally = null } = {}){
     const isCrit = strike.crit;
     const blockText = blockLabel(strike.block);
     dmg = strike.damage;
+    if(nonLethal && !selfHit) dmg = Math.min(dmg, Math.max(0, enemy.hp - 1));   // jamais mortelle
 
     if(selfHit) log(`Vous êtes confus : ${weapon.name} se retourne contre vous !`);
     applyDamage(selfHit ? player : enemy, dmg, { damageSource: 'weapon', area: !selfHit && isAreaWeapon(weapon) });
