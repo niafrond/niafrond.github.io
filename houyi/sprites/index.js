@@ -28,7 +28,9 @@ const gbaFailedAt = new Map();  // clé → date du dernier échec (pas de nouve
 // Sprite GBA pré-généré pour la clé donnée (direction : 'front'|'back'|'left'|'right').
 // Retourne null si aucun sprite généré n'existe pour cette clé, ou s'il n'est pas encore chargé (son chargement est alors lancé).
 // Alias : plusieurs PNJ partagent un même sprite généré (sentinelles de la brume, Hua, Chang'e).
-const GBA_ALIASES = { change_moon: 'change', crapaud_boue: 'rizieres_w_toad', changxi_calm: 'changxi', changxi_moon: 'changxi', moon_messenger: 'jade_hare' };
+const GBA_ALIASES = { change_moon: 'change', crapaud_boue: 'rizieres_w_toad', changxi_calm: 'changxi', changxi_moon: 'changxi', moon_messenger: 'jade_hare',
+    // Ennemis des quêtes de recrutement : même dessin que le compagnon qu'ils deviennent.
+    rice_thief: 'companion_xiao_gui', golden_carp: 'companion_yu', ember_pup: 'companion_braise' };
 const GBA_ALIAS_PATTERNS = [[/^level_guard_/, 'level_guard'], [/^hua_/, 'hua']];
 // Gabarits « copies » d'ennemis nommés (champ `copyOf` de enemies.catalog.json) sans dessin propre : ils empruntent le dessin du
 // gabarit d'origine (SVG de repli ; côté GBA, un sprite généré propre au gabarit est prioritaire, voir gbaKey).

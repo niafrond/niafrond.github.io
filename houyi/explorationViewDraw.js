@@ -572,7 +572,16 @@ export function createDraw(env) {
                     const hop = comp.hover ? 0 : tr.moving ? -tile * 0.06 * Math.abs(Math.sin(now / 85 + 1.2)) : Math.sin(now / 480 + 1.2) * tile * 0.01;   // les esprits volants flottent (`hover`), sans sautiller
                     if (!comp.noShadow) env.drawShadow(c.x, feet, tile * 0.2 * scale + tile * 0.06, tile * 0.07);
                     if (view) {
-                        env.drawSprite(view, c.x, feet + hop + hover + tile * 0.04, tile * scale * 1.06);
+                        // Une seule vue (de face) : miroir selon le dernier sens horizontal suivi (`vis.compSide`) ; en marche, le sprite se balance d'un pied sur l'autre,
+                        // s'écrase à chaque pas et penche vers la direction suivie.
+                        const baseY = feet + hop + hover + tile * 0.04, flip = vis.compSide === 'right' ? -1 : 1;
+                        const step = now / 95 + 1.2, amp = tr.moving ? Math.abs(Math.cos(step)) : 0;
+                        ctx.save();
+                        ctx.translate(c.x, baseY);
+                        if (tr.moving) ctx.rotate(Math.sin(step) * 0.07 + (tr.dir === 'left' ? -0.06 : tr.dir === 'right' ? 0.06 : 0));
+                        ctx.scale(flip * (1 + amp * 0.04), 1 - amp * 0.05);
+                        env.drawSprite(view, 0, 0, tile * scale * 1.06);
+                        ctx.restore();
                     } else {
                         env.drawSprite(npcSprite(comp.id === 'xiao_gui' ? 'xiao_gui' : comp.npc), c.x, feet + hop + hover + tile * 0.04, tile * scale * 0.85);
                     }
