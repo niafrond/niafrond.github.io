@@ -1,5 +1,5 @@
-import { describe, it, expect } from '@jest/globals';
-import { MAX_ENEMIES, groupAllowed, rollGroupSize, shouldSummon, hasRoom, pickSummonTemplate, summonableTemplates, nextLivingIndex, reinforcementLevel } from '../../enemyGroup.js';
+import { describe, it, test, expect } from '@jest/globals';
+import { MAX_ENEMIES, groupAllowed, rollGroupSize, shouldSummon, hasRoom, pickSummonTemplate, summonableTemplates, nextLivingIndex, reinforcementLevel, packSize } from '../../enemyGroup.js';
 
 const foe = (hp = 10, extra = {}) => ({ hp, maxHp: 10, level: 5, statusEffects: {}, ...extra });
 const catalog = [{ id: 'a' }, { id: 'b' }, { id: 'sun_1', copyOf: 'a' }, { id: 'fengmeng_1' }, { id: 'petit_gui', copyOf: 'a' }];
@@ -43,5 +43,27 @@ describe('groupes d\'ennemis', () => {
         expect(nextLivingIndex([foe(0), foe(0)], 0)).toBe(-1);
         expect(reinforcementLevel(1)).toBe(1);
         expect(reinforcementLevel(8)).toBe(7);
+    });
+});
+
+describe('meutes (pack)', () => {
+    test('une meute compte toujours plus d\'un ennemi, même à bas niveau, et jamais plus de MAX_ENEMIES', () => {
+        const lead = { level: 1, pack: { min: 2, max: 3 } };
+        for (const r of [0, 0.3, 0.5, 0.99]) {
+            const size = rollGroupSize(lead, () => r);
+            expect(size).toBeGreaterThanOrEqual(2);
+            expect(size).toBeLessThanOrEqual(MAX_ENEMIES);
+        }
+        expect(rollGroupSize(lead, () => 0)).toBe(2);
+        expect(rollGroupSize(lead, () => 0.99)).toBe(3);
+    });
+    test('taille de meute bornée et valeurs absurdes corrigées', () => {
+        expect(packSize({ min: 2, max: 2 })).toBe(2);
+        expect(packSize({ min: 9, max: 12 })).toBe(MAX_ENEMIES);
+        expect(packSize({ min: 0, max: 0 })).toBe(2);
+        expect(packSize(null)).toBe(2);
+    });
+    test('un boss ou un duel ne forme jamais de meute', () => {
+        expect(rollGroupSize({ level: 10, isBoss: true, pack: { min: 2 } }, () => 0)).toBe(1);
     });
 });

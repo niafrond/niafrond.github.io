@@ -1155,6 +1155,7 @@ export function encounterFor(session, enemyId, playerLevel) {
         boss: def.boss ? { ...def.boss, level } : null,
         duel: def.duel ? { ...def.duel } : null,
         carryHp: Boolean(def.carryHp),
+        pack: def.pack || null,   // meute : au moins `pack.min` ennemis de la même espèce (enemyGroup.js : rollGroupSize)
         training: def.training || null   // entraînement : classe imposée pour ce combat (classRoster.js)
     };
 }

@@ -167,7 +167,7 @@ export default {
             { id: 'crow_a', x: 25, y: 6, templateId: 'corbeau_demon', name: 'Corbeau-démon voleur', kind: 'sentinel', offset: 0, permanent: true, group: 'crow_gang' },
             { id: 'crow_b', x: 31, y: 6, templateId: 'corbeau_demon', name: 'Corbeau-démon voleur', kind: 'sentinel', offset: 0, permanent: true, group: 'crow_gang' },
             { id: 'rizieres_mill_ghost', x: 34, y: 7, templateId: 'gui_guerrier', name: 'Meunier revenant', kind: 'sentinel', offset: 0, permanent: true },
-            { id: 'rizieres_wild_patrol_toads', x: 42, y: 8, templateId: 'crapaud_boue', name: 'Crapauds en file', kind: 'patrol', patrol: [[42, 8], [42, 16]], offset: -1 },
+            { id: 'rizieres_wild_patrol_toads', x: 42, y: 8, templateId: 'crapaud_boue', name: 'Crapauds en file', pack: { min: 2, max: 3 }, kind: 'patrol', patrol: [[42, 8], [42, 16]], offset: -1 },
             { id: 'rizieres_wild_patrol_imp', x: 10, y: 5, templateId: 'huli_jing', name: 'Petit jing des diguettes', kind: 'patrol', patrol: [[10, 5], [16, 5]], offset: 0 },
             { id: 'rizieres_wild_scarecrow', x: 44, y: 17, templateId: 'shu_jing', name: 'Épouvantail possédé', kind: 'sentinel', offset: 0 }
         ],
