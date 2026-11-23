@@ -1,3 +1,9 @@
+## [3.31.0](https://github.com/niafrond/niafrond.github.io/compare/v3.30.0...v3.31.0) (2026-11-23)
+
+### Features
+
+* **houyi:** redessiner les compagnons via Pixel Lab ([#792](https://github.com/niafrond/niafrond.github.io/issues/792)) ([68d8b5a](https://github.com/niafrond/niafrond.github.io/commit/68d8b5a0e6da6da76cebb41b2ec22bebe068cf4f))
+
 ## [3.30.0](https://github.com/niafrond/niafrond.github.io/compare/v3.29.0...v3.30.0) (2026-11-23)
 
 ### Features
