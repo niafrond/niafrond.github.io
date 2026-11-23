@@ -33,6 +33,9 @@ export function rollGroupSize(leader, rng = Math.random) {
     return 1;
 }
 
+/** Part de chacun dans un coup de crânes de zone : le total est divisé entre les cibles (arrondi au-dessus, au moins 1 si le coup touche). */
+export const skullShare = (total, targets) => (total > 0 && targets > 1 ? Math.max(1, Math.ceil(total / targets)) : total);
+
 export const isAlive = e => Boolean(e) && e.hp > 0;
 export const livingFoes = foes => (Array.isArray(foes) ? foes : []).filter(isAlive);
 
