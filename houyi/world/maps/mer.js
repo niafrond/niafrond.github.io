@@ -130,7 +130,7 @@ export default {
             '~~~~~~~~~~~~~~~~~~~~~~~~~.v.~~~~~~~~~~~~~~~~~~~~'
         ],
         grass: { rate: 0.1, safeSteps: 3, table: [
-            { templateId: 'crabe_soldat', name: 'Crabe des sables', weight: 5, offset: -1 },
+            { templateId: 'crabe_soldat', name: 'Crabe des sables', pack: { min: 2, max: 3 }, weight: 5, offset: -1 },
             { templateId: 'assassin_masque', name: 'Rôdeur des dunes', weight: 4, offset: 0 },
             { templateId: 'jiaolong', name: 'Anguille de la grève', weight: 3, offset: 0 },
             { templateId: 'dame_des_neiges', name: 'Dame d\'écume', weight: 1, offset: 1 },
@@ -160,10 +160,10 @@ export default {
             { id: 'mer_w_crab', at: 'l', templateId: 'shanxiao', name: 'Démon des falaises', kind: 'patrol', offset: 0, patrol: ['l', 'm'] },
             { id: 'mer_w_wraith', at: 'n', templateId: 'wen_shen', name: 'Spectre de la marée', kind: 'patrol', offset: -1, patrol: ['n', [12, 15]] },
             { id: 'mer_w_cutter', at: 'o', templateId: 'assassin_masque', name: 'Coupeur de filets', kind: 'sentinel', offset: 0 },
-            { id: 'mer_crab_a', at: 'p', templateId: 'crabe_soldat', name: 'Crabe-soldat', kind: 'sentinel', offset: 0, permanent: true, group: 'giant_crabs' },
-            { id: 'mer_crab_b', at: 'q', templateId: 'crabe_soldat', name: 'Crabe-soldat', kind: 'sentinel', offset: 0, permanent: true, group: 'giant_crabs' },
+            { id: 'mer_crab_a', at: 'p', templateId: 'crabe_soldat', name: 'Crabe-soldat', pack: { min: 2, max: 3 }, kind: 'sentinel', offset: 0, permanent: true, group: 'giant_crabs' },
+            { id: 'mer_crab_b', at: 'q', templateId: 'crabe_soldat', name: 'Crabe-soldat', pack: { min: 2, max: 3 }, kind: 'sentinel', offset: 0, permanent: true, group: 'giant_crabs' },
             { id: 'mer_wild_pier_patrol', x: 26, y: 16, templateId: 'jiaolong', name: 'Anguille de la jetée', kind: 'patrol', offset: 0, patrol: [[26, 16], [26, 19]] },
-            { id: 'mer_wild_dune_patrol', at: 'r', templateId: 'crabe_soldat', name: 'Crabe-lame des bancs', kind: 'patrol', offset: -1, patrol: ['r', 's'] },
+            { id: 'mer_wild_dune_patrol', at: 'r', templateId: 'crabe_soldat', name: 'Crabe-lame des bancs', pack: { min: 2, max: 3 }, kind: 'patrol', offset: -1, patrol: ['r', 's'] },
             { id: 'mer_wild_grotto_guard', at: 't', templateId: 'jiaolong', name: 'Gardien de la grotte du dragon', kind: 'sentinel', offset: 1 },
             { id: 'mer_wild_reef_sentinel', at: 'u', templateId: 'wen_shen', name: 'Naufragé fiévreux du récif', kind: 'sentinel', offset: 0 }
         ],
@@ -194,7 +194,7 @@ export default {
             '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
         ],
         grass: { rate: 0.09, safeSteps: 3, table: [
-            { templateId: 'crabe_soldat', name: 'Petit crabe des galets', weight: 5, offset: -1 },
+            { templateId: 'crabe_soldat', name: 'Petit crabe des galets', pack: { min: 2, max: 3 }, weight: 5, offset: -1 },
             { templateId: 'jiaolong', name: 'Anguille de rivage', weight: 3, offset: -1 },
             { templateId: 'wen_shen', name: 'Spectre d\'écume', weight: 1, offset: 1 },
                 { templateId: 'hai_shen', name: "Hai Shen", weight: 1, offset: 1 },
@@ -211,7 +211,7 @@ export default {
             { id: 'mer_road_beach_chest', at: '3', gold: 360 }
         ],
         enemies: [
-            { id: 'mer_road_beach_patrol', at: '4', templateId: 'crabe_soldat', name: 'Crabe-lame des galets', kind: 'patrol', offset: -1, patrol: ['4', '5'] },
+            { id: 'mer_road_beach_patrol', at: '4', templateId: 'crabe_soldat', name: 'Crabe-lame des galets', pack: { min: 2, max: 3 }, kind: 'patrol', offset: -1, patrol: ['4', '5'] },
             { id: 'mer_road_jetty_serpent', at: '6', templateId: 'jiaolong', name: 'Anguille de la jetée', kind: 'sentinel', offset: 0 },
             { id: 'mer_road_spray_witch', at: '7', templateId: 'dame_des_neiges', name: 'Dame des embruns', kind: 'sentinel', offset: 0 },
             { id: 'mer_road_tide_patrol', x: 32, y: 7, templateId: 'wen_shen', name: 'Spectre du reflux', kind: 'patrol', offset: -1, patrol: [[32, 7], '8'] },
@@ -372,7 +372,7 @@ export default {
             '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
         ],
         grass: { rate: 0.09, safeSteps: 4, table: [
-            { templateId: 'crabe_soldat', name: 'Crabe-soldat égaré', weight: 5, offset: 0 },
+            { templateId: 'crabe_soldat', name: 'Crabe-soldat égaré', pack: { min: 2, max: 3 }, weight: 5, offset: 0 },
             { templateId: 'jiaolong', name: 'Anguille des marées', weight: 3, offset: 0 },
             { templateId: 'dame_des_neiges', name: 'Dame d\'embruns', weight: 1, offset: 1 },
                 { templateId: 'hai_gui', name: "Hai Gui", weight: 3, offset: 0 },
