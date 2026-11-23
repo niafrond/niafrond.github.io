@@ -153,12 +153,12 @@ describe('classCharge : temps de chargement des classes', () => {
 describe('délais de lisibilité de la file d\'actions', () => {
     test('2 s avant d\'apparaître dans la file, 2 s de plus avant de partir', () => {
         const t = actionTimes(10000);
-        expect(t).toEqual({ visibleAt: 12000, runAt: 14000 });
+        expect(t).toEqual({ visibleAt: 11000, runAt: 12000 });
         const item = { ...t };
-        expect(isActionVisible(item, 11999)).toBe(false);
-        expect(isActionVisible(item, 12000)).toBe(true);
-        expect(isActionLaunchable(item, 13999)).toBe(false);
-        expect(isActionLaunchable(item, 14000)).toBe(true);
+        expect(isActionVisible(item, 10999)).toBe(false);
+        expect(isActionVisible(item, 11000)).toBe(true);
+        expect(isActionLaunchable(item, 11999)).toBe(false);
+        expect(isActionLaunchable(item, 12000)).toBe(true);
     });
     test('une action sans date (anciennes sauvegardes, tests) est visible et lançable tout de suite', () => {
         expect(isActionVisible({}, 0)).toBe(true);
