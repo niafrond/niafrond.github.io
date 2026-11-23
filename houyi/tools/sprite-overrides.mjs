@@ -11,6 +11,10 @@ const NAMED = Object.entries(NAMED_ENEMIES).map(([id, { desc }]) => [id, id, 'Hu
 
 export const OVERRIDES = [
     ...NAMED,
+  // Crabe combattant doré (renfort rare invoqué par les crabes-soldats) : dessin propre, clé `crabe_combattant_dore`.
+  ['crabe_combattant_dore', 'Crabe combattant doré', 'Bête', 'Trésor des Bancs de Sable', 'yellow', 'mer', 'e',
+    'chibi golden crab, a real four-legged sea crab walking sideways on all four paws, wide round shell of shiny polished gold with engraved ancient Chinese cloud patterns and a few red lacquer accents, ' +
+    'two big stalked eyes, two large raised golden pincers, eight small jointed legs, small sea foam droplets, no humanoid pose, no helmet, no weapon'],
   // Créatures dont l'ancien dessin était informe (refait en 64 px, voir tools/gen-sprites-gm.mjs --px=64).
   ['hundun', 'Hundun', 'Bête', 'Chaos primordial', 'orange', 'tonnerre', 'e',
     'Hundun, primordial chaos creature, a round shaggy faceless body like a stuffed bag, dark brown fur with glowing orange cracks, six short legs and four small wings, no face'],
