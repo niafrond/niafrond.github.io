@@ -32,7 +32,7 @@ export function classChargeInfo(hero, classId) {
         agility: agilityScore(hero) * AGILITY_PCT,
         attribute: getAttributePoints(hero, attr) * CLASS_ATTR_PCT,
         qi: Math.max(0, Math.floor(hero?.mana?.[color] || 0)) * QI_PCT,
-        skills: skillBonus(hero, 'chargePct')
+        skills: skillBonus(hero, 'chargePct', classId)   // les compétences de CE personnage (chacun a ses Fulu)
     };
     const total = pct.agility + pct.attribute + pct.qi + pct.skills;
     return { time: clampTime(total), pct };
@@ -129,13 +129,12 @@ export const chargeRunning = (nowMs, lastComboMs) => nowMs - lastComboMs < BOARD
  * Début de combat : toutes les classes et l'ennemi partent avec une barre VIDE (il faut attendre leur chargement), sauf bonus :
  * `startChargePct` (compétences de soutien actives, effet des reliques portées) remplit d'avance la barre des classes ; `enemy.startChargePct` celle de l'ennemi.
  */
-export function startChargePctOf(hero) {
+export function startChargePctOf(hero, classId = null) {
     const relics = (typeof wornRelics === 'function' ? wornRelics(hero) : []).reduce((n, r) => n + (Number(r?.effect?.startChargePct) || 0), 0);
-    return Math.max(0, Math.min(100, skillBonus(hero, 'startChargePct') + relics));
+    return Math.max(0, Math.min(100, skillBonus(hero, 'startChargePct', classId || undefined) + relics));   // classId : seulement les compétences de ce personnage
 }
 export function initCharge(charge, hero, classIds, enemy, factor = 1) {
-    const heroPct = startChargePctOf(hero) / 100;
-    classIds.forEach(id => { charge.ready[id] = charge.now + Math.round(classChargeMs(hero, id, factor) * (1 - heroPct)); });
+    classIds.forEach(id => { charge.ready[id] = charge.now + Math.round(classChargeMs(hero, id, factor) * (1 - startChargePctOf(hero, id) / 100)); });
     const foePct = Math.max(0, Math.min(100, Number(enemy?.startChargePct) || 0)) / 100;
     charge.enemyReady = charge.now + Math.round(enemyChargeMs(enemy, factor) * (1 - foePct));
     return charge;

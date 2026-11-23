@@ -44,7 +44,7 @@ describe('Fulu', () => {
         soutien.forEach(s => { if (!toggleSupport(h, s.id).ok) refused = true; });
         expect(refused).toBe(true);
         expect(usedMagikoliths(h)).toBeLessThanOrEqual(4);
-        const first = h.skills.active[0];
+        const first = h.skills.activeBy.assassin[0];
         expect(toggleSupport(h, first).active).toBe(false);
     });
     test('les bonus ne comptent que les compétences actives', () => {
@@ -135,5 +135,93 @@ describe('actions : elles s\'allument avec des Fulu, comme les soutiens', () => 
     test('une action non apprise ne s\'allume pas', async () => {
         const { toggleSkill } = await import('../../skills.js');
         expect(toggleSkill({ level: 1, skills: { learned: [], active: [], progress: {} } }, 'tir_perforant').ok).toBe(false);
+    });
+});
+
+describe('Fulu par personnage (avis Équilibrage)', () => {
+    const team = (extra = {}) => ({ level: 10, classes: { owned: ['assassin', 'monk', 'barbarian'], loadout: ['assassin', 'monk', 'barbarian'] }, skills: { learned: ['garde_de_jade', 'garde_de_bronze', 'oeil_de_faucon', 'puits_de_qi', 'goutte_de_qi', 'qi_de_reserve', 'tonnerre_lointain'], progress: {}, activeBy: {} }, ...extra });
+
+    test('chaque personnage a la même capacité : 4 + 1 tous les 5 niveaux (1, 5, 10, 20, 30, 50 → 4, 5, 6, 8, 10, 14)', async () => {
+        const { memberFuluCapacity } = await import('../../skills.js');
+        expect([1, 5, 10, 20, 30, 50].map(level => memberFuluCapacity({ level }))).toEqual([4, 5, 6, 8, 10, 14]);
+        expect(memberFuluCapacity({ level: 70 })).toBeLessThanOrEqual(18);   // garde-fou : pas de dérive silencieuse
+    });
+    test('les réserves sont indépendantes : une compétence allumée pour Hou Yi ne coûte rien à Fuxi', async () => {
+        const { toggleSkill, usedMagikoliths } = await import('../../skills.js');
+        const h = team();
+        expect(toggleSkill(h, 'garde_de_bronze', 'assassin').ok).toBe(true);
+        expect(usedMagikoliths(h, 'assassin')).toBe(3);
+        expect(usedMagikoliths(h, 'monk')).toBe(0);
+        expect(toggleSkill(h, 'garde_de_bronze', 'monk')).toMatchObject({ ok: true, active: true, member: 'monk' });   // la même commune, payée aussi par Fuxi
+        expect(usedMagikoliths(h, 'monk')).toBe(3);
+    });
+    test('chacun est limité par SA réserve', async () => {
+        const { toggleSkill, usedMagikoliths } = await import('../../skills.js');
+        const h = team({ level: 1 });   // capacité 4
+        expect(toggleSkill(h, 'garde_de_bronze', 'monk').ok).toBe(true);   // 3
+        expect(toggleSkill(h, 'oeil_de_faucon', 'monk').ok).toBe(false);   // 2 de plus : 5 > 4
+        expect(toggleSkill(h, 'oeil_de_faucon', 'barbarian').ok).toBe(true);   // la réserve de Wukong est intacte
+        expect(usedMagikoliths(h, 'monk')).toBe(3);
+    });
+    test('un membre qui n\'est pas dans l\'équipe ne peut rien allumer', async () => {
+        const { toggleSkill } = await import('../../skills.js');
+        expect(toggleSkill(team(), 'garde_de_jade', 'shaman').ok).toBe(false);
+    });
+    test('une compétence de classe ne s\'allume que pour sa classe', async () => {
+        const { toggleSkill } = await import('../../skills.js');
+        const h = team(); h.skills.learned.push('cl_monk_paume');
+        expect(toggleSkill(h, 'cl_monk_paume', 'assassin').ok).toBe(false);
+        expect(toggleSkill(h, 'cl_monk_paume').member).toBe('monk');   // sans précision : sa propre classe
+    });
+    test('le chargement d\'une classe ne lit que les compétences de ce personnage', async () => {
+        const { toggleSkill, skillBonus } = await import('../../skills.js');
+        const h = team(); h.skills.learned.push('pas_leger');
+        toggleSkill(h, 'pas_leger', 'monk');
+        expect(skillBonus(h, 'chargePct', 'monk')).toBe(4);
+        expect(skillBonus(h, 'chargePct', 'assassin')).toBe(0);
+        expect(skillBonus(h, 'chargePct', 'barbarian')).toBe(0);
+    });
+    test('un bonus de défense de Hou Yi agit en permanence ; celui d\'un compagnon seulement quand c\'est son tour', async () => {
+        const { toggleSkill, skillBonus } = await import('../../skills.js');
+        const h = team();
+        toggleSkill(h, 'garde_de_jade', 'assassin'); toggleSkill(h, 'garde_de_jade', 'monk');
+        h.turnClassId = 'barbarian';
+        expect(skillBonus(h, 'defense')).toBe(4);   // Hou Yi seul
+        h.turnClassId = 'monk';
+        expect(skillBonus(h, 'defense')).toBe(8);
+    });
+    test('qì de départ : somme de l\'équipe plafonnée à 8 par couleur (le qì est commun)', async () => {
+        const { toggleSkill, teamStartMana, START_MANA_TEAM_CAP } = await import('../../skills.js');
+        const h = team({ level: 30 });
+        ['assassin', 'monk', 'barbarian'].forEach(m => toggleSkill(h, 'puits_de_qi', m));   // 3 × 4 = 12
+        expect(START_MANA_TEAM_CAP).toBe(8);
+        expect(teamStartMana(h)).toBe(8);
+    });
+    test('une action allumée pour un compagnon est dans SA liste de sorts, pas dans celle de Hou Yi', async () => {
+        const { toggleSkill, actionSpells } = await import('../../skills.js');
+        const h = team();
+        toggleSkill(h, 'tonnerre_lointain', 'monk');
+        const spells = actionSpells(h);
+        expect(spells).toHaveLength(1);
+        expect(spells[0]).toMatchObject({ skillId: 'tonnerre_lointain', class: 'monk' });
+        toggleSkill(h, 'tonnerre_lointain', 'assassin');
+        const both = actionSpells(h);
+        expect(both.map(sp => sp.id).sort()).toEqual(['skill_tonnerre_lointain', 'skill_tonnerre_lointain@monk']);
+        expect(both.find(sp => !sp.class)).toBeTruthy();   // celle de Hou Yi : sans classe
+    });
+    test('migration : l\'ancienne liste commune va à Hou Yi, une compétence de classe à sa classe ; rien n\'est perdu', async () => {
+        const { normalizeSkills } = await import('../../skills.js');
+        const h = { level: 10, classes: { owned: ['assassin', 'monk'], loadout: ['assassin', 'monk'] }, skills: { learned: ['garde_de_jade', 'cl_monk_paume', 'cl_assassin_aube'], active: ['garde_de_jade', 'cl_monk_paume'], progress: {} } };
+        const state = normalizeSkills(h);
+        expect(state.activeBy).toEqual({ assassin: ['garde_de_jade'], monk: ['cl_monk_paume'] });
+        expect(state.active).toBeUndefined();
+        expect(normalizeSkills(h).activeBy).toEqual({ assassin: ['garde_de_jade'], monk: ['cl_monk_paume'] });   // idempotent
+    });
+    test('les anciennes sauvegardes ne perdent aucune compétence : l\'ancienne liste tenait dans la réserve de Hou Yi, inchangée', async () => {
+        const { normalizeSkills, usedMagikoliths, memberFuluCapacity } = await import('../../skills.js');
+        const h = { level: 5, classes: { owned: ['assassin'], loadout: ['assassin'] }, skills: { learned: ['garde_de_bronze', 'oeil_de_faucon'], active: ['garde_de_bronze', 'oeil_de_faucon'], progress: {} } };   // 3 + 2 = 5 = capacité au niveau 5
+        normalizeSkills(h);
+        expect(h.skills.activeBy.assassin).toEqual(['garde_de_bronze', 'oeil_de_faucon']);
+        expect(usedMagikoliths(h)).toBeLessThanOrEqual(memberFuluCapacity(h));
     });
 });

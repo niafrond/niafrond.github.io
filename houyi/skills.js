@@ -8,7 +8,8 @@
 //
 // État du héros : `hero.skills = { progress: { id: PA }, learned: [id], active: [id de soutien] }`.
 
-import { normalizeRoster } from './classRoster.js';
+import { normalizeRoster, START_CLASS } from './classRoster.js';
+import { memberName } from './allies.js';
 
 const SUPPORT = 'support';
 const ACTION = 'action';
@@ -181,10 +182,25 @@ export function normalizeSkills(hero) {
     });
     const base = normalizeRoster(hero).owned.map(baseSkillOf).filter(Boolean).map(s => s.id);   // chaque personnage obtenu a sa compétence de base, déjà apprise
     const learned = [...new Set([...(Array.isArray(raw.learned) ? raw.learned : []), ...base])].filter(id => getSkill(id));
-    const active = [...new Set(Array.isArray(raw.active) ? raw.active : [])].filter(id => learned.includes(id) && (isSupport(getSkill(id)) || isAction(getSkill(id))));   // soutiens ET actions s'allument avec des Fulu
+    // Chaque personnage a SA réserve de Fulu et SES compétences allumées : `activeBy = { classId: [ids] }`. Ancienne sauvegarde (`active`, liste commune) :
+    // une compétence de classe va à sa classe, une compétence commune à Hou Yi (son seul bénéficiaire d'alors).
+    const owned = normalizeRoster(hero).owned;
+    const rawBy = raw.activeBy && typeof raw.activeBy === 'object' ? raw.activeBy : null;
+    const legacy = Array.isArray(raw.active) ? raw.active : [];
+    const activeBy = {};
+    const accept = (member, id) => {
+        const skill = getSkill(id);
+        if (!skill || !learned.includes(id) || !(isSupport(skill) || isAction(skill)) || !owned.includes(member)) return;
+        if (skill.classId && skill.classId !== member) return;   // une compétence de classe ne s'allume que pour sa classe
+        (activeBy[member] ||= []);
+        if (!activeBy[member].includes(id)) activeBy[member].push(id);
+    };
+    if (rawBy) Object.entries(rawBy).forEach(([member, ids]) => (Array.isArray(ids) ? ids : []).forEach(id => accept(member, id)));
+    else legacy.forEach(id => accept(getSkill(id)?.classId || START_CLASS, id));
     const seen = [...new Set([...(Array.isArray(raw.seen) ? raw.seen : []), ...learned, ...Object.keys(progress)])].filter(id => getSkill(id));   // compétences déjà vues (apprises, en cours ou enseignées un jour par l'équipement porté)
     if (!hero.skills || typeof hero.skills !== 'object') hero.skills = {};
-    Object.assign(hero.skills, { progress, learned, active, seen });   // en place : les références prises plus tôt restent valides
+    Object.assign(hero.skills, { progress, learned, activeBy, seen });
+    delete hero.skills.active;   // remplacé par `activeBy`   // en place : les références prises plus tôt restent valides
     trimActive(hero);
     return hero.skills;
 }
@@ -223,51 +239,82 @@ export function awardAp(hero, items, amount, classIds = []) {
 
 // ── Fulu ────────────────────────────────────────────────────────────
 
-/** Capacité en Fulu : 4 au départ, +1 tous les 5 niveaux. */
-export const magikolithCapacity = hero => 4 + Math.floor(Math.max(1, hero?.level || 1) / 5);
+/** Capacité en Fulu de CHAQUE personnage : 4 au départ, +1 tous les 5 niveaux (même taux pour tous : Hou Yi garde son ancienne réserve, avis Équilibrage). */
+export const memberFuluCapacity = hero => 4 + Math.floor(Math.max(1, hero?.level || 1) / 5);
+export const magikolithCapacity = memberFuluCapacity;   // ancien nom
 
-export const usedMagikoliths = hero => normalizeSkills(hero).active.reduce((n, id) => n + (getSkill(id)?.cost || 0), 0);
+/** Compétences allumées par un personnage (ids). */
+export const activeOf = (hero, member = START_CLASS) => normalizeSkills(hero).activeBy[member] || [];
+/** Fulu dépensés par un personnage. */
+export const usedMagikoliths = (hero, member = START_CLASS) => activeOf(hero, member).reduce((n, id) => n + (getSkill(id)?.cost || 0), 0);
 
 function trimActive(hero) {
     const state = hero.skills;
-    let used = 0;
-    const cap = magikolithCapacity(hero);
-    state.active = state.active.filter(id => {
-        const cost = getSkill(id)?.cost || 0;
-        if (used + cost > cap) return false;
-        used += cost;
-        return true;
+    const cap = memberFuluCapacity(hero);
+    Object.keys(state.activeBy).forEach(member => {
+        let used = 0;
+        state.activeBy[member] = state.activeBy[member].filter(id => {
+            const cost = getSkill(id)?.cost || 0;
+            if (used + cost > cap) return false;
+            used += cost;
+            return true;
+        });
     });
 }
 
 /** Allume ou éteint une compétence apprise (soutien ou action) : elle coûte des Fulu tant qu'elle est allumée. Renvoie { ok, message }. */
-export function toggleSkill(hero, id) {
+export function toggleSkill(hero, id, member = null) {
     const state = normalizeSkills(hero);
     const skill = getSkill(id);
     if (!skill || !(isSupport(skill) || isAction(skill))) return { ok: false, message: 'Cette compétence ne s\'active pas.' };
     if (!state.learned.includes(id)) return { ok: false, message: `${skill.name} n'est pas encore apprise.` };
-    if (state.active.includes(id)) {
-        hero.skills.active = hero.skills.active.filter(a => a !== id);
-        return { ok: true, active: false, message: `${skill.name} désactivée.` };
+    const who = member || skill.classId || START_CLASS;
+    if (!normalizeRoster(hero).owned.includes(who)) return { ok: false, message: 'Ce personnage ne fait pas partie de votre équipe.' };
+    if (skill.classId && skill.classId !== who) return { ok: false, message: `${skill.name} est réservée à ${memberName(skill.classId)}.` };
+    const list = hero.skills.activeBy[who] || [];
+    if (list.includes(id)) {
+        hero.skills.activeBy[who] = list.filter(a => a !== id);
+        return { ok: true, active: false, member: who, message: `${skill.name} désactivée pour ${memberName(who)}.` };
     }
-    const left = magikolithCapacity(hero) - usedMagikoliths(hero);
-    if (skill.cost > left) return { ok: false, message: `Pas assez de Fulu : ${skill.name} en demande ${skill.cost}, il en reste ${left}.` };
-    hero.skills.active.push(id);   // `hero.skills` (et non `state`) : la normalisation recrée l'objet à chaque lecture
-    return { ok: true, active: true, message: `${skill.name} activée.` };
+    const left = memberFuluCapacity(hero) - usedMagikoliths(hero, who);
+    if (skill.cost > left) return { ok: false, message: `Pas assez de Fulu pour ${memberName(who)} : ${skill.name} en demande ${skill.cost}, il en reste ${left}.` };
+    (hero.skills.activeBy[who] ||= []).push(id);   // `hero.skills` (et non `state`) : la normalisation recrée l'objet à chaque lecture
+    return { ok: true, active: true, member: who, message: `${skill.name} activée pour ${memberName(who)}.` };
 }
 export const toggleSupport = toggleSkill;   // ancien nom
 
 // ── Effets ──────────────────────────────────────────────────────────────────
 
-/** Somme d'un bonus (`attack`, `defense`, `poisonResist`, `regenPct`, `transePct`, `startMana`, `chargePct`, `startChargePct`) des compétences de soutien actives. */
-export function skillBonus(hero, key) {
-    if (!hero?.skills?.active?.length) return 0;
-    // Une compétence de classe ne joue que quand cette classe est la classe du tour (`hero.turnClassId`, posé par game.js).
-    return hero.skills.active.reduce((n, id) => {
-        const skill = getSkill(id);
-        if (skill?.classId && skill.classId !== hero.turnClassId) return n;
-        return n + (skill?.bonus?.[key] || 0);
+/** Ancien état (`skills.active`, liste commune) lu tel quel quand `activeBy` n'existe pas encore : chaque compétence va à sa classe, ou à Hou Yi. */
+function legacyActiveBy(hero) {
+    const list = hero?.skills?.active;
+    if (!Array.isArray(list) || !list.length) return null;
+    const by = {};
+    list.forEach(id => { (by[getSkill(id)?.classId || START_CLASS] ||= []).push(id); });
+    return by;
+}
+
+/**
+ * Somme d'un bonus (`attack`, `defense`, `poisonResist`, `regenPct`, `transePct`, `startMana`, `chargePct`, `startChargePct`) des compétences allumées.
+ * Avec `member` : seulement celles de ce personnage (barre de chargement de sa classe). Sans : le corps de Hou Yi, qui profite de ses compétences en
+ * permanence et de celles du personnage dont c'est le tour ; une compétence de classe ne joue que quand sa classe est la classe du tour (`hero.turnClassId`).
+ */
+export function skillBonus(hero, key, member = null) {
+    const by = hero?.skills?.activeBy || legacyActiveBy(hero);
+    if (!by) return 0;
+    const sum = ids => ids.reduce((n, id) => n + (getSkill(id)?.bonus?.[key] || 0), 0);
+    if (member) return sum(by[member] || []);
+    return Object.entries(by).reduce((n, [m, ids]) => {
+        if (m !== START_CLASS && m !== hero.turnClassId) return n;
+        return n + sum(ids.filter(id => { const sk = getSkill(id); return !sk?.classId || sk.classId === hero.turnClassId; }));
     }, 0);
+}
+
+/** Qì de départ des compétences : le qì est commun à l'équipe, donc la somme des personnages est plafonnée par couleur (avis Équilibrage : 8, le maximum d'avant). */
+export const START_MANA_TEAM_CAP = 8;
+export function teamStartMana(hero) {
+    const by = hero?.skills?.activeBy || legacyActiveBy(hero) || {};
+    return Math.min(START_MANA_TEAM_CAP, Object.keys(by).reduce((n, m) => n + skillBonus(hero, 'startMana', m), 0));
 }
 
 const COLOR_LABEL = { red: 'rouge', blue: 'bleu', green: 'vert', yellow: 'jaune', purple: 'violet' };
@@ -291,10 +338,11 @@ export function skillDescription(skill, level = null) {
 export function actionSpells(hero) {
     const state = normalizeSkills(hero);
     const level = Math.max(1, hero?.level || 1);
-    return state.active.map(getSkill).filter(isAction).map(skill => ({
-        id: `skill_${skill.id}`, skillId: skill.id, name: skill.name, skill: true, ...(skill.classId ? { class: skill.classId } : {}),
+    return Object.entries(state.activeBy).flatMap(([member, ids]) => ids.map(getSkill).filter(isAction).map(skill => ({
+        id: member === START_CLASS || skill.classId ? `skill_${skill.id}` : `skill_${skill.id}@${member}`, skillId: skill.id, name: skill.name, skill: true,
+        ...(skill.classId ? { class: skill.classId } : member !== START_CLASS ? { class: member } : {}),   // commande commune allumée pour un compagnon : dans SA liste
         minLevel: 1, cost: { ...skill.spell.cost }, description: skillDescription(skill, level),
         ...(skill.spell.dmg ? { dmg: Math.round(skill.spell.dmg + level * skill.spell.scales) } : {}),
         ...(skill.spell.heal ? { heal: Math.round(skill.spell.heal + level * skill.spell.scales) } : {})
-    }));
+    })));
 }

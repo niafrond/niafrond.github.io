@@ -18,7 +18,7 @@ import { actionGuard } from "./actionGuard.js";
 import { protectsFromBiome, collarForBiome, stuffTotals, normalizeStuff, grantStuff, inflictPoison, wornStuff } from "./stuff.js";
 import { isInTranse, endTranse, startTranse, transeEffectFor, mergeTranseEffects, classAllowsUltimate, describeTranse, switchGauge, storeGauge } from "./transe.js";
 import { POTIONS, normalizePotions, potionHeal, drinkPotion, drinkBlockReason, applyQueuedPotion } from "./potions.js";
-import { normalizeSkills, skillBonus, actionSpells } from "./skills.js";
+import { normalizeSkills, actionSpells, teamStartMana } from "./skills.js";
 import { normalizeRoster, usableClasses, grantClass, CLASS_SHORT } from "./classRoster.js";
 import { newCharge, newActionQueue, initCharge } from "./classCharge.js";
 import { allyWeaponBonus } from "./weapons.js";
@@ -2394,7 +2394,7 @@ export function applyStartingAbilities(){
 
     // Bonus de départ liés aux aptitudes (une couleur par aptitude).
     Object.keys(player.mana).forEach(color => {
-        const initialBonus = getAttributeManaBonus(player, color, "initial") + skillBonus(player, 'startMana');   // + compétence « Qì de réserve »
+        const initialBonus = getAttributeManaBonus(player, color, "initial") + teamStartMana(player);   // + compétences « Qì de réserve » de l'équipe (plafonnées, qì commun)
         if(initialBonus > 0) {
             addManaForColor(player, color, initialBonus, { applyGainBonus: false });
         }
