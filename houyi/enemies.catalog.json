@@ -4129,6 +4129,7 @@
   },
   {
     "id": "crabe_soldat",
+    "summon": { "templateId": "crabe_soldat", "chance": 0.3, "maxCalls": 2, "sameStrength": true, "rare": { "templateId": "crabe_combattant_dore", "chance": 0.08, "levelAbovePlayer": 6, "hpMult": 1, "attackMult": 1.4, "goldMult": 8 } },
     "name": "Crabe-soldat",
     "race": "Bête",
     "title": "Lame des Bancs de Sable",
@@ -4163,6 +4164,21 @@
       "dropChance": 0.65,
       "weaponChance": 0.55
     }
+  },
+  {
+    "id": "crabe_combattant_dore",
+    "name": "Crabe combattant doré",
+    "race": "Bête",
+    "title": "Trésor des Bancs de Sable",
+    "copyOf": "soldat_terre_cuite",
+    "battleMusic": "wav/musicgen-11-humain-1773193878854.wav",
+    "playerClass": "barbarian",
+    "hasWeapon": true,
+    "statsModifiers": {"hpMult": 1.5, "atkMult": 1.35, "defMult": 1.2},
+    "levelBias": 0,
+    "spellProfile": {"preferredColors": ["red", "yellow", "green"], "preferClassSpells": false, "targetSpellCount": 3},
+    "resistanceProfile": {"blue": 0.1, "red": 0.18, "green": 0.1, "yellow": 0.15, "purple": 0.08},
+    "dropProfile": {"goldMult": 1.6, "dropChance": 0.65, "weaponChance": 0.55}
   },
   {
     "id": "carpe_doree",

@@ -56,7 +56,7 @@ function summonAction(summoner){
     if(!foe) return;
     summoner.summonsMade = (summoner.summonsMade || 0) + 1;
     summoner.summonedLastTurn = true;
-    log(`${summoner.name} invoque ${foe.name} !`);
+    log(foe.isRareSummon ? `✦ ${summoner.name} ramène ${foe.name}, un trésor des bancs de sable ! (niveau ${foe.level})` : `${summoner.name} invoque ${foe.name} !`);
     playSfx('spellCast', { isPlayer: false });
     showCombatAnimation({ icon: 'bolt', title: 'INVOCATION', damage: foe.name, source: summoner.name, target: '→ Renfort' }, false, { autoHideMs: 1100 });
 }

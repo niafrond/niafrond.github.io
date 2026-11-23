@@ -128,8 +128,8 @@ export default {
             { id: 'volcan_road_cooling_box', x: 27, y: 3, gold: 90 }
         ],
         enemies: [
-            { id: 'volcan_road_ember_wolf', x: 8, y: 6, templateId: 'loup_braise', name: 'Loup des galeries', kind: 'sentinel', offset: 0 },
-            { id: 'volcan_road_boar_patrol', x: 6, y: 12, templateId: 'sanglier_flammes', name: 'Sanglier de scories', kind: 'patrol', patrol: [[6, 12], [13, 12]], offset: 0 },
+            { id: 'volcan_road_ember_wolf', x: 8, y: 6, templateId: 'loup_braise', name: 'Loup des galeries', pack: { min: 2, max: 3 }, kind: 'sentinel', offset: 0 },
+            { id: 'volcan_road_boar_patrol', x: 6, y: 12, templateId: 'sanglier_flammes', name: 'Sanglier de scories', pack: { min: 2, max: 3 }, kind: 'patrol', patrol: [[6, 12], [13, 12]], offset: 0 },
             { id: 'volcan_road_basalt_guard', x: 24, y: 6, templateId: 'soldat_terre_cuite', name: 'Garde de basalte', kind: 'sentinel', offset: 0 },
             { id: 'volcan_road_tiger_patrol', x: 33, y: 5, templateId: 'tigre_embrase', name: 'Tigre des galeries', kind: 'patrol', patrol: [[33, 5], [38, 5]], offset: 0 },
             { id: 'volcan_road_lava_imp', x: 37, y: 8, templateId: 'petit_gui', name: 'Petit gui des coulées', kind: 'sentinel', offset: -1 }
@@ -137,9 +137,9 @@ export default {
         grass: {
             rate: 0.1, safeSteps: 4,
             table: [
-                { templateId: 'loup_braise', name: 'Chiot de braise', weight: 5, offset: -1 },
+                { templateId: 'loup_braise', name: 'Chiot de braise', pack: { min: 2, max: 3 }, weight: 5, offset: -1 },
                 { templateId: 'huli_jing', name: 'Petit gui de cendre', weight: 4, offset: -1 },
-                { templateId: 'sanglier_flammes', name: 'Sanglier de scories', weight: 2, offset: 0 },
+                { templateId: 'sanglier_flammes', name: 'Sanglier de scories', pack: { min: 2, max: 3 }, weight: 2, offset: 0 },
                 { templateId: 'pixiu', name: 'Pixiu des galeries', weight: 1, offset: 1 },
                 { templateId: 'huo_shen', name: "Huo Shen", weight: 3, offset: 0 },
                 { templateId: 'chi_niao', name: "Chi Niao", weight: 5, offset: -1 },
@@ -199,10 +199,10 @@ export default {
             { id: 'volcan_ember_imp', x: 19, y: 8, templateId: 'huli_jing', name: 'Démon des fumées', kind: 'sentinel', offset: 0, permanent: true },
             { id: 'volcan_w_salamander', x: 19, y: 10, templateId: 'chilong', name: 'Lézard-dragon de lave', kind: 'patrol', patrol: [[19, 10], [19, 16]], offset: -1 },
             { id: 'volcan_w_smith', x: 31, y: 12, templateId: 'gui_guerrier', name: 'Forgeron calciné', kind: 'patrol', patrol: [[31, 12], [36, 12]], offset: 0 },
-            { id: 'volcan_hound_a', x: 33, y: 8, templateId: 'loup_braise', name: 'Chien de magma', kind: 'sentinel', offset: 0, permanent: true, group: 'magma_hounds' },
-            { id: 'volcan_hound_b', x: 35, y: 15, templateId: 'loup_braise', name: 'Chien de magma', kind: 'sentinel', offset: 0, permanent: true, group: 'magma_hounds' },
+            { id: 'volcan_hound_a', x: 33, y: 8, templateId: 'loup_braise', name: 'Chien de magma', pack: { min: 2, max: 3 }, kind: 'sentinel', offset: 0, permanent: true, group: 'magma_hounds' },
+            { id: 'volcan_hound_b', x: 35, y: 15, templateId: 'loup_braise', name: 'Chien de magma', pack: { min: 2, max: 3 }, kind: 'sentinel', offset: 0, permanent: true, group: 'magma_hounds' },
             { id: 'volcan_obsidian_guard', x: 23, y: 12, templateId: 'soldat_terre_cuite', name: 'Soldat d\'obsidienne', kind: 'sentinel', offset: 0, permanent: true },
-            { id: 'volcan_wild_ash_boar', x: 6, y: 8, templateId: 'sanglier_flammes', name: 'Sanglier de braise', kind: 'patrol', patrol: [[6, 8], [6, 14]], offset: 0 },
+            { id: 'volcan_wild_ash_boar', x: 6, y: 8, templateId: 'sanglier_flammes', name: 'Sanglier de braise', pack: { min: 2, max: 3 }, kind: 'patrol', patrol: [[6, 8], [6, 14]], offset: 0 },
             { id: 'volcan_wild_tiger_patrol', x: 34, y: 18, templateId: 'tigre_embrase', name: 'Tigre de cendre', kind: 'patrol', patrol: [[34, 18], [36, 18]], offset: 0 },
             { id: 'volcan_wild_ash_scholar', x: 44, y: 15, templateId: 'lettre_sorcier', name: 'Lettré des cendres', kind: 'sentinel', offset: 0 }
         ],
@@ -210,8 +210,8 @@ export default {
             rate: 0.12, safeSteps: 3,
             table: [
                 { templateId: 'huli_jing', name: 'Petit gui de cendre', weight: 5, offset: -1 },
-                { templateId: 'loup_braise', name: 'Loup des cendres hautes', weight: 4, offset: 0 },
-                { templateId: 'sanglier_flammes', name: 'Sanglier de basalte', weight: 3, offset: 0 },
+                { templateId: 'loup_braise', name: 'Loup des cendres hautes', pack: { min: 2, max: 3 }, weight: 4, offset: 0 },
+                { templateId: 'sanglier_flammes', name: 'Sanglier de basalte', pack: { min: 2, max: 3 }, weight: 3, offset: 0 },
                 { templateId: 'tigre_embrase', name: 'Tigre de braise', weight: 2, offset: 0 },
                 { templateId: 'chilong', name: 'Lézard-dragon rouge', weight: 1, offset: 1 },
                 { templateId: 'huo_shou', name: "Huo Shou", weight: 3, offset: 0 },

@@ -216,7 +216,7 @@ export default {
             { id: 'fusang_thief_a', at: 'o', templateId: 'singe_demon', name: 'Singe-démon voleur', kind: 'sentinel', offset: 0, permanent: true, group: 'peach_thieves' },
             { id: 'fusang_thief_b', at: 'p', templateId: 'singe_demon', name: 'Singe-démon voleur', kind: 'sentinel', offset: 0, permanent: true, group: 'peach_thieves' },
             { id: 'fusang_frost_wyrm', at: 'q', templateId: 'canglong', name: 'Long de givre égaré', kind: 'sentinel', offset: 0, permanent: true },
-            { id: 'fusang_w_wolf', at: 'u', templateId: 'loup_braise', name: 'Loup de braise des terrasses', kind: 'patrol', patrol: ['u', [38, 19]], offset: 0 },
+            { id: 'fusang_w_wolf', at: 'u', templateId: 'loup_braise', name: 'Loup de braise des terrasses', pack: { min: 2, max: 3 }, kind: 'patrol', patrol: ['u', [38, 19]], offset: 0 },
             { id: 'fusang_w_mist', at: 'w', templateId: 'jiangshi', name: 'Jiangshi de la brume dorée', kind: 'patrol', patrol: ['w', [35, 10]], offset: 0 },
             { id: 'fusang_w_general', at: 'r', templateId: 'lei_gong', name: 'Général des nuées égaré', kind: 'sentinel', offset: 0 }
         ],

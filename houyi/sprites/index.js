@@ -55,6 +55,7 @@ export const TEMPLATE_SPRITE_COPIES = {
     singe_demon: 'huli_jing',
     taureau_braise: 'sanglier_flammes',
     crabe_soldat: 'soldat_terre_cuite',
+    crabe_combattant_dore: 'soldat_terre_cuite',
     carpe_doree: 'jiaolong',
     tortue_dragon: 'canglong'
 };

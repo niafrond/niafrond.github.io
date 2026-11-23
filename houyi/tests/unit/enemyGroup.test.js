@@ -1,5 +1,6 @@
 import { describe, it, test, expect } from '@jest/globals';
-import { MAX_ENEMIES, groupAllowed, rollGroupSize, shouldSummon, hasRoom, pickSummonTemplate, summonableTemplates, nextLivingIndex, reinforcementLevel, packSize } from '../../enemyGroup.js';
+import { readFileSync } from 'fs';
+import { MAX_ENEMIES, groupAllowed, rollGroupSize, shouldSummon, hasRoom, pickSummonTemplate, summonableTemplates, nextLivingIndex, reinforcementLevel, packSize, summonSettings } from '../../enemyGroup.js';
 
 const foe = (hp = 10, extra = {}) => ({ hp, maxHp: 10, level: 5, statusEffects: {}, ...extra });
 const catalog = [{ id: 'a' }, { id: 'b' }, { id: 'sun_1', copyOf: 'a' }, { id: 'fengmeng_1' }, { id: 'petit_gui', copyOf: 'a' }];
@@ -65,5 +66,26 @@ describe('meutes (pack)', () => {
     });
     test('un boss ou un duel ne forme jamais de meute', () => {
         expect(rollGroupSize({ level: 10, isBoss: true, pack: { min: 2 } }, () => 0)).toBe(1);
+    });
+});
+
+describe('invocation du Crabe-soldat', () => {
+    const crab = JSON.parse(readFileSync(new URL('../../enemies.catalog.json', import.meta.url), 'utf8')).find(t => t.id === 'crabe_soldat');
+    test('il ramène un crabe de même force et, rarement, un Crabe combattant doré de niveau élevé', () => {
+        const s = summonSettings(crab);
+        expect(s.templateId).toBe('crabe_soldat');
+        expect(s.sameStrength).toBe(true);
+        expect(s.rare).toMatchObject({ templateId: 'crabe_combattant_dore', levelAbovePlayer: 6, goldMult: 8 });
+        expect(s.rare.chance).toBeGreaterThan(0);
+        expect(s.rare.chance).toBeLessThanOrEqual(0.15);
+    });
+    test('le crabe doré n\'est jamais tiré au hasard comme renfort', () => {
+        const all = JSON.parse(readFileSync(new URL('../../enemies.catalog.json', import.meta.url), 'utf8'));
+        expect(summonableTemplates(all).some(t => t.id === 'crabe_combattant_dore')).toBe(false);
+    });
+    test('sans réglage rare ou sameStrength, les anciennes invocations sont inchangées', () => {
+        const s = summonSettings({ summon: { chance: 0.3, maxCalls: 2 } });
+        expect(s.sameStrength).toBe(false);
+        expect(s.rare).toBeNull();
     });
 });

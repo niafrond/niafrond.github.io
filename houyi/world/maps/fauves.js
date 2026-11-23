@@ -128,8 +128,8 @@ export default {
             '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~.v.~~~~~~~~~~~~~~~'
         ],
         grass: { rate: 0.14, safeSteps: 3, table: [
-            { templateId: 'loup_braise', name: 'Louveteau de braise', weight: 5, offset: -1 },
-            { templateId: 'sanglier_flammes', name: 'Marcassin de flammes', weight: 4, offset: 0 },
+            { templateId: 'loup_braise', name: 'Louveteau de braise', pack: { min: 2, max: 3 }, weight: 5, offset: -1 },
+            { templateId: 'sanglier_flammes', name: 'Marcassin de flammes', pack: { min: 2, max: 3 }, weight: 4, offset: 0 },
             { templateId: 'tigre_embrase', name: 'Tigreau des chaumes', weight: 2, offset: 0 },
             { templateId: 'shanxiao', name: 'Ogre des herbes hautes', weight: 1, offset: 1 },
                 { templateId: 'bai_ze', name: "Bai Ze", weight: 3, offset: 0 },
@@ -159,13 +159,13 @@ export default {
             { id: 'fauves_alpha_tiger', x: 45, y: 17, templateId: 'zaochi', spriteKey: 'zaochi', name: 'Zaochi, Dents de Ciseau', kind: 'sentinel', offset: 1, permanent: true, boss: { name: 'Zaochi, Dents de Ciseau', level: 27 } },
             { id: 'fauves_lamb_wolf', x: 6, y: 20, templateId: 'loup_braise', name: 'Loup chapardeur de braise', kind: 'sentinel', offset: 0, permanent: true },
             { id: 'fauves_boar_chief', x: 24, y: 20, templateId: 'sanglier_flammes', name: 'Hure, sanglier de flammes', kind: 'sentinel', offset: 1, permanent: true },
-            { id: 'fauves_w_pack_a', at: 'i', templateId: 'loup_braise', name: 'Loup de la meute', kind: 'patrol', offset: 0, patrol: ['i', [23, 5]] },
+            { id: 'fauves_w_pack_a', at: 'i', templateId: 'loup_braise', name: 'Loup de la meute', pack: { min: 2, max: 3 }, kind: 'patrol', offset: 0, patrol: ['i', [23, 5]] },
             { id: 'fauves_w_pack_b', at: 'j', templateId: 'tigre_embrase', name: 'Tigresse des herbes', kind: 'patrol', offset: -1, patrol: ['j', 'k'] },
-            { id: 'fauves_hyena_a', at: 'm', templateId: 'loup_braise', name: 'Hyène de braise', kind: 'sentinel', offset: 0, permanent: true, group: 'ember_hyenas' },
-            { id: 'fauves_hyena_b', at: 'n', templateId: 'loup_braise', name: 'Hyène de braise', kind: 'sentinel', offset: 0, permanent: true, group: 'ember_hyenas' },
+            { id: 'fauves_hyena_a', at: 'm', templateId: 'loup_braise', name: 'Hyène de braise', pack: { min: 2, max: 3 }, kind: 'sentinel', offset: 0, permanent: true, group: 'ember_hyenas' },
+            { id: 'fauves_hyena_b', at: 'n', templateId: 'loup_braise', name: 'Hyène de braise', pack: { min: 2, max: 3 }, kind: 'sentinel', offset: 0, permanent: true, group: 'ember_hyenas' },
             { id: 'fauves_ember_bull', at: 'o', templateId: 'taureau_braise', name: 'Taureau de braise', kind: 'sentinel', offset: 0, permanent: true },
-            { id: 'fauves_wild_boar_patrol', x: 21, y: 18, templateId: 'sanglier_flammes', name: 'Sanglier des vagues d\'herbe', kind: 'patrol', offset: 0, patrol: [[21, 18], [27, 18]] },
-            { id: 'fauves_wild_jackal_patrol', at: 'p', templateId: 'loup_braise', name: 'Chacal de braise', kind: 'patrol', offset: -1, patrol: ['p', 'q'] },
+            { id: 'fauves_wild_boar_patrol', x: 21, y: 18, templateId: 'sanglier_flammes', name: 'Sanglier des vagues d\'herbe', pack: { min: 2, max: 3 }, kind: 'patrol', offset: 0, patrol: [[21, 18], [27, 18]] },
+            { id: 'fauves_wild_jackal_patrol', at: 'p', templateId: 'loup_braise', name: 'Chacal de braise', pack: { min: 2, max: 3 }, kind: 'patrol', offset: -1, patrol: ['p', 'q'] },
             { id: 'fauves_wild_den_guard', at: 'r', templateId: 'tigre_embrase', name: 'Tigreau de la tanière', kind: 'sentinel', offset: 0 }
         ],
         gate: {
@@ -195,8 +195,8 @@ export default {
             '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
         ],
         grass: { rate: 0.1, safeSteps: 3, table: [
-            { templateId: 'loup_braise', name: 'Louveteau égaré', weight: 5, offset: -1 },
-            { templateId: 'sanglier_flammes', name: 'Marcassin fouisseur', weight: 4, offset: -1 },
+            { templateId: 'loup_braise', name: 'Louveteau égaré', pack: { min: 2, max: 3 }, weight: 5, offset: -1 },
+            { templateId: 'sanglier_flammes', name: 'Marcassin fouisseur', pack: { min: 2, max: 3 }, weight: 4, offset: -1 },
             { templateId: 'tigre_embrase', name: 'Tigreau de la piste', weight: 1, offset: 1 },
                 { templateId: 'bai_ze_savant', name: "Bai Ze", weight: 1, offset: 1 },
                 { templateId: 'bixie', name: "Bixie", weight: 3, offset: 0 },
@@ -214,11 +214,11 @@ export default {
             { id: 'fauves_road_cairn_chest', at: '3', gold: 315 }
         ],
         enemies: [
-            { id: 'fauves_road_scout', x: 9, y: 8, templateId: 'loup_braise', name: 'Éclaireur de la meute', kind: 'patrol', offset: 0, patrol: [[9, 8], [14, 8]] },
-            { id: 'fauves_road_boar', x: 21, y: 11, templateId: 'sanglier_flammes', name: 'Sanglier fouisseur', kind: 'sentinel', offset: 0 },
-            { id: 'fauves_road_hyena', at: '4', templateId: 'loup_braise', name: 'Hyène de la piste', kind: 'sentinel', offset: -1 },
+            { id: 'fauves_road_scout', x: 9, y: 8, templateId: 'loup_braise', name: 'Éclaireur de la meute', pack: { min: 2, max: 3 }, kind: 'patrol', offset: 0, patrol: [[9, 8], [14, 8]] },
+            { id: 'fauves_road_boar', x: 21, y: 11, templateId: 'sanglier_flammes', name: 'Sanglier fouisseur', pack: { min: 2, max: 3 }, kind: 'sentinel', offset: 0 },
+            { id: 'fauves_road_hyena', at: '4', templateId: 'loup_braise', name: 'Hyène de la piste', pack: { min: 2, max: 3 }, kind: 'sentinel', offset: -1 },
             { id: 'fauves_road_alcove_tiger', at: '5', templateId: 'tigre_embrase', name: 'Tigresse de la combe', kind: 'sentinel', offset: 0 },
-            { id: 'fauves_road_ridge_wolf', at: '6', templateId: 'loup_braise', name: 'Loup de crête', kind: 'sentinel', offset: 0 }
+            { id: 'fauves_road_ridge_wolf', at: '6', templateId: 'loup_braise', name: 'Loup de crête', pack: { min: 2, max: 3 }, kind: 'sentinel', offset: 0 }
         ]
     },
 
@@ -377,8 +377,8 @@ export default {
             '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
         ],
         grass: { rate: 0.1, safeSteps: 4, table: [
-            { templateId: 'loup_braise', name: 'Loup des cendres', weight: 5, offset: 0 },
-            { templateId: 'sanglier_flammes', name: 'Sanglier des cendres', weight: 3, offset: 0 },
+            { templateId: 'loup_braise', name: 'Loup des cendres', pack: { min: 2, max: 3 }, weight: 5, offset: 0 },
+            { templateId: 'sanglier_flammes', name: 'Sanglier des cendres', pack: { min: 2, max: 3 }, weight: 3, offset: 0 },
             { templateId: 'tigre_embrase', name: 'Tigresse affamée', weight: 1, offset: 1 },
                 { templateId: 'zouyu', name: "Zouyu", weight: 3, offset: 0 },
                 { templateId: 'tianlu', name: "Tianlu", weight: 3, offset: 0 },

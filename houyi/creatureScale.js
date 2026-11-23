@@ -210,6 +210,7 @@ export const ENEMY_SCALE = {
     singe_demon: [0.95, 1.4],   // Singe-démon (Bête)
     taureau_braise: [1.4, 1.4],   // Taureau de braise (Bête)
     crabe_soldat: [0.75, 1.4],   // Crabe-soldat (Bête)
+    crabe_combattant_dore: [0.85, 1.4],   // Crabe combattant doré (Bête, rare)
     carpe_doree: [0.7, 1.4],   // Carpe dorée (Poisson)
     tortue_dragon: [1.6, 1.3],   // Tortue-Dragon (Tortue)
     shuimu_denglong: [0.8, 1.4],   // Méduse-lanterne (Méduse)

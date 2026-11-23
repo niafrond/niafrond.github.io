@@ -100,7 +100,8 @@ export function grassOf(screen) {
             templateId: t.templateId,
             name: typeof t.name === 'string' && t.name ? t.name : t.templateId,
             weight: Number.isFinite(t.weight) && t.weight > 0 ? t.weight : 1,
-            offset: Number.isInteger(t.offset) ? t.offset : 0
+            offset: Number.isInteger(t.offset) ? t.offset : 0,
+            ...(t.pack ? { pack: t.pack } : {})   // meute dans les hautes herbes
         }));
     return { cells, rate, safeSteps, table };
 }
@@ -892,7 +893,7 @@ function rollWildEncounter(session, ctx = {}) {
     // uniquement, jamais dans la sauvegarde ni dans l'index des ennemis de carte.
     rt.wildDefs[id] = {
         screenId: screen.id,
-        def: { id, templateId: entry.templateId, name: entry.name, kind: 'wild', offset: entry.offset, wild: true },
+        def: { id, templateId: entry.templateId, name: entry.name, kind: 'wild', offset: entry.offset, wild: true, ...(entry.pack ? { pack: entry.pack } : {}) },
         ground: liquidGroundAt(screen, session.data.x, session.data.y)
     };
     Object.keys(rt.wildDefs).slice(0, -WILD_KEEP).forEach(k => { delete rt.wildDefs[k]; });
@@ -1121,6 +1122,7 @@ function wildEncounter(session, { def, screenId, ground }) {
         carryHp: false,
         training: null,
         wild: true,
+        pack: def.pack || null,   // meute : voir enemyGroup.js
         friendly: Boolean(def.friendly)   // combat de découverte d'une recrue : adversaire à PV réduits (game.js, newEnemy)
     };
 }

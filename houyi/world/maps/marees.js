@@ -80,7 +80,7 @@ put(altar, 27, 10, '1'); put(altar, 24, 10, '2');
 
 // Table de rencontres : zone 1, aquatique « courante » ; zone 3, plus dense et plus forte (Changxi attend au bout).
 const roadTable = [
-    { templateId: 'crabe_soldat', name: 'Crabe-soldat des bancs', weight: 5, offset: -1 },
+    { templateId: 'crabe_soldat', name: 'Crabe-soldat des bancs', pack: { min: 2, max: 3 }, weight: 5, offset: -1 },
     { templateId: 'carpe_doree', name: 'Carpe dorée des pontons', weight: 4, offset: 0 },
     { templateId: 'hai_she', name: 'Serpent des tourbillons', weight: 3, offset: 0 },
     { templateId: 'shuimu_denglong', name: 'Méduse-lanterne', weight: 3, offset: 0 },
@@ -114,9 +114,9 @@ export default {
             { id: 'marees_road_widow', at: 'k', gold: 450 }
         ],
         enemies: [
-            { id: 'marees_crab_a', at: '2', templateId: 'crabe_soldat', name: 'Crabe-soldat du ponton', kind: 'sentinel', offset: 0, group: 'marees_crabs', permanent: true },
-            { id: 'marees_crab_b', at: '3', templateId: 'crabe_soldat', name: 'Crabe-soldat du ponton', kind: 'sentinel', offset: 0, group: 'marees_crabs', permanent: true },
-            { id: 'marees_crab_c', at: '4', templateId: 'crabe_soldat', name: 'Crabe-soldat du ponton', kind: 'sentinel', offset: 0, group: 'marees_crabs', permanent: true }
+            { id: 'marees_crab_a', at: '2', templateId: 'crabe_soldat', name: 'Crabe-soldat du ponton', pack: { min: 2, max: 3 }, kind: 'sentinel', offset: 0, group: 'marees_crabs', permanent: true },
+            { id: 'marees_crab_b', at: '3', templateId: 'crabe_soldat', name: 'Crabe-soldat du ponton', pack: { min: 2, max: 3 }, kind: 'sentinel', offset: 0, group: 'marees_crabs', permanent: true },
+            { id: 'marees_crab_c', at: '4', templateId: 'crabe_soldat', name: 'Crabe-soldat du ponton', pack: { min: 2, max: 3 }, kind: 'sentinel', offset: 0, group: 'marees_crabs', permanent: true }
         ]
     },
 
