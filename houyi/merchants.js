@@ -119,7 +119,7 @@ const offerOf = (kind, obj, section, rarity) => {
 export const STUFF_PER_SLOT = 2;
 export const STUFF_LEVEL_AHEAD = 3;
 export const STUFF_PRICE_MULT = 1.5;
-export const STOCK_SIZE = { stallItems: 5, stallWeapons: 5, stallCompanionWeapons: 2, rare: 6, exceptional: 2, stuff: 5 };
+export const STOCK_SIZE = { stallItems: 5, stallWeapons: 5, stallCompanionWeapons: 1, rare: 6, exceptional: 2, stuff: 5 };
 
 // Types d'objets que chaque marchand vend en permanence (une pièce « standard » de chacun, toujours rachetable).
 const STANDARD_TYPES = ['reusable', 'shield', 'artifact'];
@@ -155,6 +155,7 @@ export function merchantStock(merchantId, ngPlus = 0, heroLevel = 0) {
     const items = lootableItems.filter(i => !standardIds.has(i.id)).map(i => ({ kind: 'item', obj: i, rarity: i.rarity }));
     const weapons = allWeapons.filter(w => !w.fusionOnly).map(w => ({ kind: 'weapon', obj: w, rarity: weaponRarity(w) }));
     const companionEntries = companionWeapons.map(w => ({ kind: 'weapon', obj: w, rarity: weaponRarity(w) }));   // armes de compagnon (haches, épées, éventails…)
+    const companionTypes = [...new Set(companionWeapons.map(w => w.type))];
     const all = [...items, ...weapons, ...companionEntries];
     const fits = (e, rarities, up, down = 99) => rarities.includes(e.rarity) && e.obj.minLevel <= L + up && e.obj.minLevel >= L - down;
 
@@ -169,7 +170,8 @@ export function merchantStock(merchantId, ngPlus = 0, heroLevel = 0) {
     const stall = [
         ...sample(items.filter(e => e.obj.type === 'reusable' && fits(e, ['common', 'uncommon'], 1)), STOCK_SIZE.stallItems, rng),
         ...stallWeapons,
-        ...sample(companionEntries.filter(e => fits(e, ['common', 'uncommon'], 2, 12)), STOCK_SIZE.stallCompanionWeapons, rng)
+        // une arme de chaque type de compagnon (un par compagnon recruté), pour que toute l'équipe trouve de quoi s'équiper
+        ...companionTypes.flatMap(t => sample(companionEntries.filter(e => e.obj.type === t && fits(e, ['common', 'uncommon'], 2, 12)), STOCK_SIZE.stallCompanionWeapons, rng))
     ];
     const legendary = all.filter(e => fits(e, ['legendary'], 9, 12));
     const exceptional = legendary.length

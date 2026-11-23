@@ -767,3 +767,19 @@ export const heroWeapons = list => (list || []).filter(w => !isCompanionWeapon(w
 export const allyWeaponBonus = w => (w ? Math.round((w.damage || 0) * 0.25) : 0);
 /** Toutes les armes pouvant tomber en butin ou se vendre : les arcs de Hou Yi et les armes de compagnon. */
 export const lootableWeapons = () => [...allWeapons, ...companionWeapons];
+
+/**
+ * Restreint un tirage d'arme (butin) à une moitié équitable : une fois sur deux une arme de compagnon, et dans ce cas d'un type tiré au hasard
+ * (chaque compagnon a la même chance d'y trouver son arme), sinon un arc de Hou Yi. Sans candidat d'une moitié, l'autre sert. Consomme 1 ou 2 tirages.
+ */
+export function balancedWeaponPool(candidates, rng = Math.random) {
+    const hero = candidates.filter(w => !isCompanionWeapon(w));
+    const allies = candidates.filter(isCompanionWeapon);
+    if (!allies.length) return hero;
+    if (!hero.length || rng() < 0.5) {
+        const types = [...new Set(allies.map(w => w.type))];
+        const type = types[Math.floor(rng() * types.length)];
+        return allies.filter(w => w.type === type);
+    }
+    return hero;
+}

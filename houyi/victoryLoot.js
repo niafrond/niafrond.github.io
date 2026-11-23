@@ -2,7 +2,7 @@
 // au-dessus : il doit pouvoir s'en servir) et d'autant plus rare que l'écart est grand. Module pur (sans DOM).
 
 import { lootableItems } from './items.js';
-import { lootableWeapons, weaponRarity } from './weapons.js';
+import { lootableWeapons, balancedWeaponPool, weaponRarity } from './weapons.js';
 
 // Les armes et objets se revendent désormais cher (barème des armes aligné sur celui des objets, voir merchants.js) : un butin à chaque
 // victoire ferait de la revente un robinet d'or. Les ennemis ordinaires ne laissent donc rien une fois sur deux ou plus (le profil du
@@ -62,7 +62,7 @@ export function rollOverleveledLoot(gap, owner = {}, rng = Math.random) {
     for (let n = 0; n < tier.rolls; n++) {
         const rarity = pickWeighted(tier.rarity, rng);
         if (rng() < 0.5) {
-            const weapon = pick(lootableWeapons().filter(w => !w.fusionOnly && w.minLevel <= level && !ownedWeapons.has(w.id)), weaponRarity, rarity, level, rng);
+            const weapon = pick(balancedWeaponPool(lootableWeapons().filter(w => !w.fusionOnly && w.minLevel <= level && !ownedWeapons.has(w.id)), rng), weaponRarity, rarity, level, rng);
             if (weapon) {
                 ownedWeapons.add(weapon.id);
                 loot.push({ kind: 'weapon', rarity: weaponRarity(weapon), weapon });
