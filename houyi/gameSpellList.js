@@ -166,14 +166,24 @@ export function chooseAction(effect, opts = {}){
     if(!decoupled()){ spendActionCharge(); return false; }
     const id = getTurnClass();
     if(id) spendClass(gameState.charge, player, id, chargeFactor());
-    createSpellButtons();
+    showSpentCharge();   // barre vide et bouton grisé tout de suite, malgré les 2 s avant l'entrée en file
     dispatchAction('player', effect, !!opts.turnBound);
     return true;
+}
+/** Applique tout de suite le chargement dépensé à l'écran (boutons d'action, barres des personnages et de l'ennemi, arme, objets) sans attendre le ticker. */
+function showSpentCharge(){
+    if(typeof document === 'undefined') return;
+    createSpellButtons();
+    refreshClassPicker();
+    updateStats();
+    document.dispatchEvent(new Event('potions-changed'));
+    document.dispatchEvent(new Event('charge-changed'));
 }
 /** L'ennemi a choisi, payé et consommé sa barre : son effet part ou entre dans la même file. */
 export function chooseEnemyAction(effect, turnBound = false){
     if(!decoupled()) return false;
     spendEnemy(gameState.charge, enemy, 1);
+    showSpentCharge();   // la barre de l'ennemi se vide tout de suite
     dispatchAction('enemy', effect, turnBound);
     return true;
 }
