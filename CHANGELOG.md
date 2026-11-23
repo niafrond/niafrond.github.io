@@ -1,3 +1,9 @@
+## [3.26.0](https://github.com/niafrond/niafrond.github.io/compare/v3.25.0...v3.26.0) (2026-11-23)
+
+### Features
+
+* **houyi:** délais de file d'actions, crânes en zone et meutes d'ennemis ([#786](https://github.com/niafrond/niafrond.github.io/issues/786)) ([47cb4f1](https://github.com/niafrond/niafrond.github.io/commit/47cb4f18841e9ac718f80fafcea16e27c7f7039d))
+
 ## [3.25.0](https://github.com/niafrond/niafrond.github.io/compare/v3.24.0...v3.25.0) (2026-11-23)
 
 ### Features
