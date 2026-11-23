@@ -1,6 +1,6 @@
 // Équipe de Hou Yi. Hou Yi est le Chasseur (`assassin`) ; chaque autre classe est portée par un COMPAGNON (allies.js) que le héros recrute au fil de
 // l'histoire (maîtres de classe rencontrés dans les villages : leur entraînement les convainc de le suivre). L'équipe de combat compte Hou Yi et
-// 3 compagnons au plus (MAX_USABLE_CLASSES = 4). Certains biomes brident des classes (voir BIOME_CLASS_LIMITS) pour pousser le joueur à mêler les
+// 3 compagnons au plus (MAX_USABLE_CLASSES = 4). Certains biomes entravent des classes (voir BIOME_CLASS_LIMITS) pour pousser le joueur à mêler les
 // compagnons. Module pur (sans DOM).
 //
 // État du héros : `hero.classes = { owned: [id], loadout: [id] }` : `owned` = Hou Yi + compagnons recrutés, `loadout` = l'équipe de combat
@@ -68,21 +68,17 @@ export function toggleLoadout(hero, id) {
 }
 
 /**
- * Classes bridées dans ce biome pour ce héros : { id: raison }. Il reste toujours au moins une classe de combat utilisable :
- * si toutes seraient bridées, on lève la restriction de la première.
+ * Classes entravées dans ce biome pour ce héros : { id: raison }. Elles restent utilisables mais portent l'altération « Entravé » tout le combat
+ * (chargement des actions plus lent, voir alterations.js `HINDERED_*` et game.js `applyBiomeHindrance`).
  */
-export function restrictedClasses(hero, biome) {
+export function hinderedClasses(hero, biome) {
     const limit = BIOME_CLASS_LIMITS[biome];
     if (!limit) return {};
-    const loadout = normalizeRoster(hero).loadout;
-    const blocked = loadout.filter(id => limit.classes.includes(id));
-    if (blocked.length >= loadout.length) blocked.shift();
-    return Object.fromEntries(blocked.map(id => [id, limit.reason]));
+    return Object.fromEntries(normalizeRoster(hero).loadout.filter(id => limit.classes.includes(id)).map(id => [id, limit.reason]));
 }
 
-/** Classes utilisables ce tour : classes de combat non bridées ; en entraînement, uniquement la classe imposée. */
+/** Classes utilisables ce tour : toutes celles de l'équipe de combat (un biome n'en interdit plus aucune, il entrave) ; en entraînement, uniquement la classe imposée. */
 export function usableClasses(hero, biome, forcedClass = null) {
     if (forcedClass && known(forcedClass)) return [forcedClass];
-    const restricted = restrictedClasses(hero, biome);
-    return normalizeRoster(hero).loadout.filter(id => !restricted[id]);
+    return normalizeRoster(hero).loadout;
 }

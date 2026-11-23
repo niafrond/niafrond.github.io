@@ -1253,7 +1253,7 @@ body.show-xiu-text #xiu-banner { display: block; }
 
 /* Choix de la cible dans la zone d'action (targetActions.js) : les boutons d'action cèdent la place à un bouton par cible. */
 body.target-actions-on #player-spells > :not(#target-actions) { display: none; }
-.target-actions { display: flex; flex-direction: column; gap: 6px; width: 100%; }
+#player-spells > #target-actions, .target-actions { grid-column: 1 / -1; order: -1; display: flex; flex-direction: column; gap: 6px; width: 100%; min-width: 0; box-sizing: border-box; }   /* pleine largeur, même dans la grille compacte à 3 colonnes */
 .ta-title { font-weight: 800; font-size: .85em; text-align: center; }
 .ta-btn { display: grid; grid-template-columns: 1fr auto; grid-template-areas: 'name text' 'bar bar'; gap: 3px 8px; text-align: left; font: inherit; padding: 8px 10px; border-radius: 6px; border: 1px solid #8b9097; background: #34343f; color: #f3efe4; cursor: pointer; min-height: 44px; }
 .ta-btn:not(:disabled):hover, .ta-btn:not(:disabled):focus-visible { border-color: #7fe3f2; outline: none; }
@@ -1281,3 +1281,4 @@ body.target-actions-on #player-spells > :not(#target-actions) { display: none; }
 .weapon-rarity-uncommon::after, .weapon-rarity-rare::after, .weapon-rarity-legendary::after { bottom: .1em; left: -.15em; width: .4em; height: .4em; }
 .weapon-rarity-rare::before, .weapon-rarity-rare::after { background: #fff3b0; }
 .weapon-rarity-legendary::before, .weapon-rarity-legendary::after { background: #e6f8ff; }
+

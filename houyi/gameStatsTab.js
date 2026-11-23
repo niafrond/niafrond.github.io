@@ -20,7 +20,8 @@ import { ALLIES, buildAlly } from './allies.js';
 import { allyEquippedWeapon } from './allyWeapons.js';
 import { allyWeaponBonus } from './weapons.js';
 import { RAGE_MAX } from './ultimates.js';
-import { COMPANION_NAMES, classIcon, companionMenuHooks, enemy, gameState, getPrimaryAttributeEffect, player } from './game.js';
+import { WEAPON_SPRITES } from './sprites/weaponSprites.js';
+import { COMPANION_NAMES, getWeaponIcon, classIcon, companionMenuHooks, enemy, gameState, getPrimaryAttributeEffect, player } from './game.js';
 
 // Statistiques d'un compagnon (onglet Stats, un onglet par personnage) : ce que le combat utilise, tiré de la même fiche (allies.js : buildAlly).
 function allyStatsHtml(charId){
@@ -204,19 +205,16 @@ export function updatePlayerStatsTab(){
 preloadSpellFx();
 
 // Portrait pixel art de Xiao Gui (le renard compagnon) pour l'annonce de son coup.
+/** Portrait d'un compagnon de route (Xiao Gui, Zhi, Dawa…) : son sprite de compagnon (`companion_<id>`, celui qui le suit en exploration), sinon son PNJ. */
 export function companionIconHtml(id){
-    const npc = COMPANIONS.find(c => c.id === id)?.npc;
-    const uri = npc ? spriteUri(npcSprite(npc)) : null;
+    const uri = spriteUri(gbaSprite(`companion_${id}`, 'front') || npcSprite(COMPANIONS.find(c => c.id === id)?.npc || id));
     return uri ? `<img class="fox-portrait" src="${uri}" alt="${COMPANION_NAMES[id] || id}" style="width:96px;height:96px;max-width:40vw;max-height:40vw;object-fit:contain;image-rendering:pixelated">` : svgIcon('star');
 }
-export function foxIconHtml(){
-    const uri = spriteUri(npcSprite('xiao_gui'));
-    return uri ? `<img class="fox-portrait" src="${uri}" alt="Xiao Gui" style="width:96px;height:96px;max-width:40vw;max-height:40vw;object-fit:contain;image-rendering:pixelated">` : svgIcon('star');
-}
+export const foxIconHtml = () => companionIconHtml('xiao_gui');
 
 /** Scène de l'annonce d'un sort : lanceur à gauche, sort au milieu, cible à droite (Hou Yi / son équipier à gauche, l'ennemi à droite).
  *  Le sort file vers la cible, qui clignote quand il la touche ; les sorts lancés par l'ennemi font le trajet inverse. `hit` : le sort inflige des dégâts. */
-export function spellStageHtml(fxHtml, isPlayerAttack, hit, dodged = false, lunge = false, healTarget = null) {
+export function spellStageHtml(fxHtml, isPlayerAttack, hit, dodged = false, lunge = false, healTarget = null, gearHtml = '') {
     const memberSrc = id => {   // dessin d'un personnage de l'équipe : Hou Yi (« assassin ») ou un compagnon
         const m = id && id !== START_CLASS ? gameState.allies?.[id] : null;
         return (m && gbaSprite(m.sprite, 'right')) || gbaSprite(player.class, 'right') || heroSprite(player.class) || heroSprite('assassin');
@@ -237,7 +235,8 @@ export function spellStageHtml(fxHtml, isPlayerAttack, hit, dodged = false, lung
     const left = img(heroSrc, 'stage-left' + (lunge && casterHero ? ' stage-lunge' : '') + (hit && !casterHero ? (dodged ? ' stage-dodge' : ' stage-hurt') : ''));
     const right = img(foeSrc, 'stage-right' + (lunge && !casterHero ? ' stage-lunge' : '') + (hit && casterHero ? (dodged ? ' stage-dodge' : ' stage-hurt') : ''));
     const dir = casterHero ? 'ltr' : 'rtl';
-    return `<div class="spell-stage stage-${dir}${casterHero ? '' : ' stage-foe'}">${left}<div class="stage-mid">${fxHtml}</div>${right}</div>`;
+    const gear = gearHtml ? `<div class="stage-gear">${gearHtml}</div>` : '';   // arme qui reste près du lanceur (l'arc : seule la flèche part)
+    return `<div class="spell-stage stage-${dir}${casterHero ? '' : ' stage-foe'}">${left}${gear}<div class="stage-mid">${fxHtml}</div>${right}</div>`;
 }
 
 export function showCombatAnimation({ icon, title, damage = null, heal = null, source = null, target = null, projectile = null, plain = false, healTarget = null }, isPlayerAttack = true, options = {}) {
@@ -252,9 +251,11 @@ export function showCombatAnimation({ icon, title, damage = null, heal = null, s
     const bigFx = Boolean(fx && fx.includes('spellfx-big'));
     let html = `<div class="attack-icon${fx ? ' has-spellfx' : ''}${bigFx ? ' has-spellfx-big' : ''}">${fx || svgIcon(icon) || icon}</div>`;
     const casterAlly = isPlayerAttack ? gameState.allies?.[gameState.turnClass] : null;   // un compagnon frappe avec son arme (jamais l'arc de Hou Yi)
-    if(casterAlly?.weapon && !options.noAttack && !fx && damage !== null && heal === null && !projectile) { icon = casterAlly.weapon; projectile = casterAlly.weapon === 'bow' ? 'arrow' : 'melee'; }
+    if(casterAlly?.weapon && !options.noAttack && !fx && damage !== null && heal === null && !projectile) { icon = getWeaponIcon(casterAlly.weapon, allyEquippedWeapon(player, gameState.turnClass)?.rarity); projectile = casterAlly.weapon === 'bow' ? 'arrow' : 'melee'; }   // sprite de son arme, teinté selon la rareté
     const midIcon = projectile === 'melee' && typeof icon === 'string' && !icon.includes('<') ? svgIcon(icon) : (svgIcon(icon) || icon);
-    const stage = !bigFx ? spellStageHtml(fx || (projectile === 'arrow' ? `<div class="attack-icon stage-arrow">${svgIcon('arrow')}</div>` : `<div class="attack-icon">${svgIcon(icon) || icon}</div>`), isPlayerAttack, damage !== null && heal === null && !options.noAttack, Boolean(options.blocked), projectile === 'melee', healTarget) : null;
+    const bowOnStage = projectile === 'arrow' && String(icon).includes('weapon-sprite');   // tir à l'arc : l'arc reste près du lanceur, la flèche (son sprite) part vers la cible
+    const arrowSprite = bowOnStage ? WEAPON_SPRITES.arrow : null;
+    const stage = !bigFx ? spellStageHtml(fx || (projectile === 'arrow' ? (arrowSprite ? `<div class="attack-icon stage-arrow-sprite"><img src="${arrowSprite}" alt="" draggable="false"></div>` : `<div class="attack-icon stage-arrow">${svgIcon('arrow')}</div>`) : `<div class="attack-icon">${svgIcon(icon) || icon}</div>`), isPlayerAttack, damage !== null && heal === null && !options.noAttack, Boolean(options.blocked), projectile === 'melee', healTarget, arrowSprite ? icon : '') : null;
     if(stage && !plain) html = stage;   // `plain` : simple annonce (ex. tour bonus), sans la scène héros / ennemi
     // 2e temps d'un blocage / d'une parade : gros bouclier (plein = bloqué, fendu = paré) et texte qui vibre.
     let caption = `<div class="attack-title">${String(title).toUpperCase()}</div>`;

@@ -1,6 +1,6 @@
 import { icon } from './icons.js';
 import { behaviorBadges } from './enemyBehaviors.js';
-import { ENVIRONMENT_STATUSES } from './alterations.js';
+import { ENVIRONMENT_STATUSES, HINDERED_LABEL, hinderedText } from './alterations.js';
 
 // Bonus / malus actifs d'un combattant, affichés en pastilles sur sa carte (survol ou appui long = explication).
 
@@ -51,6 +51,7 @@ export function activeStatuses(entity) {
     for (const [key, info] of Object.entries(ENVIRONMENT_STATUSES)) {
         if (n(se[key]) > 0) out.push({ id: key, icon: info.icon, label: info.name, kind: 'debuff', text: info.text(n(se[key])), lasting: true });
     }
+    if (n(se.hindered) > 0) out.push({ id: 'hindered', icon: HINDERED_LABEL.icon, label: HINDERED_LABEL.name, kind: 'debuff', text: hinderedText(se.hinderedWhy || 'Le milieu vous gêne'), lasting: true });
     if (n(se.burning) > 0) add('burning', 'fire', 'Brûlé', 'debuff', `Subit ${n(se.burnDamage)} dégâts de feu à chaque tour.`, n(se.burning));
     behaviorBadges(entity?.behavior).forEach(b => add(b.id, b.icon, b.label, b.kind, b.text, b.turns));   // comportement de boss (enemyBehaviors.js)
     // Boss semi-scripté (bossScript.js) : échauffement en cours, attaque dévastatrice dans `charge` tour(s).

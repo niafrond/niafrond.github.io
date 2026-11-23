@@ -52,7 +52,7 @@ export const newCharge = () => ({ now: 0, ready: {}, enemyReady: 0 });
  * Vitesse de chargement d'un combattant selon ses altérations (1 = normale, 0 = à l'arrêt) : Ralenti et Pétrifié moitié moins vite, Épuisé et Maudit un peu
  * moins vite, Étourdi et Endormi l'arrêtent ; les altérations POSITIVES l'accélèrent (Concentré ×1,25, Hâte ×1,5, Élan ×2). Les facteurs se multiplient.
  */
-export const CHARGE_MOD = { chilled: 0.5, petrified: 0.5, exhausted: 0.7, cursed: 0.8, stunned: 0, asleep: 0, focused: 1.25, haste: 1.5, surge: 2 };
+export const CHARGE_MOD = { chilled: 0.5, petrified: 0.5, exhausted: 0.7, cursed: 0.8, stunned: 0, asleep: 0, hindered: 0.6, focused: 1.25, haste: 1.5, surge: 2 };
 export const CHARGE_SLOW = CHARGE_MOD;   // ancien nom
 export function chargeSpeed(entity) {
     const status = entity?.statusEffects || {};

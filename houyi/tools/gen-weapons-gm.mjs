@@ -36,7 +36,8 @@ const TYPE_EN = {
   mace: 'a Chinese heavy mace hammer on a short haft',
   dagger: 'a short Chinese dagger with a small hilt',
   staff: 'a long Chinese wooden staff with an ornament at the top',
-  fan: 'a Chinese folding hand fan, opened, with blades or feathers'
+  fan: 'a Chinese folding hand fan, opened, with blades or feathers',
+  arrow: 'a single long wooden arrow with white feather fletching and a steel arrowhead, perfectly horizontal, arrowhead pointing right'   // projectile des arcs (pas un WeaponType)
 };
 const RARITY_EN = {
   common: 'plain simple materials, wood and bronze, dull colors',
@@ -183,10 +184,23 @@ const writeOut = done => {
   renameSync(OUT_JS + '.tmp', OUT_JS);
 };
 
+// Flèche : tournée d'un quart de tour si le modèle l'a dessinée à la verticale (pointe en haut supposée), puis recadrée au centre du canevas.
+function alignArrow(png) {
+  let x0 = png.width, x1 = -1, y0 = png.height, y1 = -1;
+  for (let y = 0; y < png.height; y++) for (let x = 0; x < png.width; x++) if (png.data[(y * png.width + x) * 4 + 3] >= 128) { x0 = Math.min(x0, x); x1 = Math.max(x1, x); y0 = Math.min(y0, y); y1 = Math.max(y1, y); }
+  if (x1 - x0 >= y1 - y0) return png;
+  const out = new PNG({ width: png.width, height: png.height }), n = png.width;
+  for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) {   // rotation horaire : (x, y) → (n-1-y, x)
+    const s = (y * n + x) * 4, d = (x * n + (n - 1 - y)) * 4;
+    for (let k = 0; k < 4; k++) out.data[d + k] = png.data[s + k];
+  }
+  return out;
+}
+
 const base = `http://${await findHost()}:${PORT}`;
 mkdirSync(PNG_DIR, { recursive: true });
 const done = readDone();
-const TYPES = Object.values(WeaponType).map(type => ({ id: type, name: type, type }));
+const TYPES = [...Object.values(WeaponType), 'arrow'].map(type => ({ id: type, name: type, type }));
 const todo = TYPES.filter(w => (!ONLY || ONLY.includes(w.id)) && (args.force || !done[w.id]));
 console.log(`${todo.length} arme(s) à générer sur ${TYPES.length}.`);
 let failed = 0;
@@ -202,7 +216,8 @@ for (const w of todo) {
     } catch (e) { console.log(`  ${w.id} essai ${k + 1} : ${e.message}`); }
   }
   if (!best) { failed++; console.log(`✗ ${w.id}`); continue; }
-  const sprite = toSprite(toCells(best.png));
+  let sprite = toSprite(toCells(best.png));
+  if (w.id === 'arrow') sprite = alignArrow(sprite);   // la flèche doit être horizontale, pointe à droite (le jeu la fait voler de gauche à droite)
   writeFileSync(join(PNG_DIR, `weapon_${w.id}.png`), PNG.sync.write(sprite));
   done[w.id] = uriOf(sprite);
   writeOut(done);

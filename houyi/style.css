@@ -1615,6 +1615,16 @@ body.no-anim .stage-mid, body.no-anim .stage-fighter { animation: none !importan
 @keyframes stage-dodge-left { from { transform: translateX(0); } to { transform: translateX(-34%); } }
 @media (prefers-reduced-motion: reduce) { .stage-dodge { animation: none !important; } }
 /* Attaque à l'arc : une flèche part du tireur vers la cible (pointe dans le sens du trajet) */
+.stage-mid .weapon-sprite { font-size: 40px; }   /* sprite de l'arme qui frappe (getWeaponIcon) : mêmes envol et taille que les autres projectiles */
+.stage-gear { position: absolute; bottom: 14px; z-index: 2; font-size: 40px; pointer-events: none; }   /* l'arc reste près du lanceur ; seule la flèche part */
+.stage-ltr .stage-gear { left: clamp(48px, 22%, 92px); }
+.stage-rtl .stage-gear { right: clamp(48px, 22%, 92px); }
+.stage-ltr .stage-gear .weapon-sprite { transform: scaleX(-1); }   /* le sprite de l'arc est dessiné pour tirer vers la gauche : retourné quand le héros tire vers la droite */
+.stage-arrow-sprite { font-size: 0; }
+.stage-arrow-sprite img { width: 56px; height: 56px; image-rendering: pixelated; }   /* le sprite de la flèche pointe vers la droite */
+.stage-rtl .stage-arrow-sprite img { transform: scaleX(-1); }
+.stage-ltr .stage-mid:has(.stage-arrow-sprite) { animation-duration: .35s; }
+.stage-rtl .stage-mid:has(.stage-arrow-sprite) { animation-duration: .35s; }
 .stage-mid .stage-arrow { font-size: 0; }
 .stage-mid .stage-arrow svg, .stage-mid .stage-arrow .ic { width: 44px; height: 44px; }
 .stage-ltr .stage-arrow { transform: rotate(45deg); }
