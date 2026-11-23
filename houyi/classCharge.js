@@ -113,6 +113,13 @@ export function takeNextDue(queue, canRun) {
     });
     return best === -1 ? null : queue.splice(best, 1)[0];
 }
+// Délais de lisibilité (ms) : entre le choix d'une action et son entrée dans la file, puis entre l'entrée dans la file et son lancement (joueur et ennemi).
+export const ACTION_ENTER_DELAY_MS = 2000;
+export const ACTION_LAUNCH_DELAY_MS = 2000;
+/** Dates (ms) d'entrée visible dans la file et de lancement possible d'une action choisie à `now`. */
+export const actionTimes = (now, enter = ACTION_ENTER_DELAY_MS, launch = ACTION_LAUNCH_DELAY_MS) => ({ visibleAt: now + enter, runAt: now + enter + launch });
+export const isActionVisible = (item, now) => now >= (item.visibleAt ?? 0);
+export const isActionLaunchable = (item, now) => now >= (item.runAt ?? 0);
 export const hasQueuedAction = (queue, owner) => queue.some(item => item.owner === owner);
 
 /** Le temps de chargement avance-t-il ? Oui tant qu'un combo a eu lieu sur le plateau depuis moins de BOARD_IDLE_PAUSE_MS. */
