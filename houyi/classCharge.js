@@ -140,6 +140,19 @@ export function initCharge(charge, hero, classIds, enemy, factor = 1) {
     return charge;
 }
 
+/** Phrase brève d'une action en file : « Hou Yi prépare Arc du Chasseur (20 dégâts) → Dragon ». `info` : { caster, name, damage?, target? (texte ou fonction) }. */
+export function queueSentence(info) {
+    if (!info?.name) return 'Une action se prépare';
+    const dmg = Number(info.damage) > 0 ? ` (${Math.round(info.damage)} dégâts)` : '';
+    const target = typeof info.target === 'function' ? info.target() : info.target;   // fonction : cible recalculée à l'affichage (ennemi : personnage que le coup toucherait alors)
+    return `${info.caster || 'Quelqu\'un'} prépare ${info.name}${dmg}${target ? ` → ${target}` : ''}`;
+}
+/** Actions en file dans l'ordre de départ : [{ side: 'hero'|'foe', sentence }] (même ordre que les perles de `upcomingBeads`). */
+export function upcomingActions(queue) {
+    return queue.map(it => ({ side: it.owner === 'enemy' ? 'foe' : 'hero', due: it.dueAt ?? 0, seq: it.seq, sentence: queueSentence(it.info) }))
+        .sort((a, b) => a.due - b.due || a.seq - b.seq).map(({ side, sentence, seq }) => ({ side, sentence, seq }));
+}
+
 /**
  * Perles des actions à venir (ligne discrète en haut du combat) : une perle par action en attente, dans l'ordre où elles partiront
  * (temps de chargement restant de leur classe, puis ordre d'arrivée). 'hero' = action du joueur (verte), 'foe' = action ennemie (rouge).

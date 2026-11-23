@@ -308,11 +308,11 @@ export function spellCostHtml(sp, entity = null){
     }
     return '';
 }
-// Marque visuelle d'un sort multi-qì : barre dégradée aux deux couleurs (CSS `.spell-multi`).
+// Marque visuelle d'un sort : petite barre de couleur sous le bouton, dégradée aux deux couleurs d'un sort multi-qì (CSS `.spell-multi`) ou unie pour un sort mono-qì (`.spell-mono`).
 export function markMultiManaSpell(el, sp){
     const colors = spellColorsOf(sp);
-    if(colors.length < 2) return;
-    el.classList.add('spell-multi');
+    if(!colors.length) return;
+    el.classList.add(colors.length < 2 ? 'spell-mono' : 'spell-multi');
     el.style.setProperty('--spell-c1', MANA_HEX[colors[0]] || '#888');
     el.style.setProperty('--spell-c2', MANA_HEX[colors[colors.length - 1]] || '#888');
 }
@@ -1163,7 +1163,7 @@ function drinkPotionForAlly(size, classId){
         updateStats();
         endAction();
     };
-    if(decoupled()) chooseAction(effect); else { spendActionCharge(); effect(); }
+    if(decoupled()) chooseAction(effect, { info: { name: potion.name, target: ally.name } }); else { spendActionCharge(); effect(); }
     return true;
 }
 
@@ -1197,7 +1197,7 @@ export function drinkPotionAction(size, targetClass = null){
             document.dispatchEvent(new Event('potions-changed'));
             endAction();
         };
-        chooseAction(effect);
+        chooseAction(effect, { info: { name: potion.name, target: player.name || 'Hou Yi' } });
         return true;
     }
     const heal = potionHeal(player, size);
@@ -2099,7 +2099,7 @@ export function useWeapon(hand = 'right'){
         tutorialCallbacks.onWeaponUsed?.();
         endAction();
     };
-    if(chooseAction(effect)) return;   // classe consommée ; l'effet part tout de suite ou entre dans la file commune
+    if(chooseAction(effect, { info: { name: weapon.name, damage: weapon.damage, area: isAreaWeapon(weapon) } })) return;   // classe consommée ; l'effet part tout de suite ou entre dans la file commune
     effect();
 }
 
@@ -2155,6 +2155,9 @@ function strikeWithWeapon(weapon, { free = false, ally = null, pct = 100, nonLet
 }
 
 
+/** Description d'un sort pour la file d'attente : nom, dégâts affichés et cible (l'ennemi pour un sort offensif, le lanceur sinon). */
+const spellQueueInfo = spell => ({ area: isAreaSpell(spell), name: spell.name, damage: spell.type === 'damage' ? spell.dmg : 0, target: spell.type === 'damage' || !spell.type ? enemy?.name : (player.name || 'Hou Yi') });
+
 // Sort à effet (classes) quand les actions sont indépendantes du plateau. Un sort qui ne touche pas la grille part comme les autres actions ; un sort qui la
 // modifie attend la fin du tour de plateau en cours (plateau au repos, juste avant le suivant) ; si le joueur doit désigner une tuile, c'est au choix et
 // SEULE la position est mémorisée : le sort est lancé plus tard sur cette position, même si la tuile n'y est plus.
@@ -2172,7 +2175,7 @@ async function castEffectSpellDecoupled(spell){
             spreadAreaEffects(spell, foeFocus, foeBefore);   // sort de zone : altérations et pertes de qì aussi chez les autres ennemis
             saveUpdate();
             if(ok){ tutorialCallbacks.onSpellCast?.(); endAction(); }
-        }));
+        }), { info: spellQueueInfo(spell) });
         return;
     }
     const run = (index, config) => () => withCaster('player', async () => {
@@ -2192,12 +2195,12 @@ async function castEffectSpellDecoupled(spell){
         captureBoardTarget(() => module.runAs('player', () => module.applyClassSpellEffect(spell)), (index, config) => {
             if(gameState.combatState !== 'active' || isMuted(player) || !canEntityCastSpell(player, spell) || !classCanAct()) return;
             pay();
-            chooseAction(run(index, config), { turnBound: true });
+            chooseAction(run(index, config), { turnBound: true, info: spellQueueInfo(spell) });
         });
         return;
     }
     pay();
-    chooseAction(run(null, null), { turnBound: true });
+    chooseAction(run(null, null), { turnBound: true, info: spellQueueInfo(spell) });
 }
 
 export function castSpell(spellId){
@@ -2261,7 +2264,7 @@ export function castSpell(spellId){
         tutorialCallbacks.onSpellCast?.();
         endAction();
     };
-    if(chooseAction(effect, { turnBound: !!spell.effect })) return;   // classe consommée ; un sort qui modifie le plateau attend son tour de plateau
+    if(chooseAction(effect, { turnBound: !!spell.effect, info: spellQueueInfo(spell) })) return;   // classe consommée ; un sort qui modifie le plateau attend son tour de plateau
     effect();
 }
 
@@ -2306,7 +2309,7 @@ export async function castUltimate(spellId){
             spreadAreaEffects(spell, foeFocus, foeBefore);
             saveUpdate();
             if(ok) module.endPlayerSpellTurn(boardBefore); else resumeAfterBoundary();
-        }), { turnBound: true });
+        }), { turnBound: true, info: { name: spell.name, damage: spell.dmg, target: enemy?.name } });
         return;
     }
     actionGuard.markPlayerAction();

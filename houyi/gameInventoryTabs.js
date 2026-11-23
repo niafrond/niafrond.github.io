@@ -733,7 +733,7 @@ export function useInventoryItem(itemId, index, targetClass = null){
             log(`${result.message}`);
         }
     };
-    if(chooseAction(effect)) return;
+    if(chooseAction(effect, { info: { name: item.name, target: item.effect?.damage ? enemy?.name : (healsAlly && targetClass && gameState.allies?.[targetClass]?.name) || player.name || 'Hou Yi', damage: item.effect?.damage } })) return;
     effect();
 }
 

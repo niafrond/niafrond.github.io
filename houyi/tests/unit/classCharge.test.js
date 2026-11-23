@@ -1,5 +1,5 @@
 import { describe, test, expect } from '@jest/globals';
-import { ENEMY_CHARGE_FACTOR, CHARGE_BASE, CHARGE_MIN, classChargeTime, enemyChargeTime, newCharge, classChargeMs, enemyChargeMs, chargeTick, isClassReady, classProgress, classRemainingMs, spendClass, spendEnemy, isEnemyReady, chargeRunning, chargeSpeed, BOARD_IDLE_PAUSE_MS, initCharge, startChargePctOf, newActionQueue, enqueueAction, takeNextDue, hasQueuedAction, upcomingBeads, actionTimes, isActionVisible, isActionLaunchable } from '../../classCharge.js';
+import { ENEMY_CHARGE_FACTOR, CHARGE_BASE, CHARGE_MIN, classChargeTime, enemyChargeTime, newCharge, classChargeMs, enemyChargeMs, chargeTick, isClassReady, classProgress, classRemainingMs, spendClass, spendEnemy, isEnemyReady, chargeRunning, chargeSpeed, BOARD_IDLE_PAUSE_MS, initCharge, startChargePctOf, newActionQueue, enqueueAction, takeNextDue, hasQueuedAction, upcomingBeads, upcomingActions, queueSentence, actionTimes, isActionVisible, isActionLaunchable } from '../../classCharge.js';
 
 const hero = (extra = {}) => ({ attributes: {}, mana: {}, skills: {}, ...extra });
 
@@ -115,6 +115,16 @@ describe('classCharge : temps de chargement des classes', () => {
         expect(beads).toHaveLength(3);
         expect(beads.filter(b => b === 'foe')).toHaveLength(1);
         expect(beads.filter(b => b === 'hero')).toHaveLength(2);
+    });
+
+    test("file d'attente : une phrase brève par action (lanceur, attaque, dégâts, cible), dans l'ordre de départ", () => {
+        expect(queueSentence({ caster: 'Hou Yi', name: 'Arc du Chasseur', damage: 20, target: 'Dragon' })).toBe('Hou Yi prépare Arc du Chasseur (20 dégâts) → Dragon');
+        expect(queueSentence({ caster: 'Fuxi', name: 'Petite potion', target: 'Hou Yi' })).toBe('Fuxi prépare Petite potion → Hou Yi');
+        expect(queueSentence(null)).toBe('Une action se prépare');
+        const q = newActionQueue();
+        enqueueAction(q, { owner: 'enemy', dueAt: 2000, info: { caster: 'Dragon', name: 'Souffle', damage: 30, target: 'Hou Yi' } });
+        enqueueAction(q, { owner: 'player', dueAt: 1000, info: { caster: 'Hou Yi', name: 'Arc', damage: 20, target: 'Dragon' } });
+        expect(upcomingActions(q).map(a => [a.side, a.sentence])).toEqual([['hero', 'Hou Yi prépare Arc (20 dégâts) → Dragon'], ['foe', 'Dragon prépare Souffle (30 dégâts) → Hou Yi']]);
     });
 
     test('les altérations ralentissent ou arrêtent le chargement (celui de l\'ennemi aussi)', () => {

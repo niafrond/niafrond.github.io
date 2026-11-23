@@ -19,13 +19,13 @@ import { RAGE_MAX } from './ultimates.js';
 import { ULTIMATE_CLASS, getSelectableUltimates } from './ultimates.js';
 import { statusBadgesHtml } from './statusBadges.js';
 import { actionSpells } from './skills.js';
-import { classProgress, classRemainingMs, classChargeInfo, isClassReady, chargeTick, spendClass, spendEnemy, isEnemyReady, chargeRunning, chargeSpeed, enqueueAction, takeNextDue, upcomingBeads, actionTimes, isActionVisible, isActionLaunchable } from './classCharge.js';
+import { classProgress, classRemainingMs, classChargeInfo, isClassReady, chargeTick, spendClass, spendEnemy, isEnemyReady, chargeRunning, chargeSpeed, enqueueAction, takeNextDue, upcomingBeads, upcomingActions, actionTimes, isActionVisible, isActionLaunchable } from './classCharge.js';
 import { renderPotionButtons } from './potionsView.js';
 import { isInTranse, describeTranse, transeEffectFor, TRANSE_TURNS } from './transe.js';
 import { escapeHtml } from './escapeHtml.js';
 import { unreachableCosts, unreachableText } from './spellReach.js';
 import { chargePaceFactor } from './gameOptions.js';
-import { xiuMembers, getManaCapForColor, getLeftHandWeapon, canEntityCastSpell, castSpell, enemy, gameState, currentTurn, markMultiManaSpell, player, setTurnClass, spellColorsOf, spellCostHtml, spellEffectIcon, log, updateStats } from './game.js';
+import { endAction, partyTargetName, xiuMembers, getManaCapForColor, getLeftHandWeapon, canEntityCastSpell, castSpell, enemy, gameState, currentTurn, markMultiManaSpell, player, setTurnClass, spellColorsOf, spellCostHtml, spellEffectIcon, log, updateStats } from './game.js';
 
 // sorts
 const HIGH_SPELL_FROM_LEVEL = 15;
@@ -167,7 +167,7 @@ export function chooseAction(effect, opts = {}){
     const id = getTurnClass();
     if(id) spendClass(gameState.charge, player, id, chargeFactor());
     showSpentCharge();   // barre vide et bouton grisé tout de suite, malgré la seconde avant l'entrée en file
-    dispatchAction('player', effect, !!opts.turnBound);
+    dispatchAction('player', effect, !!opts.turnBound, { caster: casterName(id), target: enemy?.name, ...opts.info });
     return true;
 }
 /** Applique tout de suite le chargement dépensé à l'écran (boutons d'action, barres des personnages et de l'ennemi, arme, objets) sans attendre le ticker. */
@@ -180,16 +180,44 @@ function showSpentCharge(){
     document.dispatchEvent(new Event('charge-changed'));
 }
 /** L'ennemi a choisi, payé et consommé sa barre : son effet part ou entre dans la même file. */
-export function chooseEnemyAction(effect, turnBound = false){
+export function chooseEnemyAction(effect, turnBound = false, info = null){
     if(!decoupled()) return false;
     spendEnemy(gameState.charge, enemy, 1);
     showSpentCharge();   // la barre de l'ennemi se vide tout de suite
-    dispatchAction('enemy', effect, turnBound);
+    dispatchAction('enemy', effect, turnBound, { caster: enemy?.name, target: partyTargetName, ...info });
     return true;
 }
-function dispatchAction(owner, effect, turnBound){
+/** Nom affiché du personnage de la classe `id` (Hou Yi ou un compagnon). */
+const casterName = id => (id && id !== 'assassin' ? gameState.allies?.[id]?.name : null) || player?.name || 'Hou Yi';
+/** Le personnage `name` de l'équipe (Hou Yi ou un compagnon) est-il hors de combat ? */
+const partyMemberDown = name => {
+    if(!name || name === (player?.name || 'Hou Yi')) return !!gameState.heroKo;
+    const ally = Object.values(gameState.allies || {}).find(a => a?.name === name);
+    return !!ally?.ko;
+};
+/**
+ * Cible visée au moment du choix : l'ennemi ciblé (action du joueur contre un ennemi), ou le personnage de l'équipe que le coup toucherait (action de l'ennemi).
+ * Si elle est tombée quand l'action part, le coup est perdu (`targetLost`).
+ */
+const captureTarget = (owner, info) => {
+    if(!info) return null;
+    if(owner === 'enemy'){ const name = typeof info.target === 'function' ? info.target() : info.target; return name && name !== enemy?.name ? { party: name } : null; }
+    return info.target === enemy?.name && enemy ? { foe: enemy, area: !!info.area } : null;
+};
+const targetLost = t => !!t && (t.party ? partyMemberDown(t.party)
+    : t.area ? !(gameState.foes || []).some(f => f.hp > 0) && !(enemy?.hp > 0) : !(t.foe.hp > 0));
+function dispatchAction(owner, effect, turnBound, info = null){
     // Toute action passe par la file, avec deux délais de lisibilité (classCharge.js) : 1 s avant d'y apparaître, 1 s avant d'en partir (joueur comme ennemi).
-    const item = { owner, run: effect, turnBound, dueAt: gameState.charge.now, ...actionTimes(Date.now()) };
+    // Cible mémorisée au choix : tombée entre-temps, elle ne peut plus être touchée : le coup est perdu (qì, PA et charge restent dépensés).
+    const target = captureTarget(owner, info);
+    const run = () => {
+        if(!targetLost(target)) return effect();
+        const who = info?.caster || (owner === 'enemy' ? enemy?.name : player?.name) || 'Quelqu\'un';
+        const victim = target.party || target.foe?.name || 'sa cible';
+        log(`${who} visait ${victim}, déjà à terre : coup perdu.`);
+        if(turnBound) resumeAfterBoundary(); else endAction();
+    };
+    const item = { owner, run, turnBound, info, dueAt: gameState.charge.now, ...actionTimes(Date.now()) };
     enqueueAction(gameState.actionQueue, item);
     renderActionBeads();
 }
@@ -250,19 +278,63 @@ export function spendEnemyAction(){
     if(chargeEnabled() && !enemy?.isTutorialEnemy) spendEnemy(gameState.charge, enemy, 1);
 }
 
-/** Ligne de perles en haut du combat : une perle verte par action du joueur à venir, une rouge par action ennemie, dans l'ordre de départ. */
+/**
+ * Bandeau des actions en file, en haut du combat : une ligne de perles (verte = action du joueur, rouge = action de l'ennemi, dans l'ordre de départ) et, à son
+ * extrémité, un petit bouton « curseur ». Un clic dessus déplie la file en frise chronologique verticale (une étape par action : « Hou Yi prépare Arc du Chasseur
+ * (20 dégâts) → Dragon ») ; un nouveau clic sur le bouton la replie.
+ */
 export function renderActionBeads(){
     const box = typeof document !== 'undefined' ? document.getElementById('action-beads') : null;
     if(!box) return;
     const on = chargeEnabled() && !enemy?.isTutorialEnemy;
     box.hidden = !on;
     if(!on){ box.innerHTML = ''; _beadKey = ''; return; }
-    const beads = upcomingBeads(gameState.charge, gameState.actionQueue.filter(it => isActionVisible(it, Date.now())), !!gameState.enemyPending).slice(0, 12);
-    const key = beads.join('');
+    bindQueueToggle(box);
+    const visible = gameState.actionQueue.filter(it => isActionVisible(it, Date.now()));
+    const beads = upcomingBeads(gameState.charge, visible, !!gameState.enemyPending).slice(0, 12);
+    const actions = upcomingActions(visible);
+    const key = beads.join('') + '|' + actions.map(a => `${a.seq}${a.side}${a.sentence}`).join('|');
     if(key === _beadKey) return;   // rien n'a changé : pas de redessin
     _beadKey = key;
-    box.innerHTML = beads.map(side => `<i class="bead bead-${side}"></i>`).join('');
-    box.setAttribute('aria-label', beads.length ? `${beads.length} action${beads.length > 1 ? 's' : ''} à venir` : 'Aucune action à venir');
+    const head = document.createElement('div');
+    head.className = 'queue-head';
+    const dots = document.createElement('div');
+    dots.className = 'queue-dots';
+    dots.append(...beads.map(side => Object.assign(document.createElement('i'), { className: `bead bead-${side}` })));
+    const toggle = document.createElement('button');
+    toggle.type = 'button';
+    toggle.className = 'queue-toggle';
+    toggle.setAttribute('aria-expanded', String(box.classList.contains('open')));
+    toggle.setAttribute('aria-label', 'Afficher ou replier la file d\'attente');
+    toggle.title = 'File d\'attente';
+    toggle.innerHTML = '<svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true" focusable="false"><path d="M1.5 5.5H14.5M1.5 10.5H14.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" fill="none"/><circle cx="10.5" cy="5.5" r="2.2" fill="currentColor"/><circle cx="5.5" cy="10.5" r="2.2" fill="currentColor"/></svg>';
+    head.append(dots, toggle);
+    const keep = box.querySelector('.queue-list')?.scrollLeft || 0;
+    const list = document.createElement('ol');
+    list.className = 'queue-list';
+    list.append(...(actions.length ? actions.map((a, i) => {
+        const step = document.createElement('li');
+        step.className = `queue-step queue-${a.side}`;
+        const text = document.createElement('span');
+        text.className = 'queue-action';
+        text.textContent = a.sentence;
+        step.append(Object.assign(document.createElement('i'), { className: `queue-node bead-${a.side}` }), text);
+        if(i === 0) step.classList.add('queue-next');
+        return step;
+    }) : [Object.assign(document.createElement('li'), { className: 'queue-step queue-empty', textContent: 'Aucune action en attente' })]));
+    box.replaceChildren(head, list);
+    list.scrollLeft = keep;
+    box.setAttribute('aria-label', actions.length ? `${actions.length} action${actions.length > 1 ? 's' : ''} à venir` : 'Aucune action à venir');
+}
+/** Le bouton à l'extrémité du bandeau déplie / replie la frise des actions à venir. */
+function bindQueueToggle(box){
+    if(box._toggleBound) return;
+    box._toggleBound = true;
+    box.addEventListener('click', e => {
+        if(!e.target.closest?.('.queue-toggle')) return;
+        const open = box.classList.toggle('open');
+        box.querySelector('.queue-toggle')?.setAttribute('aria-expanded', String(open));
+    });
 }
 let _beadKey = '';
 
