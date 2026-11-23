@@ -409,7 +409,10 @@ export function createDraw(env) {
                     env.drawShadow(c.x, feet, tile * 0.34, tile * 0.11);
                     ctx.strokeStyle = '#2b1b17';
                     ctx.lineWidth = 2;
-                    if (it.rest.kind === 'fountain') {
+                    const fountainArt = it.rest.kind === 'fountain' ? gbaSprite('fountain_jade') : null;
+                    if (fountainArt) {   // vrai sprite Pixel Lab (sprites/generated.js, `fountain_jade`)
+                        env.drawSprite(fountainArt, c.x, feet + tile * 0.04, tile * 0.95);
+                    } else if (it.rest.kind === 'fountain') {   // repli dessiné en code tant que le sprite charge
                         ctx.fillStyle = '#9aa3ad';
                         ctx.beginPath(); ctx.ellipse(c.x, feet - tile * 0.08, tile * 0.32, tile * 0.16, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
                         ctx.fillStyle = `rgba(110,200,240,${(0.7 + glow * 0.3).toFixed(3)})`;

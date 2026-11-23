@@ -153,6 +153,7 @@ export const GBA_FILES = {
     forgeron_magma: 'forgeron_magma.869af0b3.js',
     fortune_sha: 'fortune_sha.9256905c.js',
     foudre_garde: 'foudre_garde.7aff127e.js',
+    fountain_jade: 'fountain_jade.fd5bfadc.js',
     fucanglong: 'fucanglong.d4665cfd.js',
     fuxi: 'fuxi.8aa5fe26.js',
     fuxi_dragon: 'fuxi_dragon.9731cd07.js',
