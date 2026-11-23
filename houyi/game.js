@@ -442,7 +442,7 @@ function applyDamageCore(target, damage, options = {}){
     // Fureur du Tigre Blanc (Xiūxiān du Guerrier) : les dégâts de l'arme et des crânes sont multipliés.
     if(target === enemy && (options.damageSource === 'weapon' || options.damageSource === 'skull')) normalizedDamage *= xiuEffect().physMult || 1;
     // Talisman de Résonance de l'ennemi : ses sorts frappent plus fort (dégâts directs et dégâts par case des sorts de plateau).
-    if(options.sourceSpell && options.caster === enemy && target === player && normalizedDamage > 0) normalizedDamage = cappedEnemyHit(normalizedDamage, spellAmplifierOf(enemy), player.maxHp, enemy.hitShareCap);   // plafond : pas de coup fatal par le multiplicateur
+    if(options.sourceSpell && options.caster === enemy && target === player && normalizedDamage > 0) normalizedDamage = cappedEnemyHit(normalizedDamage, spellAmplifierOf(enemy), player.maxHp, enemy.hitShareCap, enemy.hitShareStrict);   // plafond : pas de coup fatal par le multiplicateur
 
     // Les sorts de dégâts peuvent aussi être critiques (attaque du lanceur) et bloqués (défense de la cible).
     lastSpellStrike = null;
@@ -784,7 +784,7 @@ export function applyStandardSpellEffects(caster, target, spell, isPlayerCaster)
 
     if(spell.poisonDmg){   // Poison du Lotus Noir : le sort empoisonne sa cible en plus des dégâts
         const turns = Math.max(1, Math.floor(spell.poisonTurns || 1));
-        const poisonDmg = cappedEnemyHit(spell.poisonDmg, spellAmplifierOf(caster), target.maxHp, caster?.hitShareCap);   // talisman de l'ennemi (plafonné)
+        const poisonDmg = cappedEnemyHit(spell.poisonDmg, spellAmplifierOf(caster), target.maxHp, caster?.hitShareCap, caster?.hitShareStrict);   // talisman de l'ennemi (plafonné)
         const poisoned = inflictAlteration(target, 'poisoned', turns, { poisonDamage: poisonDmg });
         log(poisoned ? `${escapeHtml(target.name)} est empoisonné : ${poisonDmg} dégâts par tour pendant ${turns} tours.` : `${escapeHtml(target.name)} résiste au poison.`);
     }
@@ -2151,7 +2151,9 @@ async function castEffectSpellDecoupled(spell){
         if(ok) module.endPlayerSpellTurn(before); else resumeAfterBoundary();
     });
     if(module.TARGETED_EFFECTS.has(spell.effect)){
-        captureBoardTarget(() => module.applyClassSpellEffect(spell), (index, config) => {
+        // La visée lance l'effet pour en capturer la configuration : sans lanceur désigné, pendant le tour de plateau de l'ennemi (actions indépendantes du plateau)
+        // le sort se croyait lancé par l'ennemi (ligne tirée au hasard, qì et dégâts de son côté) et blessait le héros : le lanceur est donc imposé.
+        captureBoardTarget(() => module.runAs('player', () => module.applyClassSpellEffect(spell)), (index, config) => {
             if(gameState.combatState !== 'active' || isMuted(player) || !canEntityCastSpell(player, spell) || !classCanAct()) return;
             pay();
             chooseAction(run(index, config), { turnBound: true });
@@ -2458,7 +2460,8 @@ function calibrateEnemyForCombat(target){
     target.hp = result.hp;
     target.gearScale = result.gearScale;   // mode plus doux : bonus du stuff divisés comme l'attaque
     target.modeDivisor = result.modeDivisor;
-    target.hitShareCap = result.hitShareCap;           // Expert : plafond d'un coup relevé
+    target.hitShareCap = result.hitShareCap;           // plafond d'un coup (progressif en début de partie, relevé en Expert)
+    target.hitShareStrict = result.hitShareStrict;     // début de partie : le plafond vaut aussi pour les chiffres bruts
     target.spellCostFactor = result.spellCostFactor;   // Expert : sorts moins chers en qì
     if(isExpertMode(getOption('aiDifficulty'))){
         // Rattrapage : face à un héros nettement plus fort en Att / Déf (critique / blocage), l'ennemi gagne des points (base de l'ennemi, avant levelEdge).
@@ -2482,7 +2485,7 @@ function bakeEnemyDamage(target, mult){
     target.bakedDamageMult = m;
     target.damageScale = 1;   // plus de multiplicateur caché
     if(target.weapon) {
-        target.weapon = { ...target.weapon, damage: cappedEnemyHit(target.weapon.damage + (target.weaponPower || 0), m, player.maxHp, target.hitShareCap) };   // jamais un coup fatal par le seul multiplicateur
+        target.weapon = { ...target.weapon, damage: cappedEnemyHit(target.weapon.damage + (target.weaponPower || 0), m, player.maxHp, target.hitShareCap, target.hitShareStrict) };   // jamais un coup fatal par le seul multiplicateur
         target.weaponPower = 0;
     }
     // Sorts : leurs chiffres restent ceux du grimoire ; l'ennemi porte un objet magique (non récupérable) qui amplifie en continu

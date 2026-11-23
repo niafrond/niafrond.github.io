@@ -34,3 +34,15 @@ describe('Tir Furtif : tour bonus pour celui qui le lance', () => {
         expect(game).toMatch(/export function grantActionBonus[\s\S]*addBonusTurn\(caster, 1\)[\s\S]*refillActionBar/);
     });
 });
+
+describe('visée d\'un sort pendant le tour de plateau de l\'ennemi', () => {
+    test('la capture de visée impose le héros comme lanceur (Faux de Braise ne blesse plus le héros)', () => {
+        const source = readFileSync(new URL('../../game.js', import.meta.url), 'utf8');
+        expect(source).toMatch(/captureBoardTarget\(\(\) => module\.runAs\('player', \(\) => module\.applyClassSpellEffect\(spell\)\)/);
+        expect(source).not.toMatch(/captureBoardTarget\(\(\) => module\.applyClassSpellEffect\(spell\)/);
+    });
+    test('runAs remet le lanceur à zéro dès que la partie synchrone est passée', () => {
+        const effects = readFileSync(new URL('../../classSpellEffects.js', import.meta.url), 'utf8');
+        expect(effects).toMatch(/gameState\.casterOverride = who;\s*try \{ return fn\(\); \} finally \{ gameState\.casterOverride = null; \}/);
+    });
+});
