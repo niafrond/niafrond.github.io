@@ -1,3 +1,9 @@
+## [3.28.0](https://github.com/niafrond/niafrond.github.io/compare/v3.27.0...v3.28.0) (2026-11-23)
+
+### Features
+
+* **houyi:** dessiner le sprite du Crabe combattant doré ([#789](https://github.com/niafrond/niafrond.github.io/issues/789)) ([fcb9f1f](https://github.com/niafrond/niafrond.github.io/commit/fcb9f1fe391b507ab02fde4d4f24b2d01135ccc8))
+
 ## [3.27.0](https://github.com/niafrond/niafrond.github.io/compare/v3.26.0...v3.27.0) (2026-11-23)
 
 ### Features
