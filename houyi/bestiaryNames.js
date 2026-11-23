@@ -61,7 +61,7 @@ export const BESTIARY_NAMES = {
     forgeron_magma: ['Róng Yán Tiě Jiàng', '熔岩铁匠'], forgeron_lave: ['Róng Yán Tiě Jiàng', '熔岩铁匠'], garde_maree: ['Cháo Xī Wèi Shì', '潮汐卫士'],
     grue_lige: ['Xiān Hè Shǐ Zhě', '仙鹤使者'], brigand_sables: ['Shā Fěi', '沙匪'], chef_de_dune: ['Shā Fěi Shǒu Lǐng', '沙匪首领'],
     petit_gui: ['Xiǎo Guǐ', '小鬼'], corbeau_demon: ['Wū Yā Yāo', '乌鸦妖'], singe_demon: ['Hóu Yāo', '猴妖'], taureau_braise: ['Yú Jìn Mán Niú', '余烬蛮牛'],
-    crabe_soldat: ['Xiè Jiàng', '蟹将'], carpe_doree: ['Jīn Lǐ', '金鲤'], tortue_dragon: ['Lóng Guī', '龙龟'],
+    crabe_soldat: ['Xiè Jiàng', '蟹将'], crabe_combattant_dore: ['Jīn Xiè Jiàng', '金蟹将'], carpe_doree: ['Jīn Lǐ', '金鲤'], tortue_dragon: ['Lóng Guī', '龙龟'],
     shuimu_denglong: ['Dēng Lóng Shuǐ Mǔ', '灯笼水母'], baoyu_jian: ['Bào Yǔ Jiàn Yú', '暴雨剑鱼'], lu_ci_gui: ['Lú Cí Shuǐ Guǐ', '鸬鹚水鬼'],
     hai_ma_xing: ['Hǎi Mǎ Qiāng Qí Bīng', '海马枪骑兵']
 };

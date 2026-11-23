@@ -13,6 +13,8 @@ export const GROUP_MIN_LEVEL = 3;
 /** Un renfort est plus fragile et frappe moins fort que le meneur : un groupe ne multiplie pas la menace. */
 export const REINFORCEMENT_HP_MULT = 0.6;
 export const SUPPORT_DAMAGE_MULT = 0.6;
+/** PV d'un renfort rare (Crabe combattant doré) : proche de ceux d'un ennemi normal, pour qu'on puisse le vaincre malgré son niveau élevé. */
+export const RARE_SUMMON_HP_MULT = 0.8;
 /** Récompense (XP, zhu) d'un renfort vaincu avant la fin du combat : part de celle d'un ennemi seul. */
 export const REINFORCEMENT_REWARD_SHARE = 0.7;
 /** Un invocateur n'appelle jamais plus de renforts que ce nombre par combat, et jamais deux tours de suite. */
@@ -57,7 +59,12 @@ export function summonSettings(e) {
     return {
         templateId: typeof s.templateId === 'string' ? s.templateId : null,   // null : un ennemi au hasard
         chance: Math.max(0, Math.min(1, Number.isFinite(s.chance) ? s.chance : DEFAULT_SUMMON.chance)),
-        maxCalls: Math.max(1, Math.floor(Number.isFinite(s.maxCalls) ? s.maxCalls : DEFAULT_SUMMON.maxCalls))
+        maxCalls: Math.max(1, Math.floor(Number.isFinite(s.maxCalls) ? s.maxCalls : DEFAULT_SUMMON.maxCalls)),
+        sameStrength: s.sameStrength === true,   // le renfort a le niveau et les PV de l'invocateur (sinon : un cran sous lui, PV réduits)
+        rare: s.rare && typeof s.rare.templateId === 'string'   // renfort rare : { templateId, chance, levelAbovePlayer }
+            ? { templateId: s.rare.templateId, chance: Math.max(0, Math.min(1, Number(s.rare.chance) || 0)), levelAbovePlayer: Math.max(0, Math.floor(Number(s.rare.levelAbovePlayer) || 0)),
+                hpMult: Number(s.rare.hpMult) > 0 ? Number(s.rare.hpMult) : RARE_SUMMON_HP_MULT, attackMult: Number(s.rare.attackMult) > 0 ? Number(s.rare.attackMult) : 1, goldMult: Number(s.rare.goldMult) > 0 ? Number(s.rare.goldMult) : 1 }
+            : null
     };
 }
 

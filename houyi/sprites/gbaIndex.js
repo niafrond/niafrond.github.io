@@ -87,6 +87,7 @@ export const GBA_FILES = {
     corbeau_demon: 'corbeau_demon.6b35cf4c.js',
     courier_tong: 'courier_tong.9db04615.js',
     crab_old_gong: 'crab_old_gong.648cb739.js',
+    crabe_combattant_dore: 'crabe_combattant_dore.e8235ad4.js',
     crabe_soldat: 'crabe_soldat.4037a947.js',
     crane_apprentice_ling: 'crane_apprentice_ling.59979a5f.js',
     crane_elder_hegu: 'crane_elder_hegu.5108b825.js',

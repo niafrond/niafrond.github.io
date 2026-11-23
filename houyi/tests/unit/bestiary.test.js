@@ -67,7 +67,7 @@ describe('Ennemis nommés : gabarit et fiche propres (copies)', () => {
 
     test('une copie reprend exactement les statistiques de son gabarit d\'origine', () => {
         expect(copies.length).toBeGreaterThanOrEqual(37);
-        const strip = ({ id, name, race, title, copyOf, ...rest }) => rest;
+        const strip = ({ id, name, race, title, copyOf, summon, ...rest }) => rest;   // `summon` : le comportement d'invocation peut différer d'une copie
         copies.forEach(t => {
             const from = catalog.find(o => o.id === t.copyOf);
             expect(from && !from.copyOf).toBe(true);

@@ -10,7 +10,7 @@ import { createReinforcement, enemyCatalogList } from './enemies.js';
 import { calculateXPGain } from './experience.js';
 import { playSfx } from './sound.js';
 import { isAreaSpell } from './targeting.js';
-import { MAX_ENEMIES, REINFORCEMENT_HP_MULT, rollGroupSize, reinforcementLevel, livingFoes, isAlive, hasRoom, pickSummonTemplate, rewardShare } from './enemyGroup.js';
+import { MAX_ENEMIES, REINFORCEMENT_HP_MULT, rollGroupSize, reinforcementLevel, livingFoes, isAlive, hasRoom, pickSummonTemplate, rewardShare, summonSettings, RARE_SUMMON_HP_MULT } from './enemyGroup.js';
 
 // ── Qì et points d'action mutualisés : comme l'équipe du joueur, les ennemis partagent UNE réserve de qì et UNE barre de PA. ──
 /** Fait pointer `mana` et `combatPoints` de chaque ennemi sur la réserve commune (`gameState.foePool`). Les écritures (`foe.mana = …`, `foe.combatPoints -= …`) passent par la réserve. */
@@ -72,11 +72,23 @@ export function focusFoe(next){
 }
 
 /** Appelle un renfort dans le combat (invocation, ou arrivée en cours de combat). Renvoie l'ennemi ajouté, ou null s'il n'y a plus de place. */
-export function addFoe(summoner){
+export function addFoe(summoner, rng = Math.random){
     if(!hasRoom(gameState.foes)) return null;
-    const template = pickSummonTemplate(summoner, enemyCatalogList());
+    const catalog = enemyCatalogList();
+    const settings = summonSettings(summoner);
+    // Renfort rare (ex. Crabe combattant doré) : bien au-dessus du niveau du héros, il rapporte beaucoup d'XP et d'or.
+    const rare = settings?.rare && rng() < settings.rare.chance ? catalog.find(t => t.id === settings.rare.templateId) : null;
+    const template = rare || pickSummonTemplate(summoner, catalog);
     if(!template) return null;
-    const foe = prepareFoe(createReinforcement(reinforcementLevel(summoner.level), template), { hpMult: REINFORCEMENT_HP_MULT, biome: summoner.biome });
+    const level = rare ? Math.max(summoner.level || 1, (player.level || 1) + settings.rare.levelAbovePlayer)
+        : settings?.sameStrength ? Math.max(1, Math.floor(summoner.level || 1)) : reinforcementLevel(summoner.level);   // même force : même niveau, mêmes PV
+    const hpMult = rare ? settings.rare.hpMult : settings?.sameStrength ? 1 : REINFORCEMENT_HP_MULT;
+    const foe = prepareFoe(createReinforcement(level, template), { hpMult, biome: summoner.biome });
+    if(rare){
+        foe.isRareSummon = true;
+        foe.attack = Math.max(1, Math.round((foe.attack || 1) * settings.rare.attackMult));
+        foe.dropProfile = { ...(foe.dropProfile || {}), goldMult: settings.rare.goldMult, dropChance: 1, weaponChance: 0.8 };   // beaucoup d'or ; l'XP vient du niveau élevé
+    }
     foe.isReinforcement = true;
     foe.summonedBy = summoner.name;
     foe.readyAt = (gameState.charge?.now || 0) + enemyChargeMs(foe, 1);
