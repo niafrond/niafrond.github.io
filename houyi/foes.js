@@ -43,7 +43,8 @@ export function setupFoeGroup(lead){
     linkFoePool([lead]);
     const size = rollGroupSize(lead);
     for(let i = 1; i < size; i++){
-        const template = pickSummonTemplate(lead, enemyCatalogList());
+        const catalog = enemyCatalogList();
+        const template = (lead.pack && catalog.find(t => t.id === lead.templateId)) || pickSummonTemplate(lead, catalog);   // meute : même espèce que le meneur
         if(!template) break;
         const foe = prepareFoe(createReinforcement(reinforcementLevel(lead.level), template), { hpMult: REINFORCEMENT_HP_MULT, biome: lead.biome });
         foe.isReinforcement = true;

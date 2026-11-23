@@ -19,7 +19,7 @@ import { RAGE_MAX } from './ultimates.js';
 import { ULTIMATE_CLASS, getSelectableUltimates } from './ultimates.js';
 import { statusBadgesHtml } from './statusBadges.js';
 import { actionSpells } from './skills.js';
-import { classProgress, classRemainingMs, classChargeInfo, isClassReady, chargeTick, spendClass, spendEnemy, isEnemyReady, chargeRunning, chargeSpeed, enqueueAction, takeNextDue, upcomingBeads } from './classCharge.js';
+import { classProgress, classRemainingMs, classChargeInfo, isClassReady, chargeTick, spendClass, spendEnemy, isEnemyReady, chargeRunning, chargeSpeed, enqueueAction, takeNextDue, upcomingBeads, actionTimes, isActionVisible, isActionLaunchable } from './classCharge.js';
 import { renderPotionButtons } from './potionsView.js';
 import { isInTranse, describeTranse, transeEffectFor, TRANSE_TURNS } from './transe.js';
 import { escapeHtml } from './escapeHtml.js';
@@ -147,8 +147,7 @@ const actionBusy = () => Date.now() < (gameState.actionBusyUntil || 0) || (typeo
 const markActionBusy = () => { gameState.actionBusyUntil = Date.now() + ACTION_GAP_MS; };
 // Une action choisie est déjà payée et sa classe déjà consommée : elle ne dépend plus que du passage dans la file (une à la fois) et de la pause d'inactivité.
 // Les sorts qui modifient la grille et les ultimes (`turnBound`) attendent la fin du tour de plateau en cours, plateau au repos, juste avant le suivant.
-const canRunNow = it => !it.turnBound;   // les sorts qui modifient la grille ne partent pas ici : ils attendent la fin du tour de plateau (runBoundaryAction)
-const readyAhead = () => gameState.actionQueue.some(canRunNow);
+const canRunNow = it => !it.turnBound && isActionLaunchable(it, Date.now());   // 2 s après son entrée dans la file (classCharge.js)   // les sorts qui modifient la grille ne partent pas ici : ils attendent la fin du tour de plateau (runBoundaryAction)
 
 /** La classe du tour est-elle chargée (barre pleine) ? Condition pour CHOISIR une action ; toujours vrai hors combat indépendant du plateau. */
 export function classCanAct(){
@@ -179,8 +178,8 @@ export function chooseEnemyAction(effect, turnBound = false){
     return true;
 }
 function dispatchAction(owner, effect, turnBound){
-    const item = { owner, run: effect, turnBound, dueAt: gameState.charge.now };
-    if(!turnBound && !actionBusy() && !readyAhead()){ markActionBusy(); effect(); return; }
+    // Toute action passe par la file, avec deux délais de lisibilité (classCharge.js) : 2 s avant d'y apparaître, 2 s avant d'en partir (joueur comme ennemi).
+    const item = { owner, run: effect, turnBound, dueAt: gameState.charge.now, ...actionTimes(Date.now()) };
     enqueueAction(gameState.actionQueue, item);
     renderActionBeads();
 }
@@ -193,7 +192,7 @@ function dispatchAction(owner, effect, turnBound){
 export function runBoundaryAction(resume){
     gameState.boundaryResume = null;
     if(!decoupled()) return false;
-    const item = takeNextDue(gameState.actionQueue, it => it.turnBound);
+    const item = takeNextDue(gameState.actionQueue, it => it.turnBound && isActionVisible(it, Date.now()));   // une action de plateau attend d'être entrée dans la file (2 s), puis la fin du tour de plateau
     if(!item) return false;
     markActionBusy();
     gameState.boundaryResume = resume;
@@ -248,7 +247,7 @@ export function renderActionBeads(){
     const on = chargeEnabled() && !enemy?.isTutorialEnemy;
     box.hidden = !on;
     if(!on){ box.innerHTML = ''; _beadKey = ''; return; }
-    const beads = upcomingBeads(gameState.charge, gameState.actionQueue, !!gameState.enemyPending).slice(0, 12);
+    const beads = upcomingBeads(gameState.charge, gameState.actionQueue.filter(it => isActionVisible(it, Date.now())), !!gameState.enemyPending).slice(0, 12);
     const key = beads.join('');
     if(key === _beadKey) return;   // rien n'a changé : pas de redessin
     _beadKey = key;

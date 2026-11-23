@@ -24,14 +24,25 @@ export function groupAllowed(e) {
     return !(e.isBoss || e.isTutorialEnemy || e.duel || e.arena || e.training);
 }
 
+/** Taille d'une meute `{ min, max }` (au moins 2, au plus MAX_ENEMIES). */
+export function packSize(pack, rng = Math.random) {
+    const min = Math.max(2, Math.min(MAX_ENEMIES, Math.floor(Number(pack?.min) || 2)));
+    const max = Math.max(min, Math.min(MAX_ENEMIES, Math.floor(Number(pack?.max) || min)));
+    return min + Math.min(max - min, Math.floor(rng() * (max - min + 1)));
+}
+
 /** Taille du groupe de départ (1 à MAX_ENEMIES) selon le niveau du meneur. `rng` : () => [0, 1[. */
 export function rollGroupSize(leader, rng = Math.random) {
+    if (groupAllowed(leader) && leader.pack) return packSize(leader.pack, rng);   // meute : toujours plusieurs ennemis, quel que soit le niveau
     if (!groupAllowed(leader) || (leader.level || 1) < GROUP_MIN_LEVEL) return 1;
     const r = rng();
     if (r < GROUP_ODDS.three) return 3;
     if (r < GROUP_ODDS.three + GROUP_ODDS.two) return 2;
     return 1;
 }
+
+/** Part de chacun dans un coup de crânes de zone : le total est divisé entre les cibles (arrondi au-dessus, au moins 1 si le coup touche). */
+export const skullShare = (total, targets) => (total > 0 && targets > 1 ? Math.max(1, Math.ceil(total / targets)) : total);
 
 export const isAlive = e => Boolean(e) && e.hp > 0;
 export const livingFoes = foes => (Array.isArray(foes) ? foes : []).filter(isAlive);
