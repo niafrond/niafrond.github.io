@@ -48,6 +48,7 @@ export const AI_TIERS = {
         stupidityChance: 0.35,
         randomBoardMove: false,
         manaFocus: true,                // choisit les combinaisons qui donnent le qì dont il manque
+        arrowHoard: 1,                  // ruée sur les flèches (PA) : fait des réserves pour frapper pendant que le héros joue (enemyAI.js)
         lethalAwareness: 0.85, scoreSharpness: 1, boardLookahead: 8,
     },
     expert: {
@@ -60,6 +61,7 @@ export const AI_TIERS = {
         randomBoardMove: false,
         manaFocus: true,
         refillMana: true,               // aucun sort lançable : le plateau pour remplir son qì passe devant (enemyAI.js)
+        arrowHoard: 1.6,
         lethalAwareness: 1, scoreSharpness: 1.5, boardLookahead: 16,
     },
 };
@@ -76,7 +78,7 @@ export const SPECIAL_TIERS = {
     overleveled: {
         base: 'expert', name: "Hors niveau",
         spellUseProbability: 0.45, weaponUseProbability: 0.35, boardMoveProbability: 0.20,
-        strategicThinking: true, stupidityChance: 0.02, randomBoardMove: false, manaFocus: true,
+        strategicThinking: true, stupidityChance: 0.02, randomBoardMove: false, manaFocus: true, arrowHoard: 1.6,
         lethalAwareness: 1, scoreSharpness: 2, boardLookahead: 24,
         thinkingTimeMin: 180, thinkingTimeMax: 320,
     },
