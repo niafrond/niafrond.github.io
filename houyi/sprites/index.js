@@ -30,7 +30,10 @@ const gbaFailedAt = new Map();  // clé → date du dernier échec (pas de nouve
 // Alias : plusieurs PNJ partagent un même sprite généré (sentinelles de la brume, Hua, Chang'e).
 const GBA_ALIASES = { change_moon: 'change', crapaud_boue: 'rizieres_w_toad', changxi_calm: 'changxi', changxi_moon: 'changxi', moon_messenger: 'jade_hare',
     // Ennemis des quêtes de recrutement : même dessin que le compagnon qu'ils deviennent.
-    rice_thief: 'companion_xiao_gui', golden_carp: 'companion_yu', ember_pup: 'companion_braise' };
+    rice_thief: 'companion_xiao_gui', golden_carp: 'companion_yu', ember_pup: 'companion_braise',
+    // PNJ des compagnons (companions.js, `npc`) vus sur la carte : même dessin que le suiveur.
+    huli_xia: 'companion_xiao_gui', young_monk_zhi: 'companion_zhi', guide_dawa: 'companion_dawa', carp_jin: 'companion_yu',
+    forge_spirit: 'companion_etincelle', wolf_pup_baatar: 'companion_braise', crow_wing: 'companion_jian', huang_xian: 'companion_tou' };
 const GBA_ALIAS_PATTERNS = [[/^level_guard_/, 'level_guard'], [/^hua_/, 'hua']];
 // Gabarits « copies » d'ennemis nommés (champ `copyOf` de enemies.catalog.json) sans dessin propre : ils empruntent le dessin du
 // gabarit d'origine (SVG de repli ; côté GBA, un sprite généré propre au gabarit est prioritaire, voir gbaKey).
