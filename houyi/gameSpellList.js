@@ -147,7 +147,7 @@ const actionBusy = () => Date.now() < (gameState.actionBusyUntil || 0) || (typeo
 const markActionBusy = () => { gameState.actionBusyUntil = Date.now() + ACTION_GAP_MS; };
 // Une action choisie est déjà payée et sa classe déjà consommée : elle ne dépend plus que du passage dans la file (une à la fois) et de la pause d'inactivité.
 // Les sorts qui modifient la grille et les ultimes (`turnBound`) attendent la fin du tour de plateau en cours, plateau au repos, juste avant le suivant.
-const canRunNow = it => !it.turnBound && isActionLaunchable(it, Date.now());   // 2 s après son entrée dans la file (classCharge.js)   // les sorts qui modifient la grille ne partent pas ici : ils attendent la fin du tour de plateau (runBoundaryAction)
+const canRunNow = it => !it.turnBound && isActionLaunchable(it, Date.now());   // 1 s après son entrée dans la file (classCharge.js)   // les sorts qui modifient la grille ne partent pas ici : ils attendent la fin du tour de plateau (runBoundaryAction)
 
 /** La classe du tour est-elle chargée (barre pleine) ? Condition pour CHOISIR une action ; toujours vrai hors combat indépendant du plateau. */
 export function classCanAct(){
@@ -166,19 +166,29 @@ export function chooseAction(effect, opts = {}){
     if(!decoupled()){ spendActionCharge(); return false; }
     const id = getTurnClass();
     if(id) spendClass(gameState.charge, player, id, chargeFactor());
-    createSpellButtons();
+    showSpentCharge();   // barre vide et bouton grisé tout de suite, malgré la seconde avant l'entrée en file
     dispatchAction('player', effect, !!opts.turnBound);
     return true;
+}
+/** Applique tout de suite le chargement dépensé à l'écran (boutons d'action, barres des personnages et de l'ennemi, arme, objets) sans attendre le ticker. */
+function showSpentCharge(){
+    if(typeof document === 'undefined') return;
+    createSpellButtons();
+    refreshClassPicker();
+    updateStats();
+    document.dispatchEvent(new Event('potions-changed'));
+    document.dispatchEvent(new Event('charge-changed'));
 }
 /** L'ennemi a choisi, payé et consommé sa barre : son effet part ou entre dans la même file. */
 export function chooseEnemyAction(effect, turnBound = false){
     if(!decoupled()) return false;
     spendEnemy(gameState.charge, enemy, 1);
+    showSpentCharge();   // la barre de l'ennemi se vide tout de suite
     dispatchAction('enemy', effect, turnBound);
     return true;
 }
 function dispatchAction(owner, effect, turnBound){
-    // Toute action passe par la file, avec deux délais de lisibilité (classCharge.js) : 2 s avant d'y apparaître, 2 s avant d'en partir (joueur comme ennemi).
+    // Toute action passe par la file, avec deux délais de lisibilité (classCharge.js) : 1 s avant d'y apparaître, 1 s avant d'en partir (joueur comme ennemi).
     const item = { owner, run: effect, turnBound, dueAt: gameState.charge.now, ...actionTimes(Date.now()) };
     enqueueAction(gameState.actionQueue, item);
     renderActionBeads();
@@ -192,7 +202,7 @@ function dispatchAction(owner, effect, turnBound){
 export function runBoundaryAction(resume){
     gameState.boundaryResume = null;
     if(!decoupled()) return false;
-    const item = takeNextDue(gameState.actionQueue, it => it.turnBound && isActionVisible(it, Date.now()));   // une action de plateau attend d'être entrée dans la file (2 s), puis la fin du tour de plateau
+    const item = takeNextDue(gameState.actionQueue, it => it.turnBound && isActionVisible(it, Date.now()));   // une action de plateau attend d'être entrée dans la file (1 s), puis la fin du tour de plateau
     if(!item) return false;
     markActionBusy();
     gameState.boundaryResume = resume;
