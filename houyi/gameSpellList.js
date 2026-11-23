@@ -244,11 +244,10 @@ export function runBoundaryAction(resume){
     const item = takeNextDue(gameState.actionQueue, it => it.turnBound && isActionVisible(it, Date.now()));   // une action de plateau attend d'être entrée dans la file (1 s), puis la fin du tour de plateau
     if(!item) return false;
     markActionBusy();
-    trackRunning(item);
     gameState.boundaryResume = resume;
     const token = (gameState.boundaryToken = (gameState.boundaryToken || 0) + 1);
+    trackRunning(item);   // lance l'action ; elle reste affichée dans la file jusqu'à la fin de son effet
     renderActionBeads();
-    item.run();
     setTimeout(() => {   // l'action n'a rien relancé (aucun changement) : on poursuit la fin de tour
         if(gameState.boundaryToken === token && gameState.boundaryResume && gameState.combatState === 'active' && !isBoardResolving()) resumeAfterBoundary();
     }, 4000);
