@@ -259,7 +259,11 @@ let _beadKey = '';
 
 // Le temps de combat avance en temps réel, fenêtre visible ; quand une classe (ou l'ennemi) devient prête, boutons et barres se rafraîchissent.
 /** Vitesse de chargement de chaque membre de l'équipe selon ses altérations (Hou Yi : celles du héros ; un compagnon : les siennes). */
-const memberSpeeds = () => Object.fromEntries(usableNow().map(id => [id, chargeSpeed(id === 'assassin' ? player : gameState.allies?.[id])]));
+const memberSpeeds = () => {
+    const speeds = Object.fromEntries(Object.keys(gameState.charge?.ready || {}).filter(id => isMemberKO(gameState.allies, gameState.heroKo, id)).map(id => [id, 0]));   // un membre KO ne charge plus : barre figée
+    usableNow().forEach(id => { speeds[id] = chargeSpeed(id === 'assassin' ? player : gameState.allies?.[id]); });
+    return speeds;
+};
 
 let _chargeLast = 0, _chargeKey = '';
 let _aiModule = null;
