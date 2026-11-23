@@ -1,3 +1,9 @@
+## [3.25.0](https://github.com/niafrond/niafrond.github.io/compare/v3.24.0...v3.25.0) (2026-11-23)
+
+### Features
+
+* **houyi:** ruée de l'IA sur les flèches et barre figée des personnages KO ([#785](https://github.com/niafrond/niafrond.github.io/issues/785)) ([93229c5](https://github.com/niafrond/niafrond.github.io/commit/93229c5e33d6bd30d9dd61567264d51702477bb3))
+
 ## [3.24.0](https://github.com/niafrond/niafrond.github.io/compare/v3.23.1...v3.24.0) (2026-11-23)
 
 ### Features
