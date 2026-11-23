@@ -89,7 +89,7 @@ export function rollChestLoot(chest, screen = {}, owner = {}, rng = Math.random)
         if (rng() >= chance) return;
         const rarity = pickWeighted(cfg.rarity, rng);
         if (rng() < cfg.weaponChance) {
-            const weapons = balancedWeaponPool(lootableWeapons().filter(w => !w.fusionOnly && w.minLevel <= maxLevel && !ownedWeapons.has(w.id)), rng);   // arcs de Hou Yi ou armes de compagnon, à parts égales
+            const weapons = balancedWeaponPool(lootableWeapons().filter(w => !w.fusionOnly && w.minLevel <= maxLevel && !ownedWeapons.has(w.id)), rng, rarity);   // arcs de Hou Yi ou armes de compagnon, à parts égales
             const weapon = pickByRarity(weapons, weaponRarity, rarity, rng);
             if (weapon) {
                 ownedWeapons.add(weapon.id);

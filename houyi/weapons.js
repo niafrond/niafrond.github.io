@@ -770,14 +770,17 @@ export const lootableWeapons = () => [...allWeapons, ...companionWeapons];
 
 /**
  * Restreint un tirage d'arme (butin) à une moitié équitable : une fois sur deux une arme de compagnon, et dans ce cas d'un type tiré au hasard
- * (chaque compagnon a la même chance d'y trouver son arme), sinon un arc de Hou Yi. Sans candidat d'une moitié, l'autre sert. Consomme 1 ou 2 tirages.
+ * (chaque compagnon a la même chance d'y trouver son arme), sinon un arc de Hou Yi. `wanted` : rareté voulue ; seules les moitiés (et les types) qui en ont une
+ * sont retenues, de sorte que la rareté tirée ne retombe pas d'un cran à cause du filtre. Sans candidat, la liste d'origine est rendue.
  */
-export function balancedWeaponPool(candidates, rng = Math.random) {
+export function balancedWeaponPool(candidates, rng = Math.random, wanted = null) {
+    const has = list => !wanted || list.some(w => weaponRarity(w) === wanted);
     const hero = candidates.filter(w => !isCompanionWeapon(w));
     const allies = candidates.filter(isCompanionWeapon);
-    if (!allies.length) return hero;
-    if (!hero.length || rng() < 0.5) {
-        const types = [...new Set(allies.map(w => w.type))];
+    const types = [...new Set(allies.map(w => w.type))].filter(t => has(allies.filter(w => w.type === t)));
+    const heroOk = hero.length > 0 && has(hero);
+    if (!types.length) return heroOk ? hero : candidates;
+    if (!heroOk || rng() < 0.5) {
         const type = types[Math.floor(rng() * types.length)];
         return allies.filter(w => w.type === type);
     }

@@ -1606,7 +1606,7 @@ export function restartCombat({ keepHp = true } = {}){
     gameState.turnClass = null;   // la classe du tour revient à celle du héros
     gameState.foes = [];   // groupe d'ennemis reconstruit par newEnemy (foes.js)
     gameState.charge = newCharge();   // les barres sont initialisées plus bas (initCharge), une fois l'ennemi en place
-    gameState.actionQueue = newActionQueue(); gameState.enemyPending = null;
+    gameState.actionQueue = newActionQueue(); gameState.runningAction = null; gameState.enemyPending = null;
     gameState.allies = buildTeam(player); gameState.allyShield = null; gameState.heroKo = heroDown;   // équipe de combat : pleine forme, sauf les personnages restés à terre
     downIds.forEach(id => { const a = gameState.allies[id]; if(a){ a.ko = true; a.hp = 0; } });
     prepareAllyPortraits();               // dessins des compagnons puis barres de vie

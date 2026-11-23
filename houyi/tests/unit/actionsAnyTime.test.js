@@ -14,7 +14,7 @@ describe('actions choisies à tout moment (barre chargée), sans lien avec le to
     test('l\'ennemi chargé choisit aussi ses sorts de plateau hors de son tour (action de plateau, file commune)', () => {
         const flow = read('gameTurnFlow.js');
         const proactive = flow.slice(flow.indexOf('export function enemyProactiveAction'), flow.indexOf('function applyEnemyAction'));
-        expect(proactive).toMatch(/boardSpell[\s\S]*castEnemyBoardSpell[\s\S]*, true\)/);
+        expect(proactive).toMatch(/boardSpell[\s\S]*castEnemyBoardSpell[\s\S]*, true[,)]/);
         expect(proactive).not.toMatch(/passent par son tour de plateau/);
     });
 });

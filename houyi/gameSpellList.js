@@ -206,6 +206,17 @@ const captureTarget = (owner, info) => {
 };
 const targetLost = t => !!t && (t.party ? partyMemberDown(t.party)
     : t.area ? !(gameState.foes || []).some(f => f.hp > 0) && !(enemy?.hp > 0) : !(t.foe.hp > 0));
+/**
+ * Garde l'action visible dans la file (perle, frise) tant qu'elle n'est pas exécutée : elle quitte la file au départ, mais reste « en cours » jusqu'à la fin de son
+ * effet (animation comprise : au moins ACTION_GAP_MS) puis disparaît. Lance `item.run()`.
+ */
+function trackRunning(item){
+    gameState.runningAction = item;
+    const done = () => setTimeout(() => { if(gameState.runningAction === item){ gameState.runningAction = null; renderActionBeads(); } }, Math.max(0, (gameState.actionBusyUntil || 0) - Date.now()));
+    let result;
+    try{ result = item.run(); }catch(err){ done(); throw err; }
+    Promise.resolve(result).then(done, done);
+}
 function dispatchAction(owner, effect, turnBound, info = null){
     // Toute action passe par la file, avec deux délais de lisibilité (classCharge.js) : 1 s avant d'y apparaître, 1 s avant d'en partir (joueur comme ennemi).
     // Cible mémorisée au choix : tombée entre-temps, elle ne peut plus être touchée : le coup est perdu (qì, PA et charge restent dépensés).
@@ -233,6 +244,7 @@ export function runBoundaryAction(resume){
     const item = takeNextDue(gameState.actionQueue, it => it.turnBound && isActionVisible(it, Date.now()));   // une action de plateau attend d'être entrée dans la file (1 s), puis la fin du tour de plateau
     if(!item) return false;
     markActionBusy();
+    trackRunning(item);
     gameState.boundaryResume = resume;
     const token = (gameState.boundaryToken = (gameState.boundaryToken || 0) + 1);
     renderActionBeads();
@@ -254,7 +266,7 @@ export function pumpActions(){
     const item = takeNextDue(gameState.actionQueue, canRunNow);
     if(!item) return;
     markActionBusy();
-    item.run();
+    trackRunning(item);
     renderActionBeads();
 }
 /** Remplit tout de suite la barre d'action du lanceur (effet des sorts qui donnaient un tour bonus) : classe du sort (ou du tour) pour le héros, barre de l'ennemi pour lui. */
@@ -290,7 +302,7 @@ export function renderActionBeads(){
     box.hidden = !on;
     if(!on){ box.innerHTML = ''; _beadKey = ''; return; }
     bindQueueToggle(box);
-    const visible = gameState.actionQueue.filter(it => isActionVisible(it, Date.now()));
+    const visible = [...(gameState.runningAction ? [gameState.runningAction] : []), ...gameState.actionQueue.filter(it => isActionVisible(it, Date.now()))];   // l'action en cours d'exécution reste affichée jusqu'à sa fin
     const beads = upcomingBeads(gameState.charge, visible, !!gameState.enemyPending).slice(0, 12);
     const actions = upcomingActions(visible);
     const key = beads.join('') + '|' + actions.map(a => `${a.seq}${a.side}${a.sentence}`).join('|');
