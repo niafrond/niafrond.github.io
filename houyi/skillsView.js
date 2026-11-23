@@ -27,8 +27,8 @@ function onClick(ev) {
         return;
     }
     const toggle = ev.target.closest('[data-toggle-skill]');
-    if (toggle) {   // les compétences de soutien s'allument et s'éteignent à tout moment, dans la limite des Fulu
-        const res = toggleSupport(player, toggle.dataset.toggleSkill);
+    if (toggle) {   // soutiens et actions s'allument et s'éteignent à tout moment, dans la limite des Fulu du personnage
+        const res = toggleSupport(player, toggle.dataset.toggleSkill, toggle.dataset.member);   // pour le personnage de l'onglet, sur SA réserve de Fulu
         log(res.message);
         if (res.ok) saveUpdate();
         renderSkillsTab();

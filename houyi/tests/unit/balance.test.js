@@ -226,3 +226,23 @@ describe('garde-fous ajoutés le 2026-11-22 (agent Équilibrage)', () => {
         Object.values(COMPANION_POWERS).forEach(p => expect(powerChance(p, { level: 70 })).toBeLessThanOrEqual(0.30));
     });
 });
+
+describe('Fulu par personnage : garde-fous (avis Équilibrage)', () => {
+    test('gain de chaque soutien par Fulu : maxima actuels du catalogue, une compétence plus forte fait échouer le test', async () => {
+        const { SKILLS, CLASS_SKILLS } = await import('../../skills.js');
+        const MAX_PER_FULU = { attack: 3, defense: 3, regenPct: 1.25, startChargePct: 17.5, chargePct: 5 };
+        [...SKILLS, ...CLASS_SKILLS].filter(s => s.kind === 'support').forEach(s => {
+            Object.entries(MAX_PER_FULU).forEach(([key, max]) => {
+                if (s.bonus?.[key]) expect({ id: s.id, key, perFulu: s.bonus[key] / s.cost <= max }).toEqual({ id: s.id, key, perFulu: true });
+            });
+        });
+    });
+    test('capacité identique pour tous les personnages et plafonnée à haut niveau', async () => {
+        const { memberFuluCapacity } = await import('../../skills.js');
+        expect(memberFuluCapacity({ level: 70 })).toBeLessThanOrEqual(18);
+    });
+    test('qì de départ des compétences : au plus 8 par couleur pour toute l\'équipe', async () => {
+        const { START_MANA_TEAM_CAP } = await import('../../skills.js');
+        expect(START_MANA_TEAM_CAP).toBeLessThanOrEqual(8);
+    });
+});
