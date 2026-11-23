@@ -1,3 +1,9 @@
+## [3.24.0](https://github.com/niafrond/niafrond.github.io/compare/v3.23.1...v3.24.0) (2026-11-23)
+
+### Features
+
+* **bus-naolib:** afficher le lendemain une fois 9 h passées ([#784](https://github.com/niafrond/niafrond.github.io/issues/784)) ([c0fbe8c](https://github.com/niafrond/niafrond.github.io/commit/c0fbe8c13031db6305a7388685fb473b669744f7))
+
 ## [3.23.1](https://github.com/niafrond/niafrond.github.io/compare/v3.23.0...v3.23.1) (2026-11-23)
 
 ### Bug Fixes
