@@ -1,3 +1,9 @@
+## [3.29.0](https://github.com/niafrond/niafrond.github.io/compare/v3.28.0...v3.29.0) (2026-11-23)
+
+### Features
+
+* **houyi:** chargement vidé au clic, choix de la cible plus visible, délais de file à 1 s ([#790](https://github.com/niafrond/niafrond.github.io/issues/790)) ([189409c](https://github.com/niafrond/niafrond.github.io/commit/189409c13b33d8a02cb3f22bd1d5ae48e5133838))
+
 ## [3.28.0](https://github.com/niafrond/niafrond.github.io/compare/v3.27.0...v3.28.0) (2026-11-23)
 
 ### Features
