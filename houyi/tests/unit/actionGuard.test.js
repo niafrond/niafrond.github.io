@@ -100,7 +100,7 @@ describe('XP bonus des belles combinaisons', () => {
     });
     test('branchement : board.js accorde l\'XP au joueur sur 4+ et joue les sons crâne/mana', () => {
         const board = fs.readFileSync(new URL('../../board.js', import.meta.url), 'utf8');
-        expect(board).toMatch(/currentTurn === 'player' && info\.len >= 4[\s\S]*grantBigMatchXP/);
+        expect(board).toMatch(/boardSide\(\) === 'player' && info\.len >= 4[\s\S]*grantBigMatchXP/);
         expect(board).toContain("playSfx('skullHit'");
         expect(board).toContain("playSfx('manaGain'");
     });
