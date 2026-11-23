@@ -37,3 +37,6 @@ App HTML autonome (`index.html`, sans build) qui indique à quelle heure sortir 
 - 2026-11-22 (focus ligne 23) :
   - L'app ne traite plus que la ligne 23 : champ ligne retiré des réglages (fixe), titre « Mon bus 23 ». `tools/build-data.mjs` ne garde que les lignes de `LIGNES` (défaut `23`, ex. `LIGNES=23,C3 node tools/build-data.mjs`) : `data/` passe de 3,5 Mo à ≈ 0,1 Mo.
   - Sens : 1 → Haluchère - Batignolles, 2 → Mendès France - Bellevue. Test Playwright : Aquitaine → Terray (sens 1), bus de 07:27, sortie 07:22.
+
+- 2026-11-23 (bascule à 9 h) :
+  - Bloc du haut : avant 9 h il traite aujourd'hui ; à partir de 9 h il passe au prochain jour avec un bus (demain, ou ex. « lun. 30 nov. » si le week-end est en repos ; demain si aucun jour travaillé sous 7 jours). Le texte dit « aujourd'hui », « demain » ou la date ; le compte à rebours inclut le décalage de jours. Test Playwright avec horloge simulée (lun. 07:00 → aujourd'hui, lun. 10:00 → demain, ven. 10:00 → lun.).

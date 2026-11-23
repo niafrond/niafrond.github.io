@@ -182,21 +182,30 @@ const incident = c => c.bloquant ? '<div class="inc b">⛔ Ligne bloquée : ne c
   : c.etat > 0 ? '<div class="inc">⚠️ Trafic perturbé sur la ligne : prends de la marge (bus d’avant conseillé).</div>' : '';
 const ready = c => c && c !== 'wait';
 
+// Jour affiché en haut : aujourd'hui, ou à partir de 9 h le prochain jour avec un bus (décalage en jours)
+function focusDay(now) {
+  if (now.getHours() < 9) return { d: now, off: 0 };
+  for (let k = 1; k <= 7; k++) { const d = new Date(now); d.setDate(now.getDate() + k); if (startFor(d)) return { d, off: k }; }
+  const d = new Date(now); d.setDate(now.getDate() + 1); return { d, off: 1 };
+}
 function renderToday() {
   if (!cfg || $('main').classList.contains('hide')) return;
   const now = new Date(), nowMin = now.getHours() * 60 + now.getMinutes() + now.getSeconds() / 60;
-  const start = startFor(now), c = cache[ymd(now)], box = $('today');
+  const { d: fd, off } = focusDay(now), key = ymd(fd);
+  const start = startFor(fd), c = cache[key], box = $('today');
+  const when = off === 0 ? 'aujourd’hui' : off === 1 ? 'demain' : dayLabel(fd);
   const head = `<div class="mute">Ligne ${cfg.line} ${cfg.dirs ? '→ ' + cfg.dirs[cfg.sens - 1] : ''} · ${cfg.label} ⇒ ${cfg.arrLabel}</div>`;
-  if (!start) { box.innerHTML = head + '<div style="font-size:22px;margin-top:6px">Pas de bus prévu aujourd’hui 😌</div>'; return; }
+  if (!start) { box.innerHTML = head + `<div style="font-size:22px;margin-top:6px">Pas de bus prévu ${when} 😌</div>`; return; }
+  if (!c) ensure(fd);
   if (!ready(c) && c !== 'err') { box.innerHTML = head + '<div class="mute">Chargement…</div>'; return; }
   if (c === 'err') { box.innerHTML = head + '<div class="warn">Horaires indisponibles, réessaie plus tard.</div>'; return; }
   const r = calc(c, start);
-  if (!r) { box.innerHTML = head + incident(c) + `<div class="warn">Aucun bus ne t’amène à ${start}.</div>`; return; }
-  const left = r.leave - nowMin;
+  if (!r) { box.innerHTML = head + incident(c) + `<div class="warn">Aucun bus ne t’amène à ${start} ${when}.</div>`; return; }
+  const left = r.leave + off * 1440 - nowMin;
   const cd = left >= 1 ? `<span style="color:var(--ok)">dans ${left >= 60 ? Math.floor(left / 60) + ' h ' + pad(Math.floor(left % 60)) : Math.floor(left) + ' min'}</span>`
     : left > -1 ? '<span class="warn">maintenant !</span>'
     : `<span class="warn">déjà passé${-left < 60 ? ' (' + Math.ceil(-left) + ' min)' : ''}</span>`;
-  let html = head + incident(c) + `<div class="mute" style="margin-top:6px">Pour arriver à ${start}${exc[ymd(now)] ? ' (exception)' : ''}, sortir à</div>
+  let html = head + incident(c) + `<div class="mute" style="margin-top:6px">Pour arriver à ${start} ${when}${exc[key] ? ' (exception)' : ''}, sortir à</div>
     <div class="big">${hm(r.leave)}</div><div>${cd}</div><div class="mute" style="margin-top:8px">Bus de ${hm(r.bus)} · arrivée à ${cfg.arrLabel} vers ${hm(r.arrive)}</div>`;
   if (r.i > 0) html += `<div class="alt"><span>Bus d’avant : ${hm(c.times[r.i - 1])}</span><span>sortir à ${hm(c.times[r.i - 1] - cfg.walk)}</span></div>`;
   if (r.i + 1 < c.times.length) html += `<div class="alt"><span>Bus suivant : ${hm(c.times[r.i + 1])}</span><span>sortir à ${hm(c.times[r.i + 1] - cfg.walk)}</span></div>`;
@@ -248,7 +257,7 @@ function renderDays() {
 function showMain() {
   $('setup').classList.add('hide'); $('main').classList.remove('hide');
   $('foot').textContent = `Marche ${cfg.walk} min au départ, ${cfg.walk2} min à l’arrivée · horaires théoriques Naolib (GTFS${index && index.validity ? ' valable jusqu’au ' + index.validity.to.split('-').reverse().join('/') : ''}).`;
-  ensure(new Date()); renderToday(); renderDays();
+  renderToday(); renderDays();
 }
 $('r5').onclick = () => { range = 'five'; editing = null; renderDays(); };
 $('rnext').onclick = () => { range = 'next'; editing = null; renderDays(); };
