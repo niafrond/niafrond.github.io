@@ -321,7 +321,7 @@ export function combatSpellList(){
     // Invocations (anciens ultimes) : sorts comme les autres, réservés au Mage invocateur (classe du tour = ULTIMATE_CLASS) ; coût normal en qì,
     // petit temps de recharge, aucune jauge de Xiūxiān requise.
     const invocations = cls === ULTIMATE_CLASS ? getSelectableUltimates(player).map(sp => ({ ...sp, invocation: true, cooldown: sp.cooldown ?? INVOCATION_COOLDOWN })) : [];
-    return [...list, ...invocations, ...actionSpells(player).filter(sp => !sp.class || sp.class === cls)];   // les commandes de classe n'existent que pour la classe du tour
+    return [...list, ...invocations, ...actionSpells(player).filter(sp => sp.class ? sp.class === cls : cls === START_CLASS)];   // commandes de compétences : celles d'une classe n'existent que pour elle ; les communes (apprises par l'équipement de Hou Yi) sont à Hou Yi seul, pas aux compagnons
 }
 
 
