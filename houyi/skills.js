@@ -102,6 +102,10 @@ export const CLASS_SKILLS = [
 ];
 
 /** Compétence de base d'une classe : la première de sa liste (soutien), apprise d'office dès que la classe est obtenue. */
+/** Une action s'allume comme un soutien, en payant des Fulu (plus elle est longue à apprendre, plus elle en demande) : 1 jusqu'à 40 PA, 2 jusqu'à 70, 3 jusqu'à 100, 4 au-delà. */
+export const actionFuluCost = ap => (ap <= 40 ? 1 : ap <= 70 ? 2 : ap <= 100 ? 3 : 4);
+[...SKILLS, ...CLASS_SKILLS].filter(s => s.kind === ACTION).forEach(s => { s.cost = actionFuluCost(s.ap); });
+
 export const baseSkillOf = classId => CLASS_SKILLS.find(s => s.classId === classId) || null;
 export const isBaseSkill = id => CLASS_SKILLS.some(s => baseSkillOf(s.classId)?.id === id);
 
@@ -177,7 +181,7 @@ export function normalizeSkills(hero) {
     });
     const base = normalizeRoster(hero).owned.map(baseSkillOf).filter(Boolean).map(s => s.id);   // chaque personnage obtenu a sa compétence de base, déjà apprise
     const learned = [...new Set([...(Array.isArray(raw.learned) ? raw.learned : []), ...base])].filter(id => getSkill(id));
-    const active = [...new Set(Array.isArray(raw.active) ? raw.active : [])].filter(id => learned.includes(id) && isSupport(getSkill(id)));
+    const active = [...new Set(Array.isArray(raw.active) ? raw.active : [])].filter(id => learned.includes(id) && (isSupport(getSkill(id)) || isAction(getSkill(id))));   // soutiens ET actions s'allument avec des Fulu
     const seen = [...new Set([...(Array.isArray(raw.seen) ? raw.seen : []), ...learned, ...Object.keys(progress)])].filter(id => getSkill(id));   // compétences déjà vues (apprises, en cours ou enseignées un jour par l'équipement porté)
     if (!hero.skills || typeof hero.skills !== 'object') hero.skills = {};
     Object.assign(hero.skills, { progress, learned, active, seen });   // en place : les références prises plus tôt restent valides
@@ -236,11 +240,11 @@ function trimActive(hero) {
     });
 }
 
-/** Active ou désactive une compétence de soutien apprise. Renvoie { ok, message }. */
-export function toggleSupport(hero, id) {
+/** Allume ou éteint une compétence apprise (soutien ou action) : elle coûte des Fulu tant qu'elle est allumée. Renvoie { ok, message }. */
+export function toggleSkill(hero, id) {
     const state = normalizeSkills(hero);
     const skill = getSkill(id);
-    if (!skill || !isSupport(skill)) return { ok: false, message: 'Cette compétence ne s\'active pas.' };
+    if (!skill || !(isSupport(skill) || isAction(skill))) return { ok: false, message: 'Cette compétence ne s\'active pas.' };
     if (!state.learned.includes(id)) return { ok: false, message: `${skill.name} n'est pas encore apprise.` };
     if (state.active.includes(id)) {
         hero.skills.active = hero.skills.active.filter(a => a !== id);
@@ -251,6 +255,7 @@ export function toggleSupport(hero, id) {
     hero.skills.active.push(id);   // `hero.skills` (et non `state`) : la normalisation recrée l'objet à chaque lecture
     return { ok: true, active: true, message: `${skill.name} activée.` };
 }
+export const toggleSupport = toggleSkill;   // ancien nom
 
 // ── Effets ──────────────────────────────────────────────────────────────────
 
@@ -282,11 +287,11 @@ export function skillDescription(skill, level = null) {
     return `${effect}${effect && price ? '. ' : ''}${price ? `Coût : ${price}.` : effect ? '.' : ''}`;
 }
 
-/** Commandes de combat : fiches de sort des compétences d'action apprises (même forme que les sorts du jeu). */
+/** Commandes de combat : fiches de sort des compétences d'action ALLUMÉES (apprises, puis payées en Fulu) (même forme que les sorts du jeu). */
 export function actionSpells(hero) {
     const state = normalizeSkills(hero);
     const level = Math.max(1, hero?.level || 1);
-    return state.learned.map(getSkill).filter(isAction).map(skill => ({
+    return state.active.map(getSkill).filter(isAction).map(skill => ({
         id: `skill_${skill.id}`, skillId: skill.id, name: skill.name, skill: true, ...(skill.classId ? { class: skill.classId } : {}),
         minLevel: 1, cost: { ...skill.spell.cost }, description: skillDescription(skill, level),
         ...(skill.spell.dmg ? { dmg: Math.round(skill.spell.dmg + level * skill.spell.scales) } : {}),

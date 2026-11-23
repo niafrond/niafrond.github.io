@@ -38,7 +38,7 @@ describe('compétences de classe', () => {
         expect(skillBonus(h, 'attack')).toBe(6);
     });
     test("une action de classe est marquée de sa classe", () => {
-        const h = hero({ skills: { learned: ['cl_assassin_aube'], active: [], progress: {} } });
+        const h = hero({ skills: { learned: ['cl_assassin_aube'], active: ['cl_assassin_aube'], progress: {} } });
         expect(actionSpells(h).map(s => s.class)).toEqual(['assassin']);
     });
 });

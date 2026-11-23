@@ -59,7 +59,7 @@ describe('Fulu', () => {
 
 test('les compétences d\'action apprises donnent des commandes de combat', () => {
     const h = hero();
-    h.skills = { learned: ['tir_perforant', 'lotus_de_soin', 'garde_de_jade'] };
+    h.skills = { learned: ['tir_perforant', 'lotus_de_soin', 'garde_de_jade'], active: ['tir_perforant', 'lotus_de_soin'] };   // une action ne devient commande de combat qu'allumée (Fulu)
     const spells = actionSpells(h);
     expect(spells.map(s => s.id)).toEqual(['skill_tir_perforant', 'skill_lotus_de_soin']);
     expect(spells[0].dmg).toBeGreaterThan(0);
@@ -96,8 +96,44 @@ describe('description chiffrée des compétences d\'action', () => {
     });
     test('la fiche de sort d\'une action apprise porte la même description chiffrée', async () => {
         const { actionSpells, SKILLS } = await import('../../skills.js');
-        const hero = { level: 2, skills: { progress: {}, learned: ['tonnerre_lointain'], active: [] } };
+        const hero = { level: 2, skills: { progress: {}, learned: ['tonnerre_lointain'], active: ['tonnerre_lointain'] } };
         expect(actionSpells(hero)[0].description).toBe('Inflige 74 dégâts. Coût : 25 qì jaune.');
         expect(SKILLS.length).toBeGreaterThan(0);
+    });
+});
+
+describe('actions : elles s\'allument avec des Fulu, comme les soutiens', () => {
+    const base = () => ({ level: 1, skills: { learned: ['tir_perforant', 'frappe_du_tigre', 'tonnerre_lointain'], active: [], progress: {} } });
+    test('chaque action a un coût en Fulu selon ses PA (1 à 4)', async () => {
+        const { SKILLS, CLASS_SKILLS, actionFuluCost } = await import('../../skills.js');
+        [...SKILLS, ...CLASS_SKILLS].filter(s => s.spell).forEach(s => { expect(s.cost).toBe(actionFuluCost(s.ap)); expect(s.cost).toBeGreaterThanOrEqual(1); });
+        expect([30, 40, 41, 70, 71, 100, 101].map(actionFuluCost)).toEqual([1, 1, 2, 2, 3, 3, 4]);
+    });
+    test('apprise mais éteinte : aucune commande de combat', async () => {
+        const { actionSpells } = await import('../../skills.js');
+        expect(actionSpells(base())).toEqual([]);
+    });
+    test('allumer une action la rend disponible et consomme des Fulu ; l\'éteindre les rend', async () => {
+        const { toggleSkill, actionSpells, usedMagikoliths } = await import('../../skills.js');
+        const h = base();
+        expect(toggleSkill(h, 'tir_perforant')).toMatchObject({ ok: true, active: true });
+        expect(usedMagikoliths(h)).toBe(1);
+        expect(actionSpells(h).map(s => s.id)).toEqual(['skill_tir_perforant']);
+        expect(toggleSkill(h, 'tir_perforant')).toMatchObject({ ok: true, active: false });
+        expect(usedMagikoliths(h)).toBe(0);
+        expect(actionSpells(h)).toEqual([]);
+    });
+    test('pas assez de Fulu : l\'action reste éteinte', async () => {
+        const { toggleSkill, magikolithCapacity } = await import('../../skills.js');
+        const h = base();   // capacité 4 : Tonnerre lointain (3) puis Frappe du tigre (3) ne tiennent pas ensemble
+        expect(magikolithCapacity(h)).toBe(4);
+        expect(toggleSkill(h, 'tonnerre_lointain').ok).toBe(true);
+        const refused = toggleSkill(h, 'frappe_du_tigre');
+        expect(refused.ok).toBe(false);
+        expect(refused.message).toMatch(/Fulu/);
+    });
+    test('une action non apprise ne s\'allume pas', async () => {
+        const { toggleSkill } = await import('../../skills.js');
+        expect(toggleSkill({ level: 1, skills: { learned: [], active: [], progress: {} } }, 'tir_perforant').ok).toBe(false);
     });
 });

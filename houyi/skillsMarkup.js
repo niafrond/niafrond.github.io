@@ -16,7 +16,7 @@ const GEM = '<svg class="gem-ic" viewBox="0 0 16 16" aria-hidden="true"><path d=
 /** État d'une compétence : active | learned | training (enseignée par l'équipement porté) | locked. */
 export function skillState(hero, skill, taughtNow) {
     const state = normalizeSkills(hero);
-    if (isLearned(hero, skill.id)) return isSupport(skill) ? (state.active.includes(skill.id) ? 'active' : 'learned') : 'learned';
+    if (isLearned(hero, skill.id)) return state.active.includes(skill.id) ? 'active' : 'learned';
     return taughtNow.has(skill.id) ? 'training' : 'locked';
 }
 
@@ -34,7 +34,7 @@ const gems = (used, cap) => Array.from({ length: cap }, (_, i) => `<i class="ful
 
 function row(hero, skill, taught, selectedId) {
     const st = skillState(hero, skill, taught);
-    const cost = isSupport(skill) ? skill.cost : '';
+    const cost = skill.cost || '';
     return `<button type="button" class="ab-row ab-${st}${skill.id === selectedId ? ' selected' : ''}" data-skill="${skill.id}" aria-pressed="${skill.id === selectedId}">
         <span class="ab-gem">${GEM}</span>
         <span class="ab-name">${esc(skill.name)}${skill.classId ? ` <small class="ab-class">${esc(memberName(skill.classId))}</small>` : ''}</span>
@@ -59,16 +59,17 @@ function infoPanel(hero, skill, taught, canToggle) {
     else origin = `Pas apprise. Portez une arme ou une pièce de stuff qui l'enseigne, puis gagnez des combats : chaque victoire donne des PA (${have} / ${skill.ap}).`;
     // Comment l'utiliser ?
     let usage;
-    if (!support) usage = st === 'learned' ? `Rien à allumer : se lance en combat depuis la liste des sorts${cls ? ` de ${esc(cls)}` : ''}, en payant son coût en qì.` : `Une fois apprise, elle apparaît comme un sort en combat${cls ? ` (avec ${esc(cls)})` : ''}.`;
-    else if (st === 'active') usage = `Allumée : son effet agit${cls ? ` quand ${esc(cls)} joue` : ''}. Éteignez-la pour récupérer ${skill.cost} Fulu.`;
+    if (st === 'active') usage = support
+        ? `Allumée : son effet agit${cls ? ` quand ${esc(cls)} joue` : ''}. Éteignez-la pour récupérer ${skill.cost} Fulu.`
+        : `Allumée : elle apparaît dans la liste de sorts${cls ? ` de ${esc(cls)}` : ' de Hou Yi'} en combat (son coût en qì se paie à chaque lancer). Éteignez-la pour récupérer ${skill.cost} Fulu.`;
     else if (st === 'learned') usage = skill.cost > left ? `Il manque ${skill.cost - left} Fulu pour l'allumer (il en reste ${left}) : éteignez une autre compétence.` : `Touchez « Allumer » : elle coûte ${skill.cost} Fulu (il en reste ${left}).`;
     else usage = `Une fois apprise, vous pourrez l'allumer (${skill.cost} Fulu), à tout moment.`;
-    const action = support && (st === 'active' || st === 'learned')
+    const action = (st === 'active' || st === 'learned')
         ? `<button type="button" class="ab-toggle" data-toggle-skill="${skill.id}"${canToggle ? '' : ' disabled'}>${st === 'active' ? 'Éteindre' : 'Allumer'}</button>` : '';
     return `<div class="ab-info">
-        <div class="ab-info-head"><strong>${esc(skill.name)}</strong><span class="ab-state ab-state-${st}">${!support && st === 'learned' ? 'Apprise' : STATE_LABEL[st]}</span></div>
+        <div class="ab-info-head"><strong>${esc(skill.name)}</strong><span class="ab-state ab-state-${st}">${STATE_LABEL[st]}</span></div>
         <p class="ab-desc">${esc(skillDescription(skill, hero?.level))}</p>
-        <div class="ab-line"><span>Type</span><span>${support ? `Soutien · ${skill.cost} Fulu` : 'Action · commande de combat'}${cls ? ` · ${esc(cls)}` : ''}</span></div>
+        <div class="ab-line"><span>Type</span><span>${support ? `Soutien · ${skill.cost} Fulu` : `Action · commande de combat · ${skill.cost} Fulu`}${cls ? ` · ${esc(cls)}` : ''}</span></div>
         <div class="ab-line ab-origin"><span>Origine</span><span>${origin}</span></div>
         ${st === 'training' || st === 'locked' ? `<div class="ab-bar"><div class="ab-bar-fill" style="width:${pct}%"></div></div>` : ''}
         <div class="ab-line ab-usage"><span>Utiliser</span><span>${usage}</span></div>
@@ -140,7 +141,7 @@ export function skillsTabHtml(hero, gear, selectedId, canToggle = true) {
             <div class="ab-groups">${[['Soutien', list.filter(isSupport)], ['Actions', list.filter(s => !isSupport(s))]].filter(([, items]) => items.length).map(([title, items]) => `<h3 class="ab-group">${title}</h3><div class="ab-grid" role="list">${items.map(s => row(hero, s, taught, selected.id)).join('')}</div>`).join('')}</div>
             ${infoPanel(hero, selected, taught, true)}
         </div>
-        <p class="ab-legend"><span class="lg lg-active">${GEM}</span> allumée (bonus actif) <span class="lg lg-learned">${GEM}</span> apprise, éteinte <span class="lg lg-training">${GEM}</span> en apprentissage <span class="lg lg-locked">${GEM}</span> à débloquer · ${learnedCount} apprise${learnedCount > 1 ? 's' : ''}</p>
+        <p class="ab-legend"><span class="lg lg-active">${GEM}</span> allumée (bonus ou commande active) <span class="lg lg-learned">${GEM}</span> apprise, éteinte <span class="lg lg-training">${GEM}</span> en apprentissage <span class="lg lg-locked">${GEM}</span> à débloquer · ${learnedCount} apprise${learnedCount > 1 ? 's' : ''}</p>
         <details class="ab-xiu"><summary>Xiūxiān</summary>
             <p>Chaque classe a sa jauge, qui se remplit quand vous subissez des dégâts avec cette classe et se conserve d'un combat à l'autre. Pleine, touchez-la pour déclencher la Xiūxiān de cette classe (${TRANSE_TURNS} tours) : son effet s'applique, même si vous changez de classe ensuite.</p>
             <ul>${transe}</ul>${ownedClasses.includes('sorcerer') ? '<p>L\'ultime ne se lance que pendant la Xiūxiān de Longwang, avec Longwang choisi pour le tour.</p>' : ''}</details>
