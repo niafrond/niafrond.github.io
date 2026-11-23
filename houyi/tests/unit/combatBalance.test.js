@@ -53,7 +53,7 @@ describe('combatBalance : enregistreur', () => {
     });
 });
 
-import { maxDamageMultFor, EARLY_HERO_LEVEL, EARLY_MAX_DAMAGE_MULT, MODE_MAX_DAMAGE_MULT, MAX_DAMAGE_MULT, heroEffectiveHp, heroReferenceHp, calibrateEnemy, enemyCategory, DEFAULT_CYCLE_SECONDS, ENEMY_WIN_RATIO, ENEMY_RAW_CATEGORY_FACTOR, HP_DURATION_FACTOR, winRatioLevelFactor, measuredCorrections, cappedEnemyHit, HIT_SHARE_CAP, EXPERT_WIN_RATIO_FACTOR, EXPERT_CATEGORY_FACTOR, heroDamagePerCycleModel, enemyRawDamagePerCycleModel } from '../../combatBalance.js';
+import { hitShareFor, EARLY_HIT_SHARE_CAP, maxDamageMultFor, EARLY_HERO_LEVEL, EARLY_MAX_DAMAGE_MULT, MODE_MAX_DAMAGE_MULT, MAX_DAMAGE_MULT, heroEffectiveHp, heroReferenceHp, calibrateEnemy, enemyCategory, DEFAULT_CYCLE_SECONDS, ENEMY_WIN_RATIO, ENEMY_RAW_CATEGORY_FACTOR, HP_DURATION_FACTOR, winRatioLevelFactor, measuredCorrections, cappedEnemyHit, HIT_SHARE_CAP, EXPERT_WIN_RATIO_FACTOR, EXPERT_CATEGORY_FACTOR, heroDamagePerCycleModel, enemyRawDamagePerCycleModel } from '../../combatBalance.js';
 
 describe('combatBalance : calibrage des ennemis', () => {
     test('catégories', () => {
@@ -282,6 +282,43 @@ describe('mode Histoire (ultra facile)', () => {
             expect(r.damageMult).toBeLessThanOrEqual(0.2);
             const easy = calibrateEnemy({ category, heroMaxHp: 300, heroLevel: 20, enemyLevel: 20, records: [], difficulty: 'easy' });
             expect(r.damageMult).toBeLessThan(easy.damageMult);
+        }
+    });
+});
+
+describe('plafond de coup progressif en début de partie', () => {
+    const cats = ['weak', 'normal', 'aggressive', 'elite', 'miniBoss', 'boss'];
+    test('20 % des PV max jusqu\'au niveau 5, +1,5 point par niveau, 40 % dès le niveau 19', () => {
+        expect(EARLY_HIT_SHARE_CAP).toBe(0.2);
+        expect([1, 3, 5].map(l => hitShareFor(l).share)).toEqual([0.2, 0.2, 0.2]);
+        expect(hitShareFor(6).share).toBeCloseTo(0.215);
+        expect(hitShareFor(10).share).toBeCloseTo(0.275);
+        expect(hitShareFor(18).share).toBeCloseTo(0.395);
+        expect([19, 33, 70].map(l => hitShareFor(l).share)).toEqual([HIT_SHARE_CAP, HIT_SHARE_CAP, HIT_SHARE_CAP]);
+    });
+    test('strict (aussi pour les chiffres bruts) tant que le plafond est réduit, plus après le niveau 18', () => {
+        expect(hitShareFor(1).strict).toBe(true);
+        expect(hitShareFor(18).strict).toBe(true);
+        expect(hitShareFor(19).strict).toBe(false);
+    });
+    test('Expert garde son écart de +10 points, au même rythme', () => {
+        expect(hitShareFor(3, true).share).toBeCloseTo(0.3);
+        expect(hitShareFor(33, true).share).toBeCloseTo(0.5);
+        expect(hitShareFor(3, true).strict).toBe(true);
+    });
+    test('un sort brut de 36 PV ne frappe plus qu\'à 20 % des PV d\'un héros de niveau 3 (112 PV), même sans multiplicateur', () => {
+        expect(cappedEnemyHit(36, 1, 112, 0.2, true)).toBe(22);
+        expect(cappedEnemyHit(36, 1, 112, 0.4, false)).toBe(36);   // ancienne règle : le brut passait au-dessus du plafond
+        expect(cappedEnemyHit(10, 2.5, 112, 0.2, true)).toBe(22);              // arme : 10 × 2,5 = 25 → plafonné à 22
+        expect(cappedEnemyHit(5, 2.5, 112, 0.2, true)).toBe(13);                // sous le plafond : inchangé (12,5 arrondi)
+    });
+    test('le plus gros coup possible d\'un ennemi de niveau 1 ne dépasse pas 20 % des PV d\'un héros de niveau 3 (30 % en critique)', () => {
+        for (const difficulty of ['auto', 'normal', 'hard']) {
+            for (const category of cats) {
+                const r = calibrateEnemy({ category, heroMaxHp: 112, heroLevel: 3, enemyLevel: 1, difficulty });
+                expect(r.hitShareCap).toBeCloseTo(0.2);
+                expect(cappedEnemyHit(41, r.damageMult, 112, r.hitShareCap, r.hitShareStrict)).toBeLessThanOrEqual(23);
+            }
         }
     });
 });

@@ -218,11 +218,28 @@ export const MIN_DAMAGE_MULT_BOSS = 0.5;
 // Coup fatal : le multiplicateur ne peut jamais porter un coup ordinaire de l'ennemi (arme, match de crânes, sort, poison) au-delà de
 // HIT_SHARE_CAP des PV max du héros (×1,5 avec un critique : 60 %), sauf si ses chiffres bruts dépassaient déjà ce seuil.
 export const HIT_SHARE_CAP = 0.4;
-export function cappedEnemyHit(base, mult, heroMaxHp, share = HIT_SHARE_CAP) {
+export function cappedEnemyHit(base, mult, heroMaxHp, share = HIT_SHARE_CAP, strict = false) {
     const b = Math.max(0, Number(base) || 0);
     if (b <= 0) return 0;
-    const cap = Math.max(b, (Number(share) > 0 ? Number(share) : HIT_SHARE_CAP) * Math.max(1, Number(heroMaxHp) || 1));
+    const limit = (Number(share) > 0 ? Number(share) : HIT_SHARE_CAP) * Math.max(1, Number(heroMaxHp) || 1);
+    const cap = strict ? limit : Math.max(b, limit);   // `strict` (début de partie) : le plafond vaut aussi pour les chiffres bruts
     return Math.max(1, Math.round(Math.min(b * Math.max(0.1, Number(mult) || 1), cap)));
+}
+
+// Plafond de coup PROGRESSIF (début de partie) : un héros de niveau 1 à 5 n'a que ~100 à 130 PV et ne se soigne plus tout seul ; avec un plafond fixe de 40 %
+// (60 % en critique), un ennemi de niveau 1 le tuait en deux coups, voire un seul s'il était blessé, et les sorts de niveau 1 (25 à 41 dégâts bruts) passaient
+// au-dessus du plafond ("sauf si les chiffres bruts le dépassent déjà"). Le plafond monte donc de 20 % des PV max (niveaux 1 à 5) à 40 % (niveau 18) et,
+// tant qu'il est réduit, s'applique aussi aux chiffres bruts (`hitShareStrict`). Dès le niveau 19 : plafond et règle d'avant (40 %, brut permis).
+export const EARLY_HIT_SHARE_CAP = 0.2;
+export const EARLY_HIT_SHARE_UNTIL_LEVEL = 5;
+export const EARLY_HIT_SHARE_PER_LEVEL = 0.015;
+/** { share, strict } : plafond d'un coup (part des PV max du héros) pour ce niveau de héros ; Expert garde son écart de +10 points. */
+export function hitShareFor(heroLevel, expert = false) {
+    const level = Math.max(1, Math.floor(Number(heroLevel) || 1));
+    const ramp = Math.round((EARLY_HIT_SHARE_CAP + Math.max(0, level - EARLY_HIT_SHARE_UNTIL_LEVEL) * EARLY_HIT_SHARE_PER_LEVEL) * 1000) / 1000;
+    const base = Math.min(HIT_SHARE_CAP, ramp);
+    const strict = base < HIT_SHARE_CAP && ramp < HIT_SHARE_CAP;
+    return { share: Math.round((base + (expert ? EXPERT_HIT_SHARE_CAP - HIT_SHARE_CAP : 0)) * 1000) / 1000, strict };
 }
 // Mode Expert (préférence « Expert » uniquement : Auto et les autres modes sont inchangés) : l'ennemi cumule quatre leviers de plus.
 //  1. dégâts × EXPERT_DAMAGE_BONUS (un cran au-dessus du réglage de base) ;
@@ -385,7 +402,7 @@ export function calibrateEnemy({ category, heroMaxHp: rawHeroMaxHp, heroLevel = 
     const baseMult = Math.max(floorMult, expertMult / divisor);
     const damageMult = Math.round(Math.min(maxDamageMultFor(difficulty, heroLevel), baseMult * (expert ? EXPERT_DAMAGE_BONUS : 1)) * 100) / 100;
     const finalHp = Math.max(1, Math.round(hp * (adjust?.hp ?? 1)));
-    return { hp: finalHp, hpBase: hp, modeDivisor: divisor, hitShareCap: expert ? EXPERT_HIT_SHARE_CAP : HIT_SHARE_CAP, spellCostFactor: expert ? EXPERT_SPELL_COST_FACTOR : 1, gearScale: Math.round(Math.min(1.5, 1 / divisor) * 100) / 100, damageMult, damageScale, heroDamageScale, heroEffectiveHp: heroMaxHp, cycles: Math.round(cycles * 10) / 10, cycleSeconds: Math.round(cycleSeconds * 10) / 10, damagePerCycle: Math.round(damagePerCycle * 10) / 10, measured: corr.weight > 0, measuredWeight: corr.weight, measuredSample: corr.n };
+    return { hp: finalHp, hpBase: hp, modeDivisor: divisor, hitShareCap: hitShareFor(heroLevel, expert).share, hitShareStrict: hitShareFor(heroLevel, expert).strict, spellCostFactor: expert ? EXPERT_SPELL_COST_FACTOR : 1, gearScale: Math.round(Math.min(1.5, 1 / divisor) * 100) / 100, damageMult, damageScale, heroDamageScale, heroEffectiveHp: heroMaxHp, cycles: Math.round(cycles * 10) / 10, cycleSeconds: Math.round(cycleSeconds * 10) / 10, damagePerCycle: Math.round(damagePerCycle * 10) / 10, measured: corr.weight > 0, measuredWeight: corr.weight, measuredSample: corr.n };
 }
 
 /** Part de chaque source dans les dégâts infligés (0 à 1) ; sert à repérer un levier qui fait toute la durée (arme, sort ou crânes). */
