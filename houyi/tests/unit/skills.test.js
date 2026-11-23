@@ -84,3 +84,20 @@ describe('variété et visibilité des compétences', () => {
         expect(visibleSkills(h).map(s => s.id).sort()).toEqual([...taught, base].sort());
     });
 });
+
+describe('description chiffrée des compétences d\'action', () => {
+    test('dégâts ou soin et coût en qì, jamais de phrase d\'ambiance', async () => {
+        const { skillDescription, getSkill } = await import('../../skills.js');
+        expect(skillDescription(getSkill('tonnerre_lointain'))).toBe('Inflige 70 dégâts (+2 par niveau). Coût : 25 qì jaune.');
+        expect(skillDescription(getSkill('tonnerre_lointain'), 2)).toBe('Inflige 74 dégâts. Coût : 25 qì jaune.');
+        expect(skillDescription(getSkill('lotus_de_soin'), 5)).toBe('Soigne 38 PV. Coût : 10 qì vert.');
+        expect(skillDescription(getSkill('salve_double'))).toMatch(/^Inflige 62 dégâts.*10 qì rouge \+ 10 qì jaune/);
+        expect(skillDescription(getSkill('garde_de_jade'))).toBe('Défense +4 en combat.');   // un soutien garde sa phrase chiffrée
+    });
+    test('la fiche de sort d\'une action apprise porte la même description chiffrée', async () => {
+        const { actionSpells, SKILLS } = await import('../../skills.js');
+        const hero = { level: 2, skills: { progress: {}, learned: ['tonnerre_lointain'], active: [] } };
+        expect(actionSpells(hero)[0].description).toBe('Inflige 74 dégâts. Coût : 25 qì jaune.');
+        expect(SKILLS.length).toBeGreaterThan(0);
+    });
+});

@@ -1,7 +1,7 @@
 // Onglet « Compétences » : balisage (module pur, sans DOM ni accès au jeu : testable et prévisualisable hors du jeu).
 // Présentation inspirée des menus de capacités des jeux de rôle japonais : en-tête du héros avec son compteur de Fulu, grille à deux colonnes
 // (gemme pleine = activée, gemme creuse = apprise mais éteinte, gemme grise = pas encore apprise), coût en Fulu à droite, fiche d'information.
-import { visibleSkills, markSeen, getSkill, isSupport, skillsTaughtBy, normalizeSkills, isLearned, progressOf, magikolithCapacity, usedMagikoliths, isBaseSkill, victoriesLeft } from './skills.js';
+import { visibleSkills, markSeen, getSkill, isSupport, skillsTaughtBy, normalizeSkills, isLearned, progressOf, magikolithCapacity, usedMagikoliths, isBaseSkill, victoriesLeft, skillDescription } from './skills.js';
 import { TRANSE_TURNS, TRANSE_EFFECTS } from './transe.js';
 import { CLASS_IDS, CLASS_SHORT, MAX_USABLE_CLASSES, START_CLASS, BIOME_CLASS_LIMITS, normalizeRoster } from './classRoster.js';
 import { ALLIES, memberName, allyMaxHp } from './allies.js';
@@ -59,15 +59,15 @@ function infoPanel(hero, skill, taught, canToggle) {
     else origin = `Pas apprise. Portez une arme ou une pièce de stuff qui l'enseigne, puis gagnez des combats : chaque victoire donne des PA (${have} / ${skill.ap}).`;
     // Comment l'utiliser ?
     let usage;
-    if (!support) usage = st === 'learned' ? `Pas d'activation : elle apparaît dans la liste de sorts${cls ? ` de ${esc(cls)}` : ''} en combat.` : `Une fois apprise, elle apparaît comme un sort en combat${cls ? ` (avec ${esc(cls)})` : ''}.`;
+    if (!support) usage = st === 'learned' ? `Rien à allumer : se lance en combat depuis la liste des sorts${cls ? ` de ${esc(cls)}` : ''}, en payant son coût en qì.` : `Une fois apprise, elle apparaît comme un sort en combat${cls ? ` (avec ${esc(cls)})` : ''}.`;
     else if (st === 'active') usage = `Allumée : son effet agit${cls ? ` quand ${esc(cls)} joue` : ''}. Éteignez-la pour récupérer ${skill.cost} Fulu.`;
     else if (st === 'learned') usage = skill.cost > left ? `Il manque ${skill.cost - left} Fulu pour l'allumer (il en reste ${left}) : éteignez une autre compétence.` : `Touchez « Allumer » : elle coûte ${skill.cost} Fulu (il en reste ${left}).`;
     else usage = `Une fois apprise, vous pourrez l'allumer (${skill.cost} Fulu), à tout moment.`;
     const action = support && (st === 'active' || st === 'learned')
         ? `<button type="button" class="ab-toggle" data-toggle-skill="${skill.id}"${canToggle ? '' : ' disabled'}>${st === 'active' ? 'Éteindre' : 'Allumer'}</button>` : '';
     return `<div class="ab-info">
-        <div class="ab-info-head"><strong>${esc(skill.name)}</strong><span class="ab-state ab-state-${st}">${STATE_LABEL[st]}</span></div>
-        <p class="ab-desc">${esc(skill.description)}</p>
+        <div class="ab-info-head"><strong>${esc(skill.name)}</strong><span class="ab-state ab-state-${st}">${!support && st === 'learned' ? 'Apprise' : STATE_LABEL[st]}</span></div>
+        <p class="ab-desc">${esc(skillDescription(skill, hero?.level))}</p>
         <div class="ab-line"><span>Type</span><span>${support ? `Soutien · ${skill.cost} Fulu` : 'Action · commande de combat'}${cls ? ` · ${esc(cls)}` : ''}</span></div>
         <div class="ab-line ab-origin"><span>Origine</span><span>${origin}</span></div>
         ${st === 'training' || st === 'locked' ? `<div class="ab-bar"><div class="ab-bar-fill" style="width:${pct}%"></div></div>` : ''}

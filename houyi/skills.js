@@ -265,13 +265,30 @@ export function skillBonus(hero, key) {
     }, 0);
 }
 
+const COLOR_LABEL = { red: 'rouge', blue: 'bleu', green: 'vert', yellow: 'jaune', purple: 'violet' };
+
+/**
+ * Description affichée d'une compétence. Un soutien garde sa phrase (déjà chiffrée) ; une action est décrite par ses chiffres : dégâts ou soin
+ * (valeur au niveau du héros si `level` est donné, sinon valeur de base et gain par niveau) et coût en qì.
+ */
+export function skillDescription(skill, level = null) {
+    if (!skill?.spell) return skill?.description || '';
+    const { dmg, heal, scales = 0, cost = {} } = skill.spell;
+    const lvl = Number.isFinite(level) ? Math.max(1, level) : null;
+    const value = base => (lvl ? Math.round(base + lvl * scales) : base);
+    const per = scales ? (lvl ? '' : ` (+${String(scales).replace('.', ',')} par niveau)`) : '';
+    const effect = dmg ? `Inflige ${value(dmg)} dégâts${per}` : heal ? `Soigne ${value(heal)} PV${per}` : '';
+    const price = Object.entries(cost).map(([c, n]) => `${n} qì ${COLOR_LABEL[c] || c}`).join(' + ');
+    return `${effect}${effect && price ? '. ' : ''}${price ? `Coût : ${price}.` : effect ? '.' : ''}`;
+}
+
 /** Commandes de combat : fiches de sort des compétences d'action apprises (même forme que les sorts du jeu). */
 export function actionSpells(hero) {
     const state = normalizeSkills(hero);
     const level = Math.max(1, hero?.level || 1);
     return state.learned.map(getSkill).filter(isAction).map(skill => ({
         id: `skill_${skill.id}`, skillId: skill.id, name: skill.name, skill: true, ...(skill.classId ? { class: skill.classId } : {}),
-        minLevel: 1, cost: { ...skill.spell.cost }, description: skill.description,
+        minLevel: 1, cost: { ...skill.spell.cost }, description: skillDescription(skill, level),
         ...(skill.spell.dmg ? { dmg: Math.round(skill.spell.dmg + level * skill.spell.scales) } : {}),
         ...(skill.spell.heal ? { heal: Math.round(skill.spell.heal + level * skill.spell.scales) } : {})
     }));
