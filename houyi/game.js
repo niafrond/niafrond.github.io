@@ -400,7 +400,26 @@ export function lastSpellDamage(fallback){
  */
 const isAreaHit = options => Boolean(options.area) || Boolean(options.sourceSpell && isAreaSpell(options.sourceSpell));
 
+/**
+ * Crânes de l'ennemi : dégâts de zone, chaque membre de l'équipe encore debout (Hou Yi, s'il n'est pas à terre, puis chaque compagnon vivant) encaisse le coup
+ * en entier, avec sa propre barre de vie. Un compagnon touché passe par le bouclier d'allié (`allyShield`) de `applyDamageCore`.
+ */
+function applyPartySkullDamage(damage, options){
+    const saved = gameState.allyShield;
+    let dealt = 0;
+    try {
+        if(!gameState.heroKo){ gameState.allyShield = null; dealt += applyDamageCore(player, damage, { ...options, splash: true }); }
+        for(const ally of livingAllies(gameState.allies)){
+            if(gameState.combatState !== 'active') break;
+            gameState.allyShield = ally;
+            dealt += applyDamageCore(player, damage, { ...options, splash: true });
+        }
+    } finally { gameState.allyShield = saved; }
+    return dealt;
+}
+
 export function applyDamage(target, damage, options = {}){
+    if(target === player && options.area && options.damageSource === 'skull' && !options.splash && damage > 0) return applyPartySkullDamage(damage, options);
     const others = (target === enemy && !options.splash && damage > 0 && isAreaHit(options)) ? livingFoes(gameState.foes).filter(f => f !== enemy) : [];
     const focus = enemy;
     let dealt = applyDamageCore(target, damage, options);
