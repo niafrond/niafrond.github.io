@@ -40,6 +40,7 @@ const say = (speaker, ...lines) => ({ speaker, lines });
 // Les deux gardes d'un sanctuaire : « les gardes sont abattus » = les deux sont vaincus.
 const wardens = n => [`sun${n}_wardens_a`, `sun${n}_wardens_b`];
 
+// Les dessins de face regardent vers la gauche : l'exploration les retourne en miroir quand le compagnon va vers la droite.
 export const COMPANIONS = [
     { id: 'xiao_gui', name: 'Xiao Gui', title: 'Démon-renard repenti', npc: 'huli_xia', joinWhen: 'sq_rice_thief', size: 0.8 },
     { id: 'zhi', name: 'Zhi', title: 'Jeune moine novice', npc: 'young_monk_zhi', joinWhen: 'sq_bell', size: 1 },
