@@ -6,6 +6,7 @@ import { player, enemy, canEntityCastSpell, spellCostFor } from "./game.js";
 import { alterationOfSpell } from "./alterations.js";
 import { pickWeightedOption, findLethalOption, applyScoreSharpness } from "./enemyAIChoice.js";
 import { critChance, blockChance, CRIT_MULTIPLIER } from "./combatStats.js";
+import { SMART_WEIGHTS } from "./companionMoves.js";
 import { getOption } from "./gameOptions.js";
 import {
     AI_TIERS, resolveDifficulty, tierSettings, thinkingTimeFor,
@@ -69,12 +70,24 @@ export function enemyManaNeeds(spells = enemy.spells, mana = enemy.mana) {
     return needs;
 }
 
+// Réserve de flèches visée : autant d'attaques d'arme d'avance (l'IA les dépense pendant que le héros joue, voir enemyProactiveAction).
+export const ARROW_STOCK_USES = 3;
+
+/** Envie de flèches (0..1) : 0 sans arme (ou scellé) ou réserve pleine, 1 réserve vide. Palier sans `arrowHoard` : 0. */
+export function arrowHunger(hoard = currentDifficulty.arrowHoard || 0) {
+    const weapon = enemy.weapon;
+    if (!hoard || !weapon || !(weapon.actionPoints > 0) || (enemy.statusEffects?.sealed || 0) > 0) return 0;
+    return Math.max(0, 1 - (enemy.combatPoints || 0) / (weapon.actionPoints * ARROW_STOCK_USES));
+}
+
 // Options de choix de coup sur le plateau pour l'IA actuelle : null si elle n'est pas assez avancée.
 export function boardMoveOptions() {
     if (!currentDifficulty.manaFocus) return null;
     const colorNeeds = enemyManaNeeds();
-    if (!Object.keys(colorNeeds).length) return null;
-    return { colorNeeds, mana: enemy.mana, samples: currentDifficulty.boardLookahead || 0 };
+    const hunger = arrowHunger();
+    if (!Object.keys(colorNeeds).length && !hunger) return null;
+    const weights = hunger ? { combat: SMART_WEIGHTS.combat + hunger * (currentDifficulty.arrowHoard || 0) * 2 } : undefined;   // ruée sur les flèches
+    return { colorNeeds, mana: enemy.mana, samples: currentDifficulty.boardLookahead || 0, weights };
 }
 
 // ========================================
@@ -297,6 +310,13 @@ export function evaluateBoardMove() {
     if (currentDifficulty.refillMana && enemy.spellCostFactor < 1 && !context.hasUsableSpells && (enemy.spells || []).length > 0) {
         score += 30;
         reason = "remplir son qì";
+    }
+
+    // Ruée sur les flèches : réserve d'attaques vide ou entamée, le plateau devient plus attirant (jusqu'à +30)
+    const hunger = arrowHunger();
+    if (hunger > 0) {
+        score += Math.round(30 * hunger);
+        if (reason === "gain de ressources") reason = "faire provision de flèches";
     }
 
     // Ajustement selon la difficulté
