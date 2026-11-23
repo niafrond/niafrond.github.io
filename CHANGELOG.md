@@ -1,3 +1,10 @@
+## [3.27.0](https://github.com/niafrond/niafrond.github.io/compare/v3.26.0...v3.27.0) (2026-11-23)
+
+### Features
+
+* **bus-naolib:** choisir ses lignes au premier lancement et gérer un changement ([#788](https://github.com/niafrond/niafrond.github.io/issues/788)) ([106dcca](https://github.com/niafrond/niafrond.github.io/commit/106dccaadceb26d56f943b8cad49e733fe41f48a))
+* **houyi:** meutes de loups, sangliers et crabes, invocation des crabes et Crabe combattant doré ([#787](https://github.com/niafrond/niafrond.github.io/issues/787)) ([68ed3e9](https://github.com/niafrond/niafrond.github.io/commit/68ed3e99b95f3bcc88516f274e4e739dc3f0a25e))
+
 ## [3.26.0](https://github.com/niafrond/niafrond.github.io/compare/v3.25.0...v3.26.0) (2026-11-23)
 
 ### Features
