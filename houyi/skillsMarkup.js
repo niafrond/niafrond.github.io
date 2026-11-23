@@ -63,7 +63,7 @@ function infoPanel(hero, skill, taught, canToggle, member = START_CLASS) {
         ? `Allumée pour ${mName} : son effet agit ${member === START_CLASS && !skill.classId ? 'en permanence' : `quand ${mName} joue`}. Éteignez-la pour rendre ${skill.cost} Fulu à ${mName}.`
         : `Allumée pour ${mName} : elle apparaît dans sa liste de sorts en combat (son coût en qì se paie à chaque lancer). Éteignez-la pour rendre ${skill.cost} Fulu à ${mName}.`;
     else if (st === 'learned') usage = skill.cost > left ? `Il manque ${skill.cost - left} Fulu à ${mName} pour l'allumer (il lui en reste ${left}) : éteignez une autre de ses compétences.` : `Touchez « Allumer » : elle coûte ${skill.cost} Fulu à ${mName} (il lui en reste ${left}).`;
-    else usage = `Une fois apprise, vous pourrez l'allumer pour chaque personnage qui peut l'utiliser (${skill.cost} Fulu chacun), à tout moment.`;
+    else usage = `Une fois apprise, vous pourrez l'allumer (${skill.cost} Fulu de ${mName}), à tout moment.`;
     const action = (st === 'active' || st === 'learned')
         ? `<button type="button" class="ab-toggle" data-toggle-skill="${skill.id}" data-member="${member}"${canToggle ? '' : ' disabled'}>${st === 'active' ? 'Éteindre' : 'Allumer'}</button>` : '';
     return `<div class="ab-info">
@@ -120,10 +120,10 @@ export function skillsTabHtml(hero, gear, selectedId, canToggle = true) {
     // Un onglet par personnage : les compétences de sa classe (celles sans classe, ou d'une classe sans onglet, appartiennent à Hou Yi)
     const charId = getCharTab('skills', hero);
     const tabIds = charTabIds(hero);
-    // Les compétences de classe sont sur l'onglet de leur classe ; les communes sont sur chaque onglet (on choisit pour qui les allumer, chacun paie sur SA réserve).
+    // Chaque personnage a SES compétences, celles de sa classe ; les compétences communes (enseignées par l'équipement) sont celles de Hou Yi.
     const owner = s => (tabIds.includes(s.classId) ? s.classId : START_CLASS);   // une compétence d'une classe sans onglet reste sous Hou Yi
     const used = usedMagikoliths(hero, charId), cap = magikolithCapacity(hero);
-    const list = [...visibleSkills(hero, [...taught.keys()])].filter(s => (s.classId ? owner(s) === charId : true))
+    const list = [...visibleSkills(hero, [...taught.keys()])].filter(s => owner(s) === charId)
         .sort((a, b) => order[skillState(hero, a, taught, charId)] - order[skillState(hero, b, taught, charId)]);
     const selected = list.find(s => s.id === selectedId) || list[0];
     const learnedCount = hero.skills.learned.length;
