@@ -3,7 +3,7 @@
 import { escapeHtml } from "./escapeHtml.js";
 import { flyManaGain } from "./manaFlight.js";
 import { player, enemy, currentTurn, gameState, log, showCombatAnimation, finishPlayerTurn, finishEnemyTurn, applyDamage, addBonusTurn, addManaForColor, skullDamage, playFighterAttack, grantBigMatchXP } from "./game.js";
-import { board, checkMatches, claimMatchBonusTurn } from "./board.js";
+import { board, checkMatches, claimMatchBonusTurn, setCascadeOwner } from "./board.js";
 import { colors } from "./constants.js";
 import { resolveStrike, skullStrengthBonus } from "./combatStats.js";
 import { playSfx } from "./sound.js";
@@ -98,7 +98,7 @@ function collectDestroyedSpecialTiles(caster, destroyedTiles = []) {
             addBonusTurn(caster);
             playSfx('turnBonus');
             log(`${skulls} crânes détruits : tour bonus gagné par ${caster === player ? 'le joueur' : "l'ennemi"}`);
-            showCombatAnimation({ icon: 'gift', title: 'TOUR BONUS !', plain: true, damage: `${skulls} crânes détruits`, target: caster === player ? 'Vous rejouez !' : "L'ennemi rejoue !" }, caster === player);
+            showCombatAnimation({ icon: 'gift', title: 'TOUR BONUS !', plain: true, damage: `${skulls} crânes détruits`, target: caster === player ? 'Tour bonus en réserve' : "Tour bonus en réserve" }, caster === player);
         }
         if(skulls >= 4 && caster === player) {
             const bonusXp = grantBigMatchXP(skulls);
@@ -119,7 +119,7 @@ export function snapshotBoard() {
 // bonus : un seul par tour, voir claimMatchBonusTurn). `checkMatches` termine le tour du joueur quand plus rien ne bouge.
 export function endPlayerSpellTurn(before) {
     const changed = Array.isArray(before) && board.some((tile, i) => tile !== before[i]);
-    if(changed) checkMatches(true);
+    if(changed){ setCascadeOwner(getCurrentCaster() === enemy ? 'enemy' : 'player'); checkMatches(true); }   // les gains de la cascade vont au lanceur
     else if(currentTurn === 'enemy') finishEnemyTurn();   // lancé en fin du tour de plateau adverse : on poursuit CE tour
     else finishPlayerTurn();
 }

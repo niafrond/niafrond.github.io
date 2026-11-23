@@ -868,6 +868,10 @@ export function checkForMatchesOnly(){
 // Le plafond retombe dès que la cascade est terminée (le tour suivant peut en gagner de nouveaux).
 export const MAX_MATCH_BONUS_TURNS = 2;
 let matchBonusTurnsClaimed = 0;
+// Cascade déclenchée par un sort de plateau : gains (qì, flèches, crânes, tours bonus) pour LE LANCEUR, pas pour celui dont c'est le tour de plateau.
+let cascadeOwner = null;
+export function setCascadeOwner(who){ cascadeOwner = who === 'enemy' || who === 'player' ? who : null; }
+const boardSide = () => cascadeOwner || currentTurn;
 export function claimMatchBonusTurn(limit = 1){
     if(matchBonusTurnsClaimed >= Math.min(limit, MAX_MATCH_BONUS_TURNS)) return false;
     matchBonusTurnsClaimed++;
@@ -907,7 +911,7 @@ export function checkMatches(forceFullBoard = false){
         combos=true;
         turnDistinctMatches++;
         // Determine which player gets the rewards
-        const currentPlayer = currentTurn === 'player' ? player : enemy;
+        const currentPlayer = boardSide() === 'player' ? player : enemy;
         // apply effects
         if(info.type==='color'){
             // Gain de qì : 1 par tuile du match (3=>3, 4=>4, 5=>5...)
@@ -928,11 +932,11 @@ export function checkMatches(forceFullBoard = false){
             if(info.len>=4 && claimMatchBonusTurn()){
                 addBonusTurn(currentPlayer);
                 playSfx('turnBonus');
-                log(`Match de ${info.len} : tour bonus gagné par ${currentTurn === 'player' ? 'le joueur' : 'l\'ennemi'}`);
+                log(`Match de ${info.len} : tour bonus gagné par ${boardSide() === 'player' ? 'le joueur' : 'l\'ennemi'}`);
                 // Afficher une animation de tour bonus
-                const isPlayer = currentTurn === 'player';
+                const isPlayer = boardSide() === 'player';
                 showCombatAnimation(
-                    { icon: 'gift', title: 'TOUR BONUS !', plain: true, damage: `Match de ${info.len} tuiles`, target: isPlayer ? 'Vous rejouez !' : "L'ennemi rejoue !" },
+                    { icon: 'gift', title: 'TOUR BONUS !', plain: true, damage: `Match de ${info.len} tuiles`, target: isPlayer ? 'Tour bonus en réserve' : "Tour bonus en réserve" },
                     isPlayer
                 );
             }
@@ -941,27 +945,27 @@ export function checkMatches(forceFullBoard = false){
             const actionGain = chilledGain(getEffectiveMatchLength(info), currentPlayer);   // Ralenti (Reine de glace) : −1 flèche par match
             currentPlayer.combatPoints += actionGain;
             flyManaToCounter(indices, null, { isPlayer: currentPlayer === player, type: 'combat' });
-            log(`+${actionGain}${getJokerMatchMultiplier(info) > 1 ? ' (joker ×2)' : ''} points de combat pour ${currentTurn === 'player' ? 'le joueur' : 'l\'ennemi'}`);
+            log(`+${actionGain}${getJokerMatchMultiplier(info) > 1 ? ' (joker ×2)' : ''} points de combat pour ${boardSide() === 'player' ? 'le joueur' : 'l\'ennemi'}`);
             // Bonus de tour pour 4+ épées
             if(info.len>=4 && claimMatchBonusTurn()){
                 addBonusTurn(currentPlayer);
                 playSfx('turnBonus');
-                log(`Match de ${info.len} : tour bonus gagné par ${currentTurn === 'player' ? 'le joueur' : 'l\'ennemi'}`);
-                const isPlayer = currentTurn === 'player';
+                log(`Match de ${info.len} : tour bonus gagné par ${boardSide() === 'player' ? 'le joueur' : 'l\'ennemi'}`);
+                const isPlayer = boardSide() === 'player';
                 showCombatAnimation(
-                    { icon: 'gift', title: 'TOUR BONUS !', plain: true, damage: `Match de ${info.len} épées`, target: isPlayer ? 'Vous rejouez !' : "L'ennemi rejoue !" },
+                    { icon: 'gift', title: 'TOUR BONUS !', plain: true, damage: `Match de ${info.len} épées`, target: isPlayer ? 'Tour bonus en réserve' : "Tour bonus en réserve" },
                     isPlayer
                 );
             }
             if(shouldCreateJokerFromMatchLength(info.len)){ info.makeJoker=true; }
         } else if(info.type==='skull'){
             // Notifier le tutoriel d'un match de crânes du joueur
-            if(currentTurn === 'player') tutorialCallbacks.onMatch?.('skull', null, info.len);
-            const attacker = currentTurn === 'player' ? player : enemy;
+            if(boardSide() === 'player') tutorialCallbacks.onMatch?.('skull', null, info.len);
+            const attacker = boardSide() === 'player' ? player : enemy;
             // Les crânes sont des dégâts, pas un gain : la pastille vole vers l'adversaire, pas vers celui qui attaque.
             flyManaToCounter(indices, null, { isPlayer: attacker !== player, type: 'skull' });
             const selfHit = confusedSelfHit(attacker);   // Confus : les crânes se retournent contre leur auteur
-            const opponent = selfHit ? attacker : (currentTurn === 'player' ? enemy : player);
+            const opponent = selfHit ? attacker : (boardSide() === 'player' ? enemy : player);
             if(selfHit) log(`${attacker.name} est confus : ses crânes se retournent contre lui !`);
             // Force : dégâts de base par crâne (plafonnés à haut niveau) ; attaque = critique, défense = blocage.
             const attackBonus = skullStrengthBonus(attacker);
@@ -980,36 +984,36 @@ export function checkMatches(forceFullBoard = false){
             if(strike.block !== 'none') {
                 showStrikeAnimation({ icon: 'skull', title: `${info.len} crânes`, source: attacker.name, target: `→ ${opponent === player ? 'Vous' : opponent.name}` }, strike, attacker === player, dmg);
             }
-            log(`Match ${info.len} crânes : -${dmg} HP pour ${currentTurn === 'player' ? 'l\'ennemi' : 'le joueur'}${strike.crit ? ' (critique !)' : ''}${strike.block === 'total' ? ' (bloqué)' : strike.block === 'partial' ? ' (paré)' : ''}`);
+            log(`Match ${info.len} crânes : -${dmg} HP pour ${boardSide() === 'player' ? 'l\'ennemi' : 'le joueur'}${strike.crit ? ' (critique !)' : ''}${strike.block === 'total' ? ' (bloqué)' : strike.block === 'partial' ? ' (paré)' : ''}`);
             // Bonus de tour pour 4+ crânes
             if(info.len>=4 && claimMatchBonusTurn()){
                 addBonusTurn(currentPlayer);
                 playSfx('turnBonus');
-                log(`Match de ${info.len} crânes : tour bonus gagné par ${currentTurn === 'player' ? 'le joueur' : 'l\'ennemi'}`);
-                const isPlayer = currentTurn === 'player';
+                log(`Match de ${info.len} crânes : tour bonus gagné par ${boardSide() === 'player' ? 'le joueur' : 'l\'ennemi'}`);
+                const isPlayer = boardSide() === 'player';
                 showCombatAnimation(
-                    { icon: 'gift', title: 'TOUR BONUS !', plain: true, damage: `Match de ${info.len} crânes`, target: isPlayer ? 'Vous rejouez !' : "L'ennemi rejoue !" },
+                    { icon: 'gift', title: 'TOUR BONUS !', plain: true, damage: `Match de ${info.len} crânes`, target: isPlayer ? 'Tour bonus en réserve' : "Tour bonus en réserve" },
                     isPlayer
                 );
             }
             if(shouldCreateJokerFromMatchLength(info.len)){ info.makeJoker=true; }
         }
 
-        applyMatchExtras(indices, info, currentTurn === 'player' ? 'player' : 'enemy');
+        applyMatchExtras(indices, info, boardSide() === 'player' ? 'player' : 'enemy');
 
         // Sons : crânes = coup porté ; couleur = qì récolté (scintillement magique) ; épées = son de match classique.
-        const sfxPayload = { matchType: info.type, length: info.len, isPlayer: currentTurn === 'player' };
+        const sfxPayload = { matchType: info.type, length: info.len, isPlayer: boardSide() === 'player' };
         if(info.type === 'skull') playSfx('skullHit', sfxPayload);
         else if(info.type === 'color') playSfx('manaGain', sfxPayload);
         else playSfx('match', sfxPayload);
 
         // XP bonus des belles combinaisons (4, 5 tuiles ou plus), discret : une seule ligne de journal.
-        if(currentTurn === 'player' && info.len >= 4){
+        if(boardSide() === 'player' && info.len >= 4){
             const bonusXp = grantBigMatchXP(info.len);
             if(bonusXp > 0) log(`+${bonusXp} XP (belle combinaison)`);
         }
 
-        if(currentTurn === 'player' && turnDistinctMatches > 5 && !comboMasteryTriggered){
+        if(boardSide() === 'player' && turnDistinctMatches > 5 && !comboMasteryTriggered){
             comboMasteryTriggered = true;
             const comboBonusTurn = claimMatchBonusTurn(MAX_MATCH_BONUS_TURNS);
             if(comboBonusTurn){
@@ -1024,7 +1028,7 @@ export function checkMatches(forceFullBoard = false){
             }
 
             showCombatAnimation(
-                { icon: 'star', title: 'COMBO MAGISTRAL', damage: `${turnDistinctMatches} matchs différents`, target: `+${comboXp} XP, Joker créé${comboBonusTurn ? ', vous rejouez !' : ''}` },
+                { icon: 'star', title: 'COMBO MAGISTRAL', damage: `${turnDistinctMatches} matchs différents`, target: `+${comboXp} XP, Joker créé${comboBonusTurn ? ', tour bonus en réserve' : ''}` },
                 true
             );
             log(`Combo magistral : +${comboXp} XP, création d'un Joker${comboBonusTurn ? ' et tour bonus' : ''} !`);
@@ -1056,6 +1060,7 @@ export function checkMatches(forceFullBoard = false){
             [board[i],board[j]]=[board[j],board[i]];
             turnDistinctMatches = 0;
             comboMasteryTriggered = false;
+            cascadeOwner = null;
             renderBoard();
 
             if(turn === 'enemy' && currentTurn === 'enemy'){
@@ -1075,6 +1080,7 @@ export function checkMatches(forceFullBoard = false){
         turnDistinctMatches = 0;
         comboMasteryTriggered = false;
         matchBonusTurnsClaimed = 0;
+        cascadeOwner = null;
         renderBoard(); // Seulement si pas de combos pour nettoyer les classes 'match'
         // Si c'est le tour de l'ennemi et qu'il n'y a pas de combos, terminer son tour
         if(currentTurn === 'enemy'){

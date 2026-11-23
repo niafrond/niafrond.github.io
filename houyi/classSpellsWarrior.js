@@ -79,7 +79,7 @@ export function applySneakAttack(spell) {
     applyDamage(enemy, spell.dmg, { sourceSpell: spell });
     const sneakDmg = lastSpellDamage(spell.dmg);
     const refilled = grantActionBonus(player, spell);   // actions indépendantes du plateau : la barre d'action se remplit aussitôt
-    showCombatAnimation({ icon: 'sword', title: (spell.name || "TIR FURTIF").toUpperCase(), damage: `-${sneakDmg} dégâts · ${refilled ? 'BARRE REMPLIE' : 'TOUR BONUS'}`, target: `→ ${enemy.name} · ${refilled ? 'vous pouvez agir de nouveau !' : 'vous rejouez !'}` }, true);
+    showCombatAnimation({ icon: 'sword', title: (spell.name || "TIR FURTIF").toUpperCase(), damage: `-${sneakDmg} dégâts · ${refilled ? 'BARRE REMPLIE' : 'TOUR BONUS'}`, target: `→ ${enemy.name} · ${refilled ? 'vous pouvez agir de nouveau !' : 'tour bonus en réserve'}` }, true);
     log(refilled ? `Tir Furtif inflige ${sneakDmg} dégâts et remplit aussitôt votre barre d'action !` : `Tir Furtif inflige ${sneakDmg} dégâts et vous donne un tour bonus !`);
     return true;
 }

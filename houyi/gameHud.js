@@ -346,7 +346,7 @@ export function updateEnemySpells(){
     if (weaponContainer) {
         let weaponHtml = '';
         if (enemy.weapon) {
-            const icon = getWeaponIcon(enemy.weapon.type);
+            const icon = getWeaponIcon(enemy.weapon.type, enemy.weapon.rarity);
             weaponHtml += `
                 <div class="enemy-spell-item disabled">
                     <div class="spell-name">${icon} ${enemy.weapon.name}</div>

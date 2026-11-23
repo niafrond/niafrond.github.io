@@ -10,21 +10,35 @@ import { playSfx } from './sound.js';
 import { enemyNameLabel, enemyNameAsHanzi, toggleEnemyNameAsHanzi, enemyNameIsHanzi } from './bestiaryNames.js';
 import { bindEnemyStuffLongPress } from './gameTooltips.js';
 import { updateStats } from './gameHud.js';
+import { showTargetActions, hideTargetActions, targetActionsOwner, targetActionsAvailable } from './targetActions.js';
 
 let bound = false;
+
+/** Choix de la cible d'une attaque : un bouton par ennemi vivant (nom + vie) dans la zone d'action, à la place des actions. */
+function syncFoePick(picking) {
+    if (!picking || gameState.combatState !== 'active') { if (targetActionsOwner() === 'foe') hideTargetActions('foe'); return; }
+    if (targetActionsOwner() === 'foe' || !targetActionsAvailable()) return;
+    const foes = allFoes();
+    showTargetActions({ who: 'foe', title: 'Quel ennemi viser ?',
+        items: foes.map((f, i) => ({ id: String(i), name: enemyNameLabel(f, enemyNameAsHanzi()), hanzi: enemyNameIsHanzi(f), hp: f.hp || 0, maxHp: f.maxHp || 1, ko: !isAlive(f), reason: isAlive(f) ? null : 'vaincu' }))
+            .filter(it => !it.ko),
+        onPick: id => { if (pickTarget(allFoes()[Number(id)])) playSfx('uiClick'); },
+        onCancel: () => cancelTargetPick() });
+}
 
 export function renderFoeBar() {
     const box = typeof document !== 'undefined' ? document.getElementById('foe-bar') : null;
     if (!box) return;
     const foes = allFoes();
     const picking = isPickingTarget();
+    syncFoePick(picking);
     const show = gameState.combatState === 'active' && foes.filter(isAlive).length > 1;   // un seul ennemi debout : la fiche complète reprend (gameHud.js)
     box.hidden = !show;
     if (!show) { box.innerHTML = ''; return; }
     box.innerHTML = foes.map((f, i) => {
         const pct = Math.max(0, Math.min(100, Math.round(100 * (f.hp || 0) / Math.max(1, f.maxHp || 1))));
-        const cls = `foe-chip${isAlive(f) ? '' : ' down'}${picking && isAlive(f) ? ' pickable' : ''}`;
-        return `<button type="button" class="${cls}" data-foe="${i}" ${isAlive(f) ? '' : 'disabled'} aria-label="${escapeHtml(f.name)}, ${pct} % de vie${picking && isAlive(f) ? ', toucher pour viser' : ''}">`
+        const cls = `foe-chip${isAlive(f) ? '' : ' down'}`;
+        return `<button type="button" class="${cls}" data-foe="${i}" ${isAlive(f) ? '' : 'disabled'} aria-label="${escapeHtml(f.name)}, ${pct} % de vie">`
             + `<span class="foe-name${enemyNameIsHanzi(f) ? ' name-hanzi' : ''}">${escapeHtml(enemyNameLabel(f, enemyNameAsHanzi()))}${f.summonedBy ? ' ✦' : ''}</span>`
             + (statusBadgesHtml(f) || '')
             + `<span class="foe-hp"><span style="width:${pct}%"></span></span>`

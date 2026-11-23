@@ -3,7 +3,7 @@
 import { boardSize } from './constants.js';
 import { tutorialCallbacks } from './tutorial.js';
 import { getAvailableWeapons } from './weapons.js';
-import { enemyMakeMove, enemyMakeRandomMove, foxMakeRandomMove, restartSuggestionTimer, getTrappedCells, setTrappedCells, advanceBiomeTurn, announceBurningCells, convertRandomColorToArrows, checkMatches, scrambleTiles, board } from './board.js';
+import { enemyMakeMove, enemyMakeRandomMove, foxMakeRandomMove, restartSuggestionTimer, getTrappedCells, setTrappedCells, advanceBiomeTurn, announceBurningCells, convertRandomColorToArrows, checkMatches, setCascadeOwner, scrambleTiles, board } from './board.js';
 import { stuffTotals, inflictPoison, isVenomous, POISON_CHANCE, wornStuff } from './stuff.js';
 import { rollEnemyStuffDrops } from './enemyStuff.js';
 import { recordVictory } from './bossTips.js';
@@ -39,7 +39,7 @@ import { CLASS_SHORT } from './classRoster.js';
 import { pickEnemyTarget } from './allies.js';
 import { advanceAfterFoeDefeat } from './foes.js';
 import { runFoePhase } from './foeTurns.js';
-import { partyWiped, currentTurn, activeCompanionIds, addBonusTurn, addManaForColor, applyCombatXPAtEnd, applyDamage, applyStandardSpellEffects, canEntityCastSpell, combatHooks, combatRewards, consumeSpellMana, enemy, gameState, getWeaponIcon, grantStuffPiece, handlePlayerDeath, normalizeActiveInventoryIndex, sellDuplicateItem, normalizeBonusTurnValue, player, queueCombatXP, showEndCombatAnimation, turnFlags, setCurrentTurn, resetTranseTurn, applyTranseClassEffect, syncGauge, endXiuxianAtCombatEnd, xiuEffect } from './game.js';
+import { partyHitName, partyTargetName, partyWiped, currentTurn, activeCompanionIds, addBonusTurn, addManaForColor, applyCombatXPAtEnd, applyDamage, applyStandardSpellEffects, canEntityCastSpell, combatHooks, combatRewards, consumeSpellMana, enemy, gameState, getWeaponIcon, grantStuffPiece, handlePlayerDeath, normalizeActiveInventoryIndex, sellDuplicateItem, normalizeBonusTurnValue, player, queueCombatXP, showEndCombatAnimation, turnFlags, setCurrentTurn, resetTranseTurn, applyTranseClassEffect, syncGauge, endXiuxianAtCombatEnd, xiuEffect } from './game.js';
 
 // Applique les pouvoirs de fin de tour des compagnons présents (soin, jet d'eau, qì, mirage). Renvoie { skipEnemy, enemyDown }.
 export const COMPANION_NAMES = { zhi: 'Zhi', dawa: 'Dawa', yu: 'Yu', etincelle: 'Leigong', braise: 'Braise', jian: 'Jian', tou: 'Tou' };
@@ -91,6 +91,7 @@ function playCompanionAnnouncements(list, done){
         const a = list[i];
         showCombatAnimation({ icon: companionIconHtml(a.id), title: a.title, damage: a.damage, target: a.target }, true, {
             autoHideMs: 1100 * animationFactor(),
+            noAttack: true,   // un pouvoir de compagnon n'est pas une attaque : ni coup d'arme ni projectile
             onContinue: () => next(i + 1)
         });
     };
@@ -173,6 +174,7 @@ export function finishPlayerTurn(){
             // On annonce que le renard joue, puis seulement il fait son mouvement.
             showCombatAnimation({ icon: foxIconHtml(), title: 'Xiao Gui', damage: 'Un coup de renard !', target: 'Le renard joue sur le plateau…' }, true, {
                 autoHideMs: 1200 * animationFactor(),
+                noAttack: true,   // Xiao Gui joue un coup, il n'attaque pas
                 onContinue: () => { if(gameState.combatState === 'active') foxMakeRandomMove(); }
             });
         });
@@ -347,8 +349,8 @@ export function applyEnemyActionNow(decision){
         log(poison > 0 ? `${enemy.name} vous empoisonne : ${poison} dégâts par tour.` : `${enemy.name} tente de vous empoisonner, mais votre équipement vous protège.`);
     }
     playSfx('weaponHit', { isPlayer: false, rarity: enemy.weapon.rarity });
-    const icon = getWeaponIcon(enemy.weapon.type);
-    showStrikeAnimation({ icon, title: enemy.weapon.name, source: enemy.name, target: '→ Vous', projectile: enemy.weapon.type === 'bow' ? 'arrow' : 'melee' }, strike, false, dmg);
+    const icon = getWeaponIcon(enemy.weapon.type, enemy.weapon.rarity);
+    showStrikeAnimation({ icon, title: enemy.weapon.name, source: enemy.name, target: `→ ${partyHitName()}`, projectile: enemy.weapon.type === 'bow' ? 'arrow' : 'melee' }, strike, false, dmg);
     log(`${icon} ${enemy.name} utilise ${enemy.weapon.name} ! ${dmg} dégâts.${strike.crit ? ' Coup critique !' : ''}${strike.unblockable ? ' Coup inblocable !' : ''}${strike.block === 'total' ? ' Vous bloquez entièrement le coup.' : strike.block === 'partial' ? ' Vous parez le coup.' : ''}`);
     return true;
 }
@@ -411,7 +413,7 @@ export function enemyTurn(){
             const hit = signatureDamage(script, player);
             if(hit.blocked) {
                 log(`${enemy.name} déchaîne ${script.name}… le Bastion Infranchissable l'arrête net !`);
-                showCombatAnimation({ icon: 'shield', title: script.name.toUpperCase(), heal: 'Bloqué par le Bastion', source: enemy.name, target: '→ Vous' }, false, { requireClick: true });
+                showCombatAnimation({ icon: 'shield', title: script.name.toUpperCase(), heal: 'Bloqué par le Bastion', source: enemy.name, target: `→ ${partyTargetName()}` }, false, { requireClick: true });
             } else {
                 applyDamage(player, hit.damage, { damageSource: 'boss' });
                 if(script.burn) playSfx('dragonBreath');
@@ -421,7 +423,7 @@ export function enemyTurn(){
                 }
                 const prepared = hit.reduction > 0 ? ` (préparation : -${Math.round(hit.reduction * 100)} %)` : '';
                 log(`${enemy.name} déchaîne ${script.name} : ${hit.damage} dégâts${prepared}.`);
-                showCombatAnimation({ icon: 'fire', title: script.name.toUpperCase(), damage: `-${hit.damage} dégâts${prepared}`, source: enemy.name, target: '→ Vous' }, false, { requireClick: true });
+                showCombatAnimation({ icon: 'fire', title: script.name.toUpperCase(), damage: `-${hit.damage} dégâts${prepared}`, source: enemy.name, target: `→ ${partyHitName()}` }, false, { requireClick: true });
             }
             updateStats();
             updateEnemySpells();   // la carte du sort redevient inactive
@@ -468,7 +470,7 @@ export function enemyTurn(){
             const chilled = inflictAlteration(player, 'chilled', ICE_QUEEN.chillTurns);
             const scrambled = scrambleTiles(ICE_QUEEN.scrambleTiles);
             log(`${enemy.name} déchaîne une tempête de givre !${chilled ? ' Vous êtes ralenti.' : ' Vous résistez au ralentissement.'}${scrambled ? ' Le plateau est brouillé.' : ''}`);
-            showCombatAnimation({ icon: 'snow', title: 'TEMPÊTE DE GIVRE', damage: chilled ? 'Ralenti' : 'Résisté', source: enemy.name, target: '→ Vous' }, false);
+            showCombatAnimation({ icon: 'snow', title: 'TEMPÊTE DE GIVRE', damage: chilled ? 'Ralenti' : 'Résisté', source: enemy.name, target: `→ ${partyTargetName()}` }, false);
             updateStats();
             setTimeout(() => finishEnemyTurn(), 900);   // le brouillage ne crée aucune combinaison : le plateau est déjà stable
             return;
@@ -478,7 +480,7 @@ export function enemyTurn(){
             const strike = resolveStrike(step.damage, enemy, player);
             applyDamage(player, strike.damage, { damageSource: 'boss' });
             playSfx('knightCounter');
-            showStrikeAnimation({ icon: 'sword', title: 'CONTRE-ATTAQUE', source: enemy.name, target: '→ Vous' }, strike, false, strike.damage);
+            showStrikeAnimation({ icon: 'sword', title: 'CONTRE-ATTAQUE', source: enemy.name, target: `→ ${partyHitName()}` }, strike, false, strike.damage);
             log(`${enemy.name} contre-attaque : ${strike.damage} dégâts.${strike.block === 'total' ? ' Vous bloquez entièrement le coup.' : strike.block === 'partial' ? ' Vous parez le coup.' : ''}`);
             updateStats();
             setTimeout(() => finishEnemyTurn(), 900);
@@ -563,7 +565,7 @@ async function castEnemyBoardSpell(spell){
     let applied = false;
     try { applied = await applyClassSpellEffect(spell); } catch(error) { console.error(error); }
     const changed = board.some((tile, i) => tile !== before[i]);
-    if(applied === true && changed) checkMatches(true);
+    if(applied === true && changed){ setCascadeOwner('enemy'); checkMatches(true); }
     else if(!changed) resumeAfterBoundary() || (currentTurn === 'enemy' ? finishEnemyTurn() : finishPlayerTurn());   // poursuit la fin du tour de plateau en cours
 }
 
@@ -571,6 +573,7 @@ export function finishEnemyTurn(){
     if(gameState.combatState !== 'active'){
         return;
     }
+    if(runBoundaryAction(() => finishEnemyTurn())) return;   // sort de plateau ou ultime en attente : il part plateau au repos, juste avant de donner la main (tour bonus compris)
 
     runFoePhase();   // les autres ennemis du groupe frappent ou invoquent (foeTurns.js)
 
@@ -591,7 +594,6 @@ export function finishEnemyTurn(){
             enemyTurn();
         }, 1000);
     } else {
-        if(runBoundaryAction(() => finishEnemyTurn())) return;   // sort de plateau ou ultime en attente : il part juste avant le tour de plateau suivant
         if((enemy.statusEffects?.confused || 0) > 0) {
             enemy.statusEffects.confused--;
             if(enemy.statusEffects.confused <= 0) {
@@ -902,7 +904,7 @@ export function handleEnemyDefeated(){
                     combatRewards.weapons.push(randomWeapon.name);
                     // Mettre à jour la liste des armes disponibles du joueur
                     updateAvailableWeapons();
-                    const icon = getWeaponIcon(randomWeapon.type);
+                    const icon = getWeaponIcon(randomWeapon.type, randomWeapon.rarity);
                     log(`${icon} Vous obtenez : ${randomWeapon.name} !`);
                 } else {
                     // Arme déjà possédée : convertir en or

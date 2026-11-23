@@ -31,7 +31,7 @@ describe('Tir Furtif : tour bonus pour celui qui le lance', () => {
         const fn = game.slice(game.indexOf('function applyStandardSpellEffects'));
         const body = fn.slice(0, fn.indexOf('\n}\n'));
         expect(body).toMatch(/spell\.effect === 'bonusTurn'[\s\S]*grantActionBonus\(caster, spell\)/);
-        expect(game).toMatch(/export function grantActionBonus[\s\S]*addBonusTurn\(caster, 1\)[\s\S]*refillActionBar/);
+        expect(game).toMatch(/export function grantActionBonus[\s\S]*addBonusTurn\(caster, 1\)/);
     });
 });
 

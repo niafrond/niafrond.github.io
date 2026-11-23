@@ -5,6 +5,7 @@
  */
 import { player, gameState } from './game.js';
 import { escapeHtml } from './escapeHtml.js';
+import { showTargetActions, hideTargetActions, targetActionsAvailable } from './targetActions.js';
 
 /** Hou Yi puis les compagnons de l'équipe : [{ classId, name, hp, maxHp, ko }]. */
 export function teamMembers() {
@@ -16,7 +17,7 @@ export function teamMembers() {
 export const hasLivingAlly = () => Object.values(gameState.allies || {}).some(a => !a.ko);
 
 let current = null;
-export function closeTargetPicker() { current?.close(); }
+export function closeTargetPicker() { current?.close(); hideTargetActions('item'); }
 
 /**
  * @param {string} title ex. « Potion moyenne : sur qui ? »
@@ -25,6 +26,10 @@ export function closeTargetPicker() { current?.close(); }
  */
 export function openTargetPicker({ title, blockReason, onPick }) {
     closeTargetPicker();
+    if (gameState.combatState === 'active' && targetActionsAvailable()) {   // en combat : boutons dans la zone d'action (targetActions.js)
+        return showTargetActions({ who: 'item', title,
+            items: teamMembers().map(m => ({ id: m.classId, name: m.name, hp: m.hp, maxHp: m.maxHp, ko: m.ko, reason: blockReason ? blockReason(m) : null })), onPick });
+    }
     const overlay = document.createElement('div');
     overlay.className = 'target-picker-overlay';
     overlay.setAttribute('role', 'dialog');

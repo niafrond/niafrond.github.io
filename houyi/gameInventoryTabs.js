@@ -123,7 +123,7 @@ function appendWeaponButton(container, weapon, hand){
     btn.className = 'enemy-spell-item';
     btn.tabIndex = 0;
     const sealed = (player.statusEffects?.sealed || 0) > 0;   // Talisman de Scellement : cadenas, arme inutilisable
-    const icon = sealed ? svgIcon('lock') : getWeaponIcon(weapon.type);
+    const icon = sealed ? svgIcon('lock') : getWeaponIcon(weapon.type, weapon.rarity);
     btn.innerHTML = `
         <div class="spell-name">${icon} ${weapon.name}</div>
         <div class="spell-cost">${weapon.actionPoints} ${svgIcon('arrow')} - ${weapon.damage} ${svgIcon('skull')}</div>
@@ -215,7 +215,7 @@ function weaponCardHtml(weapon, { hand, count = 1 } = {}){
         key: `w:${weapon.id}${hand ? ':' + hand : ''}`,
         cls: `${hand ? 'rc-equipped' : ''}${locked && !hand ? ' is-locked' : ''}`,
         border: getRarityColor(weapon.rarity),
-        name: `${getWeaponIcon(weapon.type)} ${escapeHtml(weapon.name)}`,
+        name: `${getWeaponIcon(weapon.type, weapon.rarity)} ${escapeHtml(weapon.name)}`,
         badges,
         sub: deltas || stats,   // écarts d'abord ; les chiffres bruts sont dans l'infobulle
         primary, more, tip, attrs: compareAttrs('weapon', weapon.id)
@@ -232,7 +232,7 @@ function allyWeaponCard(weapon, charId, worn){
         key: `aw:${charId}:${weapon.id}`,
         cls: `${worn ? 'rc-equipped' : ''}${locked && !worn ? ' is-locked' : ''}`,
         border: getRarityColor(weapon.rarity),
-        name: `${getWeaponIcon(weapon.type)} ${escapeHtml(weapon.name)}`,
+        name: `${getWeaponIcon(weapon.type, weapon.rarity)} ${escapeHtml(weapon.name)}`,
         badges: worn ? badgeHtml('En main', 'rc-badge-on') : '',
         sub: `<span class="rc-stats">${weapon.damage} ${svgIcon('skull')} · ${weapon.actionPoints} ${svgIcon('arrow')} · +${allyWeaponBonus(weapon)} aux sorts · Niv. ${weapon.minLevel || 1}</span>`,
         primary,
