@@ -40,3 +40,12 @@ App HTML autonome (`index.html`, sans build) qui indique à quelle heure sortir 
 
 - 2026-11-23 (bascule à 9 h) :
   - Bloc du haut : avant 9 h il traite aujourd'hui ; à partir de 9 h il passe au prochain jour avec un bus (demain, ou ex. « lun. 30 nov. » si le week-end est en repos ; demain si aucun jour travaillé sous 7 jours). Le texte dit « aujourd'hui », « demain » ou la date ; le compte à rebours inclut le décalage de jours. Test Playwright avec horloge simulée (lun. 07:00 → aujourd'hui, lun. 10:00 → demain, ven. 10:00 → lun.).
+
+- 2026-11-23 (choix des lignes, correspondances) :
+  - Annule « focus ligne 23 » : `data/` contient de nouveau les 96 lignes (`tools/build-data.mjs`, défaut `LIGNES=*`).
+  - Premier lancement : seul l'écran « Quelles lignes ? » s'affiche, avec la liste réelle des 96 lignes (index.json, filtrable). Au clic « Télécharger et continuer », les fichiers des lignes cochées sont copiés en localStorage (`bus-naolib:v4:ld:<ligne>`, ≈ 100 Ko chacun) ; les lignes non choisies sont effacées ; erreur claire si le stockage est plein. Au démarrage, les lignes manquantes ou plus anciennes que `index.generated` sont re-téléchargées (silencieux hors ligne : l'app fonctionne ensuite depuis le localStorage).
+  - Réglages : arrêts (départ, arrivée) pris parmi tous ceux des lignes choisies ; plus de champ ligne/sens. Bouton « Modifier les lignes ». À l'enregistrement, vérification qu'un trajet existe sur les 7 prochains jours.
+  - Algorithme (`plan`) : pour une date, tous les trajets départ → arrivée, directs ou avec UN changement entre lignes choisies, au même arrêt (même nom ; correspondance minimale 2 min). Un trajet avec changement n'est préféré à un direct que s'il arrive ≥ 5 min plus tôt. Un trajet par heure de départ, dominés écartés. L'affichage détaille le changement (arrêt, ligne, heure) ; la liste des jours indique « 1 changement ».
+  - Stockage passé en `bus-naolib:v4:*` (réglages précédents ignorés).
+  - Test Playwright : lignes 23 + 4 + C3 cochées, Zola → Grillaud = 23 puis changement à Canclaux sur C3 (départ 08:09, arrivée 08:22).
+  - Limite : deux arrêts de même nom sont considérés comme la même correspondance (marche entre quais non vérifiée).
