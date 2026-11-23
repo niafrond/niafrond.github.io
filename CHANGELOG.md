@@ -1,3 +1,9 @@
+## [3.32.0](https://github.com/niafrond/niafrond.github.io/compare/v3.31.0...v3.32.0) (2026-11-23)
+
+### Features
+
+* **houyi:** choix de cible dans la zone d'action, sprites d'armes par catégorie et corrections de combat ([#793](https://github.com/niafrond/niafrond.github.io/issues/793)) ([b838de3](https://github.com/niafrond/niafrond.github.io/commit/b838de36454ad3fe9e296d9170a84980793a5585))
+
 ## [3.31.0](https://github.com/niafrond/niafrond.github.io/compare/v3.30.0...v3.31.0) (2026-11-23)
 
 ### Features
