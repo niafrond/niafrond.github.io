@@ -274,7 +274,7 @@ const memberSpeeds = () => {
     return speeds;
 };
 
-let _chargeLast = 0, _chargeKey = '';
+let _chargeLast = 0, _chargeKey = '', _pausedSince = null;
 let _aiModule = null;
 const aiModule = () => (_aiModule ||= import('./gameTurnFlow.js').catch(() => null));   // import différé : gameTurnFlow.js dépend de ce module
 function chargeTicker(){
@@ -287,7 +287,12 @@ function chargeTicker(){
     // Tempo : plateau inactif depuis 5 s = chargements en pause (barres figées) ; ils reprennent au prochain combo du plateau.
     const running = chargeRunning(now, actionGuard.lastComboAt());
     if(typeof document !== 'undefined') document.body?.classList.toggle('charge-paused', !running);
-    if(!running){ pumpActions(); return; }   // pause d'inactivité : seules les barres sont figées ; une action déjà choisie et payée (objet, sort) doit partir quand même, sinon elle reste coincée dans la file
+    if(!running){ if(_pausedSince === null) _pausedSince = now; return; }   // pause d'inactivité : barres figées ET file d'attente gelée (rien ne part) jusqu'au prochain combo
+    if(_pausedSince !== null){   // reprise : les délais d'entrée et de lancement des actions en file ne comptent pas le temps de la pause
+        const shift = now - _pausedSince;
+        _pausedSince = null;
+        gameState.actionQueue.forEach(it => { if(it.visibleAt != null) it.visibleAt += shift; if(it.runAt != null) it.runAt += shift; });
+    }
     const heroSpeed = memberSpeeds(), foeSpeed = chargeSpeed(enemy);
     const paced = dt * chargePaceFactor();   // rythme choisi / mode calme (gameOptions.js) : héros et ennemis ralentis à égalité
     chargeTick(gameState.charge, paced, heroSpeed, foeSpeed);

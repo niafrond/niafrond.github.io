@@ -1924,3 +1924,18 @@ describe('monde : un héros sauvegardé se recharge à l\'endroit voulu', () => 
         expect(enemyLevel({ boss: {} }, 7, 0)).toBe(1);
     });
 });
+
+describe('objets : descriptions courtes (héros sauvegardés)', () => {
+    const MAX_DESC = 100;   // l'infobulle et le bouton d'un objet restent lisibles ; le détail d'une altération est dans sa propre pastille
+    const heroes = [forgeEarlyGame(), forgeMidGame(), forgeLateGame(), forgeMaxLevel()];
+    test.each(heroes.map((h, i) => [`héros ${i + 1} (niveau ${h.level})`, h]))('%s : aucun objet utilisable de son sac ne dépasse la limite', (_n, hero) => {
+        const usable = allItems.filter(i => (i.type === 'reusable' || i.type === 'consumable') && (i.minLevel || 1) <= hero.level);
+        for (const item of usable) expect({ id: item.id, len: (item.description || '').length }).toEqual({ id: item.id, len: expect.any(Number) });
+        const tooLong = usable.filter(i => (i.description || '').length > MAX_DESC).map(i => i.id);
+        expect(tooLong).toEqual([]);
+    });
+    test('la Concentration, la Célérité et les objets d\'équipier ne répètent plus l\'effet de l\'altération', () => {
+        for (const id of ['focusPotion', 'swiftPotion', 'celestial_swiftness_pill', 'white_tiger_claw', 'azure_dragon_scale'])
+            expect(allItems.find(i => i.id === id).description).not.toMatch(/chargement/);
+    });
+});

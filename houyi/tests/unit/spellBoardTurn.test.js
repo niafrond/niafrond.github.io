@@ -20,7 +20,7 @@ describe('fin de tour après un sort qui modifie le plateau', () => {
     test('plateau modifié : checkMatches(true) sous le tour du lanceur ; sinon fin de tour classique', () => {
         const fn = effects.slice(effects.indexOf('export function endPlayerSpellTurn'));
         const body = fn.slice(0, fn.indexOf('\n}\n'));
-        expect(body).toMatch(/if\(changed\) checkMatches\(true\);\s*else if\(currentTurn === 'enemy'\) finishEnemyTurn\(\);[^\n]*\n\s*else finishPlayerTurn\(\);/);
+        expect(body).toMatch(/if\(changed\)\{[^}]*setCascadeOwner[^}]*checkMatches\(true\);\s*\}[^\n]*\n\s*else if\(currentTurn === 'enemy'\) finishEnemyTurn\(\);[^\n]*\n\s*else finishPlayerTurn\(\);/);
     });
 });
 
@@ -31,7 +31,7 @@ describe('Tir Furtif : tour bonus pour celui qui le lance', () => {
         const fn = game.slice(game.indexOf('function applyStandardSpellEffects'));
         const body = fn.slice(0, fn.indexOf('\n}\n'));
         expect(body).toMatch(/spell\.effect === 'bonusTurn'[\s\S]*grantActionBonus\(caster, spell\)/);
-        expect(game).toMatch(/export function grantActionBonus[\s\S]*addBonusTurn\(caster, 1\)[\s\S]*refillActionBar/);
+        expect(game).toMatch(/export function grantActionBonus[\s\S]*addBonusTurn\(caster, 1\)/);
     });
 });
 

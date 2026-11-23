@@ -244,7 +244,7 @@ export function showCombatAnimation({ icon, title, damage = null, heal = null, s
     // Les annonces de critique / blocage / parade restent affichées jusqu'au clic du joueur.
     if(options.requireClick === undefined && options.autoHideMs === undefined && /CRITIQUE|BLOQUÉ|paré/.test(String(damage ?? ''))) options = { ...options, requireClick: true };
     // Coup d'arme ou sort offensif : le combattant joue aussi son animation d'attaque (tir à l'arc, coup d'arme…)
-    if(!options.blocked && damage !== null && (isPlayerAttack ? typeof target === 'string' && target.includes(enemy.name) : /dégâts/.test(String(damage)))) playFighterAttack(isPlayerAttack);
+    if(!options.blocked && !options.noAttack && damage !== null && (isPlayerAttack ? typeof target === 'string' && target.includes(enemy.name) : /dégâts/.test(String(damage)))) playFighterAttack(isPlayerAttack);
     const boardEl = document.getElementById('board');   // zone intérieure (l'overlay est dans le padding du plateau)
     const boardPx = boardEl ? Math.min(boardEl.clientWidth, boardEl.clientHeight) || Infinity : Infinity;
     const fx = spellFxHtml(title, Number.isFinite(boardPx) ? boardPx : 0);   // les sorts très chers s'étalent sur le plateau ; mini-animation pixel art du sort (plus riche pour les sorts chers), sinon l'icône
@@ -252,9 +252,9 @@ export function showCombatAnimation({ icon, title, damage = null, heal = null, s
     const bigFx = Boolean(fx && fx.includes('spellfx-big'));
     let html = `<div class="attack-icon${fx ? ' has-spellfx' : ''}${bigFx ? ' has-spellfx-big' : ''}">${fx || svgIcon(icon) || icon}</div>`;
     const casterAlly = isPlayerAttack ? gameState.allies?.[gameState.turnClass] : null;   // un compagnon frappe avec son arme (jamais l'arc de Hou Yi)
-    if(casterAlly?.weapon && !fx && damage !== null && heal === null && !projectile) { icon = casterAlly.weapon; projectile = casterAlly.weapon === 'bow' ? 'arrow' : 'melee'; }
+    if(casterAlly?.weapon && !options.noAttack && !fx && damage !== null && heal === null && !projectile) { icon = casterAlly.weapon; projectile = casterAlly.weapon === 'bow' ? 'arrow' : 'melee'; }
     const midIcon = projectile === 'melee' && typeof icon === 'string' && !icon.includes('<') ? svgIcon(icon) : (svgIcon(icon) || icon);
-    const stage = !bigFx ? spellStageHtml(fx || (projectile === 'arrow' ? `<div class="attack-icon stage-arrow">${svgIcon('arrow')}</div>` : `<div class="attack-icon">${svgIcon(icon) || icon}</div>`), isPlayerAttack, damage !== null && heal === null, Boolean(options.blocked), projectile === 'melee', healTarget) : null;
+    const stage = !bigFx ? spellStageHtml(fx || (projectile === 'arrow' ? `<div class="attack-icon stage-arrow">${svgIcon('arrow')}</div>` : `<div class="attack-icon">${svgIcon(icon) || icon}</div>`), isPlayerAttack, damage !== null && heal === null && !options.noAttack, Boolean(options.blocked), projectile === 'melee', healTarget) : null;
     if(stage && !plain) html = stage;   // `plain` : simple annonce (ex. tour bonus), sans la scène héros / ennemi
     // 2e temps d'un blocage / d'une parade : gros bouclier (plein = bloqué, fendu = paré) et texte qui vibre.
     let caption = `<div class="attack-title">${String(title).toUpperCase()}</div>`;
@@ -292,14 +292,17 @@ export function showStrikeAnimation(params, strike, isPlayerAttack = true, final
         ...options, blocked: strike.block, requireClick: true, onContinue: options.onContinue });
 }
 
+const CLICK_FREE_EXTRA_MS = 1500;   // pause ajoutée aux annonces qui demandaient un clic (critique, blocage, parade, boss…)
 // Mécanisme DOM bas niveau pour afficher un overlay d'animation sur la grille
 export function showAttackAnimation(text, isPlayerAttack = true, options = {}) {
     const {
-        requireClick = false,
+        requireClick: wantsClick = false,   // plus de « cliquer pour continuer » : l'annonce reste simplement 1,5 s de plus
         continueText = 'Cliquez pour continuer',
         onContinue = null,
-        autoHideMs = 1600 * animationFactor()
+        autoHideMs: baseHideMs = 1600 * animationFactor()
     } = options;
+    const requireClick = false;
+    const autoHideMs = baseHideMs + (wantsClick ? CLICK_FREE_EXTRA_MS * animationFactor() : 0);
 
     const boardDiv = document.getElementById('board');
     if(!boardDiv) {

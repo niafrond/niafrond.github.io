@@ -205,8 +205,8 @@ export function applySecondWind(spell) {
     flyHeal(true, heal);
     ['poisoned', 'poisonDamage', 'stunned', 'weakened', 'weakenedAmount', 'confused', 'sealed', 'muted', 'cursed', 'cursePct', 'petrified', 'asleep', 'exhausted', 'exhaustDrain', 'corrupted'].forEach(k => { delete player.statusEffects[k]; });
     const refilled = grantActionBonus(player, spell);   // la barre d'action se remplit aussitôt
-    showCombatAnimation({ icon: 'leaf', title: spell.name.toUpperCase(), heal: `+${heal} PV • statuts purgés`, target: refilled ? '→ Vous • barre remplie !' : '→ Vous • rejouez !' }, true);
-    log(refilled ? `${spell.name} soigne ${heal} PV, retire les statuts négatifs et remplit aussitôt votre barre d'action.` : `${spell.name} soigne ${heal} PV, retire les statuts négatifs et vous laisse rejouer.`);
+    showCombatAnimation({ icon: 'leaf', title: spell.name.toUpperCase(), heal: `+${heal} PV • statuts purgés`, target: refilled ? '→ Vous • barre remplie !' : '→ Vous • tour bonus en réserve' }, true);
+    log(refilled ? `${spell.name} soigne ${heal} PV, retire les statuts négatifs et remplit aussitôt votre barre d'action.` : `${spell.name} soigne ${heal} PV, retire les statuts négatifs et vous donne un tour bonus.`);
     return true;
 }
 

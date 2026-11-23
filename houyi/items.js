@@ -109,10 +109,10 @@ export const allItems = [
 {id:"stoneSkinPotion", name:"Pilule de Peau de Bronze", type:"reusable", minLevel:7, rarity:"uncommon", actionPoints:2, chargesPerCycle:1, rechargeTurns:4,
  description:"Réduit les dégâts subis de 25% pour ce combat, sans cumul (rechargé en 4 tours)", effect:{damageReduction:0.25}},
  {id:"focusPotion", name:"Infusion de Concentration", type:"reusable", minLevel:2, rarity:"common", actionPoints:1, chargesPerCycle:1, rechargeTurns:3,
- description:"Augmente les chances de critique de 15% pour ce combat, sans cumul, et vous rend Concentré 4 tours : chargement des actions 25 % plus rapide (rechargé en 3 tours)", effect:{critChance:15, buff:{key:"focused", turns:4}}},
+ description:"Critique +15% pour ce combat, sans cumul, et Concentré 4 tours (rechargé en 3 tours)", effect:{critChance:15, buff:{key:"focused", turns:4}}},
 
 {id:"swiftPotion", name:"Pilule de Célérité", type:"reusable", minLevel:2, rarity:"common", actionPoints:1, chargesPerCycle:1, rechargeTurns:4,
- description:"Accorde 2 points d'action supplémentaires ce tour et vous met en Hâte 3 tours : chargement des actions 50 % plus rapide (rechargé en 4 tours)", effect:{gainActionPoints:2, buff:{key:"haste", turns:3}}},
+ description:"+2 points d'action ce tour et Hâte 3 tours (rechargé en 4 tours)", effect:{gainActionPoints:2, buff:{key:"haste", turns:3}}},
 
 {id:"regenPotion", name:"Gourde de Tisane Médicinale", type:"reusable", minLevel:3, rarity:"common", actionPoints:2, chargesPerCycle:1, rechargeTurns:6,
  description:"Restaure 8 HP par tour pendant 3 tours (rechargé en 6 tours)", effect:{regen:8, duration:3}},
@@ -139,7 +139,7 @@ export const allItems = [
     {id:"diamond_skin_pill", name:"Pilule de Peau de Diamant", type:"reusable", minLevel:35, rarity:"rare", actionPoints:2, chargesPerCycle:1, rechargeTurns:5,
      description:"Réduit les dégâts subis de 35% pour ce combat, sans cumul (rechargé en 5 tours)", effect:{damageReduction:0.35}},
     {id:"celestial_swiftness_pill", name:"Pilule de Célérité Céleste", type:"reusable", minLevel:38, rarity:"rare", actionPoints:1, chargesPerCycle:1, rechargeTurns:5,
-     description:"Accorde 3 points d'action supplémentaires ce tour et vous donne de l'Élan 3 tours : chargement des actions deux fois plus rapide (rechargé en 5 tours)", effect:{gainActionPoints:3, buff:{key:"surge", turns:3}}},
+     description:"+3 points d'action ce tour et Élan 3 tours (rechargé en 5 tours)", effect:{gainActionPoints:3, buff:{key:"surge", turns:3}}},
     {id:"imperial_cinnabar_elixir", name:"Élixir de Cinabre Impérial", type:"reusable", minLevel:40, rarity:"rare", actionPoints:2, chargesPerCycle:1, rechargeTurns:8,
      description:"Restaure 140 HP (rechargé en 8 tours)", effect:{heal:140}},
     {id:"imperial_crimson_wine", name:"Vin Écarlate Impérial", type:"reusable", minLevel:42, rarity:"rare", actionPoints:2, chargesPerCycle:1, rechargeTurns:5,
@@ -180,9 +180,9 @@ export const allItems = [
     {id:"xuanwu_balm", name:"Baume de la Tortue Noire", type:"reusable", minLevel:25, rarity:"rare", actionPoints:2, chargesPerCycle:1, rechargeTurns:8,
      description:"Soigne un équipier de 75 % de ses PV max (rechargé en 8 tours)", effect:{allyHeal:{pct:0.75}}},
     {id:"white_tiger_claw", name:"Griffe du Tigre Blanc", type:"reusable", minLevel:12, rarity:"uncommon", actionPoints:1, chargesPerCycle:1, rechargeTurns:6,
-     description:"Un équipier gagne la Hâte 4 tours : chargement de ses actions 50 % plus rapide (rechargé en 6 tours)", effect:{allyBuff:{key:"haste", turns:4}}},
+     description:"Un équipier gagne la Hâte 4 tours (rechargé en 6 tours)", effect:{allyBuff:{key:"haste", turns:4}}},
     {id:"azure_dragon_scale", name:"Écaille du Dragon Azur", type:"reusable", minLevel:30, rarity:"rare", actionPoints:2, chargesPerCycle:1, rechargeTurns:8,
-     description:"Un équipier récupère 20 % de ses PV max et gagne l'Élan 3 tours : chargement deux fois plus rapide (rechargé en 8 tours)", effect:{allyHeal:{pct:0.2}, allyBuff:{key:"surge", turns:3}}},
+     description:"Un équipier récupère 20 % de ses PV max et gagne l'Élan 3 tours (rechargé en 8 tours)", effect:{allyHeal:{pct:0.2}, allyBuff:{key:"surge", turns:3}}},
     {id:"qilin_hair", name:"Poil de Qilin", type:"reusable", minLevel:15, rarity:"rare", actionPoints:2, chargesPerCycle:1, rechargeTurns:8,
      description:"Ranime un équipier hors de combat (Hou Yi compris) avec 50 % de ses PV max (rechargé en 8 tours)", effect:{revive:{pct:0.5}}},
     {id:"qilin_horn", name:"Corne de Qilin", type:"reusable", minLevel:40, rarity:"legendary", actionPoints:3, chargesPerCycle:1, rechargeTurns:9,
@@ -190,7 +190,7 @@ export const allItems = [
 
     // Relique de quête (Fusang) : jamais en butin ni en vente. Portée dans un emplacement de relique, elle rend le héros indétectable.
     {id:SHADOW_RELIC_ID, name:"Cháng d'ombre de Fusang", type:"artifact", minLevel:37, rarity:"legendary", quest:true,
-     description:"Les ennemis ne vous remarquent plus, sauf les boss ; les hautes herbes, l'eau et la lave n'attirent plus de combat. Augmente HP max de 30 (permanent)", effect:{permMaxHp:30, stealth:true}},
+     description:"Ennemis (sauf boss), herbes, eau et lave n'attirent plus de combat. HP max +30 (permanent)", effect:{permMaxHp:30, stealth:true}},
 ];
 
 // Réutilisabilité (itemReuse.js) : chaque objet utilisable est « single » (consommé à l'usage) ou « relic » (charges rechargeables).

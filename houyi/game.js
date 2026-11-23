@@ -1,5 +1,6 @@
 // logique globale du joueur, ennemis, combat et interface
 
+import { WEAPON_SPRITES } from './sprites/weaponSprites.js';
 import { sellPriceOf } from './merchants.js';
 import { createBossScript, noteChargeDamage } from './bossScript.js';
 import { createBehavior, adjustDamageTaken, damageKindOf } from './enemyBehaviors.js';
@@ -178,7 +179,9 @@ export function addManaForColor(entity, color, baseGain, options = {}){
     };
 }
 
-export function getWeaponIcon(weaponType){
+export function getWeaponIcon(weaponType, rarity = 'common'){
+    const sprite = WEAPON_SPRITES[weaponType];   // sprite pixel art de la catégorie d'arme (tools/gen-weapons-gm.mjs), teinté selon la rareté (style-hud.css) ; sinon l'icône vectorielle
+    if(sprite) return `<span class="weapon-sprite weapon-rarity-${/^(common|uncommon|rare|legendary)$/.test(rarity) ? rarity : 'common'}"><img src="${sprite}" alt="" draggable="false"></span>`;
     return svgIcon(WEAPON_ICONS[weaponType] || 'sword');
 }
 
@@ -220,12 +223,13 @@ export function normalizeBonusTurnValue(value){
 
 // Pastille « cadeau ×N » affichée à côté du nom tant qu'il reste des tours bonus accumulés.
 /**
- * Bonus d'un sort qui donnait « un tour bonus » : quand les actions sont indépendantes du plateau (il n'y a plus de tour à gagner), il REMPLIT AUSSITÔT
- * la barre d'action du lanceur (sa classe, ou l'ennemi) ; tutoriel et duels gardent l'ancien tour bonus. Renvoie true si la barre a été remplie.
+ * « Tour bonus » d'un sort : le lanceur (sa classe, ou l'ennemi) gagne seulement la pastille cadeau, sans remplir sa barre d'action. Elle est lue à la fin de SON
+ * tour de plateau (finishPlayerTurn / finishEnemyTurn) : gagnée pendant son propre tour, elle sert aussitôt (il rejoue) ; gagnée pendant le tour de l'autre, elle attend
+ * le sien. Renvoie toujours false (barre non remplie).
  */
 export function grantActionBonus(caster, spell = null){
-    if(!decoupled()){ addBonusTurn(caster, 1); return false; }
-    return refillActionBar(caster, spell?.class || null);
+    addBonusTurn(caster, 1);
+    return false;
 }
 export function bonusTurnBadge(entity){
     const n = normalizeBonusTurnValue(entity?.bonusTurn);
@@ -439,6 +443,14 @@ export function applyDamage(target, damage, options = {}){
     return dealt;
 }
 
+/** Nom du personnage touché par le dernier coup reçu par l'équipe (compagnon qui encaisse, sinon Hou Yi) : annonces d'attaque ennemie. */
+export const partyHitName = () => gameState.lastVictim || player.name || 'Hou Yi';
+/** Nom du personnage que le prochain coup ennemi toucherait (compagnon protégé, Hou Yi à terre → un compagnon, sinon Hou Yi) : annonces sans dégâts. */
+export function partyTargetName(){
+    const shield = gameState.allyShield && !gameState.allyShield.ko ? gameState.allyShield : (gameState.heroKo ? pickAnyAlly(gameState.allies) : null);
+    return shield ? shield.name : (player.name || 'Hou Yi');
+}
+
 function applyDamageCore(target, damage, options = {}){
     if(!target) return 0;
     // Action ennemie qui vise un compagnon, ou Hou Yi à terre : un compagnon vivant encaisse à la place (barre de vie propre ; hors de combat à 0 PV).
@@ -446,6 +458,7 @@ function applyDamageCore(target, damage, options = {}){
     if(!shield && target === player && gameState.heroKo) shield = pickAnyAlly(gameState.allies);
     if(target === player && shield){
         const ally = shield;
+        gameState.lastVictim = ally.name;
         const result = damageAlly(ally, Math.max(0, Math.floor(damage || 0)));
         log(`${ally.name} encaisse ${result.damage} dégâts (${ally.hp}/${ally.maxHp} PV).`);
         const reflectPct = Math.floor(ally.transe || 0) > 0 ? (transeEffectFor(ally.transeClass).reflectPct || 0) : 0;   // Roues de Feu de Nezha : il renvoie une part des coups
@@ -460,6 +473,7 @@ function applyDamageCore(target, damage, options = {}){
         updateStats();
         return result.damage;
     }
+    if(target === player) gameState.lastVictim = player.name || 'Hou Yi';
     let normalizedDamage = Math.max(0, Math.floor(damage || 0));
     // Fureur du Tigre Blanc (Xiūxiān du Guerrier) : les dégâts de l'arme et des crânes sont multipliés.
     if(target === enemy && (options.damageSource === 'weapon' || options.damageSource === 'skull')) normalizedDamage *= xiuEffect().physMult || 1;
@@ -690,7 +704,7 @@ function enemyInflictsAlteration(caster, target, spell){
             else if(chilled) label = { icon: 'snow', name: 'Étourdi et ralenti', text: 'perd son prochain tour et gagne moins de points de combat' };
         }
     }
-    showCombatAnimation({ icon: label.icon, title: spell.name, damage: landed ? `${label.name} ${turns} tours` : 'Résisté', source: caster.name, target: '→ Vous' }, false);
+    showCombatAnimation({ icon: label.icon, title: spell.name, damage: landed ? `${label.name} ${turns} tours` : 'Résisté', source: caster.name, target: `→ ${partyTargetName()}` }, false);
     log(landed
         ? `${escapeHtml(caster.name)} lance ${spell.name} : vous êtes ${label.name.toLowerCase()} pendant ${turns} tours (${label.text}).`
         : `${escapeHtml(caster.name)} lance ${spell.name}, mais vous y résistez (immunité ou équipement).`);
@@ -798,8 +812,8 @@ export function applyStandardSpellEffects(caster, target, spell, isPlayerCaster)
             log(`${spell.name} inflige ${dmg} dégâts.`);
         } else {
             playSfx('spellHit', { isPlayer: false });
-            if(spellStrike) showStrikeAnimation({ icon: 'fire', title: spell.name, source: caster.name, target: '→ Vous' }, spellStrike, false, dmg);
-            else showCombatAnimation({ icon: 'fire', title: spell.name, damage: `-${Math.floor(dmg)} dégâts${spellFlags}`, source: caster.name, target: '→ Vous' }, false);
+            if(spellStrike) showStrikeAnimation({ icon: 'fire', title: spell.name, source: caster.name, target: `→ ${partyHitName()}` }, spellStrike, false, dmg);
+            else showCombatAnimation({ icon: 'fire', title: spell.name, damage: `-${Math.floor(dmg)} dégâts${spellFlags}`, source: caster.name, target: `→ ${partyHitName()}` }, false);
             log(`${escapeHtml(caster.name)} lance ${spell.name} ! ${dmg} dégâts.`);
         }
     }
@@ -833,7 +847,7 @@ export function applyStandardSpellEffects(caster, target, spell, isPlayerCaster)
 
     // Tout sort lancé par l'ennemi (tour bonus, défense, statut…) doit montrer son animation, même sans dégâts ni soin.
     if(!isPlayerCaster && !enemyAnimShown){
-        const detail = spell.effect === 'bonusTurn' ? (decoupled() ? 'Barre remplie !' : 'Rejoue !') : (opsText.join(' • ') || null);
+        const detail = spell.effect === 'bonusTurn' ? 'Tour bonus !' : (opsText.join(' • ') || null);
         showCombatAnimation({ icon: 'spark', title: spell.name, heal: detail, source: caster.name, target: `→ ${caster.name}` }, false);
     }
 }
@@ -932,7 +946,7 @@ export function grantChestLoot({ loot = [] } = {}){
             player.weapons.push(entry.weapon);
             const lvl = entry.weapon.minLevel > player.level ? `, niv. ${entry.weapon.minLevel}` : '';
             labels.push(`${entry.weapon.name} (${rarityText}${lvl})`);
-            log(`${getWeaponIcon(entry.weapon.type)} Trouvé dans un coffre : ${entry.weapon.name} !`);
+            log(`${getWeaponIcon(entry.weapon.type, entry.weapon.rarity)} Trouvé dans un coffre : ${entry.weapon.name} !`);
         } else if(entry.kind === 'item' && entry.item) {
             if(sellDuplicateItem(entry.item)) return;   // déjà possédé : converti en zhu, sans le dire
             player.inventory.push({ ...entry.item, applied: false });
@@ -2134,7 +2148,7 @@ function strikeWithWeapon(weapon, { free = false, ally = null, pct = 100, nonLet
         }
     }
 
-    const icon = getWeaponIcon(weapon.type);
+    const icon = getWeaponIcon(weapon.type, weapon.rarity);
 
     showStrikeAnimation({ icon, title: weapon.name, target: `→ ${enemy.name}`, projectile: weapon.type === 'bow' ? 'arrow' : 'melee' }, strike, true, dmg);
     log(`${icon} ${ally ? escapeHtml(ally.name) + ' utilise' : 'Vous utilisez'} ${weapon.name}${free ? ' gratuitement' : ''} et inflig${ally ? 'e' : 'ez'} ${dmg} dégâts.${isCrit ? ' Coup critique !' : ''}${strike.unblockable ? ' Coup inblocable !' : ''}${blockText ? ` L'ennemi ${blockText === 'BLOQUÉ !' ? 'bloque le coup' : 'pare le coup'}.` : ''}`);
