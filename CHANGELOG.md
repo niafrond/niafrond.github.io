@@ -1,3 +1,9 @@
+## [3.30.0](https://github.com/niafrond/niafrond.github.io/compare/v3.29.0...v3.30.0) (2026-11-23)
+
+### Features
+
+* **houyi:** actions en Fulu, Fulu par personnage, fiches chiffrées et sorts par personnage ([#791](https://github.com/niafrond/niafrond.github.io/issues/791)) ([3871567](https://github.com/niafrond/niafrond.github.io/commit/3871567f59e78a84ff35e9d3305a53c8f36afa7e))
+
 ## [3.29.0](https://github.com/niafrond/niafrond.github.io/compare/v3.28.0...v3.29.0) (2026-11-23)
 
 ### Features
