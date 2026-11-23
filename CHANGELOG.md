@@ -1,3 +1,9 @@
+## [3.33.0](https://github.com/niafrond/niafrond.github.io/compare/v3.32.0...v3.33.0) (2026-11-23)
+
+### Features
+
+* **houyi:** altération Entravé par biome, flèche et arc séparés, portrait de Xiao Gui ([#794](https://github.com/niafrond/niafrond.github.io/issues/794)) ([97186ae](https://github.com/niafrond/niafrond.github.io/commit/97186ae6d0a04d67779b2ee23ec684d0d0226a4d))
+
 ## [3.32.0](https://github.com/niafrond/niafrond.github.io/compare/v3.31.0...v3.32.0) (2026-11-23)
 
 ### Features
