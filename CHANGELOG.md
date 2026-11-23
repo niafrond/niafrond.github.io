@@ -1,3 +1,15 @@
+## [3.24.0](https://github.com/niafrond/niafrond.github.io/compare/v3.23.1...v3.24.0) (2026-11-23)
+
+### Features
+
+* **bus-naolib:** afficher le lendemain une fois 9 h passées ([#784](https://github.com/niafrond/niafrond.github.io/issues/784)) ([c0fbe8c](https://github.com/niafrond/niafrond.github.io/commit/c0fbe8c13031db6305a7388685fb473b669744f7))
+
+## [3.23.1](https://github.com/niafrond/niafrond.github.io/compare/v3.23.0...v3.23.1) (2026-11-23)
+
+### Bug Fixes
+
+* **houyi:** dégâts de début de partie et visée des sorts de plateau ([#783](https://github.com/niafrond/niafrond.github.io/issues/783)) ([377e614](https://github.com/niafrond/niafrond.github.io/commit/377e614f582bff9304f526a5b548332b6a2ec9fc))
+
 ## [3.23.0](https://github.com/niafrond/niafrond.github.io/compare/v3.22.0...v3.23.0) (2026-11-22)
 
 ### Features
