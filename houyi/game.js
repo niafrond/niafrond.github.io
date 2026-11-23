@@ -20,7 +20,7 @@ import { protectsFromBiome, collarForBiome, stuffTotals, normalizeStuff, grantSt
 import { isInTranse, endTranse, startTranse, transeEffectFor, mergeTranseEffects, classAllowsUltimate, describeTranse, switchGauge, storeGauge } from "./transe.js";
 import { POTIONS, normalizePotions, potionHeal, drinkPotion, drinkBlockReason, applyQueuedPotion } from "./potions.js";
 import { normalizeSkills, actionSpells, teamStartMana } from "./skills.js";
-import { normalizeRoster, usableClasses, grantClass, CLASS_SHORT } from "./classRoster.js";
+import { normalizeRoster, usableClasses, hinderedClasses, grantClass, CLASS_SHORT, START_CLASS } from "./classRoster.js";
 import { newCharge, newActionQueue, initCharge } from "./classCharge.js";
 import { allyWeaponBonus } from "./weapons.js";
 import { allyEquippedWeapon, ensureAllyWeapon, ensureAllyWeapons } from "./allyWeapons.js";
@@ -55,7 +55,7 @@ import { raiseEnemyHpAboveHero } from "./enemyGrowth.js";
 import { gearManaBonus } from "./manaGear.js";
 
 
-import { ENVIRONMENT_STATUSES, environmentDamage, clearEnvironmentStatuses, cureStatuses, alterationOfSpell, inflictAlteration, setAlterationHooks, cursedDamage, wakeIfAsleep, healEntity, isMuted, confusedSelfHit } from "./alterations.js";
+import { ENVIRONMENT_STATUSES, environmentDamage, clearEnvironmentStatuses, applyBiomeHindrance, cureStatuses, alterationOfSpell, inflictAlteration, setAlterationHooks, cursedDamage, wakeIfAsleep, healEntity, isMuted, confusedSelfHit } from "./alterations.js";
 import { rawAttack, rawDefense, setStrikeHooks, describeLevelEdge, resolveStrike, blockLabel, addStatBuff, describeStatBuff, clearStatBuffs } from "./combatStats.js";
 import { animationFactor, getOption, vibrate } from "./gameOptions.js";
 import { defeatGoldLoss } from "./defeatPenalty.js";
@@ -1044,7 +1044,7 @@ export function syncGauge(){
 
 export function setTurnClass(classId){
     if(gameState.combatState !== 'active' || (currentTurn !== 'player' && !decoupled())) return false;   // actions indépendantes du plateau : on choisit la classe (dont la barre est chargée) même pendant le tour de plateau adverse
-    if(!usableClasses(player, enemy?.biome, gameState.forcedClass).includes(classId)) return false;   // classes de combat, hors biome bridé, ou classe imposée
+    if(!usableClasses(player, enemy?.biome, gameState.forcedClass).includes(classId)) return false;   // classes de combat, ou classe imposée
     gameState.turnClass = classId;
     syncGauge();
     applyTranseClassEffect();
@@ -2740,6 +2740,13 @@ export function decideFirstTurn(){
         log(`Premier tour : ${starter === 'player' ? 'Joueur' : 'Ennemi'}`);
     }
 
+    // Classes entravées par le biome (BIOME_CLASS_LIMITS) : elles portent l'altération « Entravé » tout le combat, annoncée dès l'écran de début.
+    const limitLines = Object.entries(hinderedClasses(player, enemy?.biome)).map(([id, reason]) => {
+        applyBiomeHindrance(id === START_CLASS ? player : gameState.allies?.[id], reason);
+        return `${ALLIES[id]?.name || CLASS_SHORT[id] || id} est entravé : ${reason}.`;
+    });
+    limitLines.forEach(l => log(l));
+
     // Personne n'agit pendant l'écran de début : tour « intro », boutons du joueur verrouillés.
     currentTurn = 'intro';
     updateStats();
@@ -2747,7 +2754,7 @@ export function decideFirstTurn(){
     showCombatIntro({
         anim,
         banner,
-        lines: banner ? (extraLine ? [...banner.lines, extraLine] : banner.lines) : [],
+        lines: [...(banner ? (extraLine ? [...banner.lines, extraLine] : banner.lines) : []), ...limitLines],
         startLine: anim.target
     }, () => {
         if(token !== introToken || gameState.combatState !== 'active') return;

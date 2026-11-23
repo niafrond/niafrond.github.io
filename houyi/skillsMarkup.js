@@ -100,12 +100,12 @@ export function classesHtml(hero, canToggle = true) {
     }).join('');
     const limits = Object.entries(BIOME_CLASS_LIMITS).map(([biome, l]) => {
         const known = l.classes.filter(c => roster.owned.includes(c));
-        return known.length ? `<li><strong>${esc(BIOME_NAMES[biome] || biome)}</strong> : ${known.map(c => esc(memberName(c))).join(', ')} bridé${known.length > 1 ? 's' : ''} (${esc(l.reason)})</li>` : '';
+        return known.length ? `<li><strong>${esc(BIOME_NAMES[biome] || biome)}</strong> : ${known.map(c => esc(memberName(c))).join(', ')} entravé${known.length > 1 ? 's' : ''} (${esc(l.reason)})</li>` : '';
     }).join('');
     return `<div class="cl-panel"><div class="cl-head"><strong>Équipe de combat</strong><span>${roster.loadout.length} / ${MAX_USABLE_CLASSES}</span></div>
         <div class="cl-grid">${rows}</div>
-        <details class="cl-limits"><summary>Biomes qui brident des compagnons</summary><ul>${limits}</ul>
-        <p>Il reste toujours un membre utilisable : mêlez les compagnons pour tirer parti de chaque région. Ils partagent le qì de Hou Yi, mais chacun a sa barre de vie : à 0 PV, un compagnon est hors de combat jusqu'à la fin.</p></details></div>`;
+        <details class="cl-limits"><summary>Biomes qui entravent des compagnons</summary><ul>${limits}</ul>
+        <p>Un compagnon entravé reste utilisable mais son chargement est plus lent (altération « Entravé ») : mêlez les compagnons pour tirer parti de chaque région. Ils partagent le qì de Hou Yi, mais chacun a sa barre de vie : à 0 PV, un compagnon est hors de combat jusqu'à la fin.</p></details></div>`;
 }
 
 /**

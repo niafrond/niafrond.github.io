@@ -89,9 +89,9 @@ function playCompanionAnnouncements(list, done){
     const next = i => {
         if(gameState.combatState !== 'active' || i >= list.length){ done(); return; }
         const a = list[i];
-        showCombatAnimation({ icon: companionIconHtml(a.id), title: a.title, damage: a.damage, target: a.target }, true, {
+        showCombatAnimation({ icon: companionIconHtml(a.id), title: a.title, damage: a.damage, target: a.target, plain: true }, true, {   // plain : son portrait seul, sans la scène héros / ennemi
             autoHideMs: 1100 * animationFactor(),
-            noAttack: true,   // un pouvoir de compagnon n'est pas une attaque : ni coup d'arme ni projectile
+            noAttack: true,   // un pouvoir de compagnon n'est pas une attaque : ni coup d'arme ni scène héros / ennemi, seulement son portrait
             onContinue: () => next(i + 1)
         });
     };
@@ -172,9 +172,9 @@ export function finishPlayerTurn(){
             updateStats();   // verrouille les boutons
             log('Xiao Gui bondit ! Hi hi — un coup de renard !');
             // On annonce que le renard joue, puis seulement il fait son mouvement.
-            showCombatAnimation({ icon: foxIconHtml(), title: 'Xiao Gui', damage: 'Un coup de renard !', target: 'Le renard joue sur le plateau…' }, true, {
+            showCombatAnimation({ icon: foxIconHtml(), title: 'Xiao Gui', damage: 'Un coup de renard !', target: 'Le renard joue sur le plateau…', plain: true }, true, {
                 autoHideMs: 1200 * animationFactor(),
-                noAttack: true,   // Xiao Gui joue un coup, il n'attaque pas
+                noAttack: true,   // Xiao Gui joue un coup, il n'attaque pas : son portrait seul (pas la scène du héros)
                 onContinue: () => { if(gameState.combatState === 'active') foxMakeRandomMove(); }
             });
         });

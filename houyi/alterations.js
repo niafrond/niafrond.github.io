@@ -175,6 +175,11 @@ export const ENVIRONMENT_STATUSES = {
     drowning: { icon: 'swirl', name: 'Noyade', text: n => `Perd ${n} PV à chaque tour.`, log: n => `Noyade : vous subissez ${n} dégâts.`, collar: 'sea', protect: 'de la noyade' },
     ablaze: { icon: 'fire', name: 'Enflammé', text: n => `Perd ${n} PV à chaque tour.`, log: n => `Enflammé : vous subissez ${n} dégâts.`, collar: 'volcano', protect: 'des flammes' }
 };
+// Entravé : malus d'un biome sur certaines classes (BIOME_CLASS_LIMITS, classRoster.js). Dure tout le combat, ne se soigne pas : le chargement des actions de la classe
+// est plus lent (classCharge.js, CHARGE_MOD.hindered). `statusEffects.hindered` vaut 1, `statusEffects.hinderedWhy` porte la raison affichée.
+export const HINDERED_LABEL = { icon: 'hourglass', name: 'Entravé' };
+export const hinderedText = why => `${why} : le chargement des actions est 40 % plus lent pendant tout le combat.`;
+export const applyBiomeHindrance = (entity, why) => { if (!entity) return; entity.statusEffects ||= {}; entity.statusEffects.hindered = 1; entity.statusEffects.hinderedWhy = why; };
 export const ENVIRONMENT_STATUS_PCT = 0.04;   // % des PV max perdus par tour (au moins 2)
 export const environmentDamage = maxHp => Math.max(2, Math.ceil((maxHp || 0) * ENVIRONMENT_STATUS_PCT));
-export const clearEnvironmentStatuses = entity => { Object.keys(ENVIRONMENT_STATUSES).forEach(k => { if (entity?.statusEffects) delete entity.statusEffects[k]; }); };
+export const clearEnvironmentStatuses = entity => { [...Object.keys(ENVIRONMENT_STATUSES), 'hindered', 'hinderedWhy'].forEach(k => { if (entity?.statusEffects) delete entity.statusEffects[k]; }); };

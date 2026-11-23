@@ -1,6 +1,6 @@
 import { describe, test, expect } from '@jest/globals';
 import './fixtures/xhrFromDisk.js';
-import { MAX_USABLE_CLASSES, CLASS_IDS, normalizeRoster, grantClass, toggleLoadout, restrictedClasses, usableClasses, BIOME_CLASS_LIMITS } from '../../classRoster.js';
+import { MAX_USABLE_CLASSES, CLASS_IDS, normalizeRoster, grantClass, toggleLoadout, hinderedClasses, usableClasses, BIOME_CLASS_LIMITS } from '../../classRoster.js';
 import { playerClasses, getClassSpells } from '../../classes.js';
 import { allClassSpells } from '../../spells.js';
 import { QUESTS, SCREENS } from '../../story.js';
@@ -33,15 +33,16 @@ describe('classes obtenues en cours de route', () => {
     });
 });
 
-describe('biomes qui brident des classes', () => {
-    test('une classe bridée n\'est pas utilisable, les autres le restent', () => {
+describe('biomes qui entravent des classes', () => {
+    test('une classe entravée reste utilisable : le biome ne l\'interdit plus', () => {
         const h = hero();
         grantClass(h, 'templar');
-        expect(Object.keys(restrictedClasses(h, 'volcano'))).toEqual(['templar']);
-        expect(usableClasses(h, 'volcano')).toEqual(['assassin']);
+        expect(Object.keys(hinderedClasses(h, 'volcano'))).toEqual(['templar']);
+        expect(usableClasses(h, 'volcano')).toEqual(['assassin', 'templar']);
         expect(usableClasses(h, 'paddy')).toEqual(['assassin', 'templar']);
+        expect(hinderedClasses(h, 'paddy')).toEqual({});
     });
-    test('si tout est bridé, une classe reste utilisable', () => {
+    test('toute l\'équipe de combat reste utilisable, même entièrement entravée', () => {
         const h = hero({ class: 'templar' });
         expect(usableClasses(h, 'volcano')).toHaveLength(1);
         const solo = hero({ class: 'assassin' });

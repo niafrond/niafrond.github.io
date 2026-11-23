@@ -14,7 +14,7 @@ import { bindTooltip, showSpellTooltip, showMemberTooltip, hideSpellTooltip } fr
 import { updateSpellsTab } from './gameSpellsTab.js';
 import { allSpells as spellsCatalog, getSpellsByLevel } from './spells.js';
 import { getClassSpells, playerClasses } from './classes.js';
-import { usableClasses, restrictedClasses, normalizeRoster, CLASS_SHORT, START_CLASS } from './classRoster.js';
+import { usableClasses, normalizeRoster, CLASS_SHORT, START_CLASS } from './classRoster.js';
 import { RAGE_MAX } from './ultimates.js';
 import { ULTIMATE_CLASS, getSelectableUltimates } from './ultimates.js';
 import { statusBadgesHtml } from './statusBadges.js';
@@ -385,10 +385,9 @@ function renderClassPicker(container){
     const loadout = normalizeRoster(player).loadout;
     picker.hidden = !active;   // toujours là en combat, même avec une seule classe : elle porte la barre de chargement
     picker.title = isInTranse(player) ? describeTranse(current) : 'Une classe par tour : ses sorts, son effet de Xiūxiān';
-    const restricted = restrictedClasses(player, combatBiome());
     const forced = gameState.forcedClass;
     const html = loadout.map(id => {
-        const reason = isMemberKO(gameState.allies, gameState.heroKo, id) ? 'Hors de combat' : forced && id !== forced ? 'Entraînement : classe imposée' : (restricted[id] ? `Bridée ici : ${restricted[id]}` : `${ALLIES[id] ? ALLIES[id].name + ' · ' : ''}${playerClasses[id]?.name || id}`);
+        const reason = isMemberKO(gameState.allies, gameState.heroKo, id) ? 'Hors de combat' : forced && id !== forced ? 'Entraînement : classe imposée' : (`${ALLIES[id] ? ALLIES[id].name + ' · ' : ''}${playerClasses[id]?.name || id}`);
         // Barre de chargement : se remplit en temps réel jusqu'à ce que la classe soit prête (animation CSS pour le temps restant).
         const prog = Math.round(classProgress(gameState.charge, player, id, chargeFactor()) * 100);
         const remaining = classRemainingMs(gameState.charge, id);
@@ -397,10 +396,10 @@ function renderClassPicker(container){
         const info = classChargeInfo(player, id);
         const chargeText = prog >= 100 ? `Prête (chargement ${info.time})` : `Se recharge : ${Math.ceil(remaining / 1000)} s (temps ${info.time} : Agilité/Moral -${Math.round(info.pct.agility)} %, attribut -${Math.round(info.pct.attribute)} %, qì -${Math.round(info.pct.qi)} %, compétences -${info.pct.skills} %)`;
         const ko = isMemberKO(gameState.allies, gameState.heroKo, id);   // membre hors de combat : il ne joue plus
-        const off = !mine || (forced && id !== forced) || restricted[id] || ko;   // choisir un compagnon reste libre : seules ses ACTIONS attendent son chargement
+        const off = !mine || (forced && id !== forced) || ko;   // choisir un compagnon reste libre : seules ses ACTIONS attendent son chargement
         // Pastille dorée : ce personnage (non sélectionné) est chargé et a une action utilisable maintenant (arme ou sort) ; un clic le sélectionne.
         const hint = id !== current && !off && prog >= 100 && memberHasAction(id) ? `<span class="cp-hint" title="${escapeHtml(memberName(id))} peut agir maintenant"></span>` : '';
-        return `<button type="button" class="class-pick${id === current ? ' on' : ''}${restricted[id] ? ' limited' : ''}${ko ? ' ko' : ''}${prog >= 100 && !ko ? ' ready-pulse' : ' charging'}${animStyle ? ' charging-anim' : ''}" data-class="${id}" aria-pressed="${id === current}"${off ? ' disabled' : ''} style="--mc:${memberColor(id)};--charge:${prog}%;${animStyle}" title="${reason} · ${chargeText}"><span class="cp-name">${memberName(id)}</span>${hint}${memberBarsHtml(id)}</button>`;
+        return `<button type="button" class="class-pick${id === current ? ' on' : ''}${ko ? ' ko' : ''}${prog >= 100 && !ko ? ' ready-pulse' : ' charging'}${animStyle ? ' charging-anim' : ''}" data-class="${id}" aria-pressed="${id === current}"${off ? ' disabled' : ''} style="--mc:${memberColor(id)};--charge:${prog}%;${animStyle}" title="${reason} · ${chargeText}"><span class="cp-name">${memberName(id)}</span>${hint}${memberBarsHtml(id)}</button>`;
     }).join('');
     // Les actions en dessous sont celles du personnage choisi : leur cadre prend sa couleur et porte son nom (lecteurs d'écran, infobulle).
     const actions = document.getElementById('player-spells');
