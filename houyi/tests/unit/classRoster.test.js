@@ -44,7 +44,7 @@ describe('biomes qui entravent des classes', () => {
     });
     test('toute l\'équipe de combat reste utilisable, même entièrement entravée', () => {
         const h = hero({ class: 'templar' });
-        expect(usableClasses(h, 'volcano')).toHaveLength(1);
+        expect(usableClasses(h, 'volcano')).toEqual(normalizeRoster(h).loadout);
         const solo = hero({ class: 'assassin' });
         expect(usableClasses(solo, 'savanna')).toEqual(['assassin']);
     });
