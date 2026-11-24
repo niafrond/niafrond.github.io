@@ -46,14 +46,17 @@ test('zone rectangle en 2 touches, dimensions en cm par appui long, dupliquer, s
   await expect(page.locator('[data-role=zone-panel]')).toBeVisible();
   await expect(page.locator('[data-role=zone-area]')).toContainText('12,00');
 
-  // désélection puis sélection par toucher
+  // désélection puis sélection par toucher (le bandeau change la taille du plan : on reprojette)
+  p = await projeter(page);
   [x, y] = px(p, 10, 7); await page.mouse.click(x, y);
   await expect(page.locator('[data-role=zone-panel]')).toBeHidden();
   p = await projeter(page);
   [x, y] = px(p, 4, 3.5); await page.mouse.click(x, y);
   await expect(page.locator('[data-role=zone-panel]')).toBeVisible();
 
-  // appui long : dimensions en cm
+  // appui long : dimensions en cm (le bandeau a redimensionné le plan : on reprojette)
+  p = await projeter(page);
+  [x, y] = px(p, 4, 3.5);
   await page.mouse.move(x, y); await page.mouse.down(); await page.waitForTimeout(700); await page.mouse.up();
   await expect(page.locator('[data-role=pop]')).toBeVisible();
   await page.locator('[data-field=w]').fill('500');

@@ -729,6 +729,7 @@ export function mountZoneEditor(el, { garden, onChange } = {}) {
       + (ov ? `<span class="jd-msg warn" style="padding:0">⚠ ${ov} chevauchement${ov > 1 ? 's' : ''}</span>` : '')
       + (out ? `<span class="jd-msg err" style="padding:0">⚠ ${out} hors du terrain</span>` : '')
       + (wished.length ? `<span class="jd-msg" style="padding:0">À dessiner : ${wished.map((id) => (getZoneType(id) || { label: id }).label).join(', ')}</span>` : '');
+    info.hidden = !!(sel && !st.typeId);
     refreshMsg();
     refreshStart();
     panel.hidden = !sel || !!st.typeId;
@@ -752,8 +753,7 @@ export function mountZoneEditor(el, { garden, onChange } = {}) {
     const pick = (wished.length ? wished : SUGGEST.map(getZoneType).filter(Boolean)).slice(0, 4);
     startEl.append(
       h('div', { class: 'jd-start-title' }, 'Choisissez une zone puis dessinez-la'),
-      h('div', { class: 'jd-pop-hint' }, 'Touchez un type : deux touches suffisent pour tracer un rectangle.'),
-      h('div', { class: 'jd-row' },
+      h('div', { class: 'jd-row jd-grid2' },
         pick.map((t) => h('button', { type: 'button', class: 'jd-btn', 'data-start-type': t.id, style: { borderColor: t.color, borderWidth: '2px' }, onclick: () => chooseType(t.id) }, `${t.icon} ${t.label}`)),
         h('button', { type: 'button', class: 'jd-btn', 'data-act': 'start-more', onclick: () => { st.allTypes = true; refreshChips(); chips.scrollIntoView && chips.scrollIntoView({ block: 'nearest' }); say('Tous les types sont dans la palette du haut.'); } }, '＋ Autres types')));
   }
@@ -781,7 +781,7 @@ export function mountZoneEditor(el, { garden, onChange } = {}) {
       h('div', { class: 'jd-row jd-zfacts' },
         h('span', {}, 'Surface : ', h('b', { 'data-role': 'zone-area' }, frArea(shapeArea(z.shape)))),
         h('span', { 'data-role': 'zone-dims' }, dimsText(z)),
-        h('span', { 'data-role': 'zone-plants' }, nPl ? `🌱 ${nPl} plante${nPl > 1 ? 's' : ''} choisie${nPl > 1 ? 's' : ''}` : 'Aucune plante choisie')),
+        h('span', { class: 'jd-muted', 'data-role': 'zone-plants' }, nPl ? `🌱 ${nPl} plante${nPl > 1 ? 's' : ''} choisie${nPl > 1 ? 's' : ''}` : 'Aucune plante choisie')),
       h('div', { class: 'jd-row jd-zacts', 'data-role': 'zone-actions' },
         btn('📏 Dimensions…', 'dims', () => openDimsPop(z)),
         btn('⧉ Dupliquer', 'duplicate', () => duplicate(z)),

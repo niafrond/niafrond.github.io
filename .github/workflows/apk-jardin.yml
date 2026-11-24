@@ -89,8 +89,20 @@ jobs:
               el = ET.Element('uses-permission'); el.set(A('name'), p)
               children.insert(idx + n, el); n += 1
           root[:] = children
+          def add_filter(act, scheme, host, path_prefix=None):
+              f = ET.SubElement(act, 'intent-filter')
+              ET.SubElement(f, 'action').set(A('name'), 'android.intent.action.VIEW')
+              for cat in ('android.intent.category.DEFAULT', 'android.intent.category.BROWSABLE'):
+                  ET.SubElement(f, 'category').set(A('name'), cat)
+              d = ET.SubElement(f, 'data')
+              d.set(A('scheme'), scheme); d.set(A('host'), host)
+              if path_prefix: d.set(A('pathPrefix'), path_prefix)
           for act in root.iter('activity'):
               act.set(A('screenOrientation'), 'portrait')
+              # liens de transfert : jardin://import/<code> et https://niafrond.github.io/jardin/… (sans autoVerify)
+              act.set(A('launchMode'), 'singleTask')
+              add_filter(act, 'jardin', 'import')
+              add_filter(act, 'https', 'niafrond.github.io', '/jardin')
           ET.indent(tree, space='    ')
           tree.write(os.environ['MANIFEST'], encoding='unicode', xml_declaration=True)
 

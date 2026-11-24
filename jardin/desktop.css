@@ -1,0 +1,41 @@
+/* Écrans de partage / import (tous appareils) */
+.share, .import { padding: 12px 16px; display: flex; flex-direction: column; gap: 12px; }
+.share h2, .import h2 { margin: 0; font-size: 1.15rem; }
+.share-way { border: 1px solid var(--border); border-radius: var(--radius); padding: 12px; display: flex; flex-direction: column; gap: 8px; background: var(--surface); }
+.share-way h3 { margin: 0; font-size: 1rem; }
+.share-way input[type=text] { width: 100%; box-sizing: border-box; font: inherit; font-size: .85rem; padding: 10px; min-height: 44px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg); color: var(--text); }
+.qr-box { align-self: center; background: #fff; padding: 8px; border-radius: 8px; line-height: 0; max-width: 100%; }
+.qr-box svg { max-width: 100%; height: auto; }
+.notice.warn { border-left: 4px solid #d98e04; }
+.import-body textarea, .dialog textarea { font: inherit; box-sizing: border-box; }
+
+/* Édition confortable sur ordinateur */
+@media (min-width: 900px) {
+  .app { max-width: 1100px; }
+  .home, .step-body, .settings, .advice, .share, .import { padding: 16px 24px; }
+  .garden-list { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+  .share { display: grid; grid-template-columns: 1fr 1fr; align-items: start; }
+  .share > .row, .share > p, .share-body { grid-column: 1 / -1; }
+  .share-body { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; align-items: start; }
+
+  /* éditeurs de dessin : beaucoup plus hauts */
+  .jd-editor { min-height: 0; height: auto; }
+  .jd-canvas-wrap { min-height: 70vh; }
+  .jd-sheet { max-height: 30vh; }
+
+  /* barres d'outils : pas de défilement horizontal */
+  .jd-bar.jd-scroll, .jd-chips { flex-wrap: wrap; overflow-x: visible; }
+  .jd-chips { gap: 6px; }
+
+  /* cibles plus fines autorisées, survol */
+  .jd-btn, .jd-bar .jd-btn { min-height: 34px; min-width: 34px; padding: 0 10px; }
+  .btn { min-height: 38px; }
+  .btn-sm { min-height: 32px; }
+  .jd-btn:not(:disabled):hover, .btn:not(:disabled):hover { filter: brightness(1.08); border-color: var(--jd-accent, currentColor); }
+  .garden-card:hover { box-shadow: 0 2px 10px rgba(0,0,0,.18); }
+  .jd-svg { cursor: crosshair; }
+  .jd-btn[title]:hover::after { content: none; }
+}
+@media (hover: hover) and (pointer: fine) and (min-width: 900px) {
+  .jd-btn:focus-visible, .btn:focus-visible { outline: 2px solid var(--jd-accent, #2f7d4f); outline-offset: 2px; }
+}

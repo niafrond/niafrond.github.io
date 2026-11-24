@@ -1,6 +1,7 @@
 // Ensoleillement : trajectoire du soleil, ombres des obstacles, cartes estimées (pur, sans DOM).
 // Repère du plan : x vers la droite, y vers le bas ; `northAngle` = rotation du nord (degrés, sens horaire).
 import { bounds, pointInPolygon, shapePolygon } from './geometry.js';
+import { edgeObstacles, itemObstacles } from './items.js';
 
 const rad = (d) => (d * Math.PI) / 180;
 const deg = (r) => (r * 180) / Math.PI;
@@ -123,6 +124,14 @@ export function sunHoursOnPoint(point, { lat, lon, northAngle = 0, obstacles = [
 }
 
 /**
+ * Obstacles d'ombre d'un jardin : obstacles dessinés, côtés de contour mur/clôture/haie (hauteurs par défaut
+ * 2 / 1,2 / 1,8 m) et éléments hauts (pergola, parasol, abri…). Les passages (portails) ne sont pas décomptés.
+ */
+export function shadowObstacles(garden) {
+  return [...((garden && garden.obstacles) || []), ...edgeObstacles(garden), ...itemObstacles(garden)];
+}
+
+/**
  * Carte d'ensoleillement estimée : régions rectangulaires (grille 0,5 m) fusionnées par niveau.
  * Date par défaut : solstice d'été (cas le plus favorable) de l'année courante.
  * @returns {{level:string, points:Point[]}[]}
@@ -133,7 +142,7 @@ export function estimateSunMap(garden, { date, step = 0.5 } = {}) {
   if (!loc || contour.length < 3) return [];
   const d = date || new Date(Date.UTC(new Date().getUTCFullYear(), 5, 21, 12));
   const samples = echantillonsSoleil(loc.lat, loc.lon, garden.context.northAngle || 0, d);
-  const obstacles = garden.obstacles || [];
+  const obstacles = shadowObstacles(garden);
   const b = bounds(contour);
   const nx = Math.ceil(b.width / step);
   const ny = Math.ceil(b.height / step);

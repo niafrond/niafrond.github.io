@@ -158,3 +158,12 @@
 .jd-zdot { flex: 0 0 auto; width: 44px; height: 44px; border-radius: 12px; display: inline-flex; align-items: center; justify-content: center; font-size: 22px; border: 1px solid rgba(0,0,0,.25); }
 .jd-zfacts { font-size: 14px; gap: 4px 14px; }
 .jd-zacts .jd-btn { flex: 1 1 auto; }
+.jd-info[hidden] { display: none; }
+.jd-start .jd-row.jd-grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; flex-direction: unset; }
+.jd-start .jd-grid2 .jd-btn { min-width: 0; padding: 0 6px; font-size: 13px; }
+.jd-start { max-height: 92%; overflow: auto; }
+.jd-muted { color: var(--jd-muted); font-size: 13px; }
+.jd-zsheet .jd-row { margin: 4px 0; }
+.jd-zsheet .jd-select { font-size: 15px; }
+.jd-zacts { flex-wrap: nowrap; }
+.jd-zacts .jd-btn { min-width: 0; padding: 0 6px; font-size: 13px; }
