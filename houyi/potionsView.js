@@ -3,7 +3,7 @@ import { player, gameState, currentTurn, drinkPotionAction, xiuEffect } from './
 import { POTION_SIZES, POTIONS, potionCount, potionHeal, drinkBlockReason } from './potions.js';
 import { escapeHtml } from './escapeHtml.js';
 import { itemUsability, useItemChoosingTarget } from './gameInventoryTabs.js';
-import { openTargetPicker, hasLivingAlly } from './itemTargetPicker.js';
+import { openTargetPicker, hasLivingAlly, teamMembers } from './itemTargetPicker.js';
 import { classCanAct, decoupled } from './gameSpellList.js';
 import { isSingleUse } from './itemReuse.js';
 import { showItemTooltip, markPressHeld, hideSpellTooltip, ensureSpellTooltip, placeTooltip } from './gameTooltips.js';
@@ -65,12 +65,23 @@ export function renderPotionsPanel() {
     const box = document.getElementById('potions-panel');
     if (!box) return;
     const inCombat = gameState.combatState === 'active';
-    box.innerHTML = `<h3>Potions</h3><p class="potions-note">À usage unique. Les PV ne reviennent pas tout seuls après un combat : achetez-en chez les marchands.</p>` +
+    const members = teamMembers();
+    const hurt = members.some(m => !m.ko && m.hp < m.maxHp);
+    // Équipe : la vie de tous les personnages d'un coup d'œil (Hou Yi et les compagnons recrutés).
+    const team = `<h3>Équipe</h3><div class="team-hp">` + members.map(m => {
+        const pct = m.maxHp ? Math.round(100 * Math.min(1, m.hp / m.maxHp)) : 0;
+        return `<div class="team-hp-row${m.ko ? ' ko' : ''}"><span class="team-hp-name">${escapeHtml(m.name)}</span>
+            <span class="team-hp-bar" role="progressbar" aria-label="PV de ${escapeHtml(m.name)}" aria-valuemin="0" aria-valuemax="${m.maxHp}" aria-valuenow="${m.hp}"><span class="team-hp-fill${pct < 30 ? ' low' : ''}" style="width:${pct}%"></span></span>
+            <span class="team-hp-text">${m.ko ? 'hors de combat' : `${m.hp} / ${m.maxHp} PV`}</span></div>`;
+    }).join('') + `</div>`;
+    box.innerHTML = team + `<h3>Potions</h3><p class="potions-note">À usage unique. Les PV ne reviennent pas tout seuls après un combat : choisissez qui soigner, ou achetez-en chez les marchands.</p>` +
         POTION_SIZES.map(size => {
             const p = POTIONS[size];
-            const reason = inCombat ? 'Pendant le combat, utilisez les boutons de potion.' : drinkBlockReason(player, size, false);
-            return `<div class="potion-row"><span><strong>${escapeHtml(p.name)}</strong> ×${potionCount(player, size)} <em>+${potionHeal(player, size)} PV (${p.healPct} %)</em></span>
-                <button type="button" class="rc-btn" data-drink="${size}"${reason ? ' disabled' : ''} title="${escapeHtml(reason || 'Boire (gratuit hors combat)')}">Boire</button></div>`;
+            const reason = inCombat ? 'Pendant le combat, utilisez les boutons de potion.'
+                : potionCount(player, size) <= 0 ? `Aucune ${p.name.toLowerCase()}.`
+                : !hurt ? (members.every(m => m.ko) ? 'Personne à soigner : seul un point de repos ou un objet de résurrection relève un personnage à terre.' : 'Tout le monde est en pleine forme.') : null;
+            return `<div class="potion-row"><span><strong>${escapeHtml(p.name)}</strong> ×${potionCount(player, size)} <em>${p.healPct} % des PV</em></span>
+                <button type="button" class="rc-btn" data-drink="${size}"${reason ? ' disabled' : ''} title="${escapeHtml(reason || 'Boire : choisir qui soigner (gratuit hors combat)')}">Boire</button></div>`;
         }).join('');
 }
 
@@ -106,10 +117,17 @@ function bindItemHold(box) {
 
 function init() {
     document.addEventListener('stuff-changed', renderPotionsPanel);
+    document.addEventListener('team-hp-changed', renderPotionsPanel);
     document.addEventListener('potions-changed', () => { renderPotionsPanel(); renderPotionButtons(); });
     document.getElementById('potions-panel')?.addEventListener('click', ev => {
         const btn = ev.target.closest('[data-drink]');
-        if (btn) { drinkPotionAction(btn.dataset.drink); renderPotionsPanel(); }
+        if (!btn) return;
+        const size = btn.dataset.drink;
+        // Exploration : on choisit qui boit (Hou Yi ou un compagnon blessé), avec les barres de vie de toute l'équipe.
+        if (hasLivingAlly()) {
+            openTargetPicker({ title: `${POTIONS[size].name} : sur qui ?`, blockReason: m => (m.ko ? 'hors de combat' : m.hp >= m.maxHp ? 'en pleine forme' : null),
+                onPick: cls => { drinkPotionAction(size, cls); renderPotionsPanel(); } });
+        } else { drinkPotionAction(size); renderPotionsPanel(); }
     });
     const potionBox = document.getElementById('potion-buttons');
     if (potionBox) bindItemHold(potionBox);

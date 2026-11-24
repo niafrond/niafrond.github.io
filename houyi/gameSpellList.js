@@ -26,6 +26,7 @@ import { escapeHtml } from './escapeHtml.js';
 import { unreachableCosts, unreachableText } from './spellReach.js';
 import { chargePaceFactor } from './gameOptions.js';
 import { addThreat } from './enemyTargeting.js';
+import { allyEquippedWeapon } from './allyWeapons.js';
 import { endAction, partyTargetName, xiuMembers, getManaCapForColor, getLeftHandWeapon, canEntityCastSpell, castSpell, enemy, gameState, currentTurn, markMultiManaSpell, player, setTurnClass, spellColorsOf, spellCostHtml, spellEffectIcon, log, updateStats } from './game.js';
 
 // sorts
@@ -138,13 +139,15 @@ export const usableNow = () => usableClasses(player, combatBiome(), gameState.fo
 // est chargée (file commune joueur / ennemi, ordre jamais détaillé), même en plein tour de plateau adverse ; seule la pause d'inactivité du plateau
 // (5 s sans combo) les retient. Exceptions liées au plateau : les sorts qui modifient la grille et les ultimes attendent leur tour de plateau.
 const TUTORIAL_CHARGE_FACTOR = 0.2;   // tutoriel : chargement 5 fois plus court (la notion est montrée sans bloquer le déroulé)
-const ACTION_GAP_MS = 900;            // durée pendant laquelle une action « est en cours » : la suivante de la file attend la fin de l'animation
+const ACTION_GAP_MS = 250;            // marge de sécurité après le départ d'une action ; ensuite la suivante part dès que l'effet de la précédente est terminé (animation comprise)
+const RUNNING_MAX_MS = 6000;          // une action « en cours » ne reste jamais affichée ni ne bloque la file plus longtemps
+const MIN_DOT_MS = 700;               // durée minimale d'affichage de la perle d'une action depuis son entrée dans la file
 export const chargeFactor = () => (enemy?.isTutorialEnemy ? TUTORIAL_CHARGE_FACTOR : 1);
 export const chargeEnabled = () => gameState.combatState === 'active';
 /** Actions indépendantes du plateau ? Tout combat, sauf le duel-tutoriel (déroulé scripté) et les duels (tours imposés). */
 export const decoupled = () => chargeEnabled() && !enemy?.isTutorialEnemy && !enemy?.duel;
 
-const actionBusy = () => Date.now() < (gameState.actionBusyUntil || 0) || (typeof document !== 'undefined' && !!document.querySelector('.attack-overlay'));
+const actionBusy = () => Date.now() < (gameState.actionBusyUntil || 0) || (gameState.runningAction && !gameState.runningAction.settled && Date.now() - (gameState.runningAction.startedAt || 0) < RUNNING_MAX_MS) || (typeof document !== 'undefined' && !!document.querySelector('.attack-overlay'));
 const markActionBusy = () => { gameState.actionBusyUntil = Date.now() + ACTION_GAP_MS; };
 // Une action choisie est déjà payée et sa classe déjà consommée : elle ne dépend plus que du passage dans la file (une à la fois) et de la pause d'inactivité.
 // Les sorts qui modifient la grille et les ultimes (`turnBound`) attendent la fin du tour de plateau en cours, plateau au repos, juste avant le suivant.
@@ -208,15 +211,28 @@ const captureTarget = (owner, info) => {
 const targetLost = t => !!t && (t.party ? partyMemberDown(t.party)
     : t.area ? !(gameState.foes || []).some(f => f.hp > 0) && !(enemy?.hp > 0) : !(t.foe.hp > 0));
 /**
- * Garde l'action visible dans la file (perle, frise) tant qu'elle n'est pas exécutée : elle quitte la file au départ, mais reste « en cours » jusqu'à la fin de son
- * effet (animation comprise : au moins ACTION_GAP_MS) puis disparaît. Lance `item.run()`.
+ * Garde l'action affichée dans la file (perle, frise) tant qu'elle n'est pas réellement exécutée : elle quitte la file au départ mais reste « en cours » jusqu'à ce que
+ * son effet soit terminé (promesse résolue), que son animation à l'écran soit finie et qu'elle ait été visible au moins MIN_DOT_MS depuis son entrée dans la file
+ * (sinon une action qui part aussitôt faisait clignoter puis disparaître sa perle). `settled` libère la file : l'action suivante n'attend que la fin de l'effet,
+ * pas l'affichage de la perle. Lance `item.run()`.
  */
 function trackRunning(item){
+    item.startedAt = Date.now();
+    item.settled = false;
     gameState.runningAction = item;
-    const done = () => setTimeout(() => { if(gameState.runningAction === item){ gameState.runningAction = null; renderActionBeads(); } }, Math.max(0, (gameState.actionBusyUntil || 0) - Date.now()));
+    const finish = () => { if(gameState.runningAction === item){ gameState.runningAction = null; renderActionBeads(); } };
+    const check = () => {
+        if(gameState.runningAction !== item) return;
+        const now = Date.now();
+        const animating = typeof document !== 'undefined' && !!document.querySelector('.attack-overlay');
+        const shownLongEnough = now >= (item.enqueuedAt ?? item.startedAt) + MIN_DOT_MS;
+        if((item.settled && now >= (gameState.actionBusyUntil || 0) && shownLongEnough && !animating) || now - item.startedAt > RUNNING_MAX_MS) finish();
+        else setTimeout(check, 80);
+    };
+    const settle = () => { item.settled = true; };
     let result;
-    try{ result = item.run(); }catch(err){ done(); throw err; }
-    Promise.resolve(result).then(done, done);
+    try{ result = item.run(); }catch(err){ settle(); check(); throw err; }
+    Promise.resolve(result).then(settle, settle).then(check);
 }
 function dispatchAction(owner, effect, turnBound, info = null){
     // Toute action passe par la file, avec deux délais de lisibilité (classCharge.js) : 1 s avant d'y apparaître, 1 s avant d'en partir (joueur comme ennemi).
@@ -232,7 +248,7 @@ function dispatchAction(owner, effect, turnBound, info = null){
         log(`${who} visait ${victim}, déjà à terre : coup perdu.`);
         if(turnBound) resumeAfterBoundary(); else endAction();
     };
-    const item = { owner, run, turnBound, info, dueAt: gameState.charge.now, ...actionTimes(Date.now()) };
+    const item = { owner, run, turnBound, info, enqueuedAt: Date.now(), dueAt: gameState.charge.now, ...actionTimes(Date.now()) };
     enqueueAction(gameState.actionQueue, item);
     renderActionBeads();
 }
@@ -294,9 +310,9 @@ export function spendEnemyAction(){
 }
 
 /**
- * Bandeau des actions en file, en haut du combat : une ligne de perles (verte = action du joueur, rouge = action de l'ennemi, dans l'ordre de départ) et, à son
- * extrémité, un petit bouton « curseur ». Un clic dessus déplie la file en frise chronologique verticale (une étape par action : « Hou Yi prépare Arc du Chasseur
- * (20 dégâts) → Dragon ») ; un nouveau clic sur le bouton la replie.
+ * Bandeau des actions en file, en haut du combat : une ligne de perles (verte = action du joueur, rouge = action de l'ennemi, dans l'ordre de départ). Un clic
+ * n'importe où sur le bandeau déplie la file en frise chronologique verticale (une étape par action : « Hou Yi prépare Arc du Chasseur (20 dégâts) → Dragon ») ;
+ * un second clic la replie.
  */
 export function renderActionBeads(){
     const box = typeof document !== 'undefined' ? document.getElementById('action-beads') : null;
@@ -316,14 +332,7 @@ export function renderActionBeads(){
     const dots = document.createElement('div');
     dots.className = 'queue-dots';
     dots.append(...beads.map(side => Object.assign(document.createElement('i'), { className: `bead bead-${side}` })));
-    const toggle = document.createElement('button');
-    toggle.type = 'button';
-    toggle.className = 'queue-toggle';
-    toggle.setAttribute('aria-expanded', String(box.classList.contains('open')));
-    toggle.setAttribute('aria-label', 'Afficher ou replier la file d\'attente');
-    toggle.title = 'File d\'attente';
-    toggle.innerHTML = '<svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true" focusable="false"><path d="M1.5 5.5H14.5M1.5 10.5H14.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" fill="none"/><circle cx="10.5" cy="5.5" r="2.2" fill="currentColor"/><circle cx="5.5" cy="10.5" r="2.2" fill="currentColor"/></svg>';
-    head.append(dots, toggle);
+    head.append(dots);
     const keep = box.querySelector('.queue-list')?.scrollLeft || 0;
     const list = document.createElement('ol');
     list.className = 'queue-list';
@@ -339,17 +348,18 @@ export function renderActionBeads(){
     }) : [Object.assign(document.createElement('li'), { className: 'queue-step queue-empty', textContent: 'Aucune action en attente' })]));
     box.replaceChildren(head, list);
     list.scrollLeft = keep;
-    box.setAttribute('aria-label', actions.length ? `${actions.length} action${actions.length > 1 ? 's' : ''} à venir` : 'Aucune action à venir');
+    box.setAttribute('aria-label', actions.length ? `File d'attente : ${actions.length} action${actions.length > 1 ? 's' : ''} à venir (toucher pour déplier ou replier)` : 'File d\'attente vide (toucher pour déplier ou replier)');
 }
-/** Le bouton à l'extrémité du bandeau déplie / replie la frise des actions à venir. */
+/** Un clic (ou Entrée / Espace) n'importe où sur le bandeau déplie ou replie la frise des actions à venir. */
 function bindQueueToggle(box){
     if(box._toggleBound) return;
     box._toggleBound = true;
-    box.addEventListener('click', e => {
-        if(!e.target.closest?.('.queue-toggle')) return;
-        const open = box.classList.toggle('open');
-        box.querySelector('.queue-toggle')?.setAttribute('aria-expanded', String(open));
-    });
+    box.setAttribute('role', 'button');
+    box.tabIndex = 0;
+    box.setAttribute('aria-expanded', 'false');
+    const toggle = () => { const open = box.classList.toggle('open'); box.setAttribute('aria-expanded', String(open)); };
+    box.addEventListener('click', toggle);
+    box.addEventListener('keydown', e => { if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); toggle(); } });
 }
 let _beadKey = '';
 
@@ -443,10 +453,13 @@ export function memberHasAction(id){
     const g = memberGauge(id);
     if(!g || g.ko) return false;
     const castable = sp => player.level >= (sp.minLevel || 1) && canEntityCastSpell(player, sp) && !spellCooldownLeft(sp.id);
-    if(id !== START_CLASS){   // compagnon : ses sorts de classe (son arme ne fait que les renforcer)
+    const sealed = (player.statusEffects?.sealed || 0) > 0;
+    if(id !== START_CLASS){   // compagnon : son arme (payée avec les PA de l'équipe) ou un de ses sorts de classe
+        const weapon = allyEquippedWeapon(player, id);
+        if(!sealed && weapon && player.level >= (weapon.minLevel || 1) && player.combatPoints >= (weapon.actionPoints || 0)) return true;
         return !isMuted(g.entity) && activeAllySpells(player, id).some(castable);
     }
-    if((player.statusEffects?.sealed || 0) <= 0){
+    if(!sealed){
         const weapons = [player.equippedWeapon, getLeftHandWeapon()].filter(Boolean);
         if(weapons.some(w => player.level >= (w.minLevel || 1) && player.combatPoints >= (w.actionPoints || 0))) return true;
     }

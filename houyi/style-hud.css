@@ -1099,19 +1099,17 @@ body.no-blink .class-pick.ready-pulse::before, body.no-anim .class-pick.ready-pu
 /* Tempo : plateau inactif depuis 5 s, les chargements sont en pause (barres figées, sans aucun message ni changement d'aspect) jusqu'au prochain combo. */
 body.charge-paused .class-pick::before { animation-play-state: paused; }
 
-/* File d'attente des actions : une ligne de perles (rond vert = action du joueur, rond rouge = action de l'ennemi) et, à son extrémité, un petit bouton « curseur » qui
+/* File d'attente des actions : une ligne de perles (rond vert = action du joueur, rond rouge = action de l'ennemi) ; un clic n'importe où dessus
    déplie la frise chronologique verticale des actions à venir (une étape par phrase, en surimpression) ; un nouveau clic la replie. */
-.action-beads { position: relative; margin: 0 0 3px; }
+.action-beads { position: relative; margin: 0 0 3px; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.action-beads:focus-visible { outline: 2px solid #2f7bbd; outline-offset: 2px; border-radius: 6px; }
 .action-beads[hidden] { display: none; }
-.action-beads .queue-head { position: relative; display: flex; align-items: center; height: 22px; }
+.action-beads .queue-head { position: relative; display: flex; align-items: center; height: 26px; }   /* toute la ligne se touche : un clic déplie ou replie la frise */
 .action-beads .queue-dots { position: relative; flex: 1 1 auto; display: flex; justify-content: center; align-items: center; gap: 6px; height: 10px; }
 .action-beads .queue-dots::before { content: ""; position: absolute; left: 8%; right: 8%; top: 50%; height: 1px; background: rgba(120, 100, 90, 0.35); }
 .action-beads .bead, .action-beads .queue-node { position: relative; width: 7px; height: 7px; border-radius: 50%; box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.35); }
 .action-beads .bead-hero { background: #3fae6a; }
 .action-beads .bead-foe { background: #d4473f; }
-.action-beads .queue-toggle { flex: 0 0 auto; width: 32px; height: 22px; margin-left: 4px; padding: 0; display: grid; place-items: center; cursor: pointer; color: #5a463c; background: rgba(255, 255, 255, 0.55); border: 1px solid rgba(0, 0, 0, 0.35); border-radius: 11px; }
-.action-beads.open .queue-toggle { background: #f2c14e; color: #2b1b17; }
-.action-beads .queue-toggle:focus-visible { outline: 2px solid #2f7bbd; outline-offset: 1px; }
 .action-beads .queue-list { display: none; position: absolute; left: 0; right: 0; top: 100%; z-index: 6; list-style: none; margin: 2px 0 0; padding: 6px 8px; flex-direction: column; gap: 0; max-height: 168px; overflow-y: auto; overscroll-behavior: contain; touch-action: pan-y; -webkit-overflow-scrolling: touch; background: #fbf3df; border: 1px solid rgba(0, 0, 0, 0.35); border-radius: 8px; box-shadow: 0 3px 8px rgba(0, 0, 0, 0.3); }
 .action-beads.open .queue-list { display: flex; }
 .action-beads .queue-step { position: relative; padding: 3px 0 7px 20px; }

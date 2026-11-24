@@ -24,7 +24,7 @@ import { normalizeRoster, usableClasses, hinderedClasses, grantClass, CLASS_SHOR
 import { newCharge, newActionQueue, initCharge } from "./classCharge.js";
 import { allyWeaponBonus } from "./weapons.js";
 import { allyEquippedWeapon, ensureAllyWeapon, ensureAllyWeapons } from "./allyWeapons.js";
-import { buildTeam, teamAllies, allyMaxHp, damageAlly, ALLIES, livingAllies, pickAnyAlly, reviveAlly, healAlly } from "./allies.js";
+import { buildTeam, teamAllies, allyMaxHp, damageAlly, ALLIES, livingAllies, pickAnyAlly, reviveAlly, healAlly, recruitedAllies, allyHpOf, healAllyAtRest } from "./allies.js";
 import { inflictBuff, ALTERATION_LABELS } from "./alterations.js";
 import { prepareAllyPortraits } from "./alliesView.js";
 import { boostedDamageDealt, resistedDamageTaken, parryQiGain } from "./gearEffects.js";
@@ -1141,9 +1141,29 @@ export function endXiuxianAtCombatEnd(){
 
 // ── Potions (potions.js) : à usage unique, 0 PA en combat (payées en or chez le marchand) ──
 /** Potion donnée à un compagnon (choisi dans « sur qui ? ») : elle rend une part des PV max du compagnon. */
+/** Hors combat (exploration) : une potion pour un compagnon debout et blessé. Ses PV sont mémorisés dans `player.allyHp` (rendus au prochain combat). */
+function drinkPotionForAllyAtRest(size, classId){
+    const a = ALLIES[classId];
+    if(!a || !recruitedAllies(player).includes(classId)) return false;
+    const potion = POTIONS[size];
+    if(!potion || (player.potions?.[size] || 0) <= 0){ log(`Aucune ${potion ? potion.name.toLowerCase() : 'potion'}.`); return false; }
+    const max = allyMaxHp(player, classId), current = allyHpOf(player, classId);
+    if(current <= 0){ log(`${a.name} est hors de combat : une potion ne le relève pas.`); return false; }
+    if(current >= max){ log(`${a.name} est en pleine forme.`); return false; }
+    player.potions[size] -= 1;
+    const healed = healAllyAtRest(player, classId, potionHeal({ maxHp: max }, size));
+    const live = gameState.allies?.[classId];
+    if(live && !live.ko) live.hp = Math.min(live.maxHp, (player.allyHp?.[classId] ?? live.hp));   // l'équipe du dernier combat suit
+    log(`${potion.name} : ${a.name} récupère ${healed} PV.`);
+    document.dispatchEvent(new Event('potions-changed'));
+    document.dispatchEvent(new Event('team-hp-changed'));
+    saveUpdate();
+    return true;
+}
 function drinkPotionForAlly(size, classId){
+    if(gameState.combatState !== 'active') return drinkPotionForAllyAtRest(size, classId);
     const ally = gameState.allies?.[classId];
-    if(gameState.combatState !== 'active' || !ally) return false;
+    if(!ally) return false;
     if(!decoupled() && currentTurn !== 'player'){ log("Ce n'est pas votre tour."); return false; }
     if(rejectRushedAction()) return false;
     if((player.statusEffects?.sealed || 0) > 0){ log("Vous êtes scellé : impossible d'utiliser un objet."); return false; }
@@ -1553,7 +1573,9 @@ export function reviveTeamAtRest(){
     let gained = 0;
     (player.downAllies || []).forEach(id => { if(ALLIES[id]) gained += allyMaxHp(player, id); });
     player.downAllies = [];
-    Object.values(gameState.allies || {}).forEach(a => { if(a?.ko){ a.ko = false; a.hp = a.maxHp; } });
+    player.allyHp = {};   // point de repos : tous les compagnons repartent en pleine forme
+    Object.values(gameState.allies || {}).forEach(a => { if(a){ a.ko = false; a.hp = a.maxHp; } });
+    if(typeof document !== 'undefined') document.dispatchEvent(new Event('team-hp-changed'));
     gameState.heroKo = false;
     return gained;
 }
@@ -1591,6 +1613,7 @@ export function restartCombat({ keepHp = true } = {}){
     // Un héros tombé au combat précédent est relevé à la moitié de ses PV max. `keepHp: false` : réinitialisation complète (tests, outils).
     // Un personnage tombé au combat précédent reste à terre (Hou Yi : 0 PV ; un compagnon : `downAllies`) jusqu'à un point de repos ou un objet de résurrection.
     // Seule une défaite (toute l'équipe à terre) relève tout le monde : Hou Yi à la moitié de ses PV, les compagnons en pleine forme.
+    if(!keepHp) player.allyHp = {};
     const roster = teamAllies(player);
     let downIds = keepHp ? (Array.isArray(player.downAllies) ? player.downAllies : []).filter(id => roster.includes(id)) : [];
     const heroDead = keepHp && player.hp <= 0;
@@ -1906,6 +1929,7 @@ export function loadGameData() {
             player.equipment.rightHand = player.equippedWeapon;
             player.allySpells = loaded.allySpells && typeof loaded.allySpells === 'object' ? Object.fromEntries(Object.entries(loaded.allySpells).filter(([, ids]) => Array.isArray(ids)).map(([id, ids]) => [id, ids.filter(x => typeof x === 'string')])) : {};   // sorts choisis pour chaque compagnon (allySpells.js)
             player.downAllies = Array.isArray(loaded.downAllies) ? loaded.downAllies.filter(x => typeof x === 'string') : [];   // compagnons restés à terre
+            player.allyHp = loaded.allyHp && typeof loaded.allyHp === 'object' ? Object.fromEntries(Object.entries(loaded.allyHp).filter(([, v]) => Number.isFinite(v))) : {};   // PV des compagnons entre deux combats
             player.allyWeapons = loaded.allyWeapons && typeof loaded.allyWeapons === 'object' ? { ...loaded.allyWeapons } : {};   // armes portées par les compagnons
             ensureAllyWeapons(player);   // un compagnon déjà recruté sans arme en reçoit une
             player.stuffOwned = loaded.stuffOwned ?? [];

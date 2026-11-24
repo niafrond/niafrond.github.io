@@ -42,6 +42,28 @@ export const recruitedAllies = hero => normalizeRoster(hero).owned.filter(id => 
 /** Compagnons de l'équipe de combat (loadout sans Hou Yi). */
 export const teamAllies = hero => normalizeRoster(hero).loadout.filter(id => isAllyClass(id) && id !== START_CLASS);
 
+/** PV mémorisés d'un compagnon entre deux combats (`hero.allyHp`, rangés par `saveUpdate`) : absent = pleine forme ; au moins 1 PV, au plus ses PV max. */
+export function storedAllyHp(hero, classId) {
+    const max = allyMaxHp(hero, classId), v = hero?.allyHp?.[classId];
+    return Number.isFinite(v) ? Math.max(1, Math.min(max, Math.round(v))) : max;
+}
+/** PV d'un compagnon hors combat : 0 s'il est resté à terre (`hero.downAllies`), sinon ses PV mémorisés. */
+export const allyHpOf = (hero, classId) => ((hero?.downAllies || []).includes(classId) ? 0 : storedAllyHp(hero, classId));
+/** Rend jusqu'à `amount` PV à un compagnon debout hors combat (plafonné) ; renvoie les PV rendus. */
+export function healAllyAtRest(hero, classId, amount) {
+    if ((hero?.downAllies || []).includes(classId)) return 0;
+    const before = storedAllyHp(hero, classId), max = allyMaxHp(hero, classId);
+    const after = Math.min(max, before + Math.max(0, Math.floor(amount || 0)));
+    if (!hero.allyHp) hero.allyHp = {};
+    hero.allyHp[classId] = after;
+    return after - before;
+}
+/** Vie de tous les personnages hors combat : Hou Yi puis les compagnons recrutés, [{ classId, name, hp, maxHp, ko }]. */
+export function partyStatus(hero) {
+    return [{ classId: START_CLASS, name: 'Hou Yi', hp: Math.max(0, hero?.hp || 0), maxHp: hero?.maxHp || 0, ko: (hero?.hp || 0) <= 0 },
+        ...recruitedAllies(hero).map(id => { const hp = allyHpOf(hero, id); return { classId: id, name: ALLIES[id].name, hp, maxHp: allyMaxHp(hero, id), ko: hp <= 0 }; })];
+}
+
 /**
  * Entité de combat d'un compagnon (même forme qu'un combattant : hp, maxHp, defense, statusEffects…), pour que les dégâts et les altérations lui
  * soient appliqués comme à Hou Yi. Partage le qì de Hou Yi (aucune réserve propre).
@@ -49,9 +71,10 @@ export const teamAllies = hero => normalizeRoster(hero).loadout.filter(id => isA
 export function buildAlly(hero, classId) {
     const a = ALLIES[classId];
     const maxHp = allyMaxHp(hero, classId);
+    const hp = storedAllyHp(hero, classId);   // PV gardés d'un combat à l'autre (les PV ne reviennent pas tout seuls)
     return {
         isAlly: true, classId, name: a.name, short: a.short, title: a.title, sprite: a.sprite, weapon: a.weapon,
-        level: hero?.level || 1, hp: maxHp, maxHp, ko: false,
+        level: hero?.level || 1, hp, maxHp, ko: false,
         defense: Math.round((hero?.defense || 0) * a.defensePct), attack: Math.round((hero?.attack || 0) * 0.5),
         attributes: {}, statusEffects: {},
         // Xiūxiān propre au compagnon : sa jauge (conservée d'un combat à l'autre dans hero.rages), sa durée en cours

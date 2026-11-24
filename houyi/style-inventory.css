@@ -489,3 +489,13 @@ body.casual-mode .tab-btn[onclick*="'spells'"] { display: none; }
 .char-tab { flex: 1 1 auto; min-width: 0; padding: 5px 10px; border: 2px solid var(--rt-ink, #2b1b17); border-radius: 6px; background: var(--rt-paper, #f4e2b0); color: inherit; font: inherit; font-size: .9em; cursor: pointer; }
 .char-tab.on { background: var(--rt-gold, #f2c14e); font-weight: 700; }
 .char-tab:focus-visible { outline: 2px solid var(--rt-gold, #f2c14e); outline-offset: 2px; }
+
+/* Équipe (onglet Objets) : la vie de tous les personnages d'un coup d'œil, avant le stock de potions. */
+.team-hp { display: grid; gap: 5px; margin: 4px 0 10px; }
+.team-hp-row { display: grid; grid-template-columns: minmax(70px, 28%) 1fr auto; align-items: center; gap: 8px; font-size: .9em; }
+.team-hp-row.ko { filter: grayscale(1); opacity: .8; }
+.team-hp-name { font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.team-hp-bar { height: 12px; border-radius: 6px; background: rgba(0, 0, 0, .25); border: 1px solid rgba(0, 0, 0, .45); overflow: hidden; }
+.team-hp-fill { display: block; height: 100%; background: #3fae6a; }
+.team-hp-fill.low { background: #d4473f; }
+.team-hp-text { font-variant-numeric: tabular-nums; opacity: .9; white-space: nowrap; }

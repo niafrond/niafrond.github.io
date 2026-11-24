@@ -7,12 +7,13 @@ describe('« sur qui ? » : choix du personnage avec sa barre de vie', () => {
     beforeEach(() => {
         document.body.innerHTML = '';
         player.hp = 120; player.maxHp = 300; gameState.heroKo = false;
+        gameState.combatState = 'active';   // en combat : l'équipe vient de gameState.allies
         gameState.allies = {
             monk: { classId: 'monk', name: 'Sun Wukong', hp: 270, maxHp: 270, ko: false },
             sorcerer: { classId: 'sorcerer', name: 'Fuxi', hp: 0, maxHp: 210, ko: true }
         };
     });
-    afterEach(() => { closeTargetPicker(); gameState.allies = {}; });
+    afterEach(() => { closeTargetPicker(); gameState.allies = {}; gameState.combatState = 'ready'; });
 
     test('liste Hou Yi puis les compagnons avec PV actuels / max et indique hors de combat', () => {
         expect(teamMembers().map(m => m.classId)).toEqual(['assassin', 'monk', 'sorcerer']);
@@ -40,5 +41,20 @@ describe('« sur qui ? » : choix du personnage avec sa barre de vie', () => {
         document.querySelector('[data-cancel]').click();
         expect(document.querySelector('.target-picker-overlay')).toBeNull();
         expect(onPick).toHaveBeenCalledTimes(1);
+    });
+
+    test("hors combat (exploration) : Hou Yi puis les compagnons recrutés, avec leurs PV mémorisés", () => {
+        gameState.combatState = 'ready';
+        player.classes = { owned: ['assassin', 'monk', 'sorcerer'], loadout: ['assassin', 'monk'] };
+        player.allyHp = { monk: 90 };
+        player.downAllies = ['sorcerer'];
+        const members = teamMembers();
+        expect(members.map(m => m.classId)).toEqual(['assassin', 'monk', 'sorcerer']);
+        expect(members[1].hp).toBe(90);
+        expect(members[2]).toMatchObject({ hp: 0, ko: true });
+        expect(hasLivingAlly()).toBe(true);
+        player.downAllies = ['monk', 'sorcerer'];
+        expect(hasLivingAlly()).toBe(false);
+        player.allyHp = {}; player.downAllies = [];
     });
 });
