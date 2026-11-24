@@ -36,7 +36,8 @@ import { finishCombatRecord, recordEnemyTurn, recordPlayerTurn, saveCombatRecord
 import { showAttributeMenu } from './gameLevelUp.js';
 import { updateAvailableSpells, enemyActionReady, spendEnemyAction, getTurnClass, chooseEnemyAction, decoupled, runBoundaryAction, resumeAfterBoundary, withCaster } from './gameSpellList.js';
 import { CLASS_SHORT } from './classRoster.js';
-import { pickEnemyTarget } from './allies.js';
+import { livingAllies } from './allies.js';
+import { HERO_ID, pickPartyTarget, rememberTarget } from './enemyTargeting.js';
 import { advanceAfterFoeDefeat } from './foes.js';
 import { runFoePhase } from './foeTurns.js';
 import { partyHitName, partyTargetName, partyWiped, currentTurn, activeCompanionIds, addBonusTurn, addManaForColor, applyCombatXPAtEnd, applyDamage, applyStandardSpellEffects, canEntityCastSpell, combatHooks, combatRewards, consumeSpellMana, enemy, gameState, getWeaponIcon, grantStuffPiece, handlePlayerDeath, normalizeActiveInventoryIndex, sellDuplicateItem, normalizeBonusTurnValue, player, queueCombatXP, showEndCombatAnimation, turnFlags, setCurrentTurn, resetTranseTurn, applyTranseClassEffect, syncGauge, endXiuxianAtCombatEnd, xiuEffect } from './game.js';
@@ -274,11 +275,24 @@ function performEnemyAction(decision){
     return applyEnemyAction(decision);
 }
 
-/** Description d'une action de l'ennemi pour la file d'attente : nom du sort ou de l'arme, dégâts et cible. */
+/** Choisit le membre de l'équipe que l'ennemi vise (id de classe, HERO_ID pour Hou Yi) et le mémorise pour varier les cibles suivantes. */
+function choosePartyTarget(){
+    const members = [];
+    if(!gameState.heroKo) members.push({ id: HERO_ID, hpPct: (player.hp || 0) / Math.max(1, player.maxHp || 1) });
+    livingAllies(gameState.allies).forEach(a => members.push({ id: a.classId, hpPct: a.hp / Math.max(1, a.maxHp) }));
+    if(!gameState.targetHistory) gameState.targetHistory = [];
+    if(!gameState.threat) gameState.threat = {};
+    const id = pickPartyTarget({ members, threat: gameState.threat, history: gameState.targetHistory });
+    rememberTarget(gameState.targetHistory, id);
+    return id;
+}
+const partyNameOf = id => (id && id !== HERO_ID ? gameState.allies?.[id]?.name : null) || player.name || 'Hou Yi';
+
+/** Description d'une action de l'ennemi pour la file d'attente : nom du sort ou de l'arme, dégâts et cible (choisie dès l'entrée dans la file). */
 const enemyQueueInfo = decision => {
     const spell = decision.action === 'spell' ? decision.data?.spell : null;
     const heals = spell && spell.type && spell.type !== 'damage';
-    return { name: spell ? spell.name : enemy.weapon?.name, damage: heals ? 0 : (spell ? spell.dmg : enemy.weapon?.damage), target: heals ? enemy.name : partyTargetName };   // cible recalculée à l'affichage : compagnon protégé, Hou Yi à terre → un compagnon…
+    return { name: spell ? spell.name : enemy.weapon?.name, damage: heals ? 0 : (spell ? spell.dmg : enemy.weapon?.damage), target: heals ? enemy.name : partyNameOf(decision.targetId || (decision.targetId = choosePartyTarget())) };
 };
 
 /** Choix d'une action de l'ennemi : validation et paiement (qì d'un sort, PA d'une arme). Renvoie false s'il ne peut pas la payer. */
@@ -320,8 +334,11 @@ export function enemyProactiveAction(){
 }
 
 export function applyEnemyAction(decision){
-    // Une action ennemie sur quatre vise un compagnon vivant (allies.js) : il encaisse à la place de Hou Yi (voir applyDamage, game.js).
-    gameState.allyShield = enemy.isTutorialEnemy ? null : pickEnemyTarget(gameState.allies, Math.random, (player.hp || 0) / Math.max(1, player.maxHp || 1));
+    // L'ennemi vise un membre de l'équipe selon la menace, les PV et la variété (enemyTargeting.js) ; un compagnon visé encaisse à la place de Hou Yi (voir applyDamage, game.js).
+    // Cible : celle déjà choisie quand l'action est entrée dans la file (`decision.targetId`), sinon choisie maintenant (enemyTargeting.js) ; Hou Yi = pas de bouclier.
+    const targetId = enemy.isTutorialEnemy ? HERO_ID : (decision.targetId || choosePartyTarget());
+    const targeted = targetId !== HERO_ID ? gameState.allies?.[targetId] : null;
+    gameState.allyShield = targeted && !targeted.ko ? targeted : null;
     try { return applyEnemyActionNow(decision); } finally { gameState.allyShield = null; }
 }
 

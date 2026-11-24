@@ -25,6 +25,7 @@ import { isInTranse, describeTranse, transeEffectFor, TRANSE_TURNS } from './tra
 import { escapeHtml } from './escapeHtml.js';
 import { unreachableCosts, unreachableText } from './spellReach.js';
 import { chargePaceFactor } from './gameOptions.js';
+import { addThreat } from './enemyTargeting.js';
 import { endAction, partyTargetName, xiuMembers, getManaCapForColor, getLeftHandWeapon, canEntityCastSpell, castSpell, enemy, gameState, currentTurn, markMultiManaSpell, player, setTurnClass, spellColorsOf, spellCostHtml, spellEffectIcon, log, updateStats } from './game.js';
 
 // sorts
@@ -167,7 +168,7 @@ export function chooseAction(effect, opts = {}){
     const id = getTurnClass();
     if(id) spendClass(gameState.charge, player, id, chargeFactor());
     showSpentCharge();   // barre vide et bouton grisé tout de suite, malgré la seconde avant l'entrée en file
-    dispatchAction('player', effect, !!opts.turnBound, { caster: casterName(id), target: enemy?.name, ...opts.info });
+    dispatchAction('player', effect, !!opts.turnBound, { caster: casterName(id), casterId: id || 'assassin', target: enemy?.name, ...opts.info });
     return true;
 }
 /** Applique tout de suite le chargement dépensé à l'écran (boutons d'action, barres des personnages et de l'ennemi, arme, objets) sans attendre le ticker. */
@@ -222,7 +223,10 @@ function dispatchAction(owner, effect, turnBound, info = null){
     // Cible mémorisée au choix : tombée entre-temps, elle ne peut plus être touchée : le coup est perdu (qì, PA et charge restent dépensés).
     const target = captureTarget(owner, info);
     const run = () => {
-        if(!targetLost(target)) return effect();
+        if(!targetLost(target)){
+            if(owner === 'player' && info?.casterId){ if(!gameState.threat) gameState.threat = {}; addThreat(gameState.threat, info.casterId, info.damage); }   // menace en temps réel : qui agit souvent attire les coups (enemyTargeting.js)
+            return effect();
+        }
         const who = info?.caster || (owner === 'enemy' ? enemy?.name : player?.name) || 'Quelqu\'un';
         const victim = target.party || target.foe?.name || 'sa cible';
         log(`${who} visait ${victim}, déjà à terre : coup perdu.`);
