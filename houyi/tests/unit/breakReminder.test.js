@@ -108,12 +108,12 @@ describe('fermeture de la popup', () => {
 });
 
 describe('rappel de pause : discrétion et réglage', () => {
-    test('la popup est un dialogue nommé, avec le focus sur « Continuer » et un rappel que le réglage existe', () => {
+    test('la popup est un dialogue nommé, avec le focus sur « Je fais une pause » et un rappel que le réglage existe', () => {
         const btn = document.createElement('button'); document.body.appendChild(btn); btn.focus();
         const modal = showBreakReminder(1800);
         expect(modal.getAttribute('role')).toBe('dialog');
         expect(document.getElementById(modal.getAttribute('aria-labelledby')).textContent).toBe('Petite pause ?');
-        expect(document.activeElement.id).toBe('break-reminder-close');
+        expect(document.activeElement.id).toBe('break-reminder-pause');
         expect(modal.textContent).toMatch(/Options/);
         document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
         expect(document.getElementById('break-reminder-modal')).toBeNull();
