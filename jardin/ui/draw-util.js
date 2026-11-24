@@ -96,6 +96,42 @@ export function snap(p, { grid = 0, points = [], tolerance = 0.15, ortho = null 
   return { p: q, kind };
 }
 
+/** Projection d'un point sur la droite (a, b) prolongée : {p, t (0..1 sur le segment), d (distance)}. */
+export function projectOnLine(p, a, b) {
+  const dx = b.x - a.x; const dy = b.y - a.y;
+  const L2 = dx * dx + dy * dy;
+  if (L2 < 1e-12) return { p: { x: a.x, y: a.y }, t: 0, d: distance(p, a) };
+  const t = ((p.x - a.x) * dx + (p.y - a.y) * dy) / L2;
+  const q = { x: a.x + t * dx, y: a.y + t * dy };
+  return { p: q, t, d: distance(p, q) };
+}
+
+/** Aimante un point sur la droite prolongée la plus proche parmi `lines` ([{a, b}]) à moins de `tolerance`. */
+export function snapToLines(p, lines, tolerance) {
+  let best = null;
+  for (const l of lines) {
+    const r = projectOnLine(p, l.a, l.b);
+    if (r.d <= tolerance && (!best || r.d < best.d)) best = { p: r.p, d: r.d, line: l, t: r.t };
+  }
+  return best;
+}
+
+/** Quatre coins d'un rectangle de coins opposés a et b (sens horaire à l'écran). */
+export const rectPoints = (a, b) => [{ x: a.x, y: a.y }, { x: b.x, y: a.y }, { x: b.x, y: b.y }, { x: a.x, y: b.y }];
+
+/** Le polygone est-il un rectangle (4 sommets, angles droits) ? */
+export function isRectangle(points, tol = 0.02) {
+  if (!points || points.length !== 4) return false;
+  for (let i = 0; i < 4; i++) {
+    const a = points[i]; const b = points[(i + 1) % 4]; const c = points[(i + 2) % 4];
+    const ux = b.x - a.x; const uy = b.y - a.y; const vx = c.x - b.x; const vy = c.y - b.y;
+    const lu = Math.hypot(ux, uy); const lv = Math.hypot(vx, vy);
+    if (lu < 1e-6 || lv < 1e-6) return false;
+    if (Math.abs(ux * vx + uy * vy) / (lu * lv) > tol) return false;
+  }
+  return true;
+}
+
 /**
  * Canvas SVG interactif (viewBox en mètres) avec pan 1 doigt (si aucun outil ne prend la main),
  * pincement 2 doigts, molette. Les outils fournissent des gestionnaires :

@@ -2,6 +2,7 @@
 import { bounds, polygonArea, perimeter, centroid, pointInPolygon, shapePolygon, shapeBounds, signedArea, distance } from './geometry.js';
 import { ZONE_TYPES, getZoneType, SUN_LABELS, CATEGORY_LABELS } from './model.js';
 import { getPlant } from './catalog.js';
+import { gardenCost, formatEuro } from './pricing.js';
 
 const FONT = 'Helvetica, Arial, sans-serif';
 const CAT_COLORS = {
@@ -51,6 +52,8 @@ function patternBody(typeId, stroke) {
 }
 
 /** Pictogramme par catégorie, centré en (0,0), taille g (px). */
+const safeHex = (c) => (typeof c === 'string' && /^#[0-9a-f]{3}([0-9a-f]{3})?$/i.test(c.trim()) ? c.trim() : null);
+
 function glyph(cat, g, col) {
   const s = `stroke="${col}" stroke-width="1" fill="none" stroke-linecap="round" stroke-linejoin="round"`;
   switch (cat) {
@@ -118,13 +121,13 @@ export function describePlan(garden) {
 /**
  * Plan SVG autonome.
  * @param {object} garden
- * @param {{view?:'plan'|'illustrated', age?:'adult'|'young', layers?:{dims?:boolean,legend?:boolean,sun?:boolean,names?:boolean},
+ * @param {{view?:'plan'|'illustrated', age?:'adult'|'young', layers?:{dims?:boolean,legend?:boolean,sun?:boolean,names?:boolean,budget?:boolean},
  *          width?:number, height?:number, idPrefix?:string, plantLookup?:Function}} opts
  */
 export function renderPlanSVG(garden, opts = {}) {
   const view = opts.view === 'illustrated' ? 'illustrated' : 'plan';
   const age = opts.age === 'young' ? 'young' : 'adult';
-  const layers = { dims: true, legend: true, sun: false, names: true, ...(opts.layers || {}) };
+  const layers = { dims: true, legend: true, sun: false, names: true, budget: false, ...(opts.layers || {}) };
   const W = Math.max(320, Math.round(opts.width || 1000));
   const H = Math.max(240, Math.round(opts.height || 760));
   const P = opts.idPrefix || 'jp';
@@ -315,10 +318,15 @@ export function renderPlanSVG(garden, opts = {}) {
       const p = spots[i];
       const cx = tx(p.x); const cy = ty(p.y);
       const g = Math.min(rp * 0.8, 14);
-      const circle = illus
-        ? `<circle r="${f(rp)}" fill="url(#${P}-pg-${cat in CAT_COLORS ? cat : 'shrub'})" fill-opacity=".9" stroke="${darken(col, 0.3)}" stroke-width="0.8"${rp > 8 ? ` filter="url(#${P}-tshadow)"` : ''}/>`
-        : `<circle r="${f(rp)}" fill="${col}" fill-opacity=".2" stroke="${col}" stroke-width="1.1"/>`;
-      out.push(`<g transform="translate(${f(cx)} ${f(cy)})" data-plant="${esc(plant.id)}">${circle}${rp >= 5 ? glyph(cat, g, illus ? '#f4fbe9' : darken(col, 0.2)) : ''}</g>`);
+      // Couleurs réelles de l'essence (vues illustrée et jeunes plants) : feuillage en fond, floraison en couronne.
+      const colored = illus || age === 'young';
+      const foc = colored ? safeHex(plant.foliageColor) : null;
+      const flc = colored ? safeHex(plant.flowerColor) : null;
+      let circle = illus
+        ? `<circle r="${f(rp)}" fill="${foc || `url(#${P}-pg-${cat in CAT_COLORS ? cat : 'shrub'})`}" fill-opacity=".9" stroke="${darken(foc || col, 0.3)}" stroke-width="0.8"${rp > 8 ? ` filter="url(#${P}-tshadow)"` : ''}/>`
+        : `<circle r="${f(rp)}" fill="${foc || col}" fill-opacity="${foc ? '.45' : '.2'}" stroke="${foc ? darken(foc, 0.2) : col}" stroke-width="1.1"/>`;
+      if (flc && rp >= 4) circle += `<circle r="${f(rp * 0.62)}" fill="${flc}" fill-opacity=".85" stroke="${darken(flc, 0.25)}" stroke-width="0.6" data-flower="1"/>`;
+      out.push(`<g transform="translate(${f(cx)} ${f(cy)})" data-plant="${esc(plant.id)}">${circle}${rp >= 5 ? glyph(cat, g, flc ? darken(flc, 0.55) : illus ? '#f4fbe9' : darken(col, 0.2)) : ''}</g>`);
       if (!plantsLegend.has(plant.id)) plantsLegend.set(plant.id, { plant, count: 0 });
       if (layers.names && !labelled.has(gi)) {
         labelled.add(gi);
@@ -403,8 +411,12 @@ export function renderPlanSVG(garden, opts = {}) {
       const d = new Date((garden.plan && garden.plan.validatedAt) || garden.updatedAt || Date.now());
       return Number.isNaN(d.getTime()) ? '' : d.toLocaleDateString('fr-FR');
     })();
+    let budgetTxt = '';
+    if (layers.budget) {
+      try { const bc = gardenCost(garden, lookup); budgetTxt = `Budget estimé ≈ ${formatEuro(bc.total, { digits: 0 })}${bc.unknownCount ? ` (${bc.unknownCount} sans prix)` : ''}`; } catch { /* */ }
+    }
     const region = [garden.context && garden.context.commune, garden.context && garden.context.region].filter(Boolean).join(', ');
-    out.push(`<g font-family="${FONT}" fill="#1b1b1b"><rect x="${cx0}" y="${cy0}" width="${cw}" height="${CART_H}" fill="#fff" stroke="#333" stroke-width="1.2"/><line x1="${cx0 + cw * 0.5}" y1="${cy0}" x2="${cx0 + cw * 0.5}" y2="${cy0 + CART_H}" stroke="#333" stroke-width="0.8"/><text x="${cx0 + 12}" y="${cy0 + 24}" font-size="19" font-weight="700">${esc(garden.name || 'Mon jardin')}</text><text x="${cx0 + 12}" y="${cy0 + 44}" font-size="12" fill="#444">${esc(region || 'Région non renseignée')}</text><text x="${cx0 + cw * 0.5 + 12}" y="${cy0 + 20}" font-size="12">Surface : ${frNum(surface, 1)} m² · Périmètre : ${frNum(per, 1)} m</text><text x="${cx0 + cw * 0.5 + 12}" y="${cy0 + 38}" font-size="12">Vue ${illus ? 'illustrée' : 'plan'} · ${age === 'young' ? 'jeunes plants' : 'à maturité'}</text><text x="${cx0 + cw * 0.5 + 12}" y="${cy0 + 53}" font-size="11" fill="#555">${esc(dateStr)}${garden.status === 'validated' ? ' · validé' : ' · brouillon'}</text></g>`);
+    out.push(`<g font-family="${FONT}" fill="#1b1b1b"><rect x="${cx0}" y="${cy0}" width="${cw}" height="${CART_H}" fill="#fff" stroke="#333" stroke-width="1.2"/><line x1="${cx0 + cw * 0.5}" y1="${cy0}" x2="${cx0 + cw * 0.5}" y2="${cy0 + CART_H}" stroke="#333" stroke-width="0.8"/><text x="${cx0 + 12}" y="${cy0 + 24}" font-size="19" font-weight="700">${esc(garden.name || 'Mon jardin')}</text><text x="${cx0 + 12}" y="${cy0 + 44}" font-size="12" fill="#444">${esc(region || 'Région non renseignée')}</text>${budgetTxt ? `<text x="${cx0 + 12}" y="${cy0 + 54}" font-size="10" fill="#444">${esc(budgetTxt)}</text>` : ''}<text x="${cx0 + cw * 0.5 + 12}" y="${cy0 + 20}" font-size="12">Surface : ${frNum(surface, 1)} m² · Périmètre : ${frNum(per, 1)} m</text><text x="${cx0 + cw * 0.5 + 12}" y="${cy0 + 38}" font-size="12">Vue ${illus ? 'illustrée' : 'plan'} · ${age === 'young' ? 'jeunes plants' : 'à maturité'}</text><text x="${cx0 + cw * 0.5 + 12}" y="${cy0 + 53}" font-size="11" fill="#555">${esc(dateStr)}${garden.status === 'validated' ? ' · validé' : ' · brouillon'}</text></g>`);
   }
 
   const descr = describePlan(garden);

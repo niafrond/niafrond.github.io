@@ -3,6 +3,7 @@ import { allPlants, getPlant, filterPlants } from './catalog.js';
 import { climateForDepartement, adjustTminForAltitude } from './climate.js';
 import { shapeArea, shapePolygon, bounds } from './geometry.js';
 import { zoneSunLevel } from './sun.js';
+import { plantCost } from './pricing.js';
 
 const SUN_ORDER = { shade: 0, partial: 1, full: 2 };
 const SUN_LABEL = { full: 'plein soleil', partial: 'mi-ombre', shade: 'ombre' };
@@ -297,14 +298,22 @@ const heightLayer = (h) => (h < 0.5 ? 0 : h < 1.5 ? 1 : h < 4 ? 2 : 3);
 /**
  * Sélection équilibrée déterministe : hauteurs étagées, floraison étalée.
  * Retourne [{plantId, count}].
+ * `budget` (€, facultatif) : privilégie les essences peu coûteuses et réduit quantités/essences pour rester
+ * sous le budget si possible (au moins une essence est toujours conservée).
  */
-export function suggestSelection(garden, zone, { seed = 1, plants, max } = {}) {
+export function suggestSelection(garden, zone, { seed = 1, plants, max, budget } = {}) {
   const rnd = mulberry32(hashSeed(seed));
   const strict = zone.type === 'vegetable' || zone.type === 'terrace';
   let cands = recommendForZone(garden, zone, { plants }).filter((r) => !r.plant.invasive && !(strict && r.plant.toxic));
   if (!cands.length) return [];
   const area = shapeArea(zone.shape);
   const target = Math.min(cands.length, max || (area < 4 ? 2 : area < 15 ? 3 : area < 60 ? 4 : 5));
+  const cap = typeof budget === 'number' && Number.isFinite(budget) && budget > 0 ? budget : null;
+  const estCost = (plant) => {
+    if (cap == null) return 0;
+    const c = plantCost(plant, { count: Math.max(1, Math.round(suggestQuantity(plant, zone) / target)) }, zone);
+    return c ? c.total : 0;
+  };
 
   const chosen = [];
   const layers = new Set();
@@ -319,6 +328,7 @@ export function suggestSelection(garden, zone, { seed = 1, plants, max } = {}) {
         + (layers.has(heightLayer(c.plant.heightAdult)) ? 0 : 0.5)
         + newMonths / 12
         + (cats.has(c.plant.category) ? 0 : 0.15)
+        - (cap == null ? 0 : Math.min(1, estCost(c.plant) / cap) * 0.6)
         + rnd() * 0.25;
       if (v > bestV) { bestV = v; best = c; }
     }
@@ -329,9 +339,26 @@ export function suggestSelection(garden, zone, { seed = 1, plants, max } = {}) {
     cats.add(best.plant.category);
   }
   const n = chosen.length;
-  return chosen.map(({ plant }) => {
+  const sel = chosen.map(({ plant }) => {
     const q = suggestQuantity(plant, zone);
     const single = plant.category === 'tree' || plant.category === 'lawn';
     return { plantId: plant.id, count: single ? q : Math.max(1, Math.round(q / n)) };
   });
+  if (cap == null) return sel;
+  // Respect du budget : on réduit d'abord les quantités de la ligne la plus chère, puis on retire des essences.
+  const byId = new Map(chosen.map(({ plant }) => [plant.id, plant]));
+  const line = (it) => { const c = plantCost(byId.get(it.plantId), it, zone); return c ? c.total : 0; };
+  const sum = () => sel.reduce((t, it) => t + line(it), 0);
+  for (let guard = 0; guard < 5000 && sum() > cap + 1e-9; guard++) {
+    const reducible = sel.filter((it) => it.count > 1 && line(it) > 0 && byId.get(it.plantId).priceUnit !== 'm2');
+    if (reducible.length) {
+      reducible.sort((a, b) => line(b) - line(a));
+      reducible[0].count--;
+    } else if (sel.length > 1) {
+      let k = 0;
+      sel.forEach((it, i) => { if (line(it) > line(sel[k])) k = i; });
+      sel.splice(k, 1);
+    } else break;
+  }
+  return sel;
 }
