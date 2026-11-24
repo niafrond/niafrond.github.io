@@ -9,7 +9,7 @@ const ORIENT = [
 ];
 const SOILS = [['clay', 'Argileux'], ['limestone', 'Calcaire'], ['sandy', 'Sableux'], ['loam', 'Limoneux'], ['humus', 'Humifère']];
 const SLOPES = [['none', 'Nulle'], ['light', 'Légère'], ['strong', 'Forte']];
-const WINDS = [['sheltered', 'Abrité'], ['moderate', 'Modéré'], ['exposed', 'Très exposé']];
+const WINDS = [['low', 'Abrité (peu de vent)'], ['medium', 'Modérément exposé'], ['high', 'Très exposé']];
 
 export function orientationLabel(az) {
   if (az == null) return 'inconnue';
