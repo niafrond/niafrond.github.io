@@ -85,7 +85,7 @@ export function mountSun(el, { garden, onChange }) {
   function renderRadios() {
     modeBoxes.forEach((lab) => {
       const i = lab.querySelector('input');
-      i.checked = i.value === view || (i.value === 'map' && view === 'estimated' && false);
+      i.checked = i.value === view;
     });
   }
 

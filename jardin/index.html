@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Mon jardin</title>
+  <meta name="description" content="Aménagez votre jardin : terrain, zones, essences adaptées, plan et conseils d’entretien.">
+  <meta name="color-scheme" content="light dark">
+  <meta name="theme-color" content="#2f7d4f" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0f1a14" media="(prefers-color-scheme: dark)">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Mon jardin">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <a class="skip" href="#app">Aller au contenu</a>
+  <div id="app" class="app"><p class="muted" style="padding:16px">Chargement…</p></div>
+  <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+  <noscript><p style="padding:16px">Cette application nécessite JavaScript.</p></noscript>
+  <script type="module" src="app.js"></script>
+</body>
+</html>

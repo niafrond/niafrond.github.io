@@ -40,7 +40,7 @@ export function mountContext(el, { garden, onChange }) {
   const c = garden.context;
   let stopHeading = null;
   let dead = false;
-  const change = () => { garden.updatedAt = garden.updatedAt; onChange && onChange(garden); };
+  const change = () => { onChange && onChange(garden); };
 
   const gpsStatus = h('p', { class: 'muted', role: 'status', 'aria-live': 'polite', id: 'gps-status' });
   const locBox = h('div', { class: 'summary', id: 'loc-summary', 'aria-live': 'polite' });

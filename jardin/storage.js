@@ -99,7 +99,7 @@ function normaliser(brut) {
 
 /** Crée une instance de stockage (API asynchrone) sur un backend donné. */
 export function createStorage(backend = backendParDefaut()) {
-  return {
+  const api = {
     /** Jardins triés du plus récemment modifié au plus ancien. */
     async listGardens() {
       const all = await backend.getAll(STORE_GARDENS);
@@ -120,7 +120,7 @@ export function createStorage(backend = backendParDefaut()) {
     },
     /** Copie « variante » : nouvel id, brouillon, plan à regénérer. */
     async duplicateGarden(id) {
-      const src = await this.getGarden(id);
+      const src = await api.getGarden(id);
       if (!src) return null;
       const now = new Date().toISOString();
       const copieJ = { ...src, id: newId('g_'), name: `${src.name} (variante)`, createdAt: now, updatedAt: now, status: 'draft', plan: { svg: null, validatedAt: null }, tasksDone: {} };
@@ -161,6 +161,7 @@ export function createStorage(backend = backendParDefaut()) {
       return complet;
     },
   };
+  return api;
 }
 
 /** Instance partagée (IndexedDB si disponible, sinon mémoire). */
