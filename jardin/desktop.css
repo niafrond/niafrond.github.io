@@ -20,15 +20,14 @@
 
   /* éditeurs de dessin : beaucoup plus hauts */
   .jd-editor { min-height: 0; height: auto; }
-  .jd-canvas-wrap { min-height: 70vh; }
-  .jd-sheet { max-height: 30vh; }
+  .jd-editor .jd-canvas-wrap { min-height: 70vh; }
+  .jd-editor .jd-sheet { max-height: 30vh; }
 
   /* barres d'outils : pas de défilement horizontal */
-  .jd-bar.jd-scroll, .jd-chips { flex-wrap: wrap; overflow-x: visible; }
-  .jd-chips { gap: 6px; }
+  .jd-editor .jd-bar.jd-scroll, .jd-editor .jd-chips { flex-wrap: wrap; overflow-x: visible; }
 
   /* cibles plus fines autorisées, survol */
-  .jd-btn, .jd-bar .jd-btn { min-height: 34px; min-width: 34px; padding: 0 10px; }
+  .jd-editor .jd-btn { min-height: 34px; min-width: 34px; padding: 0 10px; }
   .btn { min-height: 38px; }
   .btn-sm { min-height: 32px; }
   .jd-btn:not(:disabled):hover, .btn:not(:disabled):hover { filter: brightness(1.08); border-color: var(--jd-accent, currentColor); }

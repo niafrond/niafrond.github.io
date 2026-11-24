@@ -37,7 +37,7 @@ export function mountImportScreen(el, { code, onDone, onCancel }) {
       h('div', { class: 'row' }, thumb,
         h('div', { class: 'grow', 'data-role': 'preview' },
           h('strong', null, d.name),
-          h('p', { class: 'muted' }, `${fmtM2(d.areaM2)} · ${d.zones} zone${d.zones > 1 ? 's' : ''} · ${d.plants} plant${d.plants > 1 ? 's' : ''}`))),
+          h('p', { class: 'muted' }, `${fmtM2(d.areaM2)} · ${d.zones} zone${d.zones > 1 ? 's' : ''} · ${d.plants} plante${d.plants > 1 ? 's' : ''}`))),
       h('p', { class: 'muted' }, 'Le jardin sera ajouté à vos jardins : aucun jardin existant n’est modifié.'),
       h('div', { class: 'row end' }, cancel, importBtn),
       native ? null : h('p', null, h('a', { class: 'btn', 'data-act': 'open-app', href }, 'Ouvrir dans l’application Android')));

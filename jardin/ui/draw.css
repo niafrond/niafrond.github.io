@@ -167,3 +167,5 @@
 .jd-zsheet .jd-select { font-size: 15px; }
 .jd-zacts { flex-wrap: nowrap; }
 .jd-zacts .jd-btn { min-width: 0; padding: 0 6px; font-size: 13px; }
+.jd-start .jd-grid2 .jd-btn { overflow: hidden; text-overflow: ellipsis; display: block; line-height: 44px; }
+.jd-start .jd-grid2 [data-act=start-more] { grid-column: 1 / -1; }

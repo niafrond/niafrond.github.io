@@ -107,6 +107,14 @@ L'utilisateur peut ajouter des types personnalisés. Une même zone ne contient 
 
 À cette étape, la liste choisie sert de **checklist** : une zone souhaitée sans forme dessinée est signalée avant le rendu.
 
+### Éditeur de zones : ergonomie téléphone
+
+- **Palette** : cartes larges (icône, couleur, nom) ; les types souhaités (`wishedZoneTypes`) d'abord, avec l'état « à dessiner » ou « ✓ dessiné (n) » ; « Autres types » déploie les autres. **Démarrage guidé** sur un plan sans zone : « Choisissez une zone puis dessinez-la » avec un bouton par type souhaité.
+- **Création** : polygone = rectangle en 2 touches (coins opposés, ou toucher puis glisser) par défaut, bascule « Forme libre » (un point par angle, « Terminer » ou retouche du 1er point) ; cercle = toucher le centre puis glisser ou toucher le bord ; ligne (allée, haie) = points successifs, largeur en cm réglable. Aperçu en direct des dimensions et de la surface, « Terminer » et « Annuler le tracé ».
+- **Aimantation** : sommets du contour et des autres zones, côtés du contour prolongés, grille. Une zone qui sort du terrain a un contour rouge (⚠) ; un chevauchement de zones au sol est signalé.
+- **Sélection** (toucher une zone, son nom ou sa cote) : bandeau en bas (nom éditable, type, surface, dimensions, essences choisies, « Dimensions… », « Dupliquer », « Supprimer »). Poignées : sommets glissables (un rectangle reste un rectangle), ＋ au milieu des côtés pour insérer un sommet, glisser la zone sélectionnée pour la déplacer. Annuler / Rétablir global.
+- **Appui long** : sur une zone → saisie en cm (rectangle = largeur × longueur, cercle = rayon, ligne = largeur) ; sur le plan vide avec un type choisi → même fenêtre pour créer une zone de dimensions connues posée à cet endroit (style `jd-pop`, mêmes règles de saisie que le contour).
+
 ## 6. Ensoleillement
 
 Facultatif, mais utilisé pour filtrer et noter les essences.
