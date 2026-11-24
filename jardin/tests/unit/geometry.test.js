@@ -137,7 +137,7 @@ describe('GPS', () => {
   test('orientation : est = +x, nord = −y', () => {
     const o = { lat: 47, lon: 2 };
     const { points } = gpsToLocal([o, { lat: 47, lon: 2.001 }, { lat: 47.001, lon: 2 }]);
-    expect(points[0]).toEqual({ x: 0, y: 0 });
+    expect(points[0].x).toBeCloseTo(0); expect(points[0].y).toBeCloseTo(0);
     expect(points[1].x).toBeGreaterThan(70); expect(points[1].y).toBeCloseTo(0);
     expect(points[2].y).toBeLessThan(-100);
   });

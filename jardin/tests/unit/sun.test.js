@@ -65,9 +65,11 @@ describe('heures de soleil', () => {
   });
   test('northAngle fait tourner le plan : mur au nord réel ne gêne pas', () => {
     const mur = { id: 'm', kind: 'wall', points: [{ x: -50, y: 2 }, { x: 50, y: 2 }, { x: 50, y: 2.3 }, { x: -50, y: 2.3 }], height: 6 };
-    const auSud = sunHoursOnPoint({ x: 0, y: 0 }, { ...PARIS, obstacles: [mur], date });
-    const auNord = sunHoursOnPoint({ x: 0, y: 0 }, { ...PARIS, northAngle: 180, obstacles: [mur], date }); // mur au nord réel
-    expect(auNord).toBeGreaterThan(auSud + 2);
+    const equinoxe = new Date(Date.UTC(2026, 2, 20, 12)); // le soleil reste au sud toute la journée
+    const auSud = sunHoursOnPoint({ x: 0, y: 0 }, { ...PARIS, obstacles: [mur], date: equinoxe });
+    const auNord = sunHoursOnPoint({ x: 0, y: 0 }, { ...PARIS, northAngle: 180, obstacles: [mur], date: equinoxe }); // mur au nord réel
+    expect(auSud).toBeLessThan(1);
+    expect(auNord).toBeGreaterThan(10);
   });
   test('arbre rond ombre un point proche', () => {
     const arbre = { id: 't', kind: 'tree', center: { x: 0, y: 3 }, radius: 1.5, height: 10 };
