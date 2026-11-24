@@ -1,6 +1,6 @@
 # Jardin — specs
 
-Application **mobile** (Android et iOS) d'aménagement de jardin, **France uniquement** : l'utilisateur décrit son terrain (région, exposition, dimensions métrées), place des zones (mare, terrasse, massifs, arbres…), choisit des essences adaptées, obtient un plan vectoriel puis un guide de plantation, d'entretien et d'arrosage.
+Application **mobile Android uniquement** d'aménagement de jardin, **France uniquement** : l'utilisateur décrit son terrain (région, exposition, dimensions métrées), place des zones (mare, terrasse, massifs, arbres…), choisit des essences adaptées, obtient un plan vectoriel puis un guide de plantation, d'entretien et d'arrosage.
 
 Statut : **specs initiales (aucun code)**. Dossier : `jardin/`.
 
@@ -161,14 +161,14 @@ Les conseils proviennent du catalogue (`care` par essence) et de règles génér
 - **Locales** (aucun serveur ni push distant) : planifiées par l'app via les notifications locales Capacitor, donc gratuites et fonctionnelles hors ligne.
 - **Contenu** : « Arroser le massif sud ce soir (≈ 15 L) », par hydrozone, avec action « Fait », « Reporter » ou « Il a plu ». Regroupement d'une seule notification par jour à l'heure choisie (soirée ou matin tôt par défaut en été).
 - **Calcul** : bilan hydrique simple par zone, alimenté par la pluie réelle et prévue et l'évapotranspiration de référence (ET₀) de la météo (§11), pondérée par un coefficient par essence/zone, le sol et l'âge de la plantation. Déclenchement quand le déficit estimé dépasse un seuil. La pluie prévue ou tombée supprime ou décale l'arrosage.
-- **Fraîcheur des données** : la météo est récupérée à l'ouverture de l'app et, quand l'OS le permet, par tâche de fond périodique (limitée sur iOS) ; l'app planifie à l'avance les 3 à 7 prochains jours et **ré-évalue** à chaque rafraîchissement (annule/remplace les notifications obsolètes). Si aucune donnée récente, repli sur le calendrier théorique (fréquence moyenne mensuelle du §9) et mention « estimation sans météo ».
+- **Fraîcheur des données** : la météo est récupérée à l'ouverture de l'app et, par tâche de fond périodique (WorkManager, via Capacitor ; l'exécution exacte reste à la discrétion d'Android : mode économie d'énergie, Doze) ; l'app planifie à l'avance les 3 à 7 prochains jours et **ré-évalue** à chaque rafraîchissement (annule/remplace les notifications obsolètes). Si aucune donnée récente, repli sur le calendrier théorique (fréquence moyenne mensuelle du §9) et mention « estimation sans météo ».
 - **Réglages** : heure, jours, par zone ou par jardin, activation/désactivation, « ne pas déranger », mode vacances, alertes gel (protéger les plantes frileuses) et canicule.
 - Autres notifications facultatives : tâche du mois (taille, plantation), rappel de rentrer une plante en pot.
 - Permission demandée au moment de l'activation (pas au premier lancement), avec explication préalable.
 
 ## 10. Architecture technique (proposition)
 
-- **Plateforme** : application web en modules ES (sans framework imposé, SVG pour le plan) empaquetée avec **Capacitor** pour Android et iOS ; plugins : géolocalisation, boussole/orientation, notifications locales, tâches de fond, système de fichiers/stockage, partage. Cela garde la même base de code que les autres apps du dépôt ; une app React Native/Expo n'est envisagée que si le dessin tactile se révèle insuffisant en webview (à prototyper tôt, §15).
+- **Plateforme** : application web en modules ES (sans framework imposé, SVG pour le plan) empaquetée avec **Capacitor** pour **Android uniquement** (dossier `jardin-android/` sur le modèle de `flash-guess-android`, `mob-rush-android`, `reveil-xtrem-android` : `capacitor.config.json`, `package.json`, `src/`) ; plugins : géolocalisation, boussole/orientation, notifications locales, tâches de fond, système de fichiers/stockage, partage. Cela garde la même base de code que les autres apps du dépôt ; une app React Native/Expo n'est envisagée que si le dessin tactile se révèle insuffisant en webview (à prototyper tôt, §15).
 - `jardin/index.html` (liste des jardins) + `jardin/editor.html` (assistant).
 - Modules : `geometry.js` (aire, périmètre, intersection, point-dans-polygone, lacet, conversion GPS→mètres — pur et testé), `model.js` (types, validation), `storage.js` (IndexedDB, export/import), `catalog.js` + `data/plants.json`, `recommend.js` (filtres, score — pur et testé), `sun.js` (trajectoire du soleil, cartographie, estimation), `weather.js` (appels Open-Meteo, cache, repli hors ligne), `watering.js` (bilan hydrique, planification des notifications — pur et testé), `notify.js` (pont Capacitor), `geo.js` (GPS, boussole, géocodage), `render.js` (SVG), `advice.js` (conseils, calendrier), `ui/*` (étapes).
 - Tests Jest (comme le reste du dépôt) sur `geometry`, `recommend`, `watering`, `advice`, `storage` (mock) ; test Playwright du parcours complet (créer un jardin, tracer, zoner, choisir, valider) avec GPS/boussole simulés.
@@ -205,14 +205,14 @@ Côtés courbes et relief 3D, estimation d'ombre précise heure par heure, recon
 
 ## 13. Jalons
 
-1. **MVP** : localisation GPS, contexte (région, exposition à la boussole), contour métré et relevé GPS, zones, ensoleillement rapide, catalogue embarqué (~150 essences), recommandation filtrée, rendu SVG, validation, conseils généraux, arrosage avec **notifications locales** alimentées par Open-Meteo, stockage local, app Android/iOS via Capacitor.
+1. **MVP** : localisation GPS, contexte (région, exposition à la boussole), contour métré et relevé GPS, zones, ensoleillement rapide, catalogue embarqué (~150 essences), recommandation filtrée, rendu SVG, validation, conseils généraux, arrosage avec **notifications locales** alimentées par Open-Meteo, stockage local, app Android via Capacitor (APK/AAB).
 2. Export PDF/PNG, ensoleillement cartographié, calendrier consolidé, tâches du mois.
 3. Ensoleillement estimé (PVGIS + soleil local), mode « Surprends-moi », association de plantes, évolution à maturité, DROM.
 
 ## 14. Risques
 
 - **Open-Meteo : usage non commercial seulement** ; publier l'app sur les stores avec monétisation imposerait un abonnement ou un changement de source.
-- **Tâches de fond iOS** peu fiables : d'où la planification à l'avance de plusieurs jours et le repli calendaire.
+- **Tâches de fond Android** non garanties (Doze, économie de batterie, constructeurs agressifs) : d'où la planification à l'avance de plusieurs jours et le repli calendaire. Les notifications exactes demandent la permission « alarmes et rappels » (Android 12+) et la permission de notification (Android 13+), à demander au moment de l'activation ; guider l'utilisateur vers les réglages si la batterie bloque l'app.
 - **Précision du GPS et de la boussole** d'un téléphone (plusieurs mètres, interférences magnétiques) : toujours afficher la précision et permettre la correction manuelle.
 - **Dépendance à des API publiques** qui évoluent (cf. arrêt de l'API Adresse, suspension de SoilGrids) : isoler chaque source derrière un module et prévoir des replis.
 - **Effort éditorial** du catalogue (150 essences fiables) : c'est le vrai coût du projet.
@@ -221,7 +221,7 @@ Côtés courbes et relief 3D, estimation d'ombre précise heure par heure, recon
 ## 15. Questions ouvertes
 
 - Publication prévue sur les stores (conditions d'usage d'Open-Meteo) ou usage personnel/non commercial ?
-- Cible prioritaire : Android, iOS, ou les deux dès le MVP ?
+- Version Android minimale à supporter (proposition : Android 8 / API 26) ?
 - Précision attendue du métré (cm) et besoin d'import d'un plan existant ?
 - Faut-il un mode « jardin existant » (plantes déjà en place) en plus de la création ?
 - Prototype du dessin tactile en Capacitor avant de figer la plateforme ?
