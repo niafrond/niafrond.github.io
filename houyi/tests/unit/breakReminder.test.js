@@ -36,6 +36,21 @@ describe('rappel de pause', () => {
         document.getElementById('break-reminder-close').click();
         expect(document.getElementById('break-reminder-modal')).toBeNull();
     });
+
+    test('deux boutons : « Je fais une pause » (grand) lance onPause et ferme ; « Je continue à jouer » (petit) ferme seulement', () => {
+        const onPause = jest.fn();
+        showBreakReminder(3600, Math.random, { onPause });
+        const pause = document.getElementById('break-reminder-pause'), keep = document.getElementById('break-reminder-close');
+        expect(pause.textContent).toBe('Je fais une pause');
+        expect(keep.textContent).toBe('Je continue à jouer');
+        keep.click();
+        expect(onPause).not.toHaveBeenCalled();
+        expect(document.getElementById('break-reminder-modal')).toBeNull();
+        showBreakReminder(3600, Math.random, { onPause });
+        document.getElementById('break-reminder-pause').click();
+        expect(onPause).toHaveBeenCalledTimes(1);
+        expect(document.getElementById('break-reminder-modal')).toBeNull();
+    });
 });
 
 describe('surveillance du temps de jeu', () => {

@@ -78,8 +78,9 @@ export const BREAK_VARIANT_COUNT = HOOKS.length * BODIES.length * CONCLUSIONS.le
 
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
-// Affiche la popup ; renvoie l'élément (ou null s'il y en a déjà une).
-export function showBreakReminder(seconds, rng = Math.random) {
+// Affiche la popup ; renvoie l'élément (ou null s'il y en a déjà une). Deux choix : « Je fais une pause » (grand bouton : `onPause`, par défaut le jeu se recharge
+// et revient à l'écran de démarrage, le launcher) et « Je continue à jouer » (tout petit : ferme la popup, comme Échap ou un clic à côté).
+export function showBreakReminder(seconds, rng = Math.random, { onPause = () => location.reload() } = {}) {
     if (document.getElementById('break-reminder-modal')) return null;
     const m = buildBreakMessage(seconds, rng);
     const modal = document.createElement('div');
@@ -95,7 +96,8 @@ export function showBreakReminder(seconds, rng = Math.random) {
         <p>${esc(m.body)}</p>
         <p>${esc(m.conclusion)}</p>
         <p><em>${esc(m.punchline)}</em></p>
-        <div class="modal-actions"><button class="primary" id="break-reminder-close">Continuer à jouer</button></div>
+        <div class="modal-actions break-reminder-actions"><button class="primary break-reminder-pause" id="break-reminder-pause">Je fais une pause</button></div>
+        <p class="break-reminder-continue"><button type="button" id="break-reminder-close">Je continue à jouer</button></p>
         <p class="break-reminder-hint"><small>Ce rappel se désactive dans Options / Pause.</small></p>
     </div>`;
     document.body.appendChild(modal);
@@ -103,16 +105,17 @@ export function showBreakReminder(seconds, rng = Math.random) {
     const close = () => { modal.remove(); document.removeEventListener('keydown', onKey); if (previous?.isConnected) previous.focus?.(); };
     const onKey = e => { if (e.key === 'Escape') close(); };
     modal.querySelector('#break-reminder-close').addEventListener('click', close);
+    modal.querySelector('#break-reminder-pause').addEventListener('click', () => { close(); onPause(); });
     modal.addEventListener('click', e => { if (e.target === modal) close(); });
     document.addEventListener('keydown', onKey);
-    modal.querySelector('#break-reminder-close').focus?.();
+    modal.querySelector('#break-reminder-pause').focus?.();
     return modal;
 }
 
 // Surveille le temps de jeu de la session (secondes, page visible). `isCalm()` doit renvoyer true hors combat / dialogue :
 // le rappel attend un moment calme (jamais en plein combat ou puzzle). Fermer la popup ne touche pas au compteur de session. Renvoie la fonction à appeler chaque seconde.
 // `isEnabled()` : false quand le joueur a désactivé le rappel (option) ; le compteur continue mais rien n'est affiché, et aucune rafale ne suit la réactivation.
-export function createBreakWatcher({ isCalm = () => true, show = showBreakReminder, isEnabled = () => true } = {}) {
+export function createBreakWatcher({ isCalm = () => true, show = showBreakReminder, isEnabled = () => true } = {}) {   // `show(seconds)` : popup (onPause réglé par l'appelant via `show`)
     let session = 0;
     let shown = 0;
     let last = Date.now();
