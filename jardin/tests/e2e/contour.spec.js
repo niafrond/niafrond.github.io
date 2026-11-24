@@ -60,7 +60,7 @@ test('rectangle par dimensions en cm, puis longueur corrigée par appui long', a
 test('appui long sur le plan vide : le rectangle est proposé ; « 3,5 m » est compris', async ({ page }) => {
   await nouveauJardin(page);
   const box = await page.locator('.jd-svg').boundingBox();
-  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  await page.mouse.move(box.x + box.width / 2, box.y + 14);
   await page.mouse.down(); await page.waitForTimeout(700); await page.mouse.up();
   await expect(page.locator('[data-role=pop]')).toContainText('Terrain rectangulaire');
   await page.locator('[data-field=w]').fill('3,5 m');
