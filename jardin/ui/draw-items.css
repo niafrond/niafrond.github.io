@@ -1,0 +1,30 @@
+/* Éditeur d'aménagements (mobilier, murs & clôtures, portes & accès). Complète draw.css (variables --jd-*). */
+.jdi { min-height: 540px; }
+.jdi-tabs { display: flex; background: var(--jd-card); border-bottom: 1px solid var(--jd-line); }
+.jdi-tabs .jd-tab { flex: 1 1 0; min-width: 0; padding: 0 4px; font-size: 14px; }
+.jdi-chips { display: flex; gap: 6px; padding: 0 0 0 8px; align-items: center; }
+.jdi-chip { min-height: 44px; padding: 0 12px; border-radius: 22px; border: 1px solid var(--jd-line); background: var(--jd-card); color: var(--jd-fg); font: inherit; font-size: 13px; cursor: pointer; white-space: nowrap; }
+.jdi-chip[aria-pressed="true"] { background: color-mix(in srgb, var(--jd-accent) 20%, var(--jd-card)); border-color: var(--jd-accent); font-weight: 600; }
+.jdi-palette { display: flex; gap: 8px; padding: 6px 8px; overflow-x: auto; -webkit-overflow-scrolling: touch; background: var(--jd-card); border-bottom: 1px solid var(--jd-line); }
+.jdi-card {
+  flex: 0 0 auto; width: 104px; min-height: 64px; padding: 6px 6px; border-radius: 12px; border: 2px solid var(--jd-line);
+  background: var(--jd-card); color: var(--jd-fg); font: inherit; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 2px; touch-action: manipulation;
+}
+.jdi-card[aria-pressed="true"] { border-color: var(--jd-accent); background: color-mix(in srgb, var(--jd-accent) 14%, var(--jd-card)); }
+.jdi-pastille { width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; font-size: 20px; line-height: 1; border: 1px solid rgba(0,0,0,.2); }
+.jdi-card-name { font-size: 12px; font-weight: 600; line-height: 1.15; text-align: center; overflow-wrap: anywhere; }
+.jdi-card-meta { font-size: 11px; color: var(--jd-muted); text-align: center; white-space: nowrap; }
+.jdi-detail { background: var(--jd-card); border-top: 1px solid var(--jd-line); padding: 6px 8px; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; min-height: 56px; }
+.jdi-detail[hidden] { display: none; }
+.jdi-detail-title { flex: 1 1 140px; font-size: 14px; font-weight: 600; min-width: 0; overflow-wrap: anywhere; }
+.jdi-detail-title small { display: block; font-weight: 400; color: var(--jd-muted); font-size: 12px; }
+.jdi-detail .jd-input { width: 96px; flex: 0 0 auto; text-align: center; }
+.jdi-seg { display: flex; gap: 6px; flex-wrap: wrap; }
+.jdi-warn { color: var(--jd-warn); font-size: 12px; }
+.jdi-start {
+  position: absolute; left: 10px; right: 10px; top: 8px; z-index: 4; pointer-events: none; text-align: center; font-size: 13px;
+  background: color-mix(in srgb, var(--jd-card) 90%, transparent); border: 1px solid var(--jd-line); border-radius: 12px; padding: 8px 10px; max-width: 380px; margin: 0 auto;
+}
+.jdi-start[hidden] { display: none; }
+.jdi-start b { display: block; margin-bottom: 2px; }
+.jdi .jd-pop { top: 4px; }
