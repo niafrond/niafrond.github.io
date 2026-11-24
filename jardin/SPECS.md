@@ -2,7 +2,7 @@
 
 Application **mobile Android uniquement** d'aménagement de jardin, **France uniquement** : l'utilisateur décrit son terrain (région, exposition, dimensions métrées), place des zones (mare, terrasse, massifs, arbres…), choisit des essences adaptées, obtient un plan vectoriel puis un guide de plantation, d'entretien et d'arrosage.
 
-Statut : **specs initiales (aucun code)**. Dossier : `jardin/`.
+Statut : **implémenté (MVP + une partie des jalons 2 et 3)**, voir §17. Dossier : `jardin/` (web) et `jardin-android/` (enveloppe Capacitor).
 
 ## 1. Principes
 
@@ -283,3 +283,18 @@ Dossier web : `jardin/` (ES modules, sans build, sans dépendance runtime). Enve
 - `ui/draw.js` : `mountContourEditor(el, {garden, onChange})` (tracé au doigt, saisie des longueurs, relevé GPS, obstacles) et `mountZoneEditor(el, {garden, onChange})` (formes polygone/cercle/ligne par type, déplacement, suppression) et `mountSunPainter(el, {garden, onChange})`. Ils modifient `garden` en place puis appellent `onChange(garden)`.
 - `ui/plan-step.js` : `mountPlanStep(el, {garden, onValidate, onBack})` ; `ui/advice-screen.js` : `mountAdvice(el, {garden})` ; `ui/settings.js` : `mountSettings(el)`.
 - Chaque module `ui/*.js` exporte une fonction `mountX(el, props)` qui retourne `unmount()`.
+
+## 17. État de l'implémentation
+
+**Fait** (379 tests unitaires Jest + 1 parcours Playwright `jardin/tests/e2e/parcours.spec.js`, projet `jardin` de `playwright.config.js`) :
+- Logique pure : géométrie et conversion GPS, modèle et validation, trajectoire du soleil et carte d'ensoleillement estimée, stockage IndexedDB avec export/import JSON, climat par département (96 + Corse), catalogue de 213 essences (111 ligneuses, 102 herbacées), score de compatibilité, quantités, cohérence, « Surprends-moi », météo Open-Meteo, géocodage, commune, altitude, bilan hydrique et planification des notifications, conseils et calendrier 12 mois.
+- Interface : accueil (plusieurs jardins, vignettes, dupliquer, supprimer, import/export), assistant en 7 étapes, tracé du contour au doigt avec saisie des longueurs et relevé GPS, obstacles, zones (polygone, cercle, ligne), ensoleillement uniforme, peint ou estimé, choix des essences avec raisons, rendu SVG plan/illustré/jeunes plants, export SVG et PNG, validation, conseils par onglets, tâches du mois, réglages de notifications.
+- Android : `jardin-android/` (Capacitor, API 33 minimum, notifications locales, géolocalisation) et workflow `.github/workflows/apk-jardin.yml`.
+
+**Écarts avec les specs précédentes** :
+- Export PDF et export JSON depuis l'écran du plan non faits (export JSON disponible depuis l'accueil).
+- Conseils, hydrozones et planning d'arrosage faits ; matériel d'arrosage suggéré et volume de cuve non faits.
+- Mode d'ensoleillement « mesuré » (capteur de lumière) non fait ; le mode « estimé » est enregistré comme `sun.mode = 'map'`.
+- Les données du catalogue sont issues de connaissances horticoles générales, non vérifiées en ligne : à relire avant diffusion.
+
+**Non vérifié** : GPS, boussole, notifications et build de l'APK sur appareil réel ou en CI (le workflow n'a pas encore tourné) ; les points « à vérifier » du §11 (altimétrie IGN, API Géo) n'ont pas été testés contre les services réels.

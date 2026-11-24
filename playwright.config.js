@@ -16,6 +16,11 @@ export default defineConfig({
   reporter: [['list']],
   projects: [
     {
+      name: 'jardin',
+      testDir: './jardin/tests/e2e',
+      use: { ...devices['Pixel 5'] },
+    },
+    {
       name: 'quiz',
       testDir: './quiz/tests/e2e',
       use: { ...devices['Desktop Chrome'] },
