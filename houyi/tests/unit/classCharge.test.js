@@ -1,5 +1,5 @@
 import { describe, test, expect } from '@jest/globals';
-import { ENEMY_CHARGE_FACTOR, CHARGE_BASE, CHARGE_MIN, classChargeTime, enemyChargeTime, newCharge, classChargeMs, enemyChargeMs, chargeTick, isClassReady, classProgress, classRemainingMs, spendClass, spendEnemy, isEnemyReady, chargeRunning, chargeSpeed, BOARD_IDLE_PAUSE_MS, initCharge, startChargePctOf, newActionQueue, enqueueAction, takeNextDue, hasQueuedAction, upcomingBeads, upcomingActions, queueSentence, actionTimes, isActionVisible, isActionLaunchable } from '../../classCharge.js';
+import { ENEMY_CHARGE_FACTOR, CHARGE_BASE, CHARGE_MIN, classChargeTime, enemyChargeTime, newCharge, classChargeMs, enemyChargeMs, chargeTick, isClassReady, classProgress, classRemainingMs, spendClass, spendEnemy, isEnemyReady, chargeRunning, chargeSpeed, BOARD_IDLE_PAUSE_MS, initCharge, startChargePctOf, newActionQueue, enqueueAction, takeNextDue, hasQueuedAction, upcomingBeads, upcomingActions, queueSentence, actionTimes, ACTION_ENTER_DELAY_MS, ACTION_LAUNCH_DELAY_MS, isActionVisible, isActionLaunchable } from '../../classCharge.js';
 
 const hero = (extra = {}) => ({ attributes: {}, mana: {}, skills: {}, ...extra });
 
@@ -160,15 +160,18 @@ describe('classCharge : temps de chargement des classes', () => {
     });
 });
 
-describe('délais de lisibilité de la file d\'actions', () => {
-    test('2 s avant d\'apparaître dans la file, 2 s de plus avant de partir', () => {
+describe('délais de la file d\'actions', () => {
+    test('aucune pause artificielle : une action visible et lançable aussitôt, elles s\'enchaînent', () => {
         const t = actionTimes(10000);
-        expect(t).toEqual({ visibleAt: 11000, runAt: 12000 });
-        const item = { ...t };
-        expect(isActionVisible(item, 10999)).toBe(false);
-        expect(isActionVisible(item, 11000)).toBe(true);
-        expect(isActionLaunchable(item, 11999)).toBe(false);
-        expect(isActionLaunchable(item, 12000)).toBe(true);
+        expect(t).toEqual({ visibleAt: 10000, runAt: 10000 });
+        expect(ACTION_ENTER_DELAY_MS).toBe(0);
+        expect(ACTION_LAUNCH_DELAY_MS).toBe(0);
+        expect(isActionVisible(t, 10000)).toBe(true);
+        expect(isActionLaunchable(t, 10000)).toBe(true);
+        const later = actionTimes(10000, 1000, 1000);   // les délais restent réglables
+        expect(later).toEqual({ visibleAt: 11000, runAt: 12000 });
+        expect(isActionVisible(later, 10999)).toBe(false);
+        expect(isActionLaunchable(later, 12000)).toBe(true);
     });
     test('une action sans date (anciennes sauvegardes, tests) est visible et lançable tout de suite', () => {
         expect(isActionVisible({}, 0)).toBe(true);

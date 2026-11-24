@@ -113,9 +113,9 @@ export function takeNextDue(queue, canRun) {
     });
     return best === -1 ? null : queue.splice(best, 1)[0];
 }
-// Délais de lisibilité (ms) : entre le choix d'une action et son entrée dans la file, puis entre l'entrée dans la file et son lancement (joueur et ennemi).
-export const ACTION_ENTER_DELAY_MS = 1000;
-export const ACTION_LAUNCH_DELAY_MS = 1000;
+// Délais de lisibilité (ms) : ils sont à 0 — une action dont c'est le moment entre dans la file et part aussitôt, les actions s'enchaînent sans pause (seule l'animation de la précédente les retient). Réglables via actionTimes.
+export const ACTION_ENTER_DELAY_MS = 0;    // plus de pause artificielle : une action dont c'est le moment entre dans la file et part aussitôt (elles s'enchaînent)
+export const ACTION_LAUNCH_DELAY_MS = 0;
 /** Dates (ms) d'entrée visible dans la file et de lancement possible d'une action choisie à `now`. */
 export const actionTimes = (now, enter = ACTION_ENTER_DELAY_MS, launch = ACTION_LAUNCH_DELAY_MS) => ({ visibleAt: now + enter, runAt: now + enter + launch });
 export const isActionVisible = (item, now) => now >= (item.visibleAt ?? 0);
