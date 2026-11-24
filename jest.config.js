@@ -145,5 +145,20 @@ export default {
       testMatch: ['<rootDir>/reveil-xtrem/tests/unit/**/*.test.js'],
       transform: {},
     },
+    // ── Jardin : logique pure (node) ─────────────────────────────────────────
+    {
+      displayName: 'jardin-node',
+      testEnvironment: 'node',
+      testMatch: ['<rootDir>/jardin/tests/unit/**/*.test.js'],
+      testPathIgnorePatterns: ['\\.dom\\.test\\.js$'],
+      transform: {},
+    },
+    // ── Jardin : modules avec DOM (jsdom) ────────────────────────────────────
+    {
+      displayName: 'jardin-jsdom',
+      testEnvironment: 'jsdom',
+      testMatch: ['<rootDir>/jardin/tests/unit/**/*.dom.test.js'],
+      transform: {},
+    },
   ],
 };

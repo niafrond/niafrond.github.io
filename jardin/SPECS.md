@@ -231,3 +231,55 @@ Côtés courbes et relief 3D, estimation d'ombre précise heure par heure, mode 
 - **Métré** : précision au centimètre ; **pas d'import** de plan (ni cadastre ni image de fond) : on part d'une feuille blanche ou du relevé GPS.
 - **Pas de mode « jardin existant »** ni d'identification par photo (Pl@ntNet écarté).
 - **Plateforme** : prototype du dessin tactile en Capacitor **en tout premier jalon** ; bascule vers React Native/Expo si la fluidité est insuffisante.
+
+## 16. Contrat des modules (implémentation)
+
+Dossier web : `jardin/` (ES modules, sans build, sans dépendance runtime). Enveloppe Android : `jardin-android/` (`webDir: ../jardin`). Tests : `jardin/tests/unit/*.test.js` (Jest, node) et `*.dom.test.js` (jsdom) ; lancer `NODE_OPTIONS=--experimental-vm-modules npx jest --selectProjects jardin-node jardin-jsdom`. Tous les textes visibles sont en français.
+
+### Conventions
+- Unités : mètres. Repère du plan : x vers la droite, y vers le bas (écran). `northAngle` (degrés, sens horaire) = rotation du nord par rapport au haut du plan (0 = nord en haut). Azimut/cap : degrés depuis le nord, sens horaire.
+- `Point = {x, y}`. `LatLon = {lat, lon}`. Identifiants : `newId()` (`model.js`).
+- Mois : entiers 1–12. Températures en °C. Niveaux de soleil : `'full'` (≥ 6 h) | `'partial'` (3–6 h) | `'shade'` (< 3 h). Besoin en eau : `'low'|'medium'|'high'`.
+- Forme d'une zone (`zone.shape`) : `{kind:'polygon', points:Point[]}` | `{kind:'circle', center:Point, radius:number}` | `{kind:'line', points:Point[], width:number}` (allée, haie).
+
+### `model.js`
+- `ZONE_TYPES` : tableau `{id, label, color, icon (emoji), layer:'ground'|'canopy', shapeKinds:string[], defaultWidth?:number, minSun?:'full'|'partial'|'shade'|null}` pour : `pond, pool, terrace, path, lawn, lowplants, midplants, tallplants, hedge, trees, vegetable, orchard, other`.
+- `SUN_LEVELS`, `WATER_NEEDS`, `PLANT_CATEGORIES` (`tree, shrub, hedge, fruit, climber, perennial, groundcover, grass, bulb, aquatic, vegetable, lawn`), `SOILS` (`clay, limestone, sandy, loam, humus`), `ORIENTATIONS` (`N,NE,E,SE,S,SW,W,NW` avec azimut), `newId()`.
+- `createGarden(name)` → `{id, name, createdAt, updatedAt, status:'draft', context:{location:null|{lat,lon,accuracy?}, commune:null|string, departement:null|string (code INSEE), region:null|string, altitude:null|number, orientation:null|number (azimut du fond du jardin), northAngle:0, soil:null, slope:null, wind:null, roofArea:null}, boundary:Point[], boundaryClosed:false, obstacles:Obstacle[], sun:{mode:'unknown'|'uniform'|'map', uniform:null|SunLevel, regions:[{id, level, points:Point[]}]}, wishedZoneTypes:string[], zones:Zone[], plan:{svg:null, validatedAt:null}, tasksDone:{}}`.
+- `Obstacle = {id, kind:'house'|'wall'|'shed'|'tree'|'fence', points?:Point[], center?:Point, radius?:number, height:number}`.
+- `Zone = {id, type, label, shape, plantings:[{plantId, count}], notes}` ; `createZone(typeId, shape)`.
+- `validateGarden(g)` → `{ok, errors:string[], warnings:string[]}` (contour simple et fermé, surface > 1 m², zones dans le contour, chevauchement de zones « ground », zones souhaitées sans forme).
+- `getZoneType(id)`.
+
+### `geometry.js` (pur)
+`distance(a,b)`, `polygonArea(points)` (≥ 0), `signedArea`, `perimeter(points, closed=true)`, `centroid`, `bounds(points)` → `{minX,minY,maxX,maxY,width,height}`, `pointInPolygon(p, points)`, `segmentsIntersect`, `isSimplePolygon`, `shapePolygon(shape, segments=24)` → `Point[]` (cercle échantillonné, ligne épaissie), `shapeArea(shape)`, `shapeBounds(shape)`, `overlapArea(polyA, polyB)` (approx. par échantillonnage, résolution 0,05 m), `polygonInside(inner, outer)`, `snapPoint(p, {grid, points, tolerance, ortho:{from}})`, `pointFromLengthBearing(from, length, bearingDeg)` (bearing relatif au haut du plan, 0 = haut, horaire), `bearing(a,b)`, `closeGapReport(points)` (écart de fermeture + correction répartie), `translatePolygon`, `gpsToLocal(latlons, origin?)` → `{points:Point[], origin}` (plan tangent, x = est, y = −nord), `localToGps(point, origin)`, `haversine(a,b)`.
+
+### `sun.js` (pur)
+`sunPosition(lat, lon, date)` → `{azimuth, elevation}` (degrés), `sunHoursOnPoint(point, {lat, lon, northAngle, obstacles, date})`, `estimateSunMap(garden, {date})` → `[{level, points}]` (régions par grille 0,5 m), `levelFromHours(h)`, `zoneSunLevel(garden, zone)` → `{level|null, dominant, share:{full,partial,shade}}` selon `garden.sun`.
+
+### `storage.js`
+`createStorage(backend?)` avec backend IndexedDB (repli mémoire) ; API asynchrone : `listGardens()`, `getGarden(id)`, `saveGarden(g)` (met à jour `updatedAt`), `deleteGarden(id)`, `duplicateGarden(id)`, `exportGarden(g)` → string JSON `{format:'jardin-v1', garden}`, `importGarden(json)` (valide, nouvel id), `getSettings()`, `saveSettings(s)` avec `settings = {notifications:{enabled, hour:19, minute:0, frost:true, heat:true, monthlyTasks:true, vacationUntil:null}, units, apiCache}`. Export par défaut `storage` (instance partagée).
+
+### Données `data/`
+- `data/plants/woody.js` et `data/plants/herbaceous.js` exportent chacun `default` : tableau de `Plant`. `data/plants/index.js` : `plants` (concat), `plantsById`.
+- `Plant = {id (slug), commonName, latinName, category, heightAdult, widthAdult (m), sun:SunLevel[], hardiness (°C mini supportée, négatif), water, soil:string[] (sols tolérés, [] = tous), foliage:'deciduous'|'evergreen'|'semi'|'none', bloom:number[], bloomColor?:string, harvest?:number[], zones:string[] (ids de ZONE_TYPES), invasive?:boolean, toxic?:boolean, melliferous?:boolean, edible?:boolean, maintenance:'low'|'medium'|'high', windTolerant?:boolean, kc:number (coefficient cultural 0.3–1.1), spacing:number (m, distance entre plants), care:{plantMonths:number[], pruneMonths:number[], fertMonths:number[], planting:string, pruning:string, fertilizer:string, watering:string, notes:string}}`.
+- `data/climate.js` : table des 96 départements métropolitains `{code, name, region, tminC (minimum extrême moyen annuel de référence), rainMm (annuel), frostFreeFrom, frostFreeTo (mois), zoneUSDA}`.
+
+### `climate.js` / `catalog.js` / `recommend.js` (purs)
+- `climate.js` : `climateForDepartement(code)`, `regions()`, `adjustTminForAltitude(tminC, altitudeM)`, `hardinessZone(tminC)` (zone USDA), `departementFromCommuneCode(insee)`.
+- `catalog.js` : `allPlants()`, `getPlant(id)`, `searchPlants(query)` (nom commun/latin, sans accents), `filterPlants(plants, filters)` (filtres du §7 : `foliage, bloomMonth, heightMax, melliferous, edible, lowMaintenance, lowWater, nonToxic, nonInvasive, category`).
+- `recommend.js` : `scorePlant(plant, ctx)` avec `ctx = {tminC, zoneType, sunLevel|null, areaM2, minDimension, soil|null, windy:boolean|null}` → `{score:0-100, status:'ideal'|'possible'|'discouraged', reasons:[{ok:boolean|null, criterion, text}]}` ; `recommendForZone(garden, zone, {includeDiscouraged=false, filters})` → `[{plant, ...score}]` trié ; `suggestQuantity(plant, zone)` ; `checkCoherence(garden)` → `[{level:'warn'|'info', zoneId?, text}]` ; `suggestSelection(garden, zone, {seed})` (« Surprends-moi »).
+
+### Services (`weather.js`, `geo.js`, `notify.js`, `watering.js`, `advice.js`)
+- `weather.js` : `fetchForecast({lat, lon, days=7}, {fetchImpl=fetch, cache})` → `{fetchedAt, stale:boolean, daily:[{date:'YYYY-MM-DD', precipMm, et0Mm, tminC, tmaxC}]}` (Open-Meteo `forecast`, daily `precipitation_sum, et0_fao_evapotranspiration, temperature_2m_min, temperature_2m_max`, `timezone=auto`, + `past_days=3`) ; repli sur cache localStorage ; `parseOpenMeteo(json)` pur.
+- `geo.js` : `getPosition({samples=5, timeoutMs})` (Capacitor Geolocation sinon `navigator.geolocation`, moyenne des échantillons → `{lat, lon, accuracy}`), `watchHeading(cb)` → `stop()` (cap magnétique corrigé), `reverseCommune(lat, lon, {fetchImpl})` → `{commune, departement, region, codeInsee}` (geo.api.gouv.fr), `searchAddress(q, {fetchImpl})` → `[{label, lat, lon}]` (Géoplateforme `data.geopf.fr/geocodage/search`), `fetchElevation(lat, lon, {fetchImpl})` → mètres (Géoplateforme altimétrie, repli Open-Meteo elevation), `magneticDeclination(lat, lon, date)` approximation.
+- `watering.js` (pur) : `hydrozones(garden)` → `[{id, level:'low'|'medium'|'high', zoneIds, areaM2, avgKc}]`, `waterNeed(zone, garden, day)` (L/jour), `planWatering(garden, forecast, state, now, settings)` → `{notifications:[{id:number, at:ISO string, title, body, zoneIds}], summary:[{zoneId, litersPerWeek}], skipped:[{date, reason}]}` (bilan hydrique : ET₀ × kc × surface − pluie efficace, déclenchement quand déficit > seuil, jamais deux jours consécutifs sauf canicule, alerte gel si `tminC` ≤ 2 °C et plantes frileuses, repli calendaire sans météo), `monthlySchedule(garden)` (fréquence et litres par mois, par zone).
+- `notify.js` : `ensurePermission()`, `scheduleAll(list)` (annule les notifications `jardin-*` obsolètes puis planifie ; Capacitor LocalNotifications, repli `Notification` web / no-op), `cancelAll()`, `refreshAndSchedule(garden, settings)` (météo → `planWatering` → `scheduleAll`).
+- `advice.js` (pur) : `buildAdvice(garden)` → `{zones:[{zoneId, zoneLabel, plants:[{plant, count, planting, pruning, fertilizer, watering, notes}]}], plantingOrder:string[], general:{...}}` ; `calendar(garden)` → 12 mois `[{month, tasks:[{kind:'plant'|'prune'|'fertilize'|'water'|'harvest'|'protect', zoneId, plantId?, text}]}]` ; `tasksForMonth(garden, month)` ; `genericCare(category)` (conseils par catégorie quand la fiche d'essence est incomplète) ; `frostProtection(garden, tminC)`.
+
+### UI (`ui/*.js`, `render.js`, `app.js`, `index.html`, `style.css`)
+- `index.html` : page unique (liste des jardins + assistant + écrans conseils/réglages) avec routeur par hash (`#/`, `#/garden/:id/:step`, `#/garden/:id/advice`, `#/settings`). `app.js` pilote ; les étapes sont : `context`, `boundary`, `wished`, `sun`, `zones`, `plants`, `render`.
+- `render.js` : `renderPlanSVG(garden, {view:'plan'|'illustrated', age:'adult'|'young', layers:{dims, legend, sun, names}, width, height})` → string SVG autonome.
+- `ui/draw.js` : `mountContourEditor(el, {garden, onChange})` (tracé au doigt, saisie des longueurs, relevé GPS, obstacles) et `mountZoneEditor(el, {garden, onChange})` (formes polygone/cercle/ligne par type, déplacement, suppression) et `mountSunPainter(el, {garden, onChange})`. Ils modifient `garden` en place puis appellent `onChange(garden)`.
+- `ui/plan-step.js` : `mountPlanStep(el, {garden, onValidate, onBack})` ; `ui/advice-screen.js` : `mountAdvice(el, {garden})` ; `ui/settings.js` : `mountSettings(el)`.
+- Chaque module `ui/*.js` exporte une fonction `mountX(el, props)` qui retourne `unmount()`.
