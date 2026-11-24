@@ -1,5 +1,5 @@
 // Stockage local des jardins et réglages : backend injectable (IndexedDB, repli mémoire).
-import { createGarden, newId } from './model.js';
+import { createGarden, newId, ensureAmenagements } from './model.js';
 
 const FORMAT = 'jardin-v1';
 const STORE_GARDENS = 'gardens';
@@ -94,7 +94,7 @@ function normaliser(brut) {
   g.context = fusion(base.context, brut.context);
   g.sun = fusion(base.sun, brut.sun);
   g.plan = fusion(base.plan, brut.plan);
-  return g;
+  return ensureAmenagements(g);
 }
 
 /** Crée une instance de stockage (API asynchrone) sur un backend donné. */
@@ -103,10 +103,11 @@ export function createStorage(backend = backendParDefaut()) {
     /** Jardins triés du plus récemment modifié au plus ancien. */
     async listGardens() {
       const all = await backend.getAll(STORE_GARDENS);
+      all.forEach(ensureAmenagements);
       return all.sort((a, b) => String(b.updatedAt).localeCompare(String(a.updatedAt)));
     },
     async getGarden(id) {
-      return (await backend.get(STORE_GARDENS, id)) || null;
+      return ensureAmenagements(await backend.get(STORE_GARDENS, id)) || null;
     },
     /** Enregistre le jardin (met à jour `updatedAt` sur l'objet passé) et le retourne. */
     async saveGarden(g) {

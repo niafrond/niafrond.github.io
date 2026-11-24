@@ -1,12 +1,12 @@
 // Service worker : cache hors ligne des fichiers statiques (stale-while-revalidate).
 const CACHE = 'jardin-v1';
 const FILES = [
-  './', 'index.html', 'style.css', 'app.js', 'manifest.webmanifest', 'icon.svg',
+  './', 'index.html', 'style.css', 'desktop.css', 'app.js', 'manifest.webmanifest', 'icon.svg',
   'model.js', 'geometry.js', 'sun.js', 'storage.js', 'climate.js', 'catalog.js', 'recommend.js',
-  'weather.js', 'geo.js', 'notify.js', 'watering.js', 'advice.js', 'render.js',
+  'weather.js', 'geo.js', 'notify.js', 'watering.js', 'advice.js', 'render.js', 'transfer.js', 'qr.js', 'vendor/qrcode.js',
   'data/climate.js', 'data/plants/index.js', 'data/plants/woody.js', 'data/plants/herbaceous.js',
   'ui/home.js', 'ui/wizard.js', 'ui/step-context.js', 'ui/step-wished.js', 'ui/step-sun.js', 'ui/step-plants.js',
-  'ui/draw.js', 'ui/draw.css', 'ui/draw-util.js', 'ui/plan-step.js', 'ui/advice-screen.js', 'ui/settings.js',
+  'ui/draw.js', 'ui/draw.css', 'ui/draw-util.js', 'ui/plan-step.js', 'ui/advice-screen.js', 'ui/settings.js', 'ui/share-screen.js', 'ui/import-screen.js',
 ];
 
 self.addEventListener('install', (e) => {

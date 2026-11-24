@@ -1,6 +1,7 @@
 // Accueil : liste des jardins, nouveau/dupliquer/supprimer, import/export, tâches du mois.
 import { h, toast, confirmDialog, gardenHash } from './wizard.js';
 import { polygonArea } from '../geometry.js';
+import { codeFromUrl } from '../transfer.js';
 
 const MOIS = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'];
 
@@ -54,7 +55,30 @@ export function mountHome(el, { storage, navigate, createGarden }) {
       list,
       h('div', { class: 'row' },
         h('button', { class: 'btn grow', type: 'button', onclick: () => fileInput.click() }, '📥 Importer (JSON)'),
+        h('button', { class: 'btn grow', type: 'button', id: 'btn-import-link', onclick: openPasteDialog }, '📲 Importer un lien ou un code'),
         fileInput)));
+
+  function openPasteDialog() {
+    const prev = document.activeElement;
+    const close = () => { overlay.remove(); if (prev && prev.focus) prev.focus(); };
+    const area = h('textarea', { rows: 4, id: 'import-paste', 'aria-label': 'Lien ou code de transfert', placeholder: 'Collez ici le lien ou le code reçu', style: 'width:100%' });
+    const err = h('p', { class: 'notice', role: 'alert', hidden: true }, 'Rien de reconnu : collez le lien complet ou le code (il commence par « v1. »).');
+    const go = () => {
+      const code = codeFromUrl(area.value);
+      if (!code) { err.hidden = false; area.focus(); return; }
+      close();
+      navigate('#/import/' + code);
+    };
+    const overlay = h('div', { class: 'overlay', onkeydown: (e) => { if (e.key === 'Escape') close(); } },
+      h('div', { class: 'dialog', role: 'dialog', 'aria-modal': 'true', 'aria-label': 'Importer un lien ou un code' },
+        h('p', null, 'Collez un lien « Continuer sur mon téléphone » ou un code de transfert.'),
+        area, err,
+        h('div', { class: 'row end' },
+          h('button', { class: 'btn', type: 'button', onclick: close }, 'Annuler'),
+          h('button', { class: 'btn btn-primary', type: 'button', id: 'import-paste-ok', onclick: go }, 'Continuer'))));
+    document.body.append(overlay);
+    area.focus();
+  }
 
   async function loadThumb(box, g) {
     try {
@@ -121,6 +145,7 @@ export function mountHome(el, { storage, navigate, createGarden }) {
         h('div', { class: 'card-actions' },
           g.status === 'validated' ? h('a', { class: 'btn btn-sm', href: gardenHash(g.id, 'render') }, 'Modifier') : null,
           h('button', { class: 'btn btn-sm', type: 'button', onclick: async () => { await storage.duplicateGarden(g.id); toast('Jardin dupliqué.'); refresh(); } }, 'Dupliquer'),
+          h('a', { class: 'btn btn-sm', href: `#/garden/${encodeURIComponent(g.id)}/share` }, 'Envoyer vers le téléphone'),
           h('button', { class: 'btn btn-sm', type: 'button', onclick: async () => download(`jardin-${(g.name || 'jardin').replace(/[^\w-]+/g, '_')}.json`, await storage.exportGarden(g)) }, 'Exporter'),
           h('button', { class: 'btn btn-sm btn-danger', type: 'button', onclick: async () => {
             if (await confirmDialog(`Supprimer « ${g.name} » ? Cette action est définitive.`, { ok: 'Supprimer', danger: true })) {

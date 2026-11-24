@@ -1,5 +1,6 @@
 // Modèle de données du jardin : constantes, création, validation (pur, sans DOM).
 import { polygonArea, isSimplePolygon, shapePolygon, shapeArea, polygonInside, overlapArea } from './geometry.js';
+import { getItemKind, getOpeningKind, itemPolygon, resolveSide } from './items.js';
 
 /** Types de zones. `layer` : 'ground' (au sol, exclusif) ou 'canopy' (au-dessus, superposable). */
 export const ZONE_TYPES = [
@@ -73,6 +74,9 @@ export function createGarden(name = 'Mon jardin') {
     boundary: [],
     boundaryClosed: false,
     obstacles: [],
+    items: [],
+    boundaryEdges: [],
+    openings: [],
     sun: { mode: 'unknown', uniform: null, regions: [] },
     wishedZoneTypes: [],
     zones: [],
@@ -86,6 +90,31 @@ export function createZone(typeId, shape) {
   const t = getZoneType(typeId);
   if (!t) throw new Error(`Type de zone inconnu : ${typeId}`);
   return { id: newId('z_'), type: typeId, label: t.label, shape, plantings: [], notes: '' };
+}
+
+/** Nouvel élément d'aménagement (lève une erreur si le type est inconnu). Cercle : `radius` et width = depth = diamètre. */
+export function createItem(kindId, x = 0, y = 0, rotation = 0) {
+  const k = getItemKind(kindId);
+  if (!k) throw new Error(`Élément inconnu : ${kindId}`);
+  const it = { id: newId('i_'), kind: kindId, x, y, rotation, width: k.w, depth: k.d };
+  if (k.shape === 'circle') { it.radius = k.w / 2; }
+  return it;
+}
+
+/** Nouvelle ouverture (portail, porte…) sur un côté `ref` à la position `t` (0..1). */
+export function createOpening(kindId, ref, t = 0.5) {
+  const k = getOpeningKind(kindId);
+  if (!k) throw new Error(`Ouverture inconnue : ${kindId}`);
+  return { id: newId('op_'), kind: kindId, ref, t, width: k.width, swing: k.swing };
+}
+
+/** Complète un jardin ancien avec les champs d'aménagement absents (sans toucher aux autres). */
+export function ensureAmenagements(g) {
+  if (!g || typeof g !== 'object') return g;
+  if (!Array.isArray(g.items)) g.items = [];
+  if (!Array.isArray(g.boundaryEdges)) g.boundaryEdges = [];
+  if (!Array.isArray(g.openings)) g.openings = [];
+  return g;
 }
 
 const SEUIL_CHEVAUCHEMENT = 0.1; // m²
@@ -143,6 +172,21 @@ export function validateGarden(g) {
       }
     }
   }
+
+  // Aménagements : éléments hors du terrain, ouvertures sans côté.
+  const items = Array.isArray(g && g.items) ? g.items : [];
+  items.forEach((it, i) => {
+    const k = getItemKind(it.kind);
+    const nom = (it.label || (k && k.label)) || `Élément ${i + 1}`;
+    if (!k) { warnings.push(`Élément « ${nom} » : type inconnu.`); return; }
+    if (contourValide && !polygonInside(itemPolygon(it), contour)) warnings.push(`Élément « ${nom} » : sort du contour du terrain.`);
+  });
+  const openings = Array.isArray(g && g.openings) ? g.openings : [];
+  openings.forEach((op, i) => {
+    const k = getOpeningKind(op.kind);
+    const nom = (k && k.label) || `Ouverture ${i + 1}`;
+    if (!resolveSide(g, op.ref)) warnings.push(`Ouverture « ${nom} » : le côté qui la porte n'existe plus.`);
+  });
 
   // Zones souhaitées sans forme dessinée.
   const wished = Array.isArray(g && g.wishedZoneTypes) ? g.wishedZoneTypes : [];

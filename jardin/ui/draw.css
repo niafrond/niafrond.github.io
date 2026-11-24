@@ -130,3 +130,31 @@
 .jd-start .jd-row { flex-direction: column; align-items: stretch; }
 .jd-start-title { font-weight: 700; margin-bottom: 4px; }
 .jd-start .jd-row { justify-content: center; }
+
+/* Éditeur de zones : palette en cartes, bandeau de sélection, aperçu en direct */
+.jd-bar[hidden], .jd-chips[hidden], .jd-panel[hidden], .jd-sheet[hidden], .jd-live[hidden] { display: none; }
+.jd-chips { gap: 8px; padding: 8px 6px; -webkit-overflow-scrolling: touch; }
+.jd-chip.jd-tcard {
+  flex-direction: column; justify-content: center; gap: 0; min-width: 92px; max-width: 112px; min-height: 76px; padding: 6px 8px;
+  border-radius: 14px; border-width: 2px; text-align: center; line-height: 1.15;
+}
+.jd-tcard .jd-ticon { font-size: 24px; line-height: 1.1; }
+.jd-tcard .jd-tname { font-size: 12px; font-weight: 600; max-width: 96px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.jd-tcard .jd-tstat { font-size: 11px; opacity: .8; min-height: 13px; }
+.jd-tcard.done::after { content: none; }
+.jd-tcard.done { background: color-mix(in srgb, var(--chip) 16%, var(--jd-card)); }
+.jd-tcard.done .jd-tstat { color: var(--jd-accent); font-weight: 700; opacity: 1; }
+.jd-tcard.todo { border-style: dashed; }
+.jd-tcard[aria-pressed="true"] .jd-tstat, .jd-tcard[aria-pressed="true"] .jd-tname { color: #fff; }
+.jd-tmore { border-style: dotted; --chip: var(--jd-line); }
+.jd-live {
+  position: absolute; left: 8px; top: 8px; z-index: 3; max-width: calc(100% - 16px); padding: 6px 10px; border-radius: 10px;
+  background: color-mix(in srgb, var(--jd-card) 92%, transparent); border: 1px solid var(--jd-line); font-size: 14px; font-weight: 600;
+  font-variant-numeric: tabular-nums; pointer-events: none;
+}
+.jd-zsheet { max-height: 44vh; overflow: auto; box-shadow: 0 -4px 16px rgba(0,0,0,.12); }
+.jd-zhead { display: flex; gap: 8px; align-items: center; }
+.jd-zhead .jd-input { flex: 1 1 auto; font-weight: 600; }
+.jd-zdot { flex: 0 0 auto; width: 44px; height: 44px; border-radius: 12px; display: inline-flex; align-items: center; justify-content: center; font-size: 22px; border: 1px solid rgba(0,0,0,.25); }
+.jd-zfacts { font-size: 14px; gap: 4px 14px; }
+.jd-zacts .jd-btn { flex: 1 1 auto; }
