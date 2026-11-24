@@ -31,7 +31,7 @@ test('parcours : étapes, rendu, validation, conseils', async ({ page }) => {
     return g.id;
   });
 
-  for (const step of ['context', 'boundary', 'wished', 'sun', 'zones', 'plants']) {
+  for (const step of ['context', 'boundary', 'wished', 'sun', 'zones', 'items', 'plants']) {
     await page.goto(`${URL}#/garden/${id}/${step}`);
     await page.waitForTimeout(300);
     await expect(page.locator('#app')).not.toContainText('écran en cours de chargement');

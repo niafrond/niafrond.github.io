@@ -676,8 +676,7 @@ export function mountItemEditor(el, { garden, onChange } = {}) {
           },
         }, h('span', { class: 'jdi-pastille', style: { background: k.color } }, k.emoji),
         h('span', { class: 'jdi-card-name' }, k.label),
-        h('span', { class: 'jdi-card-meta' }, `${k.shape === 'circle' ? 'Ø ' + cm(k.w) : cm(k.w) + '×' + cm(k.d)} cm`),
-        h('span', { class: 'jdi-card-meta' }, `≈ ${euro(k.priceEur)}`)));
+        h('span', { class: 'jdi-card-meta' }, `${k.shape === 'circle' ? 'Ø ' + cm(k.w) : cm(k.w) + '×' + cm(k.d)} cm · ${euro(k.priceEur)}`)));
       }
       panel.append(pal);
     } else if (st.tab === 'edges') {
