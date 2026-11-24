@@ -49,6 +49,8 @@ jobs:
               - 'match3-quest/**'
             houyi:
               - 'houyi/**'
+            jardin:
+              - 'jardin/**'
             shared:
               - 'jest.config.js'
               - 'package.json'
@@ -83,6 +85,7 @@ jobs:
           FILTER_REVEIL_XTREM: ${{ steps.filter.outputs.reveil-xtrem }}
           FILTER_MATCH3_QUEST: ${{ steps.filter.outputs.match3-quest }}
           FILTER_HOUYI: ${{ steps.filter.outputs.houyi }}
+          FILTER_JARDIN: ${{ steps.filter.outputs.jardin }}
           FILTER_SHARED: ${{ steps.filter.outputs.shared }}
         run: |
           if [ "$FILTER_SHARED" = "true" ]; then
@@ -105,6 +108,7 @@ jobs:
           [ "$FILTER_REVEIL_XTREM" = "true" ] && PROJECTS+=(reveil-xtrem-node)
           [ "$FILTER_MATCH3_QUEST" = "true" ] && PROJECTS+=(match3-quest-node)
           [ "$FILTER_HOUYI" = "true" ] && PROJECTS+=(houyi-node)
+          [ "$FILTER_JARDIN" = "true" ] && PROJECTS+=(jardin-node jardin-jsdom)
 
           # blind-test/, mix-blind-test/ et theme-party/ importent directement des
           # modules de dj-mix/lib (config downloader, trackStore, audioSourceManager...) :
@@ -122,6 +126,56 @@ jobs:
           mapfile -t UNIQUE_PROJECTS < <(printf '%s\n' "${PROJECTS[@]}" | sort -u)
           echo "Projets Jest exécutés : ${UNIQUE_PROJECTS[*]}"
           npx jest --selectProjects "${UNIQUE_PROJECTS[@]}"
+
+  jardin-e2e:
+    name: Jardin - parcours e2e (Pixel 5)
+    runs-on: ubuntu-24.04
+
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Detect changes
+        uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            jardin:
+              - 'jardin/**'
+              - 'playwright.config.js'
+              - 'package.json'
+              - 'package-lock.json'
+              - '.github/workflows/ci.yml'
+
+      - name: Setup Node.js
+        if: steps.filter.outputs.jardin == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        if: steps.filter.outputs.jardin == 'true'
+        run: npm install
+
+      - name: Install Playwright browsers
+        if: steps.filter.outputs.jardin == 'true'
+        run: npx playwright install --with-deps chromium
+
+      - name: Parcours e2e Jardin
+        if: steps.filter.outputs.jardin == 'true'
+        run: npx playwright test --project=jardin --trace off
+
+      - name: Upload Playwright results
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: jardin-e2e-results
+          path: test-results/
+          if-no-files-found: ignore
 
   match3-quest-perf:
     name: Match3 Quest - perf mobile (Pixel 5 + bas de gamme)
