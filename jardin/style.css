@@ -100,3 +100,30 @@ summary { cursor: pointer; min-height: var(--tap); display: flex; align-items: c
 .screen { min-height: 100vh; }
 .link { display: inline-flex; align-items: center; min-height: var(--tap); }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+
+/* Étape essences : vignettes, couleurs, prix, budget */
+.surprise-all { display: flex; flex-direction: column; gap: 10px; border: 2px solid var(--primary); }
+.btn-xl { min-height: 56px; font-size: 1.1rem; font-weight: 700; }
+.proposal-summary { margin: 0; font-weight: 600; min-height: 1.2em; }
+.zone-total { color: var(--muted); font-weight: 600; font-size: .9em; }
+.thumb-col { display: flex; flex-direction: column; align-items: center; gap: 2px; flex: 0 0 64px; width: 64px; }
+.plant-thumb { all: unset; box-sizing: border-box; cursor: zoom-in; width: 64px; height: 64px; border-radius: 50%; overflow: hidden; display: block; position: relative; border: 1px solid var(--border); }
+.plant-thumb:focus-visible { outline: 3px solid var(--primary); outline-offset: 2px; }
+.thumb-box { display: block; width: 100%; height: 100%; }
+.thumb-box img, .detail-photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.thumb-fb { display: flex; width: 100%; height: 100%; align-items: center; justify-content: center; font-size: 1.7rem; border-radius: 50%; }
+.thumb-fb.big { font-size: 3.5rem; border-radius: 12px; }
+.photo-credit { font-size: .6rem; line-height: 1.1; color: var(--muted); opacity: .8; min-height: 1.1em; text-align: center; margin: 0; }
+.swatches { display: flex; flex-wrap: wrap; gap: 4px 10px; margin-top: 4px; }
+.swatch { display: inline-flex; align-items: center; gap: 4px; font-size: .75rem; color: var(--muted); }
+.swatch i { width: 12px; height: 12px; border-radius: 50%; border: 1px solid rgba(0,0,0,.35); display: inline-block; flex: none; }
+.price { margin: 0; font-weight: 600; }
+.plant-card p { margin: 0; }
+.detail-photo { width: 100%; height: 190px; border-radius: 12px; overflow: hidden; background: var(--bg); }
+.dialog.plant-detail { max-height: 90vh; overflow: auto; display: flex; flex-direction: column; gap: 6px; }
+.plant-detail h3, .plant-detail h4, .plant-detail p { margin: 0; }
+.care-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.budget-spacer { height: 78px; }
+.budget-bar { position: fixed; left: 0; right: 0; bottom: calc(62px + var(--sab)); z-index: 19; display: flex; flex-direction: column; gap: 1px; padding: 6px calc(16px + var(--sar)) 6px calc(16px + var(--sal)); background: var(--surface); border-top: 2px solid var(--primary); box-shadow: 0 -2px 8px rgba(0,0,0,.12); }
+.budget-bar.over { border-top-color: var(--ko); }
+.budget-bar .small { color: var(--muted); font-size: .72rem; }

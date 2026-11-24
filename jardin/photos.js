@@ -82,7 +82,7 @@ export async function getPlantPhoto(plant, { fetchImpl, cache, now = Date.now() 
     const job = limit(async () => {
       let data = null;
       for (const t of photoTitles(plant)) { data = await tryTitle(t, f); if (data) break; }
-      writeCache(plant.id, { t: Date.now(), data }, cache);
+      writeCache(plant.id, { t: now, data }, cache);
       return data;
     });
     if (!cache) { inflight.set(key, job); job.then(() => inflight.delete(key)); }
