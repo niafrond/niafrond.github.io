@@ -1,4 +1,4 @@
-// Assistant à 7 étapes : barre d'étapes, navigation libre, chargement paresseux des étapes.
+// Assistant à 8 étapes : barre d'étapes, navigation libre, chargement paresseux des étapes.
 // Exporte aussi de petits utilitaires DOM partagés (h, toast, confirmDialog…).
 
 export const STEPS = [
@@ -7,6 +7,7 @@ export const STEPS = [
   { id: 'wished', label: 'Zones souhaitées', icon: '✅' },
   { id: 'sun', label: 'Soleil', icon: '☀️' },
   { id: 'zones', label: 'Dessin des zones', icon: '🗺️' },
+  { id: 'items', label: 'Aménagements', icon: '🪑' },
   { id: 'plants', label: 'Essences', icon: '🌿' },
   { id: 'render', label: 'Rendu', icon: '🖼️' },
 ];
@@ -83,6 +84,7 @@ const LOADERS = {
   wished: async () => (await import('./step-wished.js')).mountWished,
   sun: async () => (await import('./step-sun.js')).mountSun,
   zones: async () => (await import('./draw.js')).mountZoneEditor,
+  items: async () => (await import('./step-items.js')).mountItems,
   plants: async () => (await import('./step-plants.js')).mountPlants,
   render: async () => (await import('./plan-step.js')).mountPlanStep,
 };
