@@ -1,0 +1,17 @@
+{
+  "appId": "io.github.niafrond.jardin",
+  "appName": "Jardin",
+  "webDir": "../jardin",
+  "server": {
+    "androidScheme": "https"
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchAutoHide": true
+    },
+    "LocalNotifications": {
+      "smallIcon": "ic_stat_jardin",
+      "iconColor": "#2e7d32"
+    }
+  }
+}
