@@ -115,6 +115,16 @@ L'utilisateur peut ajouter des types personnalisés. Une même zone ne contient 
 - **Sélection** (toucher une zone, son nom ou sa cote) : bandeau en bas (nom éditable, type, surface, dimensions, essences choisies, « Dimensions… », « Dupliquer », « Supprimer »). Poignées : sommets glissables (un rectangle reste un rectangle), ＋ au milieu des côtés pour insérer un sommet, glisser la zone sélectionnée pour la déplacer. Annuler / Rétablir global.
 - **Appui long** : sur une zone → saisie en cm (rectangle = largeur × longueur, cercle = rayon, ligne = largeur) ; sur le plan vide avec un type choisi → même fenêtre pour créer une zone de dimensions connues posée à cet endroit (style `jd-pop`, mêmes règles de saisie que le contour).
 
+## 5 bis. Aménagements (mobilier, murs, clôtures, portes)
+
+Étape « Aménagements » (route `items`, 🪑), entre `zones` et `plants` : l'assistant compte 8 étapes. Trois onglets : Mobilier, Murs & clôtures, Portes & accès.
+
+- **Modèle** (rétro-compatible, valeurs par défaut `[]` ; `ensureAmenagements` complète les anciens jardins à la lecture et à l'import) : `items[{id, kind, x, y, rotation, width, depth, radius?, label?}]` (centre en m, cercle = `radius`), `boundaryEdges[{kind:'open'|'wall'|'fence'|'hedge', height}]` indexé par côté du contour (absent = ouvert), `openings[{id, kind:'gate'|'wicket'|'door'|'garage'|'double_gate', ref:{type:'boundary'|'obstacle', obstacleId?, side}, t, width, swing:'in'|'out'|'sliding'}]`. `validateGarden` avertit si un élément sort du terrain ou si une ouverture n'a plus de côté.
+- **`items.js`** (pur) : catalogue `ITEM_KINDS` (27 éléments, dimensions, prix indicatif France, hauteur d'ombre), `OPENING_KINDS` (portail 3 m, portillon 1 m, porte 0,9 m, garage 2,4 m, double portail 4 m ; garage et porte sur maison/abri), `itemPolygon`, `openingGeometry`, `snapOpeningToSides`, `edgeObstacles` (mur 2 m, clôture 1,2 m, haie 1,8 m), `itemObstacles`.
+- **Ombre** : `sun.shadowObstacles(garden)` = obstacles + côtés bâtis + éléments hauts ; utilisé par `estimateSunMap`. Les passages ne sont pas décomptés.
+- **UI** : `ui/step-items.js`, `ui/draw-items.js` (+ `draw-items.css`, `ui/pop.js`). Mobilier : palette puis toucher le plan (aimantation aux côtés, grille), glisser, poignée de rotation, ↺ ↻ 90°, appui long = taille en cm, dupliquer, supprimer. Murs : toucher un côté numéroté, type + hauteur en cm, « appliquer à tous », murs/clôtures libres (obstacles `wall`/`fence`). Portes : type puis toucher un côté, glisser le long du côté, largeur par appui long, sens d'ouverture. Annuler/rétablir partout ; utilisable sans contour.
+- **Rendu** : `render-items.js` (`renderItemsSVG`, `itemsLegendEntries`) ; à brancher dans `render.js`.
+
 ## 6. Ensoleillement
 
 Facultatif, mais utilisé pour filtrer et noter les essences.

@@ -32,7 +32,7 @@ const px = (p, x, y) => [p.ox + (x - p.vx) * p.k, p.oy + (y - p.vy) * p.k];
 test('banc, taille en cm, mur de 2 m, porte de garage sur la maison', async ({ page }) => {
   const errors = []; page.on('pageerror', (e) => errors.push(String(e)));
   const id = await nouveauJardin(page);
-  await page.screenshot({ path: process.env.SHOT_DIR ? `${process.env.SHOT_DIR}/1-mobilier.png` : undefined });
+  await page.screenshot({ path: process.env.SHOT_DIR ? `${process.env.SHOT_DIR}/1-mobilier.png` : undefined, fullPage: true });
 
   // 1. Poser un banc : palette puis toucher le plan (hors maison)
   await page.locator('[data-kind=bench]').click();
@@ -49,7 +49,7 @@ test('banc, taille en cm, mur de 2 m, porte de garage sur la maison', async ({ p
   await page.locator('[data-field=d]').fill('55');
   await page.locator('[data-act=pop-ok]').click();
   await expect(page.locator('[data-role=sel-banner]')).toContainText('180 × 55 cm');
-  await page.screenshot({ path: process.env.SHOT_DIR ? `${process.env.SHOT_DIR}/2-banc.png` : undefined });
+  await page.screenshot({ path: process.env.SHOT_DIR ? `${process.env.SHOT_DIR}/2-banc.png` : undefined, fullPage: true });
 
   // 3. Murs & clôtures : le côté du haut devient un mur de 2 m
   await page.locator('[data-tab=edges]').click();
@@ -58,7 +58,7 @@ test('banc, taille en cm, mur de 2 m, porte de garage sur la maison', async ({ p
   await page.mouse.click(tx, ty);
   await page.locator('[data-edge-kind=wall]').click();
   await expect(page.locator('[data-role=sel-banner]')).toContainText('Mur');
-  await page.screenshot({ path: process.env.SHOT_DIR ? `${process.env.SHOT_DIR}/3-murs.png` : undefined });
+  await page.screenshot({ path: process.env.SHOT_DIR ? `${process.env.SHOT_DIR}/3-murs.png` : undefined, fullPage: true });
 
   // 4. Portes & accès : porte de garage sur le côté sud de la maison
   await page.locator('[data-tab=access]').click();
@@ -67,7 +67,7 @@ test('banc, taille en cm, mur de 2 m, porte de garage sur la maison', async ({ p
   const [gx, gy] = px(p, 4.5, 6.05);
   await page.mouse.click(gx, gy);
   await expect(page.locator('[data-role=sel-banner]')).toContainText('Porte de garage');
-  await page.screenshot({ path: process.env.SHOT_DIR ? `${process.env.SHOT_DIR}/4-garage.png` : undefined });
+  await page.screenshot({ path: process.env.SHOT_DIR ? `${process.env.SHOT_DIR}/4-garage.png` : undefined, fullPage: true });
 
   const g = await lire(page, id);
   expect(g.items).toHaveLength(1);

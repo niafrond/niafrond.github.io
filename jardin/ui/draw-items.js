@@ -89,7 +89,7 @@ export function mountItemEditor(el, { garden, onChange } = {}) {
   const bar = h('div', { class: 'jd-bar jd-scroll' });
   const panel = h('div', { class: 'jdi-panel' });
   const wrap = h('div', { class: 'jd-canvas-wrap' });
-  const detail = h('div', { class: 'jdi-detail', hidden: true, 'data-role': 'detail' });
+  const detail = h('div', { class: 'jdi-detail', 'data-role': 'detail' });
   const info = h('div', { class: 'jd-info' });
   const msgEl = h('div', { class: 'jd-msg', role: 'status', 'aria-live': 'polite' });
   const startEl = h('div', { class: 'jdi-start', hidden: true, 'data-role': 'start-panel' });
@@ -544,7 +544,7 @@ export function mountItemEditor(el, { garden, onChange } = {}) {
     const og = openingGeometry(g, { ...op, t });
     op.t = og ? og.t : t;
     mutate(() => { g.openings.push(op); st.sel = { t: 'open', id: op.id }; });
-    say(`${k.label} posé. Glissez-le le long du côté, appui long pour sa largeur en cm.`);
+    say(`${k.label} ajouté. Glissez-le le long du côté, appui long pour sa largeur en cm.`);
   }
   function openOpeningPop(op) {
     const k = getOpeningKind(op.kind);
@@ -707,8 +707,8 @@ export function mountItemEditor(el, { garden, onChange } = {}) {
 
   function renderDetail() {
     detail.replaceChildren();
-    detail.hidden = true;
-    const show = (...kids) => { detail.append(...kids.filter(Boolean)); detail.hidden = false; };
+    detail.className = `jdi-detail is-${st.tab}`;
+    const show = (...kids) => { detail.append(...kids.filter(Boolean)); };
     if (st.tab === 'furniture') {
       const it = selItem();
       if (!it) return;
@@ -737,9 +737,9 @@ export function mountItemEditor(el, { garden, onChange } = {}) {
         hIn.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); hIn.blur(); } });
         show(
           h('div', { class: 'jdi-detail-title', 'data-role': 'sel-banner' }, `Côté ${i + 1} · ${fr(L)} m`, h('small', null, kind === 'open' ? 'Ouvert' : `${getEdgeKind(kind).label} · hauteur en cm`)),
-          h('div', { class: 'jdi-seg' }, EDGE_KINDS.map((k) => btn(k.label, `edge-${k.id}`, () => chooseEdgeKind(k.id), '', { 'data-edge-kind': k.id, 'aria-pressed': String(kind === k.id) }))),
           kind === 'open' ? null : h('span', { class: 'jdi-seg' }, hIn, h('span', { class: 'jd-unit' }, 'cm')),
-          btn('Appliquer à tous les côtés', 'apply-all', applyAll));
+          h('div', { class: 'jdi-seg jdi-row2' }, EDGE_KINDS.map((k) => btn(k.label, `edge-${k.id}`, () => chooseEdgeKind(k.id), '', { 'data-edge-kind': k.id, 'aria-pressed': String(kind === k.id) })),
+            btn('Appliquer à tous', 'apply-all', applyAll, '', { title: 'Appliquer à tous les côtés', 'aria-label': 'Appliquer à tous les côtés' })));
       } else if (o) {
         const hIn = h('input', { class: 'jd-input', type: 'text', inputmode: 'numeric', 'aria-label': 'Hauteur en centimètres', 'data-field': 'free-height', value: cm(o.height || FREE_KINDS[o.kind].height) });
         hIn.addEventListener('change', () => { const v = parseLength(hIn.value); if (Number.isFinite(v)) mutate(() => { o.height = v; }); else refreshUI(); });
@@ -752,7 +752,7 @@ export function mountItemEditor(el, { garden, onChange } = {}) {
       const k = getOpeningKind(op.kind);
       show(
         h('div', { class: 'jdi-detail-title', 'data-role': 'sel-banner' }, `${k.emoji} ${k.label}`, h('small', null, `${cm(op.width)} cm`)),
-        ...OPENING_SWINGS.filter((sw) => op.kind !== 'garage' || sw.id === 'sliding').map((sw) => btn(sw.id === 'in' ? '⤶ Dedans' : sw.id === 'out' ? '⤷ Dehors' : '⇄ Coulissant', `swing-${sw.id}`, () => setSwing(sw.id), '', { 'aria-pressed': String((op.swing || k.swing) === sw.id), title: sw.label })),
+        ...OPENING_SWINGS.filter((sw) => op.kind !== 'garage' || sw.id === 'sliding').map((sw) => btn(sw.id === 'in' ? '⤶' : sw.id === 'out' ? '⤷' : '⇄', `swing-${sw.id}`, () => setSwing(sw.id), '', { 'aria-pressed': String((op.swing || k.swing) === sw.id), title: sw.label, 'aria-label': sw.label })),
         btn('✎ Largeur', 'edit', () => openOpeningPop(op)),
         btn('🗑', 'del', deleteSel, 'danger', { 'aria-label': 'Supprimer' }));
     }

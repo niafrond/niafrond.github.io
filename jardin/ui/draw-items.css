@@ -1,5 +1,8 @@
 /* Éditeur d'aménagements (mobilier, murs & clôtures, portes & accès). Complète draw.css (variables --jd-*). */
-.jdi { height: calc(100dvh - 255px); min-height: 540px; }
+.jdi { height: auto; min-height: 0; }
+.jdi > * { flex-shrink: 0; }
+/* hauteur du plan fixe : la sélection (bandeau en dessous) ne le redimensionne jamais */
+.jdi .jd-canvas-wrap { flex: 0 0 auto; height: max(300px, calc(100dvh - 420px)); min-height: 0; }
 .jdi-tabs { display: flex; background: var(--jd-card); border-bottom: 1px solid var(--jd-line); }
 .jdi-tabs .jd-tab { flex: 1 1 0; min-width: 0; padding: 0 2px; font-size: 12.5px; white-space: nowrap; }
 .jdi-chips { display: flex; gap: 6px; padding: 0 0 0 8px; align-items: center; }
@@ -15,10 +18,11 @@
 .jdi-card-name { font-size: 12px; font-weight: 600; line-height: 1.15; text-align: center; overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; min-height: 2.3em; }
 .jdi-card-meta { font-size: 11px; color: var(--jd-muted); text-align: center; white-space: nowrap; }
 .jdi-detail { background: var(--jd-card); border-top: 1px solid var(--jd-line); padding: 6px 8px; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; min-height: 56px; }
-.jdi-detail[hidden] { display: none; }
-.jdi-detail-title { flex: 1 1 140px; font-size: 14px; font-weight: 600; min-width: 0; overflow-wrap: anywhere; }
+.jdi-row2 { flex: 1 1 100%; }
+.jdi-detail-title { flex: 1 1 100%; font-size: 14px; font-weight: 600; min-width: 0; overflow-wrap: anywhere; }
 .jdi-detail-title small { display: block; font-weight: 400; color: var(--jd-muted); font-size: 12px; }
 .jdi-detail .jd-input { width: 96px; flex: 0 0 auto; text-align: center; }
+.jdi-detail.is-edges .jdi-detail-title { flex: 1 1 120px; }
 .jdi-seg { display: flex; gap: 6px; flex-wrap: wrap; }
 .jdi-warn { color: var(--jd-warn); font-size: 12px; }
 .jdi-start {

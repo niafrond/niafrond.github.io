@@ -172,7 +172,9 @@ test('rendu illustré : couleurs de floraison/feuillage ; budget dans le cartouc
   expect(ill).not.toMatch(/Budget estimé/);
   const young = renderPlanSVG(g, { view: 'plan', age: 'young' });
   expect(young).toContain('data-flower="1"');
-  expect(renderPlanSVG(g, { view: 'plan' })).not.toContain('data-flower');
+  // vues 2D : vraies couleurs aussi en vue plan ; hors floraison, seulement le feuillage
+  expect(renderPlanSVG(g, { view: 'plan' })).toContain('data-flower="1"');
+  expect(renderPlanSVG(g, { view: 'plan', month: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].find((m) => !p.bloom.includes(m)) })).not.toContain('data-flower');
   const b = renderPlanSVG(g, { view: 'plan', layers: { budget: true } });
   expect(b).toMatch(/Budget estimé ≈ \d+ €/);
 });

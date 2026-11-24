@@ -6,7 +6,8 @@ const URL = '/jardin/';
 test('parcours : étapes, rendu, validation, conseils', async ({ page }) => {
   const errors = [];
   page.on('pageerror', (e) => errors.push(String(e)));
-  page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()); });
+  // Les ressources externes (photos Wikipédia, API) peuvent échouer sans réseau : ce n'est pas une erreur de l'app.
+  page.on('console', (m) => { if (m.type() === 'error' && !/Failed to load resource|net::ERR_/.test(m.text())) errors.push(m.text()); });
 
   await page.goto(URL);
   await page.waitForFunction(() => window.__jardin);

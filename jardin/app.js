@@ -90,9 +90,31 @@ async function route() {
     return;
   }
 
+  if (r.name === 'import') {
+    const body = h('main', { class: 'import' });
+    root.replaceChildren(shell('Importer un jardin', body));
+    try {
+      const { mountImportScreen } = await import('./ui/import-screen.js');
+      if (token !== routeToken) return;
+      current = mountImportScreen(body, { code: r.code, onDone: (id) => navigate(gardenHash(id, 'context')), onCancel: () => navigate('#/') });
+    } catch (e) { console.error(e); body.append(h('p', { class: 'notice' }, 'Impossible de lire ce lien.')); }
+    return;
+  }
+
   const g = await loadGarden(r.id);
   if (token !== routeToken) return;
   if (!g) { toast('Jardin introuvable.'); navigate('#/'); return; }
+
+  if (r.name === 'share') {
+    const body = h('main', { class: 'share' });
+    root.replaceChildren(shell('Continuer sur mon téléphone', body));
+    try {
+      const { mountShareScreen } = await import('./ui/share-screen.js');
+      if (token !== routeToken) return;
+      current = mountShareScreen(body, { garden: g, onBack: () => navigate('#/') });
+    } catch (e) { console.error(e); body.append(h('p', { class: 'notice' }, 'Écran de partage indisponible.')); }
+    return;
+  }
 
   if (r.name === 'advice') {
     if (g.status !== 'validated') { navigate(gardenHash(g.id, 'render')); return; }
@@ -111,7 +133,25 @@ async function route() {
   setSaveStatus('');
 }
 
+/** Liens profonds de l'app Android (jardin://import/<code> ou lien https du site) : ouvre l'import. */
+async function openIncomingUrl(url) {
+  try {
+    const { routeFromIncomingUrl } = await import('./transfer.js');
+    const hash = routeFromIncomingUrl(url);
+    if (hash) navigate(hash);
+  } catch (e) { console.error(e); }
+}
+function listenDeepLinks() {
+  const App = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.App;
+  if (!App) return;
+  try {
+    App.addListener('appUrlOpen', (ev) => { if (ev && ev.url) openIncomingUrl(ev.url); });
+    if (App.getLaunchUrl) App.getLaunchUrl().then((r) => { if (r && r.url) openIncomingUrl(r.url); }).catch(() => {});
+  } catch (e) { console.error(e); }
+}
+
 export function start() {
+  listenDeepLinks();
   window.addEventListener('hashchange', () => { flush().then(route); });
   window.addEventListener('pagehide', flush);
   document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') flush(); });

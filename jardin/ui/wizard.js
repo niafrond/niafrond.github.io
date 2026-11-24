@@ -18,9 +18,11 @@ export function parseRoute(hash) {
   const parts = String(hash || '').replace(/^#\/?/, '').split('/').filter(Boolean);
   if (!parts.length) return { name: 'home' };
   if (parts[0] === 'settings') return { name: 'settings' };
+  if (parts[0] === 'import' && parts[1]) return { name: 'import', code: parts.slice(1).join('/') };
   if (parts[0] === 'garden' && parts[1]) {
     const id = decodeURIComponent(parts[1]);
     if (parts[2] === 'advice') return { name: 'advice', id };
+    if (parts[2] === 'share') return { name: 'share', id };
     return { name: 'wizard', id, step: STEP_IDS.includes(parts[2]) ? parts[2] : 'context' };
   }
   return { name: 'home' };
