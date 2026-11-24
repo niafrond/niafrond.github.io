@@ -188,12 +188,23 @@ Principe : n'utiliser que des API **gratuites, sans compte ou sans clé secrète
 | **Fond de carte / vue satellite** | Géoplateforme IGN (tuiles WMTS orthophotos et plan IGN) ou OpenStreetMap (usage modéré, respecter la politique d'usage des tuiles) | Pour caler le plan ; tuiles à mettre en cache raisonnablement |
 | **Sol** (argile, sable) | SoilGrids (ISRIC) : le service REST est **actuellement suspendu** ([source](https://rest.isric.org/)) ; données sous CC BY 4.0 mais non interrogeables en direct. À défaut : saisie par l'utilisateur, aide par test du boudin/test de l'eau expliqué dans l'app | Ne pas bâtir de fonctionnalité sur SoilGrids en v1 |
 | **Noms de plantes** (nom latin, synonymes, vérification) | [TAXREF / INPN](https://inpn.mnhn.fr/) (référentiel taxonomique français), [GBIF Species API](https://techdocs.gbif.org/en/openapi/) (`/species/match`, sans clé) | Pour **normaliser** les noms du catalogue, pas pour les conseils de culture |
+| **Identification d'une plante par photo** (« jardin existant », v2) | [Pl@ntNet API](https://my.plantnet.org/pricing) | Gratuit jusqu'à **500 identifications/jour par clé**, usage commercial permis dans ce plafond ([conditions](https://my.plantnet.org/terms_of_use)), crédit à Pl@ntNet demandé, 10 requêtes simultanées max ; au-delà, offre payante. **Quota par clé, pas par utilisateur** : voir ci-dessous |
 | **Photos de plantes** | Wikimedia Commons / Wikipédia (API libre, licences à respecter et à créditer) | Chargées à la demande, mises en cache |
 | **Données de culture** (soleil, arrosage, rusticité) | **Aucune API gratuite fiable adaptée au jardinage français** identifiée | Voir ci-dessous |
 
+### Pl@ntNet : identification des plantes déjà présentes
+
+Usage retenu : fonction facultative **« Identifier une plante »** (appareil photo ou galerie) pour le mode « jardin existant » : l'utilisateur photographie un arbre, un arbuste ou une fleur, l'app propose les espèces les plus probables et les rattache à une essence du catalogue (par nom latin, via TAXREF/GBIF) pour qu'elle apparaisse sur le plan et reçoive ses conseils d'entretien et d'arrosage. Si l'espèce n'est pas au catalogue, elle est ajoutée comme plante « inconnue du catalogue » avec les conseils génériques de sa catégorie.
+
+Contraintes :
+- **La clé API n'est pas secrète dans une app Android** et le quota gratuit (500/jour) est **partagé par tous les utilisateurs de la clé**. Une clé unique embarquée serait épuisée dès quelques dizaines d'utilisateurs actifs et pourrait être extraite de l'APK. Options, par ordre de préférence : (a) l'utilisateur crée sa propre clé gratuite et la saisit dans les réglages (convient à un usage perso/amis) ; (b) petit relais serveur à nous qui garde la clé et limite par utilisateur (contredit le principe « sans serveur », donc à décider si l'app est diffusée) ; (c) clé embarquée avec un plafond local, uniquement pour un test.
+- Nécessite le réseau ; photo compressée avant envoi ; l'utilisateur voit que la photo est transmise à Pl@ntNet et peut refuser. Les résultats sont des probabilités : toujours confirmation manuelle.
+- Mention « Identification : Pl@ntNet » dans l'app.
+- Hors MVP : le catalogue, les recommandations et les conseils n'en dépendent pas.
+
 ### Le catalogue de plantes : décision
 
-Les API de plantes grand public (Perenual, Trefle, etc.) sont soit limitées en gratuit, soit non vérifiées, soit sans données pertinentes pour la France (rusticité en zones USDA, essences américaines) ; les limites exactes du plan gratuit de Perenual n'ont pas pu être confirmées. Elles ne conviennent pas comme dépendance d'une app dont le cœur est la recommandation. **Décision : un catalogue embarqué, rédigé et vérifié par nous (`data/plants.json`, ~150 essences courantes en France pour le MVP), servi hors ligne**, dont les noms sont validés par TAXREF/GBIF et les illustrations obtenues via Wikimedia. On pourra l'enrichir à la marge (descriptions, photos) par API, jamais pour les critères qui pilotent les filtres (rusticité, ensoleillement, besoin en eau). La rusticité est exprimée en température minimale (°C), convertible en zone USDA.
+Les API de plantes grand public (Perenual, Trefle, etc. ; Pl@ntNet identifie des espèces mais ne donne pas de données de culture) sont soit limitées en gratuit, soit non vérifiées, soit sans données pertinentes pour la France (rusticité en zones USDA, essences américaines) ; les limites exactes du plan gratuit de Perenual n'ont pas pu être confirmées. Elles ne conviennent pas comme dépendance d'une app dont le cœur est la recommandation. **Décision : un catalogue embarqué, rédigé et vérifié par nous (`data/plants.json`, ~150 essences courantes en France pour le MVP), servi hors ligne**, dont les noms sont validés par TAXREF/GBIF et les illustrations obtenues via Wikimedia. On pourra l'enrichir à la marge (descriptions, photos) par API, jamais pour les critères qui pilotent les filtres (rusticité, ensoleillement, besoin en eau). La rusticité est exprimée en température minimale (°C), convertible en zone USDA.
 
 ### Données climatiques par zone
 
@@ -201,12 +212,12 @@ La zone de rusticité et la pluviométrie de référence ne viennent pas d'une A
 
 ## 12. Hors périmètre v1
 
-Côtés courbes et relief 3D, estimation d'ombre précise heure par heure, reconnaissance de plantes par photo, import de plan cadastral, synchronisation multi-appareils, partage en ligne, achat de plantes, **notifications push distantes**, DROM, autres pays.
+Côtés courbes et relief 3D, estimation d'ombre précise heure par heure, reconnaissance de plantes par photo dans le MVP (voir Pl@ntNet, v2), import de plan cadastral, synchronisation multi-appareils, partage en ligne, achat de plantes, **notifications push distantes**, DROM, autres pays.
 
 ## 13. Jalons
 
 1. **MVP** : localisation GPS, contexte (région, exposition à la boussole), contour métré et relevé GPS, zones, ensoleillement rapide, catalogue embarqué (~150 essences), recommandation filtrée, rendu SVG, validation, conseils généraux, arrosage avec **notifications locales** alimentées par Open-Meteo, stockage local, app Android via Capacitor (APK/AAB).
-2. Export PDF/PNG, ensoleillement cartographié, calendrier consolidé, tâches du mois.
+2. Export PDF/PNG, identification de plantes par Pl@ntNet (mode « jardin existant »), ensoleillement cartographié, calendrier consolidé, tâches du mois.
 3. Ensoleillement estimé (PVGIS + soleil local), mode « Surprends-moi », association de plantes, évolution à maturité, DROM.
 
 ## 14. Risques
@@ -223,5 +234,5 @@ Côtés courbes et relief 3D, estimation d'ombre précise heure par heure, recon
 - Publication prévue sur les stores (conditions d'usage d'Open-Meteo) ou usage personnel/non commercial ?
 - Version Android minimale à supporter (proposition : Android 8 / API 26) ?
 - Précision attendue du métré (cm) et besoin d'import d'un plan existant ?
-- Faut-il un mode « jardin existant » (plantes déjà en place) en plus de la création ?
+- Faut-il un mode « jardin existant » (plantes déjà en place, avec identification Pl@ntNet) en plus de la création ? Si oui, clé personnelle de l'utilisateur ou petit relais serveur ?
 - Prototype du dessin tactile en Capacitor avant de figer la plateforme ?
