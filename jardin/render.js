@@ -149,10 +149,59 @@ export function renderPlanSVG(garden, opts = {}) {
 
   const MARGIN = 34;
   const CART_H = 58;
-  const LEG_W = layers.legend ? 210 : 0;
+  const sun = garden.sun || {};
+  const used = new Set(zones.map((z) => z.type));
+  const catsUsed = new Set();
+  for (const z of zones) for (const pl of z.plantings || []) { const pt = lookup(pl.plantId); if (pt) catsUsed.add(pt.category); }
+
+  // Légende : éléments {h, svg} (empilés à droite en paysage, en colonnes sous le plan en portrait)
+  const legendItems = [];
+  if (layers.legend) {
+    const li = (h0, inner) => legendItems.push({ h: h0, svg: inner });
+    li(24, `<text font-size="13" font-weight="700" fill="#222" font-family="${FONT}">Légende</text>`);
+    for (const t of ZONE_TYPES.filter((q) => used.has(q.id))) {
+      li(20, `<rect y="-11" width="22" height="14" fill="${t.color}" fill-opacity=".7" stroke="${darken(t.color, 0.35)}"/><rect y="-11" width="22" height="14" fill="url(#${P}-pat-${t.id})"/><text x="30" font-size="11" fill="#222" font-family="${FONT}">${esc(t.label.length > 24 ? t.label.slice(0, 23) + '…' : t.label)}</text>`);
+    }
+    if (catsUsed.size) {
+      li(22, `<text font-size="12" font-weight="700" fill="#222" font-family="${FONT}">Essences</text>`);
+      for (const cat of catsUsed) {
+        const col = CAT_COLORS[cat] || '#558b2f';
+        li(22, `<g transform="translate(11 -4)"><circle r="9" fill="${col}" fill-opacity=".22" stroke="${col}"/>${glyph(cat, 11, darken(col, 0.2))}</g><text x="30" font-size="11" fill="#222" font-family="${FONT}">${esc(CATEGORY_LABELS[cat] || cat)}</text>`);
+      }
+    }
+    if (layers.sun && (sun.mode === 'map' || sun.mode === 'uniform')) {
+      li(22, `<text font-size="12" font-weight="700" fill="#222" font-family="${FONT}">Ensoleillement</text>`);
+      for (const k of ['full', 'partial', 'shade']) li(20, `<rect y="-11" width="22" height="14" fill="${SUN_COLORS[k]}" fill-opacity=".5" stroke="${SUN_COLORS[k]}"/><text x="30" font-size="11" fill="#222" font-family="${FONT}">${esc(SUN_LABELS[k])}</text>`);
+    }
+    if (obstacles.length) {
+      li(22, `<text font-size="12" font-weight="700" fill="#222" font-family="${FONT}">Existant</text>`);
+      for (const k of [...new Set(obstacles.map((o) => o.kind))]) li(20, `<rect y="-11" width="22" height="14" fill="#e3e3e3" stroke="#424242"/><text x="30" font-size="11" fill="#222" font-family="${FONT}">${esc(OBSTACLE_LABELS[k] || k)}</text>`);
+    }
+  }
+  const bottomLegend = layers.legend && H > W * 1.05;
+  const COL_W = 200;
+  let legCols = [];
+  let LEG_H = 0;
+  if (bottomLegend) {
+    const ncols = Math.max(1, Math.floor((W - MARGIN * 2) / COL_W));
+    const total = legendItems.reduce((acc, it) => acc + it.h, 0);
+    let colMax = Math.max(Math.ceil(total / ncols), 44);
+    for (let guard = 0; guard < 40; guard++) {
+      legCols = []; let cur = []; let acc = 0;
+      for (const it of legendItems) {
+        if (acc + it.h > colMax && cur.length) { legCols.push(cur); cur = []; acc = 0; }
+        cur.push(it); acc += it.h;
+      }
+      if (cur.length) legCols.push(cur);
+      if (legCols.length <= ncols) break;
+      colMax += 10;
+    }
+    LEG_H = Math.max(...legCols.map((c) => c.reduce((a2, it) => a2 + it.h, 0))) + 14;
+  }
+  const LEG_W = layers.legend && !bottomLegend ? 210 : 0;
   const ax = MARGIN; const ay = MARGIN;
   const aw = W - MARGIN * 2 - (LEG_W ? LEG_W + 14 : 0);
-  const ah = H - MARGIN * 2 - CART_H - 8;
+  const ah = H - MARGIN * 2 - CART_H - 8 - (LEG_H ? LEG_H + 8 : 0);
   const pad = 26; // pour cotes et marges
   const S = Math.min((aw - pad * 2) / wb.width, (ah - pad * 2) / wb.height);
   const ox = ax + (aw - wb.width * S) / 2;
@@ -162,7 +211,6 @@ export function renderPlanSVG(garden, opts = {}) {
   const pts = (poly) => poly.map((p) => `${f(tx(p.x))},${f(ty(p.y))}`).join(' ');
 
   const defs = [];
-  const used = new Set(zones.map((z) => z.type));
   const typeColor = (id) => (getZoneType(id) ? getZoneType(id).color : '#9e9e9e');
   for (const t of ZONE_TYPES) {
     if (!used.has(t.id)) continue;
@@ -197,7 +245,6 @@ export function renderPlanSVG(garden, opts = {}) {
   }
 
   // Ensoleillement
-  const sun = garden.sun || {};
   if (layers.sun && sun.mode === 'uniform' && sun.uniform && boundary.length >= 3) {
     out.push(`<polygon points="${pts(boundary)}" fill="${SUN_COLORS[sun.uniform]}" fill-opacity=".30" stroke="none"/>`);
   } else if (layers.sun && sun.mode === 'map') {
@@ -333,42 +380,17 @@ export function renderPlanSVG(garden, opts = {}) {
   }
 
   // Légende
-  if (layers.legend) {
-    const lx = W - MARGIN - LEG_W; const ly = ay;
-    const rows = [];
-    let y = 22;
-    const row = (inner, h = 20) => { rows.push(`<g transform="translate(10 ${y})">${inner}</g>`); y += h; };
-    rows.push(`<text x="10" y="${y}" font-size="13" font-weight="700" fill="#222" font-family="${FONT}">Légende</text>`);
-    y += 10;
-    const usedTypes = ZONE_TYPES.filter((t) => used.has(t.id));
-    for (const t of usedTypes) {
-      row(`<rect y="-11" width="22" height="14" fill="${t.color}" fill-opacity=".7" stroke="${darken(t.color, 0.35)}"/><rect y="-11" width="22" height="14" fill="url(#${P}-pat-${t.id})"/><text x="30" font-size="11" fill="#222" font-family="${FONT}">${esc(t.label.length > 24 ? t.label.slice(0, 23) + '…' : t.label)}</text>`);
+  if (layers.legend && legendItems.length) {
+    if (bottomLegend) {
+      const ly = ay + ah + 8;
+      let cx = MARGIN;
+      const cols = legCols.map((col) => { let y = 20; const g2 = col.map((it) => { const r = `<g transform="translate(8 ${y})">${it.svg}</g>`; y += it.h; return r; }).join(''); const r2 = `<g transform="translate(${cx} 0)">${g2}</g>`; cx += COL_W; return r2; }).join('');
+      out.push(`<g font-family="${FONT}"><rect x="${MARGIN}" y="${ly}" width="${W - MARGIN * 2}" height="${LEG_H}" rx="6" fill="#fff" fill-opacity=".9" stroke="#bdbdbd"/><g transform="translate(0 ${ly - 8})">${cols}</g></g>`);
+    } else {
+      const lx = W - MARGIN - LEG_W; let y = 20;
+      const rows = legendItems.map((it) => { const r = `<g transform="translate(10 ${y})">${it.svg}</g>`; y += it.h; return r; }).join('');
+      out.push(`<g font-family="${FONT}"><rect x="${lx}" y="${ay}" width="${LEG_W}" height="${f(Math.min(ah, y + 8))}" rx="6" fill="#fff" fill-opacity=".9" stroke="#bdbdbd"/><g transform="translate(${lx} ${ay})">${rows}</g></g>`);
     }
-    const cats = new Map();
-    for (const { plant } of plantsLegend.values()) cats.set(plant.category, (cats.get(plant.category) || 0) + 1);
-    if (cats.size) {
-      y += 4;
-      row(`<text font-size="12" font-weight="700" fill="#222" font-family="${FONT}">Essences</text>`, 18);
-      for (const [cat] of cats) {
-        const col = CAT_COLORS[cat] || '#558b2f';
-        row(`<g transform="translate(11 -4)"><circle r="9" fill="${col}" fill-opacity=".22" stroke="${col}"/>${glyph(cat, 11, darken(col, 0.2))}</g><text x="30" font-size="11" fill="#222" font-family="${FONT}">${esc(CATEGORY_LABELS[cat] || cat)}</text>`, 22);
-      }
-    }
-    if (layers.sun && (sun.mode === 'map' || sun.mode === 'uniform')) {
-      y += 4;
-      row(`<text font-size="12" font-weight="700" fill="#222" font-family="${FONT}">Ensoleillement</text>`, 18);
-      for (const k of ['full', 'partial', 'shade']) {
-        row(`<rect y="-11" width="22" height="14" fill="${SUN_COLORS[k]}" fill-opacity=".5" stroke="${SUN_COLORS[k]}"/><text x="30" font-size="11" fill="#222" font-family="${FONT}">${esc(SUN_LABELS[k])}</text>`);
-      }
-    }
-    if (obstacles.length) {
-      y += 4;
-      const kinds = [...new Set(obstacles.map((o) => o.kind))];
-      row(`<text font-size="12" font-weight="700" fill="#222" font-family="${FONT}">Existant</text>`, 18);
-      for (const k of kinds) row(`<rect y="-11" width="22" height="14" fill="#e3e3e3" stroke="#424242"/><text x="30" font-size="11" fill="#222" font-family="${FONT}">${esc(OBSTACLE_LABELS[k] || k)}</text>`);
-    }
-    const lh = Math.min(ah, y + 8);
-    out.push(`<g font-family="${FONT}"><rect x="${lx}" y="${ly}" width="${LEG_W}" height="${f(lh)}" rx="6" fill="#fff" fill-opacity=".9" stroke="#bdbdbd"/><g transform="translate(${lx} ${ly})">${rows.join('')}</g></g>`);
   }
 
   // Cartouche

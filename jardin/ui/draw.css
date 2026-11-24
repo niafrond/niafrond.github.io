@@ -54,7 +54,7 @@
 .jd-msg { padding: 6px 10px; font-size: 13px; color: var(--jd-muted); }
 .jd-msg.warn { color: var(--jd-warn); }
 .jd-msg.err { color: var(--jd-err); }
-.jd-sheet { background: var(--jd-card); border-top: 1px solid var(--jd-line); max-height: 42vh; overflow: auto; padding: 8px 10px; }
+.jd-sheet { background: var(--jd-card); border-top: 1px solid var(--jd-line); max-height: 36vh; overflow: auto; padding: 8px 10px; }
 .jd-sheet h3, .jd-panel h3 { margin: 4px 0 8px; font-size: 15px; }
 .jd-sides { width: 100%; border-collapse: collapse; font-size: 14px; }
 .jd-sides td, .jd-sides th { padding: 3px 4px; text-align: left; }
@@ -106,3 +106,7 @@
 .jd-switch { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 48px; padding: 4px 0; }
 .jd-switch input[type=checkbox] { width: 26px; height: 26px; accent-color: var(--jd-accent); }
 .jd-tag { display: inline-block; font-size: 12px; padding: 1px 8px; border-radius: 10px; background: color-mix(in srgb, var(--jd-accent) 18%, var(--jd-card)); margin-right: 4px; }
+.jd-bar .jd-btn, .jd-chips .jd-chip { flex: 0 0 auto; }
+.jd-details { background: var(--jd-card); border-bottom: 1px solid var(--jd-line); }
+.jd-details > summary { min-height: 44px; display: flex; align-items: center; padding: 0 12px; cursor: pointer; font-size: 14px; }
+.jd input[type=range] { accent-color: var(--jd-accent); }
