@@ -274,6 +274,13 @@ function performEnemyAction(decision){
     return applyEnemyAction(decision);
 }
 
+/** Description d'une action de l'ennemi pour la file d'attente : nom du sort ou de l'arme, dégâts et cible. */
+const enemyQueueInfo = decision => {
+    const spell = decision.action === 'spell' ? decision.data?.spell : null;
+    const heals = spell && spell.type && spell.type !== 'damage';
+    return { name: spell ? spell.name : enemy.weapon?.name, damage: heals ? 0 : (spell ? spell.dmg : enemy.weapon?.damage), target: heals ? enemy.name : partyTargetName };   // cible recalculée à l'affichage : compagnon protégé, Hou Yi à terre → un compagnon…
+};
+
 /** Choix d'une action de l'ennemi : validation et paiement (qì d'un sort, PA d'une arme). Renvoie false s'il ne peut pas la payer. */
 export function payEnemyAction(decision){
     if(decision.action === 'spell'){
@@ -306,10 +313,10 @@ export function enemyProactiveAction(){
     if(!payEnemyAction(decision)) return;
     if(decision.action === 'spell' && decision.data?.spell?.boardSpell){   // sort de plateau : choisi et payé tout de suite, il part avec les autres actions de plateau (fin du tour de plateau en cours)
         const chosen = decision;
-        chooseEnemyAction(() => withCaster('enemy', async () => { playSfx('spellCast', { isPlayer: false, spellId: chosen.data.spell.id }); await castEnemyBoardSpell(chosen.data.spell); }), true);
+        chooseEnemyAction(() => withCaster('enemy', async () => { playSfx('spellCast', { isPlayer: false, spellId: chosen.data.spell.id }); await castEnemyBoardSpell(chosen.data.spell); }), true, enemyQueueInfo(chosen));
         return;
     }
-    chooseEnemyAction(() => runEnemyActionOutOfTurn(decision));
+    chooseEnemyAction(() => runEnemyActionOutOfTurn(decision), false, enemyQueueInfo(decision));
 }
 
 export function applyEnemyAction(decision){
@@ -501,12 +508,12 @@ export function enemyTurn(){
         if(spellOnBoard){
             // Sort de plateau : choisi et payé s'il est chargé, il part avec les autres actions de plateau, à la fin du tour de plateau en cours.
             const chosen = decision;
-            if(enemyActionReady() && payEnemyAction(chosen)) chooseEnemyAction(() => withCaster('enemy', async () => { playSfx('spellCast', { isPlayer: false, spellId: chosen.data.spell.id }); await castEnemyBoardSpell(chosen.data.spell); }), true);
+            if(enemyActionReady() && payEnemyAction(chosen)) chooseEnemyAction(() => withCaster('enemy', async () => { playSfx('spellCast', { isPlayer: false, spellId: chosen.data.spell.id }); await castEnemyBoardSpell(chosen.data.spell); }), true, enemyQueueInfo(chosen));
             decision = { ...decision, action: 'board', reason: `${decision.reason} ; son sort de plateau part à la fin du tour de plateau, il joue sur la grille`, data: {} };
         } else if(decision.action === 'spell' || decision.action === 'weapon'){
             // Il ne peut choisir son action que chargé (barre pleine) et s'il peut la payer ; elle part alors tout de suite ou depuis la file, et il joue sur le plateau.
             const chosen = decision;
-            if(enemyActionReady() && payEnemyAction(chosen)) chooseEnemyAction(() => runEnemyActionOutOfTurn(chosen));
+            if(enemyActionReady() && payEnemyAction(chosen)) chooseEnemyAction(() => runEnemyActionOutOfTurn(chosen), false, enemyQueueInfo(chosen));
             decision = { ...decision, action: 'board', reason: `${decision.reason} ; son action part sans lien avec le plateau, il joue sur la grille`, data: {} };
         }
     }
