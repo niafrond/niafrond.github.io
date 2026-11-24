@@ -71,6 +71,7 @@
   "enemyGroup.js",
   "enemyGrowth.js",
   "enemyStuff.js",
+  "enemyTargeting.js",
   "equipPreview.js",
   "equipment.js",
   "escapeHtml.js",

@@ -36,6 +36,21 @@ describe('rappel de pause', () => {
         document.getElementById('break-reminder-close').click();
         expect(document.getElementById('break-reminder-modal')).toBeNull();
     });
+
+    test('deux boutons : « Je fais une pause » (grand) lance onPause et ferme ; « Je continue à jouer » (petit) ferme seulement', () => {
+        const onPause = jest.fn();
+        showBreakReminder(3600, Math.random, { onPause });
+        const pause = document.getElementById('break-reminder-pause'), keep = document.getElementById('break-reminder-close');
+        expect(pause.textContent).toBe('Je fais une pause');
+        expect(keep.textContent).toBe('Je continue à jouer');
+        keep.click();
+        expect(onPause).not.toHaveBeenCalled();
+        expect(document.getElementById('break-reminder-modal')).toBeNull();
+        showBreakReminder(3600, Math.random, { onPause });
+        document.getElementById('break-reminder-pause').click();
+        expect(onPause).toHaveBeenCalledTimes(1);
+        expect(document.getElementById('break-reminder-modal')).toBeNull();
+    });
 });
 
 describe('surveillance du temps de jeu', () => {
@@ -93,12 +108,12 @@ describe('fermeture de la popup', () => {
 });
 
 describe('rappel de pause : discrétion et réglage', () => {
-    test('la popup est un dialogue nommé, avec le focus sur « Continuer » et un rappel que le réglage existe', () => {
+    test('la popup est un dialogue nommé, avec le focus sur « Je fais une pause » et un rappel que le réglage existe', () => {
         const btn = document.createElement('button'); document.body.appendChild(btn); btn.focus();
         const modal = showBreakReminder(1800);
         expect(modal.getAttribute('role')).toBe('dialog');
         expect(document.getElementById(modal.getAttribute('aria-labelledby')).textContent).toBe('Petite pause ?');
-        expect(document.activeElement.id).toBe('break-reminder-close');
+        expect(document.activeElement.id).toBe('break-reminder-pause');
         expect(modal.textContent).toMatch(/Options/);
         document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
         expect(document.getElementById('break-reminder-modal')).toBeNull();

@@ -981,6 +981,12 @@ body.dark-mode :focus-visible { outline-color: #ffd54a; box-shadow: 0 0 0 5px #0
 .a11y-toast { position: fixed; left: 50%; bottom: 76px; transform: translateX(-50%); z-index: 100000; max-width: min(92vw, 520px); padding: 10px 14px; border-radius: 10px; background: #2b1b17; color: #fff8e1; border: 2px solid #f2c14e; font-size: 15px; line-height: 1.35; text-align: center; opacity: 0; visibility: hidden; pointer-events: none; transition: opacity .2s; }
 .a11y-toast.visible { opacity: 1; visibility: visible; }
 .break-reminder-hint { text-align: center; opacity: .8; }
+/* Rappel de pause : « Je fais une pause » en grand, « Je continue à jouer » en tout petit (lien discret). */
+.break-reminder-actions { margin-top: 14px; }
+.break-reminder-actions .break-reminder-pause { width: 100%; padding: 16px 20px; font-size: 1.35em; font-weight: 800; border-radius: 12px; }
+.break-reminder-continue { margin: 10px 0 0; text-align: center; }
+.break-reminder-continue button { min-height: 32px; padding: 2px 6px; font-size: 11px; line-height: 1.3; color: inherit; opacity: .7; background: none; border: 0; box-shadow: none; text-decoration: underline; cursor: pointer; }
+.break-reminder-continue button:hover { opacity: 1; }
 
 /* Cibles tactiles : au moins 44 px de côté pour les boutons de commande sur écran tactile. */
 @media (pointer: coarse) {
@@ -1300,3 +1306,23 @@ body.target-actions-on #player-spells > :not(#target-actions) { display: none; }
 .weapon-rarity-rare::before, .weapon-rarity-rare::after { background: #fff3b0; }
 .weapon-rarity-legendary::before, .weapon-rarity-legendary::after { background: #e6f8ff; }
 
+
+/* Tour de plateau de l'ennemi : indicateur bien visible (anneau rouge qui pulse, fond rougi, bandeau « TOUR ENNEMI »). Aucune épaisseur de bordure ne change : la mise en page ne bouge pas. */
+#enemy-stats.active-turn, body.rt #enemy-stats.active-turn {
+    border-color: #ff1744;
+    box-shadow: 0 0 0 3px #ff1744, 0 0 16px 5px rgba(255, 23, 68, 0.75) !important;
+    animation: enemy-turn-pulse 1s ease-in-out infinite;
+}
+#enemy-stats.active-turn::before {
+    content: "TOUR ENNEMI";
+    position: absolute; top: -9px; left: 50%; transform: translateX(-50%); z-index: 3;
+    padding: 1px 8px; border-radius: 8px; white-space: nowrap; pointer-events: none;
+    font: 800 10px/14px system-ui, sans-serif; letter-spacing: .06em; color: #fff;
+    background: #d50000; border: 1px solid #4a0a0a; text-shadow: 0 1px 1px rgba(0, 0, 0, .5);
+}
+@keyframes enemy-turn-pulse {
+    0%, 100% { box-shadow: 0 0 0 3px #ff1744, 0 0 10px 2px rgba(255, 23, 68, 0.55); }
+    50% { box-shadow: 0 0 0 3px #ff1744, 0 0 22px 8px rgba(255, 23, 68, 0.9); }
+}
+@media (prefers-reduced-motion: reduce) { #enemy-stats.active-turn, body.rt #enemy-stats.active-turn { animation: none; } }
+body.no-anim #enemy-stats.active-turn, body.fx-low #enemy-stats.active-turn { animation: none; }

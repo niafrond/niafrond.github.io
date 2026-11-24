@@ -24,7 +24,7 @@ import { getOption, animationsEnabled, effectsLevel, setOption, applyOptions, vi
 import { realPlayTimeStats, formatDuration, startPlayTimeTracking } from "./playTime.js";
 import { initDialogs } from "./a11y.js";
 import { runCasualAutopilot } from "./casualPilot.js";
-import { createBreakWatcher } from "./breakReminder.js";
+import { createBreakWatcher, showBreakReminder } from "./breakReminder.js";
 import { initCompare } from "./compareView.js";
 import { getWeaponById } from "./weapons.js";
 import { MAX_ACTIVE_SPELLS } from "./constants.js";
@@ -429,6 +429,7 @@ function init() {
     // Rappel de pause : 30 min de jeu, puis toutes les 15 min, hors combat et fenêtres ouvertes (breakReminder.js)
     const breakTick = createBreakWatcher({
         isEnabled: () => getOption('breakReminder'),
+        show: seconds => showBreakReminder(seconds, Math.random, { onPause: () => { try { saveUpdate(); } catch {} location.reload(); } }),   // « Je fais une pause » : sauvegarde puis retour au launcher (écran de démarrage)
         // Calme : hors combat, dialogue et marchand (carte affichée ou non, p. ex. onglet Armes), ou combat terminé (écran Victoire / Défaite,
         // dont l'arène enchaîne sans repasser par la carte), sans cinématique ni transition de combat (ce ne sont pas des .modal) ni fenêtre ouverte.
         isCalm: () => (Boolean(exploration.isFree?.()) || Boolean(document.body.dataset.combatEnd))
