@@ -54,6 +54,25 @@ export function parseNum(s) {
   return Number.isFinite(n) ? n : NaN;
 }
 
+/**
+ * Lit une longueur saisie « à la française » et la renvoie en mètres (NaN si illisible).
+ * Un entier seul est des centimètres (« 350 » = 3,50 m) ; avec décimale ou « m » c'est des mètres
+ * (« 3,5 » ou « 3,5 m ») ; « 350 cm » est explicite.
+ */
+export function parseLength(s) {
+  const t = String(s ?? '').trim().toLowerCase().replace(/\s+/g, '').replace(',', '.');
+  if (!t) return NaN;
+  const m = t.match(/^(-?\d+(?:\.\d+)?)(cm|m)?$/);
+  if (!m) return NaN;
+  const n = parseFloat(m[1]);
+  if (!(n > 0)) return NaN;
+  if (m[2] === 'cm') return n / 100;
+  if (m[2] === 'm' || m[1].includes('.')) return n;
+  return n / 100;
+}
+/** Longueur en mètres → centimètres entiers pour la saisie. */
+export const toCm = (m) => String(Math.round(m * 100));
+
 export function clone(o) { return JSON.parse(JSON.stringify(o)); }
 
 /**
@@ -81,7 +100,7 @@ export function snap(p, { grid = 0, points = [], tolerance = 0.15, ortho = null 
  * Canvas SVG interactif (viewBox en mètres) avec pan 1 doigt (si aucun outil ne prend la main),
  * pincement 2 doigts, molette. Les outils fournissent des gestionnaires :
  *   down(world, ev) -> null | {move(world, ev), up(world, ev, moved), cancel()}   (null → pan)
- *   tap(world, ev), hover(world, ev)
+ *   tap(world, ev), hover(world, ev), long(world, ev, {x, y} en pixels écran)  (appui long ≈ 0,5 s sans bouger)
  */
 export function createCanvas(wrap, { onView, handlers = {} } = {}) {
   const svg = svgEl('svg', { class: 'jd-svg', role: 'img', preserveAspectRatio: 'xMidYMid meet' });
@@ -131,7 +150,11 @@ export function createCanvas(wrap, { onView, handlers = {} } = {}) {
   let pinch = null;
   const evWorld = (e) => toWorld(e.clientX, e.clientY);
 
+  const LONG_MS = 480;
+  let longTimer = null;
+  const clearLong = () => { if (longTimer) { clearTimeout(longTimer); longTimer = null; } };
   const cancelActive = () => {
+    clearLong();
     if (active && active.handler && active.handler.cancel) active.handler.cancel();
     active = null;
   };
@@ -148,7 +171,18 @@ export function createCanvas(wrap, { onView, handlers = {} } = {}) {
     if (ptrs.size > 2) return;
     const w = evWorld(e);
     const handler = handlers.down ? handlers.down(w, e) : null;
-    active = { id: e.pointerId, handler, startX: e.clientX, startY: e.clientY, lastX: e.clientX, lastY: e.clientY, moved: false, t0: Date.now() };
+    active = { id: e.pointerId, handler, startX: e.clientX, startY: e.clientY, lastX: e.clientX, lastY: e.clientY, moved: false, t0: Date.now(), long: false };
+    clearLong();
+    if (handlers.long) {
+      const cur = active;
+      longTimer = setTimeout(() => {
+        longTimer = null;
+        if (active !== cur || cur.moved) return;
+        cur.long = true;
+        try { if (navigator.vibrate) navigator.vibrate(18); } catch { /* sans vibreur */ }
+        handlers.long(toWorld(cur.startX, cur.startY), e, { x: cur.startX, y: cur.startY });
+      }, LONG_MS);
+    }
   };
   const onMove = (e) => {
     if (!ptrs.has(e.pointerId)) {
@@ -169,7 +203,7 @@ export function createCanvas(wrap, { onView, handlers = {} } = {}) {
       return;
     }
     if (!active || active.id !== e.pointerId) return;
-    if (!active.moved && Math.hypot(e.clientX - active.startX, e.clientY - active.startY) > 7) active.moved = true;
+    if (!active.moved && Math.hypot(e.clientX - active.startX, e.clientY - active.startY) > 7) { active.moved = true; clearLong(); }
     if (active.handler) {
       if (active.moved && active.handler.move) active.handler.move(evWorld(e), e);
     } else if (active.moved) {
@@ -183,6 +217,8 @@ export function createCanvas(wrap, { onView, handlers = {} } = {}) {
     if (!had || !active || active.id !== e.pointerId) return;
     const a = active;
     active = null;
+    clearLong();
+    if (a.long) return; // l'appui long a déjà agi : ni tap ni fin de geste
     const w = evWorld(e);
     if (a.handler) {
       if (a.handler.up) a.handler.up(w, e, a.moved);

@@ -68,6 +68,14 @@ Deux façons de tracer, combinables : **dessin manuel** (ci-dessous) ou **relev�
 - Obstacles ponctuels/polygonaux à placer (maison, mur, abri, arbre existant avec hauteur) : servent à l'ombre et à interdire des zones.
 - Plusieurs jardins : chaque jardin a son propre repère ; duplication d'un jardin possible (« variante »).
 
+### Saisie rapide des dimensions (ergonomie)
+
+- **Démarrage guidé** : sur un plan vide, trois choix : « Je connais les dimensions » (rectangle : largeur et longueur), « Je dessine au doigt », « Je fais le tour au GPS ».
+- **Appui long (≈ 0,5 s, avec vibration)** : sur un côté → fenêtre de saisie de sa longueur ; sur un sommet → fenêtre du sommet (suppression) ; sur le plan vide → rectangle (si aucun point) ou « côté suivant » depuis le dernier sommet (longueur + direction ↑ → ↓ ←).
+- **Toucher une cote** (étiquette de longueur) ou le point au milieu d'un côté → même fenêtre de saisie ; **glisser** ce point insère un sommet.
+- **Unités** : la saisie se fait en **centimètres** (« 350 » = 3,50 m) ; « 3,5 » ou « 3,5 m » sont aussi compris (`parseLength`). Boutons −10 / +10 cm, Entrée valide, Échap annule ; le côté en cours d'édition est surligné.
+- Le tableau « Côtés » reste disponible, en mètres.
+
 ## 4 bis. GPS et boussole
 
 - **Relevé du contour au GPS** : l'utilisateur marche le long de sa limite et « pose un point » à chaque angle. Les coordonnées WGS84 sont converties en mètres dans le repère local (projection locale, Lambert-93 ou plan tangent). Chaque point peut être moyenné sur quelques secondes (précision affichée) ; au-delà de ~5 m de précision, l'app avertit que le GPS d'un téléphone est peu fiable sous couvert et propose de compléter au mètre à ruban (saisie des longueurs, §4). Les côtés relevés restent éditables.

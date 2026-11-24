@@ -6,7 +6,7 @@ import {
 import { newId } from '../model.js';
 import { getPosition } from '../geo.js';
 import {
-  injectStyles, h, createCanvas, gridPath, snap, clone, esc, fr, frLen, frArea, parseNum,
+  injectStyles, h, createCanvas, gridPath, snap, clone, esc, fr, frLen, frArea, parseNum, parseLength, toCm,
 } from './draw-util.js';
 
 const OBSTACLE_KINDS = [
@@ -32,7 +32,7 @@ export function mountContourEditor(el, { garden, onChange } = {}) {
     sel: null, selObstacle: null, ghost: null, history: [], future: [],
     draft: null, // obstacle en cours {kind, points}
     rect: true, closePrompt: null, msg: '', msgKind: '', fix: null, live: null, liveOn: false, busy: false,
-    obstacleKind: 'house',
+    obstacleKind: 'house', selSide: null, pop: null,
   };
   let timer = null;
   let destroyed = false;
@@ -57,6 +57,8 @@ export function mountContourEditor(el, { garden, onChange } = {}) {
   const msgEl = h('div', { class: 'jd-msg', role: 'status', 'aria-live': 'polite' });
   const promptEl = h('div', { class: 'jd-panel', hidden: true });
   const sheet = h('div', { class: 'jd-sheet', hidden: true });
+  const startEl = h('div', { class: 'jd-start', hidden: true, 'data-role': 'start-panel' });
+  const pop = h('div', { class: 'jd-pop', hidden: true, role: 'dialog', 'aria-modal': 'false', 'data-role': 'pop' });
   root.append(bar1, bar2, wrap, info, msgEl, promptEl, sheet);
   el.innerHTML = '';
   el.appendChild(root);
@@ -86,7 +88,8 @@ export function mountContourEditor(el, { garden, onChange } = {}) {
   const gMain = document.createElementNS('http://www.w3.org/2000/svg', 'g');
   const gTop = document.createElementNS('http://www.w3.org/2000/svg', 'g');
 
-  const cv = createCanvas(wrap, { onView: () => draw(), handlers: { down: onDown, tap: onTap, hover: onHover } });
+  const cv = createCanvas(wrap, { onView: () => draw(), handlers: { down: onDown, tap: onTap, hover: onHover, long: onLong } });
+  wrap.append(startEl, pop);
   cv.svg.append(gGrid, gMain, gTop);
   cv.svg.setAttribute('aria-label', 'Plan du terrain : touchez pour poser les sommets du contour');
 
@@ -148,18 +151,184 @@ export function mountContourEditor(el, { garden, onChange } = {}) {
   };
 
   function onDown(w) {
+    if (st.pop) closePop();
     if (st.tool === 'obstacle') return downObstacle(w);
     const vi = hitVertex(w);
     if (vi >= 0) return vertexDrag(vi);
     const mi = hitMid(w);
-    if (mi >= 0) {
-      const a = g.boundary[mi]; const b = g.boundary[(mi + 1) % g.boundary.length];
-      st.history.push(snapshot()); st.future = [];
-      g.boundary.splice(mi + 1, 0, { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 });
-      st.sel = mi + 1; changed();
-      return vertexDrag(mi + 1, true);
-    }
+    if (mi >= 0) return midDrag(mi);
     return null;
+  }
+
+  /** Milieu d'un côté : un toucher ouvre la saisie de la longueur, un glissé insère un sommet. */
+  function midDrag(mi) {
+    let inserted = null;
+    return {
+      move(w) {
+        if (!inserted) {
+          const a = g.boundary[mi]; const b = g.boundary[(mi + 1) % g.boundary.length];
+          st.history.push(snapshot()); st.future = [];
+          g.boundary.splice(mi + 1, 0, { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 });
+          st.sel = mi + 1; inserted = vertexDrag(mi + 1, true);
+        }
+        inserted.move(w);
+      },
+      up(w, e, didMove) {
+        if (inserted) return inserted.up(w, e, didMove);
+        openSidePop(mi);
+        return undefined;
+      },
+      cancel() { if (inserted) inserted.cancel(); },
+    };
+  }
+
+  // ---------- appui long ----------
+  function sideAt(w, tol = cv.px(22)) {
+    const n = g.boundary.length;
+    if (n < 2) return -1;
+    const edges = closed() ? n : n - 1;
+    let best = -1; let bd = tol;
+    for (let i = 0; i < edges; i++) {
+      const a = g.boundary[i]; const b = g.boundary[(i + 1) % n];
+      const L2 = (b.x - a.x) ** 2 + (b.y - a.y) ** 2 || 1;
+      const t = Math.max(0, Math.min(1, ((w.x - a.x) * (b.x - a.x) + (w.y - a.y) * (b.y - a.y)) / L2));
+      const d = distance(w, { x: a.x + t * (b.x - a.x), y: a.y + t * (b.y - a.y) });
+      if (d <= bd) { bd = d; best = i; }
+    }
+    return best;
+  }
+  function onLong(w) {
+    if (st.tool !== 'draw') return;
+    const vi = hitVertex(w, 26);
+    if (vi >= 0) { openVertexPop(vi); return; }
+    const si = sideAt(w);
+    if (si >= 0) { openSidePop(si); return; }
+    if (!g.boundary.length) { openRectPop(snapAt(w).p); return; }
+    if (!closed()) openNextPop(w);
+  }
+
+  // ---------- fenêtre de saisie (cm) ----------
+  function closePop() { st.pop = null; st.selSide = null; pop.hidden = true; pop.innerHTML = ''; draw(); }
+  /**
+   * Petite fenêtre en haut du plan : champs numériques en cm (« 350 » = 3,50 m ; « 3,5 m » accepté),
+   * boutons − / + 10 cm, actions supplémentaires. `onOk(valeurs en m)` ; Entrée valide, Échap annule.
+   */
+  function openPop({ title, hint, fields = [], extra = null, actions = [], okLabel = 'Valider', onOk }) {
+    st.pop = { title };
+    pop.innerHTML = '';
+    pop.hidden = false;
+    const inputs = {};
+    const rows = fields.map((f) => {
+      const inp = h('input', { class: 'jd-input jd-pop-input', type: 'text', inputmode: f.decimal ? 'decimal' : 'numeric', value: f.value ?? '', 'aria-label': f.label, enterkeyhint: 'done', 'data-field': f.key });
+      inputs[f.key] = inp;
+      const step = (d) => () => {
+        const v = parseLength(inp.value);
+        const next = Math.max(0.01, (Number.isFinite(v) ? v : 0) + d);
+        inp.value = toCm(next); inp.focus(); inp.select();
+      };
+      return h('div', { class: 'jd-pop-row' },
+        h('label', {}, f.label),
+        h('button', { type: 'button', class: 'jd-btn jd-step', 'aria-label': 'Moins 10 centimètres', onclick: step(-0.1) }, '−10'),
+        inp,
+        h('span', { class: 'jd-unit' }, 'cm'),
+        h('button', { type: 'button', class: 'jd-btn jd-step', 'aria-label': 'Plus 10 centimètres', onclick: step(0.1) }, '+10'));
+    });
+    const commit = () => {
+      const out = {};
+      for (const f of fields) {
+        const v = parseLength(inputs[f.key].value);
+        if (!Number.isFinite(v)) { inputs[f.key].classList.add('bad'); inputs[f.key].focus(); say('Saisissez une longueur en cm, par exemple 350 (ou 3,5 m).', 'warn'); return; }
+        out[f.key] = v;
+      }
+      const res = onOk ? onOk(out) : null;
+      if (res !== false) closePop();
+    };
+    const kids = [
+      h('div', { class: 'jd-pop-title' }, title),
+      ...rows,
+      extra,
+      hint ? h('div', { class: 'jd-pop-hint' }, hint) : null,
+      h('div', { class: 'jd-row' },
+        h('button', { type: 'button', class: 'jd-btn primary', 'data-act': 'pop-ok', onclick: commit }, okLabel),
+        h('button', { type: 'button', class: 'jd-btn', 'data-act': 'pop-cancel', onclick: closePop }, 'Annuler'),
+        ...actions.map((a) => h('button', { type: 'button', class: `jd-btn ${a.danger ? 'danger' : ''}`, 'data-act': a.act, onclick: () => { a.fn(); } }, a.label))),
+    ];
+    pop.append(...kids.filter(Boolean));
+    pop.onkeydown = (e) => {
+      if (e.key === 'Enter') { e.preventDefault(); commit(); }
+      else if (e.key === 'Escape') { e.preventDefault(); closePop(); }
+    };
+    const first = Object.values(inputs)[0];
+    if (first) setTimeout(() => { first.focus(); first.select(); }, 0);
+  }
+
+  function openSidePop(i) {
+    const n = g.boundary.length;
+    const { a, b } = edgeAt(i);
+    st.selSide = i; st.sel = null;
+    const L = distance(a, b);
+    draw();
+    openPop({
+      title: `Côté ${i + 1} → ${((i + 1) % n) + 1} · ${frLen(L)}`,
+      fields: [{ key: 'len', label: 'Longueur', value: toCm(L) }],
+      hint: 'Tapez en centimètres : 350 = 3,50 m. Les sommets suivants se décalent.',
+      onOk: ({ len }) => { setSideLength(i, len); },
+    });
+  }
+
+  function openVertexPop(i) {
+    st.sel = i; draw(); refreshUI();
+    const p = g.boundary[i];
+    openPop({
+      title: `Sommet ${i + 1}`,
+      hint: `Position : ${fr(p.x)} m ; ${fr(p.y)} m. Glissez le sommet pour le déplacer.`,
+      okLabel: 'Fermer',
+      onOk: () => {},
+      actions: [{ label: '🗑 Supprimer', act: 'pop-del-vertex', danger: true, fn: () => { closePop(); deleteVertex(); } }],
+    });
+  }
+
+  function openNextPop(w) {
+    const n = g.boundary.length;
+    const last = g.boundary[n - 1];
+    const raw = bearing(last, w);
+    const dirs = [{ d: 0, t: '↑' }, { d: 90, t: '→' }, { d: 180, t: '↓' }, { d: 270, t: '←' }];
+    let cur = dirs.reduce((best, x) => {
+      const dd = Math.abs((((raw - x.d) % 360) + 540) % 360 - 180);
+      return dd < best.dd ? { d: x.d, dd } : best;
+    }, { d: 90, dd: 999 }).d;
+    const chips = h('div', { class: 'jd-row jd-dirs', 'data-role': 'pop-dirs' }, h('label', {}, 'Direction'),
+      dirs.map((x) => h('button', {
+        type: 'button', class: 'jd-btn jd-dir', 'aria-pressed': String(x.d === cur), 'data-dir': x.d,
+        onclick: (e) => { cur = x.d; chips.querySelectorAll('.jd-dir').forEach((c) => c.setAttribute('aria-pressed', String(c === e.currentTarget))); },
+      }, x.t)));
+    openPop({
+      title: `Côté suivant depuis le sommet ${n}`,
+      fields: [{ key: 'len', label: 'Longueur', value: '' }],
+      extra: chips,
+      hint: 'Haut du plan = ↑. Tapez la longueur en cm (500 = 5 m).',
+      okLabel: 'Ajouter le côté',
+      onOk: ({ len }) => { addSegment(len, cur); },
+    });
+  }
+
+  function openRectPop(origin) {
+    openPop({
+      title: 'Terrain rectangulaire',
+      fields: [{ key: 'w', label: 'Largeur', value: '' }, { key: 'l', label: 'Longueur', value: '' }],
+      hint: 'Tapez les dimensions en centimètres (1000 = 10 m). Vous pourrez ensuite ajuster chaque côté.',
+      okLabel: 'Créer le rectangle',
+      onOk: ({ w, l }) => {
+        mutate(() => {
+          const o = origin || { x: 0, y: 0 };
+          g.boundary = [{ x: o.x, y: o.y }, { x: o.x + w, y: o.y }, { x: o.x + w, y: o.y + l }, { x: o.x, y: o.y + l }]
+            .map((p) => ({ x: Math.round(p.x * 1000) / 1000, y: Math.round(p.y * 1000) / 1000 }));
+          g.boundaryClosed = true; st.sel = null;
+        });
+        fitView();
+        announceValidity();
+      },
+    });
   }
 
   function vertexDrag(i, already = false) {
@@ -190,6 +359,8 @@ export function mountContourEditor(el, { garden, onChange } = {}) {
 
   function onTap(w) {
     if (st.tool === 'obstacle') return tapObstacle(w);
+    const lab = labelAt(w);
+    if (lab >= 0) { openSidePop(lab); return; }
     if (closed()) { st.sel = null; say('Contour fermé : touchez un sommet pour le déplacer, un « + » pour en insérer un, ou « Rouvrir ».'); draw(); refreshUI(); return; }
     const { p } = snapAt(w);
     if (g.boundary.length && distance(g.boundary[g.boundary.length - 1], p) < 1e-6) return;
@@ -197,6 +368,21 @@ export function mountContourEditor(el, { garden, onChange } = {}) {
     st.ghost = null; drawTop();
     st.closePrompt = null;
     say('');
+  }
+
+  /** Étiquette de cote touchée (≈ au milieu du côté, légèrement décalée vers l'extérieur) ? */
+  function labelAt(w) {
+    const n = g.boundary.length;
+    if (n < 2) return -1;
+    const edges = closed() ? n : n - 1;
+    let best = -1; let bd = cv.px(26);
+    for (let i = 0; i < edges; i++) {
+      const a = g.boundary[i]; const b = g.boundary[(i + 1) % n];
+      if (distance(a, b) < cv.px(40)) continue;
+      const d = distance({ x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 }, w);
+      if (d <= bd) { bd = d; best = i; }
+    }
+    return best;
   }
 
   function onHover(w) {
@@ -452,18 +638,22 @@ export function mountContourEditor(el, { garden, onChange } = {}) {
     if (n >= 2) {
       if (isClosed) s += `<polygon points="${poly(b)}" fill="var(--jd-accent,#2e7d32)" fill-opacity=".12" stroke="var(--jd-fg,#222)" stroke-width="2.5" stroke-linejoin="round" ${NS}/>`;
       else s += `<polyline points="${poly(b)}" fill="none" stroke="var(--jd-fg,#222)" stroke-width="2.5" stroke-linejoin="round" ${NS}/>`;
+      if (st.selSide != null && st.selSide < (isClosed ? n : n - 1)) {
+        const sa = b[st.selSide]; const sb = b[(st.selSide + 1) % n];
+        s += `<line x1="${sa.x}" y1="${sa.y}" x2="${sb.x}" y2="${sb.y}" stroke="#d81b60" stroke-width="5" stroke-linecap="round" ${NS}/>`;
+      }
       const sgn = isClosed ? Math.sign(signedArea(b)) || 1 : 1;
       const edges = isClosed ? n : n - 1;
       for (let i = 0; i < edges; i++) s += dimText(b[i], b[(i + 1) % n], fs, sgn);
     }
     if (st.tool === 'draw') {
-      // poignées d'insertion
-      if (n >= 2 && cv.px(1) < 0.02) {
+      // milieu des côtés : toucher = saisir la longueur, glisser = insérer un sommet
+      if (n >= 2) {
         const edges = isClosed ? n : n - 1;
         for (let i = 0; i < edges; i++) {
           const a = b[i]; const c = b[(i + 1) % n];
           if (distance(a, c) < cv.px(50)) continue;
-          s += `<g><circle cx="${(a.x + c.x) / 2}" cy="${(a.y + c.y) / 2}" r="${cv.px(8)}" fill="var(--jd-card,#fff)" stroke="var(--jd-accent,#2e7d32)" stroke-width="1.5" ${NS}/><path d="M${(a.x + c.x) / 2 - cv.px(4)} ${(a.y + c.y) / 2}h${cv.px(8)}M${(a.x + c.x) / 2} ${(a.y + c.y) / 2 - cv.px(4)}v${cv.px(8)}" stroke="var(--jd-accent,#2e7d32)" stroke-width="1.5" ${NS}/></g>`;
+          s += `<circle cx="${(a.x + c.x) / 2}" cy="${(a.y + c.y) / 2}" r="${cv.px(5)}" fill="var(--jd-card,#fff)" stroke="#0d47a1" stroke-width="1.5" ${NS}/>`;
         }
       }
       b.forEach((p, i) => {
@@ -543,9 +733,21 @@ export function mountContourEditor(el, { garden, onChange } = {}) {
       + (n >= 3 && isClosed && area <= 1 ? '<span class="jd-msg warn" style="padding:0">⚠ surface ≤ 1 m²</span>' : '');
     msgEl.textContent = st.msg; msgEl.className = `jd-msg ${st.msgKind}`;
     if (!st.msg) {
-      if (st.tool === 'draw' && !n) msgEl.textContent = 'Touchez le plan pour poser le 1er sommet, ou saisissez les côtés (« Côtés »). Pincez pour zoomer.';
-      else if (st.tool === 'draw' && !isClosed && n) msgEl.textContent = 'Touchez pour ajouter un sommet. Touchez le sommet 1 (ou « Fermer ») pour terminer.';
+      if (st.tool === 'draw' && !n) msgEl.textContent = 'Touchez le plan pour poser le 1er sommet. Un appui long ouvre la saisie des dimensions en cm.';
+      else if (st.tool === 'draw' && !isClosed && n) msgEl.textContent = 'Touchez pour ajouter un sommet, touchez une cote ou appuyez longuement sur un côté pour saisir sa longueur en cm. Touchez le sommet 1 pour fermer.';
+      else if (st.tool === 'draw' && isClosed) msgEl.textContent = 'Touchez une cote (ou appuyez longuement sur un côté) pour la corriger en cm. Glissez un sommet pour le déplacer, tirez le point au milieu d\'un côté pour ajouter un sommet.';
       else if (st.tool === 'obstacle') msgEl.textContent = st.draft ? 'Touchez les points suivants puis « Terminer ».' : 'Choisissez un type d\'obstacle puis touchez le plan. Touchez un obstacle pour le modifier ou le déplacer.';
+    }
+    // démarrage : trois façons de commencer
+    startEl.hidden = !(st.tool === 'draw' && !n);
+    if (!startEl.hidden && !startEl.firstChild) {
+      startEl.append(
+        h('div', { class: 'jd-start-title' }, 'Comment voulez-vous commencer ?'),
+        h('div', { class: 'jd-row' },
+          btn('▭ Je connais les dimensions', 'start-rect', () => openRectPop({ x: 0, y: 0 }), 'primary'),
+          btn('✏️ Je dessine au doigt', 'start-draw', () => say('Touchez le plan pour poser chaque angle du terrain.')),
+          btn('📍 Je fais le tour au GPS', 'start-gps', () => posePointGps())),
+      );
     }
     // assistant de fermeture
     promptEl.hidden = !st.closePrompt;
