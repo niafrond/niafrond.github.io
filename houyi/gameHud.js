@@ -459,7 +459,11 @@ export function getCurrentAIDifficulty() {
 let lastSaveErrorNotice = 0;
 export function saveUpdate(){
     // Un compagnon tombé reste à terre d'un combat à l'autre (jusqu'à un point de repos ou une résurrection) : sa chute est mémorisée dans la sauvegarde.
-    if(gameState.allies && !enemy?.isTutorialEnemy && !enemy?.duel) player.downAllies = Object.values(gameState.allies).filter(a => a?.ko).map(a => a.classId);
+    if(gameState.allies && !enemy?.isTutorialEnemy && !enemy?.duel){
+        player.downAllies = Object.values(gameState.allies).filter(a => a?.ko).map(a => a.classId);
+        // PV des compagnons d'un combat à l'autre : les PV ne reviennent plus tout seuls (potions, points de repos), comme pour Hou Yi
+        player.allyHp = { ...(player.allyHp || {}), ...Object.fromEntries(Object.values(gameState.allies).filter(a => a && !a.ko).map(a => [a.classId, Math.max(1, Math.round(a.hp))])) };
+    }
     clampManaToCaps(player);
     storeGauge(player);   // une jauge de Xiūxiān par classe : la jauge affichée est rangée avant l'écriture
     try {

@@ -4,17 +4,21 @@
  * aider sont cliquables. Fenêtre superposée au jeu, fermée par Annuler, la touche Échap ou un clic à côté.
  */
 import { player, gameState } from './game.js';
+import { partyStatus } from './allies.js';
 import { escapeHtml } from './escapeHtml.js';
 import { showTargetActions, hideTargetActions, targetActionsAvailable } from './targetActions.js';
 
 /** Hou Yi puis les compagnons de l'équipe : [{ classId, name, hp, maxHp, ko }]. */
 export function teamMembers() {
+    if (gameState.combatState !== 'active') return partyStatus(player);   // exploration : PV mémorisés de Hou Yi et de tous les compagnons recrutés
     return [{ classId: 'assassin', name: 'Hou Yi', hp: Math.max(0, player.hp), maxHp: player.maxHp, ko: !!gameState.heroKo },
         ...Object.values(gameState.allies || {}).map(a => ({ classId: a.classId, name: a.name, hp: a.hp, maxHp: a.maxHp, ko: !!a.ko }))];
 }
 
 /** Au moins un compagnon est encore debout : il faut alors demander sur qui utiliser une potion de soin. */
-export const hasLivingAlly = () => Object.values(gameState.allies || {}).some(a => !a.ko);
+export const hasLivingAlly = () => (gameState.combatState !== 'active'
+    ? partyStatus(player).some(m => m.classId !== 'assassin' && !m.ko)
+    : Object.values(gameState.allies || {}).some(a => !a.ko));
 
 let current = null;
 export function closeTargetPicker() { current?.close(); hideTargetActions('item'); }
