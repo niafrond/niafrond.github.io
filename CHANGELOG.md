@@ -1,3 +1,9 @@
+## [3.34.0](https://github.com/niafrond/niafrond.github.io/compare/v3.33.0...v3.34.0) (2026-11-24)
+
+### Features
+
+* **houyi:** sprite de fontaine, armes de compagnons, file d'attente en frise, coup perdu et barre des sorts ([#795](https://github.com/niafrond/niafrond.github.io/issues/795)) ([2b8dc05](https://github.com/niafrond/niafrond.github.io/commit/2b8dc051f6f9316dc028b028c9d2b4b93cd46a08))
+
 ## [3.33.0](https://github.com/niafrond/niafrond.github.io/compare/v3.32.0...v3.33.0) (2026-11-23)
 
 ### Features
