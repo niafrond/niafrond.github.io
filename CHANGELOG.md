@@ -1,3 +1,9 @@
+## [3.35.0](https://github.com/niafrond/niafrond.github.io/compare/v3.34.0...v3.35.0) (2026-11-24)
+
+### Features
+
+* **houyi:** ciblage des ennemis varié, rappel de pause à deux boutons et tour ennemi plus visible ([#796](https://github.com/niafrond/niafrond.github.io/issues/796)) ([03a2de0](https://github.com/niafrond/niafrond.github.io/commit/03a2de00f4a272e008038c65a25f8d6851de15ac))
+
 ## [3.34.0](https://github.com/niafrond/niafrond.github.io/compare/v3.33.0...v3.34.0) (2026-11-24)
 
 ### Features
