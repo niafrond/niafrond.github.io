@@ -1,3 +1,4 @@
+import { jest } from '@jest/globals';
 import { averageSamples, getPosition, magneticDeclination, reverseCommune, searchAddress, fetchElevation, watchHeading } from '../../geo.js';
 
 const ok = (body) => ({ ok: true, status: 200, json: async () => body });

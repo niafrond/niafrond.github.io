@@ -71,7 +71,7 @@ async function route() {
   current = null;
   const r = parseRoute(location.hash);
   state.route = r;
-  window.scrollTo(0, 0);
+  try { window.scrollTo(0, 0); } catch { /* jsdom */ }
 
   if (r.name === 'home') {
     await flush();

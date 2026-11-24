@@ -1,3 +1,4 @@
+import { jest } from '@jest/globals';
 import { ensurePermission, scheduleAll, cancelAll, refreshAndSchedule } from '../../notify.js';
 
 function fakePlugin({ display = 'prompt', pending = [] } = {}) {

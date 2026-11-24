@@ -6,7 +6,7 @@ const FILES = [
   'weather.js', 'geo.js', 'notify.js', 'watering.js', 'advice.js', 'render.js',
   'data/climate.js', 'data/plants/index.js', 'data/plants/woody.js', 'data/plants/herbaceous.js',
   'ui/home.js', 'ui/wizard.js', 'ui/step-context.js', 'ui/step-wished.js', 'ui/step-sun.js', 'ui/step-plants.js',
-  'ui/draw.js', 'ui/plan-step.js', 'ui/advice-screen.js', 'ui/settings.js',
+  'ui/draw.js', 'ui/draw.css', 'ui/draw-util.js', 'ui/plan-step.js', 'ui/advice-screen.js', 'ui/settings.js',
 ];
 
 self.addEventListener('install', (e) => {

@@ -1,3 +1,4 @@
+import { jest } from '@jest/globals';
 import { parseOpenMeteo, fetchForecast, weatherUrl, cacheKey } from '../../weather.js';
 
 const json = {
