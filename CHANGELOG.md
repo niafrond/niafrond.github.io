@@ -1,3 +1,9 @@
+## [3.36.0](https://github.com/niafrond/niafrond.github.io/compare/v3.35.0...v3.36.0) (2026-11-24)
+
+### Features
+
+* **houyi:** menu de l'équipe, potions pour qui on veut, file d'attente cliquable et pastilles des compagnons ([#797](https://github.com/niafrond/niafrond.github.io/issues/797)) ([bdb85ad](https://github.com/niafrond/niafrond.github.io/commit/bdb85ad56d17e5e5eb328f641da25c693c9567e1))
+
 ## [3.35.0](https://github.com/niafrond/niafrond.github.io/compare/v3.34.0...v3.35.0) (2026-11-24)
 
 ### Features
