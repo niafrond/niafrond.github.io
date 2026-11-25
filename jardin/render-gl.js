@@ -1,0 +1,534 @@
+// Scène 3D temps réel du jardin (three.js passé en paramètre : chargé à la demande par `ui/view3d.js`).
+// Repère 3D : x = plan x, z = plan y (vers le bas du plan = vers le sud si northAngle = 0), y = haut. Unités : mètres.
+import { sunPosition } from './sun.js';
+import { shapePolygon, bounds as polyBounds, signedArea } from './geometry.js';
+import { ZONE_TYPES } from './model.js';
+import {
+  placePlants, runJob, slimPlant, groupsFromRecords, hashStr, kindOf, isDeciduousWoody, isWoody, heightFactor, LAWN_PLANT,
+} from './gl-worker-core.js';
+import * as tx from './gl-textures.js';
+import { polyGeometry, buildBuilding, buildLinear, buildOpening, buildItem, segmentsWithGaps } from './gl-structures.js';
+
+export { placePlants };
+
+// Aménagements (items.js, écrit en parallèle) : import défensif.
+let ITEMS = null;
+try { ITEMS = await import('./items.js'); } catch (e) { ITEMS = null; }
+
+const rad = (d) => (d * Math.PI) / 180;
+const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+const smooth = (a, b, x) => { const t = clamp((x - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); };
+
+const DEFAULT_LAT = 46.5; const DEFAULT_LON = 2.5; // centre de la France
+const FOLIAGE_DEFAULT = { tree: '#4f8f3a', fruit: '#5c9a3e', shrub: '#5a9a45', hedge: '#3f8f4a', climber: '#4f9a4a', perennial: '#6aa84a', groundcover: '#7ab356', grass: '#9ab45a', bulb: '#6aa84a', aquatic: '#4f9a6a', vegetable: '#6fae48', lawn: '#6aa84a' };
+
+/** Direction du soleil (vers le soleil) dans le repère de la scène. `hour` = heure solaire (0–24). */
+export function sunDirection(garden, { date = new Date(), hour = 14 } = {}) {
+  const ctx = (garden && garden.context) || {};
+  const loc = ctx.location;
+  const lat = loc && Number.isFinite(loc.lat) ? loc.lat : DEFAULT_LAT;
+  const lon = loc && Number.isFinite(loc.lon) ? loc.lon : DEFAULT_LON;
+  const d0 = date instanceof Date ? date : new Date(date);
+  const utc = Date.UTC(d0.getFullYear(), d0.getMonth(), d0.getDate()) + (hour - lon / 15) * 3600000;
+  const pos = sunPosition(lat, lon, new Date(utc));
+  const a = rad(pos.azimuth + (Number(ctx.northAngle) || 0));
+  const el = rad(pos.elevation);
+  return { azimuth: pos.azimuth, elevation: pos.elevation, lat, lon, dir: { x: Math.sin(a) * Math.cos(el), y: Math.sin(el), z: -Math.cos(a) * Math.cos(el) } };
+}
+
+/** Couleurs du ciel (zénith, horizon) et intensités selon l'élévation du soleil (°). */
+export function skyState(elev) {
+  const KEYS = [
+    { e: -12, top: '#050a1c', hor: '#101a33', hemi: 0.18, sun: 0 },
+    { e: -3, top: '#14214a', hor: '#3b3f6b', hemi: 0.25, sun: 0 },
+    { e: 3, top: '#3b5a8e', hor: '#f0a56e', hemi: 0.42, sun: 0.45 },
+    { e: 12, top: '#4d86c8', hor: '#f3d3a7', hemi: 0.7, sun: 1.7 },
+    { e: 30, top: '#4a90d9', hor: '#cfe6f5', hemi: 0.95, sun: 2.7 },
+    { e: 70, top: '#3d86d6', hor: '#c4e0f4', hemi: 1.05, sun: 3.1 },
+  ];
+  if (elev <= KEYS[0].e) return { ...KEYS[0] };
+  for (let i = 1; i < KEYS.length; i++) {
+    if (elev <= KEYS[i].e) {
+      const a = KEYS[i - 1]; const b = KEYS[i]; const t = (elev - a.e) / (b.e - a.e);
+      return { e: elev, top: [a.top, b.top, t], hor: [a.hor, b.hor, t], hemi: a.hemi + (b.hemi - a.hemi) * t, sun: a.sun + (b.sun - a.sun) * t };
+    }
+  }
+  return { ...KEYS[KEYS.length - 1] };
+}
+
+/** Le feuillage des caducs est-il présent ce mois-ci ? */
+export const leavesOn = (month) => month >= 4 && month <= 11;
+/** Facteur de hauteur des herbacées caduques (repos hivernal). */
+export const dormancy = (month) => ([12, 1, 2].includes(month) ? 0.22 : [3, 11].includes(month) ? 0.6 : 1);
+
+function offsetPoly(poly, d) {
+  const n = poly.length; const s = Math.sign(signedArea(poly)) || 1;
+  return poly.map((p, i) => {
+    const a = poly[(i + n - 1) % n]; const b = poly[(i + 1) % n];
+    const e1 = Math.hypot(p.x - a.x, p.y - a.y) || 1; const e2 = Math.hypot(b.x - p.x, b.y - p.y) || 1;
+    const n1 = { x: ((p.y - a.y) / e1) * s, y: (-(p.x - a.x) / e1) * s };
+    const n2 = { x: ((b.y - p.y) / e2) * s, y: (-(b.x - p.x) / e2) * s };
+    let nx = n1.x + n2.x; let ny = n1.y + n2.y; const L = Math.hypot(nx, ny) || 1; nx /= L; ny /= L;
+    const k = d / Math.max(0.5, nx * n1.x + ny * n1.y);
+    return { x: p.x + nx * k, y: p.y + ny * k };
+  });
+}
+
+/** Tâches pour les workers : une par zone plantée ou pelouse, plus les arbres existants. */
+export function jobsForGarden(garden, plantsById, { age = 1, density = 1 } = {}) {
+  const get = (id) => (typeof plantsById === 'function' ? plantsById(id) : plantsById instanceof Map ? plantsById.get(id) : (plantsById || {})[id]);
+  const jobs = [];
+  for (const z of (garden && garden.zones) || []) {
+    const plants = {};
+    for (const pl of z.plantings || []) { const p = get(pl.plantId); if (p) plants[p.id] = slimPlant(p); }
+    if (!Object.keys(plants).length && z.type !== 'lawn') continue;
+    const lawnPlant = Object.values(plants).find((p) => p.category === 'lawn');
+    jobs.push({ zoneId: z.id, zone: { id: z.id, type: z.type, shape: z.shape, plantings: (z.plantings || []).map((p) => ({ plantId: p.plantId, count: p.count ?? p.quantity })) }, plants, age, density, lawnColor: lawnPlant && lawnPlant.foliageColor });
+  }
+  const extra = []; const tplants = {};
+  ((garden && garden.obstacles) || []).forEach((ob, i) => {
+    if (ob.kind !== 'tree' || !ob.center) return;
+    const id = `_otree${i}`;
+    tplants[id] = { ...slimPlant({ id, category: 'tree', heightAdult: Number(ob.height) > 0 ? ob.height : 8, widthAdult: Math.max(1, (Number(ob.radius) || 2) * 2), foliage: 'deciduous', bloom: [], foliageColor: '#4f8a3c' }) };
+    const r = (hashStr(`${ob.id || i}`) % 1000) / 1000;
+    extra.push({ plantId: id, x: ob.center.x, y: ob.center.y, rot: r * 6.28, seed: r });
+  });
+  if (extra.length) jobs.push({ zoneId: '_obstacles', zone: null, plants: tplants, extra, age, density });
+  return jobs;
+}
+
+/** Fusionne les groupes de plusieurs zones (même essence + même partie → un seul InstancedMesh). */
+function mergeGroups(listOfGroups) {
+  const map = new Map();
+  for (const groups of listOfGroups) {
+    for (const g of groups) {
+      const k = `${g.plantId}|${g.part}`;
+      let e = map.get(k);
+      if (!e) { e = { plantId: g.plantId, part: g.part, n: 0, ms: [], ts: [] }; map.set(k, e); }
+      e.n += g.n; e.ms.push(g.matrices); e.ts.push(g.tints);
+    }
+  }
+  const out = [];
+  for (const e of map.values()) {
+    const matrices = new Float32Array(e.n * 16); const tints = new Float32Array(e.n);
+    let om = 0; let ot = 0;
+    for (let i = 0; i < e.ms.length; i++) { matrices.set(e.ms[i], om); om += e.ms[i].length; tints.set(e.ts[i], ot); ot += e.ts[i].length; }
+    out.push({ plantId: e.plantId, part: e.part, n: e.n, matrices, tints });
+  }
+  return out;
+}
+
+/**
+ * Construit la scène 3D (synchrone ; les instances viennent de `opts.results` — workers — sinon du calcul synchrone).
+ * @returns {{scene, bounds, update(patch), dispose(), stats, ...}}
+ */
+export function buildScene(THREE, garden, opts = {}) {
+  const g = garden || {};
+  const quality = { density: 1, detail: 2, ...(opts.quality || {}) };
+  const plantsById = opts.plantsById || {};
+  const state = {
+    age: clamp(Number.isFinite(opts.age) ? opts.age : 1, 0, 1),
+    hour: Number.isFinite(opts.hour) ? opts.hour : 14,
+    date: opts.date instanceof Date ? opts.date : new Date(new Date().getFullYear(), (opts.month || 6) - 1, 15),
+    month: null,
+  };
+  state.month = Number.isFinite(opts.month) ? opts.month : state.date.getMonth() + 1;
+
+  const tracked = [];
+  const track = (o) => { tracked.push(o); return o; };
+  const scene = new THREE.Scene();
+  const texCache = new Map();
+  const ctx = {
+    THREE, track,
+    tex(name, factory, rx, ry) {
+      let base = texCache.get(name);
+      if (base === undefined) { base = factory(THREE); texCache.set(name, base); if (base) tracked.push(base); }
+      if (!base || rx == null) return base;
+      const t = base.clone(); t.repeat.set(rx, ry == null ? rx : ry); t.needsUpdate = true; tracked.push(t);
+      return t;
+    },
+    mat(color, o = {}) {
+      const key = `${color}|${Object.keys(o).sort().map((k) => `${k}=${o[k] && o[k].uuid ? o[k].uuid : o[k]}`).join(',')}`;
+      let m = ctx._mats.get(key);
+      if (!m) {
+        const params = { color: new THREE.Color(color), roughness: 0.9, metalness: 0, ...o };
+        if (!params.map) delete params.map;
+        m = new THREE.MeshStandardMaterial(params);
+        ctx._mats.set(key, m); tracked.push(m);
+      }
+      return m;
+    },
+    _mats: new Map(),
+  };
+
+  // ── contour et emprise ──
+  let boundary = ((g.boundary || []).length >= 3 ? g.boundary : null);
+  const allPts = [];
+  for (const z of g.zones || []) { try { allPts.push(...shapePolygon(z.shape, 12)); } catch (e) { /* forme invalide */ } }
+  for (const o of g.obstacles || []) { if (o.points) allPts.push(...o.points); }
+  if (!boundary) boundary = allPts.length >= 3 ? [{ x: Math.min(...allPts.map((p) => p.x)), y: Math.min(...allPts.map((p) => p.y)) }, { x: Math.max(...allPts.map((p) => p.x)), y: Math.min(...allPts.map((p) => p.y)) }, { x: Math.max(...allPts.map((p) => p.x)), y: Math.max(...allPts.map((p) => p.y)) }, { x: Math.min(...allPts.map((p) => p.x)), y: Math.max(...allPts.map((p) => p.y)) }] : [{ x: 0, y: 0 }, { x: 10, y: 0 }, { x: 10, y: 8 }, { x: 0, y: 8 }];
+  const bb = polyBounds(boundary);
+  const cx = (bb.minX + bb.maxX) / 2; const cz = (bb.minY + bb.maxY) / 2;
+  const radius = Math.max(6, Math.hypot(bb.width, bb.height) / 2);
+  const bounds = { minX: bb.minX, maxX: bb.maxX, minZ: bb.minY, maxZ: bb.maxY, cx, cz, width: bb.width, depth: bb.height, radius };
+
+  // ── sol ──
+  const outerSize = radius * 24;
+  const outer = new THREE.Mesh(track(new THREE.CircleGeometry(outerSize / 2, 48)), ctx.mat('#cfdcc0', { map: ctx.tex('ground', tx.groundTexture, outerSize / 4, outerSize / 4) }));
+  outer.rotation.x = -Math.PI / 2; outer.position.set(cx, -0.02, cz); outer.receiveShadow = true; outer.name = 'terrain-exterieur';
+  // le repeat du clone est en 1/tuile × taille : texture clonée déjà à 1/4 → on fixe la répétition absolue
+  if (outer.material.map) outer.material.map.repeat.set(outerSize / 4, outerSize / 4);
+  scene.add(outer);
+  const ground = new THREE.Mesh(track(polyGeometry(THREE, boundary)), ctx.mat('#ffffff', { map: ctx.tex('ground', tx.groundTexture) }));
+  ground.position.y = 0; ground.receiveShadow = true; ground.name = 'sol';
+  scene.add(ground);
+
+  // ── zones ──
+  const zonesGroup = new THREE.Group(); zonesGroup.name = 'zones'; scene.add(zonesGroup);
+  const zoneMat = (z) => {
+    const h = hashStr(String(z.id || ''));
+    switch (z.type) {
+      case 'lawn': return { mat: ctx.mat('#ffffff', { map: ctx.tex('lawn', tx.lawnTexture) }), y: 0.012, depth: 0 };
+      case 'terrace': return h % 2 ? { mat: ctx.mat('#ffffff', { map: ctx.tex('slab', tx.slabTexture), roughness: 0.85 }), y: 0, depth: 0.07 } : { mat: ctx.mat('#ffffff', { map: ctx.tex('wood', tx.woodTexture), roughness: 0.75 }), y: 0, depth: 0.07 };
+      case 'path': return { mat: ctx.mat('#ffffff', { map: ctx.tex('gravel', tx.gravelTexture), roughness: 1 }), y: 0.02, depth: 0 };
+      case 'vegetable': return { mat: ctx.mat('#ffffff', { map: ctx.tex('soilv', (T) => tx.soilTexture(T, '#5a3f2c')), roughness: 1 }), y: 0.016, depth: 0 };
+      case 'lowplants': case 'midplants': case 'tallplants': return { mat: ctx.mat('#ffffff', { map: ctx.tex('soil', tx.soilTexture), roughness: 1 }), y: 0.016, depth: 0 };
+      case 'other': { const t = ZONE_TYPES.find((x) => x.id === 'other'); return { mat: ctx.mat(t ? t.color : '#9e9e9e', {}), y: 0.016, depth: 0 }; }
+      default: return null;
+    }
+  };
+  const waterMeshes = [];
+  for (const z of g.zones || []) {
+    let poly = [];
+    try { poly = shapePolygon(z.shape, 40); } catch (e) { poly = []; }
+    if (poly.length < 3) continue;
+    if (z.type === 'pond' || z.type === 'pool') {
+      const pool = z.type === 'pool';
+      const rim = new THREE.Mesh(track(polyGeometry(THREE, offsetPoly(poly, pool ? 0.22 : 0.32), 0.1, [poly])), ctx.mat(pool ? '#e6e1d6' : '#a39d90', { roughness: 0.95 }));
+      rim.castShadow = true; rim.receiveShadow = true; rim.name = `berge-${z.id}`;
+      const water = new THREE.Mesh(track(polyGeometry(THREE, poly)), ctx.mat(pool ? '#27b9d2' : '#ffffff', { map: pool ? null : ctx.tex('water', tx.waterTexture), roughness: 0.04, metalness: 0.25, envMapIntensity: 1.6 }));
+      water.position.y = 0.065; water.receiveShadow = true; water.name = `eau-${z.id}`;
+      zonesGroup.add(rim, water); waterMeshes.push(water);
+      continue;
+    }
+    const zm = zoneMat(z);
+    if (!zm) continue;
+    const mesh = new THREE.Mesh(track(polyGeometry(THREE, poly, zm.depth)), zm.mat);
+    mesh.position.y = zm.y; mesh.receiveShadow = true; mesh.castShadow = zm.depth > 0; mesh.name = `zone-${z.type}-${z.id}`;
+    zonesGroup.add(mesh);
+  }
+
+  // ── structures : obstacles, côtés du contour, ouvertures, mobilier ──
+  const structures = new THREE.Group(); structures.name = 'structures'; scene.add(structures);
+  const openings = g.openings || [];
+  const gapsOf = (refMatch) => openings.map((op) => {
+    if (!ITEMS || !op.ref || !refMatch(op.ref)) return null;
+    const geo = ITEMS.openingGeometry(g, op); if (!geo) return null;
+    return { t: geo.t, w: geo.width };
+  }).filter(Boolean);
+  for (const ob of g.obstacles || []) {
+    if ((ob.kind === 'house' || ob.kind === 'shed') && (ob.points || []).length >= 3) structures.add(buildBuilding(ctx, ob));
+    else if ((ob.kind === 'wall' || ob.kind === 'fence') && (ob.points || []).length >= 2) {
+      const h = Number(ob.height) > 0 ? Number(ob.height) : (ob.kind === 'wall' ? 2 : 1.2);
+      for (let i = 0; i < ob.points.length - 1; i++) {
+        const gaps = gapsOf((r) => r.type === 'obstacle' && r.obstacleId === ob.id && r.side === i);
+        const L = Math.hypot(ob.points[i + 1].x - ob.points[i].x, ob.points[i + 1].y - ob.points[i].y);
+        for (const [t0, t1] of segmentsWithGaps(L, gaps)) {
+          const m = buildLinear(ctx, ob.kind, ob.points[i], ob.points[i + 1], h, ob.kind === 'wall' ? 0.2 : 0.06, t0, t1);
+          if (m) structures.add(m);
+        }
+      }
+    }
+  }
+  if (ITEMS && boundary === g.boundary) {
+    for (const s of ITEMS.boundarySides(g)) {
+      const kind = ITEMS.edgeKindOf(g, s.i);
+      if (kind === 'open') continue;
+      const ek = ITEMS.getEdgeKind(kind) || {};
+      const h = ITEMS.edgeHeightOf(g, s.i);
+      const L = Math.hypot(s.b.x - s.a.x, s.b.y - s.a.y);
+      const gaps = gapsOf((r) => r.type === 'boundary' && r.side === s.i);
+      for (const [t0, t1] of segmentsWithGaps(L, gaps)) {
+        const m = buildLinear(ctx, kind, s.a, s.b, h, ek.thickness || (kind === 'hedge' ? 0.6 : 0.15), t0, t1);
+        if (m) structures.add(m);
+      }
+    }
+  }
+  if (ITEMS) {
+    for (const op of openings) {
+      try {
+        const geo = ITEMS.openingGeometry(g, op); if (!geo) continue;
+        structures.add(buildOpening(ctx, op, ITEMS.getOpeningKind(op.kind), geo));
+      } catch (e) { /* ouverture invalide */ }
+    }
+    for (const it of g.items || []) {
+      try { structures.add(buildItem(ctx, it, ITEMS.getItemKind(it.kind))); } catch (e) { /* élément invalide */ }
+    }
+  }
+
+  // ── plantes (instances) ──
+  const plantsGroup = new THREE.Group(); plantsGroup.name = 'plantes'; scene.add(plantsGroup);
+  const jobs = opts.jobs || jobsForGarden(g, plantsById, { age: state.age, density: quality.density });
+  const results = opts.results && opts.results.length === jobs.length ? opts.results : jobs.map((j) => runJob(j));
+  const slims = { _lawn: LAWN_PLANT };
+  for (const j of jobs) Object.assign(slims, j.plants);
+  const merged = mergeGroups(results.map((r) => r.groups));
+
+  const geoCache = new Map();
+  const partGeometry = (part) => {
+    let geo = geoCache.get(part);
+    if (geo) return geo;
+    if (part === 'trunk') { geo = new THREE.CylinderGeometry(0.6, 1, 1, 7, 1); geo.translate(0, 0.5, 0); }
+    else if (part === 'branch') { geo = new THREE.CylinderGeometry(0.1, 1, 1, 5, 1); geo.translate(0, 0.5, 0); }
+    else if (part === 'cone') { geo = new THREE.ConeGeometry(1, 1, 9, 1); geo.translate(0, 0.5, 0); shadeVertical(THREE, geo, 0, 1, 0.62, 1.08); }
+    else if (part === 'flower') geo = new THREE.IcosahedronGeometry(1, 0);
+    else if (part === 'tuft') geo = bladesGeometry(THREE);
+    else { // crown | mound : icosaèdre irrégulier
+      geo = new THREE.IcosahedronGeometry(1, quality.detail);
+      const p = geo.attributes.position;
+      for (let i = 0; i < p.count; i++) {
+        const x = p.getX(i); const y = p.getY(i); const z = p.getZ(i);
+        const f = 1 + 0.11 * Math.sin(x * 5.1 + z * 3.7) + 0.09 * Math.sin(y * 6.3 - x * 2.9) + 0.07 * Math.sin(z * 8.1 + y * 4.3);
+        p.setXYZ(i, x * f, y * f, z * f);
+      }
+      geo.computeVertexNormals();
+      shadeVertical(THREE, geo, -1, 1, 0.66, 1.08);
+    }
+    track(geo); geoCache.set(part, geo);
+    return geo;
+  };
+  const partMaterial = (plantId, part) => {
+    const plant = slims[plantId] || LAWN_PLANT;
+    if (part === 'trunk') return ctx.mat('#6b5242', { roughness: 1 });
+    if (part === 'branch') return ctx.mat('#5b4636', { roughness: 1 });
+    if (part === 'flower') { const c = plant.flowerColor || '#f4c2d7'; return ctx.mat(c, { roughness: 0.55, emissive: c, emissiveIntensity: 0.12, flatShading: true }); }
+    const c = plant.foliageColor || FOLIAGE_DEFAULT[plant.category] || '#5a9a45';
+    const o = { roughness: 0.88, vertexColors: true, flatShading: part === 'crown' || part === 'cone' || part === 'mound' };
+    if (part === 'tuft') o.side = THREE.DoubleSide;
+    return ctx.mat(c, o);
+  };
+  const meshes = [];
+  const smallShadows = quality.density >= 1;
+  for (const gr of merged) {
+    const geo = partGeometry(gr.part);
+    const mat = partMaterial(gr.plantId, gr.part);
+    const im = new THREE.InstancedMesh(geo, mat, gr.n);
+    im.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+    im.instanceMatrix.array.set(gr.matrices);
+    const col = new Float32Array(gr.n * 3);
+    for (let i = 0; i < gr.n; i++) { col[i * 3] = col[i * 3 + 1] = col[i * 3 + 2] = gr.tints[i]; }
+    im.instanceColor = new THREE.InstancedBufferAttribute(col, 3);
+    im.frustumCulled = false;
+    im.castShadow = ['trunk', 'branch', 'crown', 'cone'].includes(gr.part) || (smallShadows && gr.part === 'mound');
+    im.receiveShadow = gr.part !== 'flower';
+    im.name = `${gr.plantId}:${gr.part}`;
+    im.userData = { plantId: gr.plantId, part: gr.part, key: `${gr.plantId}|${gr.part}` };
+    plantsGroup.add(im); meshes.push(im);
+  }
+  const instanceCount = meshes.reduce((s, m) => s + m.count, 0);
+  const speciesIds = [...new Set(meshes.map((m) => m.userData.plantId))].filter((id) => !id.startsWith('_'));
+
+  // ── lumières, ciel, brouillard ──
+  const hemi = new THREE.HemisphereLight('#bcd6f5', '#6b5a3f', 1);
+  scene.add(hemi);
+  const sun = new THREE.DirectionalLight('#fff2dc', 3);
+  sun.castShadow = true;
+  const sc = sun.shadow.camera;
+  const ext = radius * 1.3;
+  sc.left = -ext; sc.right = ext; sc.top = ext; sc.bottom = -ext; sc.near = 0.5; sc.far = radius * 8;
+  sun.shadow.bias = -0.0004; sun.shadow.normalBias = 0.05; sun.shadow.radius = 3;
+  sun.shadow.mapSize.set(quality.shadow || 2048, quality.shadow || 2048);
+  sun.target.position.set(cx, 0, cz);
+  scene.add(sun, sun.target);
+
+  const skyR = Math.max(700, radius * 30);
+  const skyMat = new THREE.ShaderMaterial({
+    side: THREE.BackSide, depthWrite: false, fog: false,
+    uniforms: { top: { value: new THREE.Color('#4a90d9') }, hor: { value: new THREE.Color('#cfe6f5') }, ground: { value: new THREE.Color('#9fb08a') }, sunDir: { value: new THREE.Vector3(0, 1, 0) }, sunCol: { value: new THREE.Color('#fff2dc') }, glow: { value: 1 } },
+    vertexShader: 'varying vec3 vDir; void main(){ vDir = normalize(position); gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }',
+    fragmentShader: `uniform vec3 top; uniform vec3 hor; uniform vec3 ground; uniform vec3 sunDir; uniform vec3 sunCol; uniform float glow; varying vec3 vDir;
+      #include <tonemapping_pars_fragment>
+      #include <colorspace_pars_fragment>
+      void main(){
+        float h = clamp(vDir.y, -0.2, 1.0);
+        vec3 c = h >= 0.0 ? mix(hor, top, pow(h, 0.55)) : mix(hor, ground, smoothstep(0.0, 0.2, -h));
+        float s = max(dot(normalize(vDir), normalize(sunDir)), 0.0);
+        c += sunCol * (pow(s, 600.0) * 3.0 + pow(s, 12.0) * 0.18) * glow;
+        gl_FragColor = vec4(c, 1.0);
+        #include <tonemapping_fragment>
+        #include <colorspace_fragment>
+      }`,
+  });
+  skyMat.toneMapped = true;
+  const sky = new THREE.Mesh(track(new THREE.SphereGeometry(skyR, 32, 16)), track(skyMat));
+  sky.position.set(cx, 0, cz); sky.renderOrder = -10; sky.frustumCulled = false; sky.name = 'ciel';
+  scene.add(sky);
+  scene.fog = new THREE.Fog('#cfe6f5', radius * 4, radius * 16);
+
+  // ── mise à jour ──
+  const tmpA = new THREE.Color(); const tmpB = new THREE.Color('#c8742a');
+  const woodyDecid = new Map();
+  const applySeason = () => {
+    const m = state.month; const on = leavesOn(m);
+    for (const im of meshes) {
+      const { plantId, part } = im.userData; const plant = slims[plantId];
+      if (!plant) continue;
+      const woodyDec = isDeciduousWoody(plant);
+      woodyDecid.set(plantId, woodyDec);
+      if (part === 'flower') { im.visible = (plant.bloom || []).includes(m); continue; }
+      if (part === 'branch') { im.visible = woodyDec && !on; continue; }
+      if (part === 'trunk') continue;
+      const mat = im.material;
+      if (isWoody(plant)) {
+        im.visible = woodyDec ? on : true;
+        if (woodyDec) {
+          const base = plant.foliageColor || FOLIAGE_DEFAULT[plant.category] || '#5a9a45';
+          const t = m === 10 ? 0.35 : m === 11 ? 0.7 : m === 4 ? -0.15 : 0;
+          tmpA.set(base);
+          if (t > 0) tmpA.lerp(tmpB, t); else if (t < 0) tmpA.lerp(new THREE.Color('#c9e08a'), -t);
+          mat.color.copy(tmpA);
+        }
+        im.scale.y = 1;
+      } else {
+        const dec = plant.foliage === 'deciduous' && part !== 'flower' && plant.category !== 'lawn';
+        const f = dec ? dormancy(m) : 1;
+        im.visible = true; im.scale.y = f;
+        const base = plant.foliageColor || FOLIAGE_DEFAULT[plant.category] || '#5a9a45';
+        tmpA.set(base);
+        if (dec && f < 1) tmpA.lerp(new THREE.Color('#9b8a63'), 1 - f);
+        mat.color.copy(tmpA);
+      }
+    }
+  };
+  const applySun = () => {
+    const s = sunDirection(g, { date: state.date, hour: state.hour });
+    const sk = skyState(s.elevation);
+    const mix = (v) => (Array.isArray(v) ? new THREE.Color(v[0]).lerp(new THREE.Color(v[1]), v[2]) : new THREE.Color(v));
+    const top = mix(sk.top); const hor = mix(sk.hor);
+    skyMat.uniforms.top.value.copy(top); skyMat.uniforms.hor.value.copy(hor);
+    skyMat.uniforms.ground.value.copy(hor).multiplyScalar(0.75);
+    const warm = new THREE.Color('#ff9f55').lerp(new THREE.Color('#fff4e2'), smooth(2, 35, s.elevation));
+    sun.color.copy(warm);
+    skyMat.uniforms.sunCol.value.copy(warm);
+    skyMat.uniforms.glow.value = s.elevation > -1 ? 1 : 0;
+    const d = radius * 3;
+    sun.position.set(cx + s.dir.x * d, Math.max(0.5, s.dir.y * d + 0), cz + s.dir.z * d);
+    sun.intensity = sk.sun * (s.elevation > 0 ? 1 : smooth(-3, 0, s.elevation));
+    sun.visible = sun.intensity > 0.01;
+    hemi.color.copy(top).lerp(new THREE.Color('#ffffff'), 0.35); hemi.groundColor.set('#5f5440').lerp(hor, 0.2);
+    hemi.intensity = sk.hemi;
+    scene.fog.color.copy(hor);
+    skyMat.uniforms.sunDir.value.set(s.dir.x, s.dir.y, s.dir.z);
+    state.sun = s;
+    return s;
+  };
+  const growth = (age) => {
+    const gs = jobs.map((j, ji) => {
+      const r = results[ji];
+      return groupsFromRecords(r.rec, r.ids, { ...j.plants, _lawn: LAWN_PLANT }, { age, density: quality.density });
+    });
+    const next = mergeGroups(gs);
+    const byKey = new Map(next.map((n) => [`${n.plantId}|${n.part}`, n]));
+    for (const im of meshes) {
+      const n = byKey.get(im.userData.key);
+      if (n && n.n === im.count) { im.instanceMatrix.array.set(n.matrices); im.instanceMatrix.needsUpdate = true; }
+    }
+  };
+
+  const api = {
+    scene, bounds, state, sun, hemi, sky, waterMeshes, meshes, plantsGroup, zonesGroup, structures, jobs,
+    speciesIds, slims,
+    stats: { instances: instanceCount, meshes: meshes.length, objects: scene.children.length },
+    /** Hauteur max (m) des plantes, lue dans les matrices d'instances. */
+    topHeight() {
+      let top = 0;
+      for (const im of meshes) {
+        if (!['crown', 'cone', 'tuft', 'mound'].includes(im.userData.part)) continue;
+        const a = im.instanceMatrix.array;
+        for (let i = 0; i < im.count; i++) top = Math.max(top, a[i * 16 + 13] + Math.hypot(a[i * 16 + 4], a[i * 16 + 5], a[i * 16 + 6]));
+      }
+      return top;
+    },
+    update(patch = {}) {
+      let seasonDirty = false;
+      if (patch.date instanceof Date) { state.date = patch.date; if (!Number.isFinite(patch.month)) state.month = patch.date.getMonth() + 1; seasonDirty = true; }
+      if (Number.isFinite(patch.month)) {
+        state.month = patch.month;
+        if (!(patch.date instanceof Date)) state.date = new Date(state.date.getFullYear(), patch.month - 1, 15);
+        seasonDirty = true;
+      }
+      if (Number.isFinite(patch.hour)) state.hour = patch.hour;
+      if (Number.isFinite(patch.age)) { const a = clamp(patch.age, 0, 1); if (a !== state.age) { state.age = a; growth(a); } }
+      if (seasonDirty) applySeason();
+      applySun();
+      return state;
+    },
+    setShadowSize(n) {
+      sun.shadow.mapSize.set(n, n);
+      if (sun.shadow.map) { sun.shadow.map.dispose(); sun.shadow.map = null; }
+    },
+    dispose() {
+      for (const im of meshes) im.dispose();
+      for (const o of tracked) { try { o.dispose && o.dispose(); } catch (e) { /* déjà libéré */ } }
+      sun.shadow.map && sun.shadow.map.dispose();
+      scene.clear();
+      api.disposed = true;
+    },
+  };
+  applySeason();
+  applySun();
+  if (state.age !== 1 && opts.results == null) { /* instances déjà générées à l'âge demandé */ }
+  return api;
+}
+
+/** Comme `buildScene`, mais la génération des instances passe par un pool de Web Workers. */
+export async function buildSceneAsync(THREE, garden, opts = {}, pool = null) {
+  const age = Number.isFinite(opts.age) ? opts.age : 1;
+  const jobs = jobsForGarden(garden, opts.plantsById || {}, { age, density: (opts.quality && opts.quality.density) || 1 });
+  let gen = { results: null, ms: 0, workers: 0 };
+  if (pool) gen = await pool.run(jobs);
+  else {
+    const t0 = typeof performance !== 'undefined' ? performance.now() : Date.now();
+    gen = { results: jobs.map((j) => runJob(j)), workers: 0 };
+    gen.ms = Math.round((typeof performance !== 'undefined' ? performance.now() : Date.now()) - t0);
+  }
+  const api = buildScene(THREE, garden, { ...opts, jobs, results: gen.results });
+  api.generation = { ms: gen.ms, workers: gen.workers, jobs: jobs.length, instances: api.stats.instances };
+  return api;
+}
+
+/** Feuilles d'herbe d'une touffe (rayon 1, hauteur 1, base sombre → pointe claire). */
+function bladesGeometry(THREE) {
+  const N = 12; const pos = []; const col = []; const nor = [];
+  for (let i = 0; i < N; i++) {
+    const a = (i / N) * Math.PI * 2 * 2.3 + i * 0.37;
+    const r0 = 0.05 + ((i * 37) % 10) / 10 * 0.35;
+    const lean = 0.18 + ((i * 53) % 10) / 10 * 0.5;
+    const hgt = 0.62 + ((i * 29) % 10) / 10 * 0.38;
+    const ca = Math.cos(a); const sa = Math.sin(a); const tx_ = -sa; const tz_ = ca;
+    const w = 0.07;
+    const bx = ca * r0; const bz = sa * r0;
+    const tipx = ca * (r0 + lean); const tipz = sa * (r0 + lean);
+    pos.push(bx - tx_ * w, 0, bz - tz_ * w, bx + tx_ * w, 0, bz + tz_ * w, tipx, hgt, tipz);
+    col.push(0.55, 0.55, 0.55, 0.55, 0.55, 0.55, 1.1, 1.1, 1.1);
+    nor.push(0, 1, 0, 0, 1, 0, 0, 1, 0);
+  }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  geo.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
+  geo.setAttribute('normal', new THREE.Float32BufferAttribute(nor, 3));
+  return geo;
+}
+
+/** Dégradé vertical (assombrit le bas) : couleurs de sommet multipliées par la couleur du matériau. */
+function shadeVertical(THREE, geo, y0, y1, lo, hi) {
+  const p = geo.attributes.position;
+  const c = new Float32Array(p.count * 3);
+  for (let i = 0; i < p.count; i++) {
+    const t = clamp((p.getY(i) - y0) / (y1 - y0), 0, 1);
+    const v = lo + (hi - lo) * t;
+    c[i * 3] = c[i * 3 + 1] = c[i * 3 + 2] = v;
+  }
+  geo.setAttribute('color', new THREE.Float32BufferAttribute(c, 3));
+}
+export { heightFactor, kindOf };

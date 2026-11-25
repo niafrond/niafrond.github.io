@@ -384,3 +384,13 @@ export function patternDefs(P, usedTypes, illus) {
   }
   return defs;
 }
+
+/** Motif de brins d'herbe pour une pelouse de couleur `col`. */
+export function lawnPatternDef(id, col) {
+  return `<pattern id="${id}" width="12" height="12" patternUnits="userSpaceOnUse"><path d="M2 10L2.6 6M5 11L6.2 6.5M8.5 9L9 4.5M10.5 5L11 2" stroke="${darken(col, 0.3)}" stroke-width=".9" stroke-linecap="round" fill="none" opacity=".6"/><path d="M0.5 5L1 2M6 4L6.5 1.5" stroke="${lighten(col, 0.4)}" stroke-width=".8" stroke-linecap="round" fill="none" opacity=".7"/></pattern>`;
+}
+
+/** Bandeau de pied de cadre quand le cartouche est masqué (feuille de contact). */
+export function captionSVG(text, { W, H, MARGIN, CART_H }) {
+  return `<text x="${W / 2}" y="${H - MARGIN - CART_H / 2 + 6}" font-size="22" font-weight="700" text-anchor="middle" fill="#223" font-family="${FONT}">${esc(text)}</text>`;
+}

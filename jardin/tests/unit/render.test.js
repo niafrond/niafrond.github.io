@@ -1,6 +1,7 @@
 import { renderPlanSVG } from '../../render.js';
 import { createGarden, createZone } from '../../model.js';
 import { allPlants } from '../../catalog.js';
+import { jardin as jardinCouleurs, lookup, NO_LEGEND } from './render-fixture.js';
 
 function jardin() {
   const g = createGarden('Test <jardin>');
@@ -61,5 +62,85 @@ describe('renderPlanSVG', () => {
     expect(vide).toContain('viewBox="0 0 600 500"');
     expect(bienForme(vide)).toBe(true);
     expect(vide).not.toMatch(/NaN|undefined/);
+  });
+});
+
+describe('renderPlanSVG : vraies couleurs des essences', () => {
+  const FOLIAGES = ['#2f8f3f', '#6f8f6a', '#2e7d4a', '#1f6f3a'];
+  const render = (o = {}) => renderPlanSVG(jardinCouleurs(), { plantLookup: lookup, ...o });
+  const has = (svg, hex) => svg.toLowerCase().includes(hex.toLowerCase());
+
+  test('toutes les vues 2D contiennent feuillage et fleurs réels (pleine floraison)', () => {
+    for (const view of ['plan', 'illustrated']) {
+      const svg = render({ view, layers: NO_LEGEND });
+      for (const hex of [...FOLIAGES.slice(0, 3), '#ff66aa', '#7744cc', '#dd1122']) expect(has(svg, hex)).toBe(true);
+      expect(svg).toContain('data-flower="1"');
+      expect(svg).not.toMatch(/NaN|undefined/);
+    }
+  });
+
+  test('hors floraison : seulement le feuillage (pas de couleur de fleur)', () => {
+    const svg = render({ view: 'illustrated', month: 12, layers: NO_LEGEND });
+    for (const hex of ['#ff66aa', '#7744cc', '#dd1122']) expect(has(svg, hex)).toBe(false);
+    expect(svg).not.toContain('data-flower');
+    expect(has(svg, '#6f8f6a')).toBe(true);
+  });
+
+  test('floraison selon le mois : avril = cerisier seul ; juillet = lavande et rosier', () => {
+    const avril = render({ month: 4, layers: NO_LEGEND });
+    expect(has(avril, '#ff66aa')).toBe(true); expect(has(avril, '#7744cc')).toBe(false); expect(has(avril, '#dd1122')).toBe(false);
+    const juillet = render({ month: 7, layers: NO_LEGEND });
+    expect(has(juillet, '#7744cc')).toBe(true); expect(has(juillet, '#dd1122')).toBe(true); expect(has(juillet, '#ff66aa')).toBe(false);
+  });
+
+  test('caduc dépouillé de novembre à mars, feuillu en été ; persistant toujours feuillu', () => {
+    const hiver = render({ month: 1, layers: NO_LEGEND });
+    expect(hiver).toContain('data-bare="1"');
+    expect(has(hiver, '#2f8f3f')).toBe(false); // cerisier sans feuilles
+    expect(has(hiver, '#6f8f6a')).toBe(true); // lavande persistante
+    const ete = render({ month: 6, layers: NO_LEGEND });
+    expect(ete).not.toContain('data-bare="1"');
+    expect(has(ete, '#2f8f3f')).toBe(true);
+    // en avril le cerisier fleurit mais n'est pas dépouillé
+    expect(render({ month: 4, layers: NO_LEGEND })).not.toContain('data-bare="1"');
+  });
+
+  test('légende « Essences » : pastilles de couleurs réelles et quantités, groupées par zone', () => {
+    const svg = render({ view: 'plan' });
+    expect(svg).toContain('Essences');
+    expect(svg).toContain('Lavande vraie ×12');
+    expect(svg).toContain('Buis ×12');
+    expect(svg).toContain('Massif');
+    const i = svg.indexOf('Essences');
+    expect(has(svg.slice(i), '#7744cc')).toBe(true);
+    expect(has(svg.slice(i), '#2e7d4a')).toBe(true);
+  });
+
+  test('déterministe, mois lisible dans le cartouche, budget conservé', () => {
+    expect(render({ month: 5 })).toBe(render({ month: 5 }));
+    expect(render({ month: 5 })).not.toBe(render({ month: 9 }));
+    expect(render({ month: 3 })).toContain('Mars');
+    expect(render()).toContain('Pleine floraison');
+    expect(renderPlanSVG(jardinCouleurs(), { plantLookup: lookup, layers: { budget: true } })).toMatch(/Budget estimé/);
+  });
+
+  test('gazon texturé, ombres en vue illustrée seulement, jeunes plants plus petits', () => {
+    const ill = render({ view: 'illustrated' });
+    expect(ill).toMatch(/pattern id="jp-lawn-/);
+    expect(ill).toContain('data-role="shadows"');
+    expect(render({ view: 'plan' })).not.toContain('data-role="shadows"');
+    expect(render({ age: 'young' })).not.toBe(render({ age: 'adult' }));
+  });
+
+  test('légende volumineuse : reste dans le cadre (compacte ou tronquée), jamais de NaN', () => {
+    const g = jardinCouleurs();
+    const z = g.zones[1];
+    const many = {};
+    z.plantings = Array.from({ length: 40 }, (_, i) => { many[`p${i}`] = { id: `p${i}`, commonName: `Essence ${i}`, category: 'perennial', heightAdult: 0.5, widthAdult: 0.4, spacing: 0.4, bloom: [6], flowerColor: '#aa3366', foliageColor: '#336633' }; return { plantId: `p${i}`, count: 2 }; });
+    for (const [w, h] of [[1000, 760], [1000, 1500]]) {
+      const svg = renderPlanSVG(g, { plantLookup: (id) => many[id] || lookup(id), width: w, height: h });
+      expect(svg).not.toMatch(/NaN|undefined/);
+      expect(svg).toContain('data-role="legend"');
+    }
   });
 });

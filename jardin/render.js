@@ -5,9 +5,9 @@ import { getZoneType } from './model.js';
 import { getPlant } from './catalog.js';
 import { gardenCost, formatEuro } from './pricing.js';
 import {
-  FONT, CAT_COLORS, OBSTACLE_LABELS, BARE_WOOD, BARE_HERB, SUN_COLORS, esc, f, frNum, darken, lighten, mixHex, rng, rngOf,
+  FONT, OBSTACLE_LABELS, BARE_WOOD, BARE_HERB, SUN_COLORS, esc, f, frNum, darken, lighten, mixHex, rngOf,
   normMonth, monthLabel, plantState, placePlants, shadowDir, GradRegistry, buildLegendItems, makeFrame, northSVG, scaleBarSVG,
-  cartoucheSVG, describePlan as describeCommon, patternDefs, plantHeightM,
+  cartoucheSVG, describePlan as describeCommon, patternDefs, plantHeightM, lawnPatternDef, captionSVG,
 } from './render-common.js';
 
 export { placePlants } from './render-common.js';
@@ -122,9 +122,9 @@ function symbolBody(pp, st, kind, cx, cy, rp, ctx) {
       const dormant = st.bare;
       const col = dormant ? BARE_HERB : fo;
       s += `<circle cx="${f(cx)}" cy="${f(cy)}" r="${f(rp * 0.5)}" fill="${col}" fill-opacity="${dormant ? 0.5 : 0.85}"${dormant ? ' data-bare="1"' : ''}/>`;
-      const n = 7; const a0 = R() * PI2;
+      const n = rp < 7 ? 5 : 7; const a0 = R() * PI2;
       for (let k = 0; k < n; k++) s += `<path d="${leafPath(cx, cy, a0 + (k / n) * PI2, rp * (dormant ? 0.75 : 0.95) * (0.85 + 0.2 * R()), rp * 0.28)}" fill="${k % 2 ? col : lighten(col, 0.18)}" fill-opacity="${dormant ? 0.55 : 0.92}" stroke="${darken(col, 0.4)}" stroke-width=".6"/>`;
-      if (fl) s += flowerDots(cx, cy, rp, fl, R, clamp(Math.round(rp / 2.8), 3, 9), true, clamp(rp * 0.1, 1.3, 3.2));
+      if (fl) s += flowerDots(cx, cy, rp, fl, R, clamp(Math.round(rp / 2.8), 3, 9), rp >= 7, clamp(rp * 0.1, 1.1, 3.2));
       break;
     }
     case 'groundcover': {
@@ -349,9 +349,7 @@ export function renderPlanSVG(garden, opts = {}) {
     out.push(`<text x="${f(tx(c.x))}" y="${f(ty(c.y) + 4)}" font-size="12" font-weight="700" text-anchor="middle" fill="#14210f" stroke="#fff" stroke-width="3" paint-order="stroke" font-family="${FONT}" opacity=".92">${esc(z.label || t.label)}</text>`);
   }
   obstacles.filter((o) => o.kind === 'tree').forEach((o) => out.push(obstacleEl(o)));
-  for (const [id, col] of lawnPats) {
-    defs.push(`<pattern id="${id}" width="12" height="12" patternUnits="userSpaceOnUse"><path d="M2 10L2.6 6M5 11L6.2 6.5M8.5 9L9 4.5M10.5 5L11 2" stroke="${darken(col, 0.3)}" stroke-width=".9" stroke-linecap="round" fill="none" opacity=".6"/><path d="M0.5 5L1 2M6 4L6.5 1.5" stroke="${lighten(col, 0.4)}" stroke-width=".8" stroke-linecap="round" fill="none" opacity=".7"/></pattern>`);
-  }
+  for (const [id, col] of lawnPats) defs.push(lawnPatternDef(id, col));
 
   // Cotes
   if (layers.dims && boundary.length >= 2) {
@@ -385,11 +383,11 @@ export function renderPlanSVG(garden, opts = {}) {
   if (layers.budget) {
     try { const bc = gardenCost(garden, lookup); budgetTxt = `Budget estimé ≈ ${formatEuro(bc.total, { digits: 0 })}${bc.unknownCount ? ` (${bc.unknownCount} sans prix)` : ''}`; } catch { /* */ }
   }
-  out.push(cartoucheSVG(garden, { W, H, MARGIN, CART_H, budgetTxt, line2: `Vue ${illus ? 'illustrée' : 'plan'} · ${age === 'young' ? 'jeunes plants' : 'à maturité'} · ${monthLabel(month)}` }));
+  if (layers.cartouche === false) out.push(captionSVG(opts.caption || 'Vue du dessus', { W, H, MARGIN, CART_H }));
+  else out.push(cartoucheSVG(garden, { W, H, MARGIN, CART_H, budgetTxt, line2: `Vue ${illus ? 'illustrée' : 'plan'} · ${age === 'young' ? 'jeunes plants' : 'à maturité'} · ${monthLabel(month)}` }));
 
   const gdefs = grads.defs();
   const descr = describeCommon(garden, lookup);
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-labelledby="${P}-t ${P}-d" font-family="${FONT}"><title id="${P}-t">Plan du jardin « ${esc(garden.name || 'Mon jardin')} »</title><desc id="${P}-d">${esc(descr || 'Plan sans zone.')}</desc><defs>${defs.join('')}${gdefs}</defs>${out.join('')}</svg>`;
 }
 
-void CAT_COLORS; void mixHex; void rng; void lighten;
