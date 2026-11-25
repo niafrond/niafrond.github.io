@@ -54,6 +54,9 @@ export function scorePlant(plant, ctx = {}) {
     const zones = plant.zones || [];
     if (zones.includes(ctx.zoneType)) {
       add(true, 'zone', `Convient pour ${ZONE_LABEL[ctx.zoneType] || 'ce type de zone'}`);
+    } else if (ctx.zoneType === 'trees' && isSmallShrub(plant)) {
+      // Dans une zone d'arbres, on propose aussi de petits arbustes (sous-étage).
+      add(true, 'zone', 'Petit arbuste : s’associe bien aux arbres (sous-étage)');
     } else {
       score -= 35;
       forceDiscouraged = true;
@@ -307,6 +310,9 @@ export function checkCoherence(garden, { plants } = {}) {
   return out;
 }
 
+/** Petit arbuste (≤ 4 m) : accepté aussi dans une zone d'arbres, en sous-étage. */
+export const isSmallShrub = (plant) => !!plant && plant.category === 'shrub' && (Number(plant.heightAdult) || 0) <= 4;
+
 // ---------- « Surprends-moi » ----------
 function hashSeed(seed) {
   if (typeof seed === 'number') return seed >>> 0;
@@ -352,12 +358,20 @@ export function suggestSelection(garden, zone, { seed = 1, plants, max, budget, 
   // Ambiance : au moins 70 % d'essences typiques quand le catalogue le permet.
   const minTypical = amb ? Math.ceil(0.7 * target - 1e-9) : 0;
   let typicalCount = 0;
+  // Zone d'arbres : environ un tiers de petits arbustes en sous-étage (si au moins 3 essences et si le catalogue le permet).
+  const minShrub = zone.type === 'trees' && target >= 3 ? Math.max(1, Math.floor(target / 3)) : 0;
+  let shrubCount = 0;
   while (chosen.length < target && cands.length) {
     let best = null, bestV = -Infinity;
     let pool = cands;
     if (amb && minTypical - typicalCount >= target - chosen.length) {
       const typ = cands.filter((c) => isTypical(c.plant, amb));
       if (typ.length) pool = typ;
+    }
+    if (minShrub - shrubCount > 0 && minShrub - shrubCount >= target - chosen.length) {
+      const sh = pool.filter((c) => isSmallShrub(c.plant));
+      const sh2 = sh.length ? sh : cands.filter((c) => isSmallShrub(c.plant));
+      if (sh2.length) pool = sh2;
     }
     for (const c of pool) {
       const bloom = c.plant.bloom || [];
@@ -373,6 +387,7 @@ export function suggestSelection(garden, zone, { seed = 1, plants, max, budget, 
     }
     chosen.push(best);
     if (amb && isTypical(best.plant, amb)) typicalCount++;
+    if (isSmallShrub(best.plant)) shrubCount++;
     cands = cands.filter((c) => c !== best);
     layers.add(heightLayer(best.plant.heightAdult));
     (best.plant.bloom || []).forEach((m) => months.add(m));
