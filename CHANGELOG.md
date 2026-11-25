@@ -1,3 +1,9 @@
+## [3.39.0](https://github.com/niafrond/niafrond.github.io/compare/v3.38.0...v3.39.0) (2026-11-25)
+
+### Features
+
+* **jardin:** enchaîner les zones, fermer les formes au 1er point et saisons dans la vue 3D ([#800](https://github.com/niafrond/niafrond.github.io/issues/800)) ([addda90](https://github.com/niafrond/niafrond.github.io/commit/addda903061b6d7e0285d42751b51f3fc5c53ddd))
+
 ## [3.38.0](https://github.com/niafrond/niafrond.github.io/compare/v3.37.0...v3.38.0) (2026-11-25)
 
 ### Features
