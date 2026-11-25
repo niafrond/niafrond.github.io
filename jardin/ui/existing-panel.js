@@ -7,6 +7,7 @@ import {
 } from '../existing.js';
 import { MATERIALS } from '../items.js';
 import { h, parseLength } from './draw-util.js';
+import { checkHeight, heightMessage, formatHeight } from '../heights.js';
 
 const cm = (m) => `${Math.round(m * 100)}`;
 const safeHex = (c) => (/^#[0-9a-f]{6}$/i.test(c || '') ? c : '#7a9a5a');
@@ -129,8 +130,11 @@ export function renderExistingDetail(detail, api) {
     inp.addEventListener('keydown', (ev) => { if (ev.key === 'Enter') { ev.preventDefault(); inp.blur(); } });
     return h('label', { class: 'jdi-size' }, h('span', null, label), inp, h('span', { class: 'jd-unit' }, 'cm'));
   };
+  const defH = isFence ? getFenceMaterial(e.material).height : plant ? sizeForPlant(plant, st.exAge || 'adult', e.kind).height : k.height;
+  const setHeight = (v) => { const chk = checkHeight(e.kind, v); const m = chk.ok ? chk.value : null; if (m == null) { api.say(heightMessage(e.kind), 'warn'); api.refreshUI(); return; } api.mutate(() => { e.height = m; }); if (chk.clamped) api.say(chk.message, 'warn'); };
   kids.push(h('div', { class: 'jdi-seg jdi-row2' },
-    num('ex-height', 'Hauteur', e.height, (v) => api.mutate(() => { e.height = v; })),
+    num('ex-height', 'Hauteur', e.height, setHeight),
+    api.btn('↺ Valeur par défaut', 'height-reset', () => api.mutate(() => { e.height = defH; }), '', { 'aria-label': `Hauteur par défaut (${formatHeight(defH)})`, title: `Valeur par défaut : ${formatHeight(defH)}`, disabled: Math.abs((Number(e.height) || 0) - defH) < 0.005 }),
     isFence ? null : num('ex-width', 'Largeur', e.width, (v) => api.mutate(() => { e.width = v; }))));
   kids.push(h('div', { class: 'jdi-seg jdi-row2', role: 'group', 'aria-label': 'Devenir' },
     api.btn('✅ À conserver', 'keep', () => api.setKeep(e, true), '', { 'aria-pressed': String(e.keep !== false) }),

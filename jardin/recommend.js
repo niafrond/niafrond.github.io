@@ -3,6 +3,9 @@ import { allPlants, getPlant, filterPlants } from './catalog.js';
 import { climateForDepartement, adjustTminForAltitude } from './climate.js';
 import { shapeArea, shapePolygon, bounds } from './geometry.js';
 import { zoneSunLevel } from './sun.js';
+import { effectivePlant } from './heights.js';
+import { edgeObstacles } from './items.js';
+import { existingShadowObstacles } from './existing.js';
 import { plantCost } from './pricing.js';
 import { levelForZone, fitsMaintenance, plantEffort, getMaintenanceLevel } from './maintenance.js';
 import { getAmbiance, detectAmbiance, plantAmbianceScore, plantAvoids, isTypical } from './ambiances.js';
@@ -254,6 +257,42 @@ function polygonsDistance(A, B) {
   return best;
 }
 
+/** Haies, clôtures et murs hauts (> 2 m) situés au sud (± 60°) et à moins de 6 m d'une zone de plein soleil. */
+function tallWallsSouth(garden, zone, lookup) {
+  let level = null;
+  try { level = (zoneSunLevel(garden, zone) || {}).level; } catch { level = null; }
+  if (level !== 'full') return [];
+  const poly = shapePolygon(zone.shape);
+  if (poly.length < 3) return [];
+  const c = poly.reduce((a, p) => ({ x: a.x + p.x / poly.length, y: a.y + p.y / poly.length }), { x: 0, y: 0 });
+  const th = ((garden.context && garden.context.northAngle) || 0) * Math.PI / 180;
+  const south = { x: -Math.sin(th), y: Math.cos(th) };
+  const KIND = { wall: 'Mur', fence: 'Clôture', hedge: 'Haie' };
+  const lines = [];
+  for (const e of edgeObstacles(garden)) lines.push({ name: KIND[e.kind] || 'Mur', height: e.height, a: e.points[0], b: e.points[1] });
+  for (const o of garden.obstacles || []) if ((o.kind === 'wall' || o.kind === 'fence') && o.points && o.points.length >= 2) for (let i = 0; i < o.points.length - 1; i++) lines.push({ name: KIND[o.kind], height: Number(o.height) || (o.kind === 'wall' ? 2 : 1.2), a: o.points[i], b: o.points[i + 1] });
+  for (const e of existingShadowObstacles(garden)) if (e.points && e.points.length >= 2) for (let i = 0; i < e.points.length - 1; i++) lines.push({ name: KIND[e.kind] || 'Haie', height: e.height, a: e.points[i], b: e.points[i + 1] });
+  for (const z of garden.zones || []) {
+    if (z === zone || !z.shape || z.shape.kind !== 'line' || !z.shape.points || z.shape.points.length < 2) continue;
+    for (const pl of z.plantings || []) {
+      const pt = effectivePlant(lookup(pl.plantId), pl);
+      if (pt && (pt.category === 'hedge' || pt.category === 'shrub') && pt.heightAdult > 2) for (let i = 0; i < z.shape.points.length - 1; i++) lines.push({ name: 'Haie', height: pt.heightAdult, a: z.shape.points[i], b: z.shape.points[i + 1] });
+    }
+  }
+  const out = [];
+  let best = null;
+  for (const l of lines) {
+    if (!(l.height > 2)) continue;
+    const m = { x: (l.a.x + l.b.x) / 2, y: (l.a.y + l.b.y) / 2 };
+    const vx = m.x - c.x; const vy = m.y - c.y; const vl = Math.hypot(vx, vy) || 1;
+    if ((vx * south.x + vy * south.y) / vl < 0.5) continue;
+    if (polygonsDistance(poly, [l.a, l.b]) > 6) continue;
+    if (!best || l.height > best.height) best = l;
+  }
+  if (best) out.push(best);
+  return out;
+}
+
 /** Contrôle de cohérence du jardin : surdensité, arbres hauts près d'une terrasse/piscine, eau, invasives, toxiques. */
 export function checkCoherence(garden, { plants } = {}) {
   const out = [];
@@ -266,7 +305,7 @@ export function checkCoherence(garden, { plants } = {}) {
 
   for (const zone of zones) {
     const items = (zone.plantings || [])
-      .map((pl) => ({ plant: lookup(pl.plantId), count: pl.count || 1 }))
+      .map((pl) => ({ plant: effectivePlant(lookup(pl.plantId), pl), count: pl.count || 1 }))
       .filter((x) => x.plant);
     if (!items.length) continue;
     const name = zone.label || zone.type;
@@ -294,6 +333,13 @@ export function checkCoherence(garden, { plants } = {}) {
           const what = s.type === 'pool' ? 'la piscine' : 'la terrasse';
           out.push({ level: 'warn', zoneId: zone.id, text: `${PLANT_NAME(tall[0].plant)} (${fmtM(tall[0].plant.heightAdult)} adulte) est à moins de 3 m de ${what} (${fmtM(d)}) : racines, ombre et feuilles à prévoir` });
         }
+      }
+    }
+
+    // Haie / clôture / mur haut (> 2 m) au sud d'une zone de plein soleil : ombre portée sur la zone.
+    if (zone.shape && zone.type !== 'pool' && zone.type !== 'path') {
+      for (const w of tallWallsSouth(garden, zone, lookup)) {
+        out.push({ level: 'warn', zoneId: zone.id, text: `${w.name} de ${fmtM(w.height)} au sud de la zone « ${name} » (plein soleil) : son ombre portée réduira l'ensoleillement` });
       }
     }
 

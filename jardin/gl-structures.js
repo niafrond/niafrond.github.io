@@ -1,5 +1,6 @@
 // Structures de la vue 3D : maison, abri, murs, clôtures, haies, portails, mobilier (three.js passé en paramètre).
 import { pointInPolygon, signedArea } from './geometry.js';
+import { itemHeight, obstacleHeight } from './heights.js';
 import { fenceTexture, leafTexture, roofTexture, brickTexture, stoneWallTexture } from './gl-textures.js';
 
 /** Hauteur par défaut (m) du mobilier sans `height` dans le catalogue. */
@@ -62,7 +63,7 @@ export function buildBuilding(ctx, ob, openings = []) {
   const g = new THREE.Group();
   const pts = ob.points;
   const isHouse = ob.kind === 'house';
-  const H = Number(ob.height) > 0 ? Number(ob.height) : (isHouse ? 6 : 2.5);
+  const H = obstacleHeight(ob);
   const roofH = isHouse ? Math.min(2.4, H * 0.3) : 0;
   const wallH = H - roofH - (isHouse ? 0 : 0.12);
   const walls = new THREE.Mesh(ctx.track(polyGeometry(THREE, pts, wallH)), ctx.mat(isHouse ? '#ece4d4' : '#9a7b5a', { roughness: 0.92 }));
@@ -238,7 +239,7 @@ export function buildItem(ctx, item, kind) {
   const radius = Number.isFinite(item.radius) && item.radius > 0 ? item.radius : null;
   const w = radius ? radius * 2 : (item.width || (kind && kind.w) || 0.6);
   const d = radius ? radius * 2 : (item.depth || (kind && kind.d) || 0.6);
-  const H = item.height != null ? item.height : ((kind && kind.height) || HAUTEUR_ITEM[id] || 0.5);
+  const H = itemHeight(item) || ((kind && kind.height) || HAUTEUR_ITEM[id] || 0.5);
   const col = (kind && kind.color) || '#a1887f';
   const wood = '#8d6e63'; const metal = '#4a4f55';
   const legs = (top, th = 0.05, inset = 0.06, color = wood) => {

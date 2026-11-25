@@ -6,6 +6,7 @@ import { getZoneType, isAbovePool } from './model.js';
 import { getPlant } from './catalog.js';
 import { culmColor, hedgeSeg, familyOf } from './gl-worker-core.js';
 import { habitOf, habitParams } from './habits.js';
+import { zoneHeight, obstacleHeight, defaultItemHeight } from './heights.js';
 import {
   FONT, BARE_WOOD, BARE_HERB, esc, f, darken, lighten, mixHex, rng, rngOf, hash32, normMonth, monthLabel, plantState,
   placePlants, shadowDir, GradRegistry, buildLegendItems, makeFrame, northSVG, scaleBarSVG, cartoucheSVG, captionSVG,
@@ -106,11 +107,14 @@ function hull(points) {
 const ABOVE_POOL_H = 1.2;
 const ABOVE_POOL_WATER_H = 1.05;
 
+
+/** Hauteur (m) de base des volumes en isométrique ; une hauteur réglée les étire proportionnellement. */
 const ITEM_H = {
   bench: 0.45, table: 0.75, table_round: 0.75, chair: 0.9, lounge: 0.6, sunbed: 0.35, hammock: 1.6, bbq: 0.9, firepit: 0.35,
   composter: 0.9, rain_tank: 1.5, planter: 0.5, raised_bed: 0.4, woodpile: 1.3, clothesline: 1.8, mailbox: 1.1, light: 2.2,
   fountain: 1, swing: 2.3, trampoline: 0.9, sandbox: 0.25, playhouse: 1.8, shed_item: 2.3, greenhouse: 2, pergola: 2.4, gazebo: 2.5, parasol: 2.5,
 };
+const isoItemH = (it, k) => { const base = ITEM_H[it.kind] || k.height || 0.5; return it.height > 0 ? base * (it.height / (defaultItemHeight(it.kind) || base)) : base; };
 
 function rectPoly(it) {
   const w = (it.width || 0.5) / 2; const d = (it.depth || 0.5) / 2; const a = ((it.rotation || 0) * Math.PI) / 180;
@@ -224,13 +228,13 @@ export function renderViewSVG(garden, opts = {}) {
     const above = isAbovePool(z);
     if (above && flatMode) {
       const b0 = prims.length;
-      addBox(zp, 0, ABOVE_POOL_H, { wall: '#c9d3d8', roof: '#4aa3d8', seg: 2, tag: 'pool' });
+      addBox(zp, 0, zoneHeight(z) || ABOVE_POOL_H, { wall: '#c9d3d8', roof: '#4aa3d8', seg: 2, tag: 'pool' });
       for (let i = b0; i < prims.length; i++) { const fn = prims[i].fn; prims[i].fn = (T) => `<g data-pool="above">${fn(T)}</g>`; }
     } else if (above) {
-      addAbovePool(zp);
+      addAbovePool(zp, zoneHeight(z) || ABOVE_POOL_H);
     } else if (flatMode) {
       if (!canopy && ['terrace', 'path', 'pond', 'pool'].includes(z.type)) {
-        addBox(zp, 0, FLAT_H[z.type] || 0.05, { wall: water ? '#3a8fc4' : t.color, roof: water ? '#4aa3d8' : t.color, seg: 4, noShadow: true });
+        addBox(zp, 0, z.type === 'terrace' ? Math.max(FLAT_H.terrace, zoneHeight(z)) : (FLAT_H[z.type] || 0.05), { wall: water ? '#3a8fc4' : t.color, roof: water ? '#4aa3d8' : t.color, seg: 4, noShadow: true });
       }
     } else {
       const top = zp.map((p) => pr(p.x, p.y, water ? -0.02 : 0.01));
@@ -259,16 +263,16 @@ export function renderViewSVG(garden, opts = {}) {
       ground.push((T) => `<polygon points="${poly(T, top)}" fill="${st.foliage}" fill-opacity=".7"/><polygon points="${poly(T, top)}" fill="url(#${id})"/>${dots.length ? `<g data-flower="1" fill="${st.flower}" stroke="${darken(st.flower, 0.35)}" stroke-width=".4">${dots.map((d) => `<circle cx="${T.p(d).split(',')[0]}" cy="${T.p(d).split(',')[1]}" r="1.5"/>`).join('')}</g>` : ''}`);
     }
     if (layers.names && !flatMode && polygonArea(zp) > 1.2) {
-      const c = centroid(zp); const pc = pr(c.x, c.y, above ? ABOVE_POOL_H + 0.1 : 0.05);
+      const c = centroid(zp); const pc = pr(c.x, c.y, above ? (zoneHeight(z) || ABOVE_POOL_H) + 0.1 : 0.05);
       labels.push({ pt: pc, text: z.label || t.label });
     }
   }
 
   // ---- piscine hors sol : paroi extrudée, bord (margelle), eau plus basse, échelle d'accès
   /** Paroi + eau + margelle + échelle (`data-pool="above"`). */
-  function addAbovePool(zp) {
+  function addAbovePool(zp, Hpool = ABOVE_POOL_H) {
     const before = prims.length;
-    const H = ABOVE_POOL_H; const W = ABOVE_POOL_WATER_H; const WALL = '#c9d3d8';
+    const H = Hpool; const W = Math.max(0.05, Hpool - (ABOVE_POOL_H - ABOVE_POOL_WATER_H)); const WALL = '#c9d3d8';
     const c = centroid(zp);
     const rim = zp.map((p) => pr(p.x, p.y, H));
     const wat = zp.map((p) => pr(p.x, p.y, W));
@@ -514,10 +518,10 @@ export function renderViewSVG(garden, opts = {}) {
     if ((o.kind === 'house' || o.kind === 'shed') && o.points && o.points.length >= 3) {
       const house = o.kind === 'house';
       const before = prims.length;
-      addBox(o.points, 0, o.height > 0 ? o.height : (house ? 5 : 2.3), { wall: house ? '#ece3d4' : '#a1887f', roof: house ? '#b5654a' : '#6d4c41', gable: true, seg: 2, tag: o.kind });
+      addBox(o.points, 0, obstacleHeight(o), { wall: house ? '#ece3d4' : '#a1887f', roof: house ? '#b5654a' : '#6d4c41', gable: true, seg: 2, tag: o.kind });
       tagNew(before, `data-obstacle="${o.kind}"`);
     } else if (o.kind === 'tree' && o.center) {
-      const H = o.height > 0 ? o.height : 6; const a = o.radius > 0 ? o.radius : 1.5;
+      const H = obstacleHeight(o); const a = o.radius > 0 ? o.radius : 1.5;
       addTree(o.center.x, o.center.y, H, a, { foliage: '#4f8f3a', flower: null, flowering: false, bare: false }, rng(hash32(`o${o.id}`)), '#4f8f3a', true);
     }
   }
@@ -527,7 +531,7 @@ export function renderViewSVG(garden, opts = {}) {
     if (!k) continue;
     let fp;
     try { fp = ITEMS.itemPolygon(it); } catch { fp = rectPoly(it); }
-    const h = it.height > 0 ? it.height : (ITEM_H[it.kind] || k.height || 0.5);
+    const h = isoItemH(it, k);
     const col = k.color || '#9e9e9e';
     const itemStart = prims.length;
     if (it.kind === 'parasol') {

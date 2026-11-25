@@ -4,6 +4,7 @@ import { bounds, polygonArea, centroid, pointInPolygon, shapePolygon } from './g
 import { ZONE_TYPES, getZoneType, SUN_LABELS, isAbovePool, POOL_ABOVE_LABEL } from './model.js';
 import { getPlant } from './catalog.js';
 import { habitOf } from './habits.js';
+import { effectivePlant } from './heights.js';
 import { applyPortLayout, wallSegments, FAMILY, polyAxis, hedgeSeg } from './gl-worker-core.js';
 
 export const FONT = 'Helvetica, Arial, sans-serif';
@@ -108,7 +109,7 @@ export function placePlants(garden, zone, plantsById, opts = {}) {
   const poly = shapePolygon(shape, 48);
   if (poly.length < 3) return [];
   const zid = String(zone.id ?? '');
-  const groups = (zone.plantings || []).map((pl) => ({ pl, plant: lookup(pl.plantId) })).filter((g) => g.plant)
+  const groups = (zone.plantings || []).map((pl) => ({ pl, plant: effectivePlant(lookup(pl.plantId), pl) })).filter((g) => g.plant)
     .map((g) => ({ ...g, n: Math.max(1, Math.round(g.pl.count || 1)) }));
   if (!groups.length) return [];
   // haies taillées : assez de plants pour couvrir la longueur de la zone (rang continu)

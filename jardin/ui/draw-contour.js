@@ -11,6 +11,7 @@ import {
   injectStyles, h, createCanvas, gridPath, snap, clone, esc, fr, frLen, frArea, parseNum, parseLength, toCm,
 } from './draw-util.js';
 import { createExisting, ensureExisting } from '../existing.js';
+import { defaultObstacleHeight, obstacleHeight, applyHeight, heightToCm, isDefaultHeight, parseHeight, formatHeight } from '../heights.js';
 
 const OBSTACLE_KINDS = [
   { id: 'house', label: 'Maison', height: 6, poly: true },
@@ -813,6 +814,21 @@ export function mountContourEditor(el, { garden, onChange } = {}) {
     return inp;
   }
 
+  /** Hauteur d'un obstacle en cm (bornes de heights.js, valeur arrondie signalée). */
+  function heightInput(o, i) {
+    const inp = h('input', { class: 'jd-input sm', type: 'text', inputmode: 'numeric', value: heightToCm(obstacleHeight(o)), 'aria-label': `Hauteur de ${kindLabel(o.kind)} en centimètres`, 'data-field': `obst-height-${i}`, enterkeyhint: 'done' });
+    const commit = () => {
+      const m = parseHeight(inp.value);
+      if (m == null) { refreshUI(); return; }
+      let res;
+      mutate(() => { res = applyHeight(g.obstacles[i], o.kind, m, defaultObstacleHeight(o.kind)); g.obstacles[i].height = res.value; });
+      if (res && res.clamped) say(res.message, 'warn');
+    };
+    inp.addEventListener('change', commit);
+    inp.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); inp.blur(); } });
+    return inp;
+  }
+
   function renderSheet() {
     sheet.innerHTML = '';
     if (st.tool === 'obstacle') return renderObstacleSheet();
@@ -867,8 +883,9 @@ export function mountContourEditor(el, { garden, onChange } = {}) {
     g.obstacles.forEach((o, i) => {
       const row = h('div', { class: 'jd-row', style: { background: st.selObstacle === i ? 'color-mix(in srgb, var(--jd-accent) 14%, transparent)' : '', borderRadius: '8px', padding: '2px 4px' } },
         h('button', { type: 'button', class: 'jd-btn', onclick: () => { st.selObstacle = i; draw(); refreshUI(); } }, kindLabel(o.kind)),
-        h('label', {}, 'Hauteur (m)'),
-        numInput(fr(o.height ?? 0), (v) => { mutate(() => { g.obstacles[i].height = Math.max(0, v); }); }, { label: `Hauteur de ${kindLabel(o.kind)}` }),
+        h('label', {}, 'Hauteur (cm)'),
+        heightInput(o, i),
+        h('button', { type: 'button', class: 'jd-btn', 'data-act': `obst-height-reset-${i}`, 'aria-label': `Valeur par défaut de la hauteur de ${kindLabel(o.kind)} (${formatHeight(defaultObstacleHeight(o.kind))})`, title: `Valeur par défaut : ${formatHeight(defaultObstacleHeight(o.kind))}`, disabled: isDefaultHeight(o, defaultObstacleHeight(o.kind)), onclick: () => mutate(() => { o.height = defaultObstacleHeight(o.kind); }) }, '↺'),
         o.kind === 'tree' ? h('label', {}, 'Rayon (m)') : null,
         o.kind === 'tree' ? numInput(fr(o.radius ?? 1), (v) => { mutate(() => { g.obstacles[i].radius = Math.max(0.2, v); }); }, { label: 'Rayon de l\'arbre' }) : null,
         btn('🗑', `obst-del-${i}`, () => mutate(() => { g.obstacles.splice(i, 1); st.selObstacle = null; }), 'danger', { 'aria-label': 'Supprimer l\'obstacle' }));
