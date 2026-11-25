@@ -18,22 +18,44 @@ export function isSoftwareRenderer(name) {
   return /swiftshader|llvmpipe|softpipe|software|basic render|microsoft basic|lavapipe/i.test(String(name || ''));
 }
 
-/** Niveau automatique selon le nom du GPU. */
-export function autoQuality(gpuName) {
+/** GPU mobile haut de gamme (Adreno 7xx, Mali-G7x/G8x/G9x, Immortalis, Apple) : MSAA et qualité Moyenne permis. */
+export function isStrongMobileGpu(name) {
+  return /Adreno\s*\(?TM\)?\s*(7\d\d|6[5-9]\d)|Mali-G(7[1-9]|[89]\d)|Immortalis|Apple (GPU|A1\d|M\d)/i.test(String(name || ''));
+}
+
+/** Niveau automatique selon le nom du GPU ; sur mobile : Basse, ou Moyenne si le GPU est costaud. */
+export function autoQuality(gpuName, { mobile = false } = {}) {
   const n = String(gpuName || '');
   if (!n || isSoftwareRenderer(n)) return 'low';
+  if (mobile) return isStrongMobileGpu(n) ? 'medium' : 'low';
   if (/RTX\s*(30|40|50)|RTX\s*A\d|RX\s*[67]\d{3}|Apple M[2-9]|Radeon Pro W|Ada Generation/i.test(n)) return 'ultra';
   if (/RTX|GTX\s*(16|10)|GeForce|Radeon RX|Radeon\(TM\) RX|Quadro|Arc\b|Apple M1|Apple GPU|Radeon Pro/i.test(n)) return 'high';
   return 'medium'; // GPU intégré (Intel HD/UHD/Iris, Radeon Graphics, Mali, Adreno…)
 }
 
 /** Paramètres d'un niveau adaptés aux capacités réelles (`maxTextureSize`) et à l'écran (`dpr`). */
-export function resolveQuality(id, { maxTextureSize = 4096, dpr = 1 } = {}) {
+export function resolveQuality(id, { maxTextureSize = 4096, dpr = 1, mobile = false, strongGpu = false } = {}) {
   const q = QUALITIES[id] || QUALITIES.medium;
-  return {
+  const r = {
     ...q,
     shadow: Math.max(512, Math.min(q.shadow, maxTextureSize)),
     pixelRatio: Math.max(0.75, Math.min(dpr || 1, q.maxPixelRatio)),
     photoWidth: Math.min(q.photoWidth, maxTextureSize),
+    mobile: !!mobile,
   };
+  if (mobile) { // profil appareil mobile : ombres ≤ 2048, pixelRatio ≤ 2, moins de feuillage, photo bornée, MSAA seulement si GPU costaud
+    r.shadow = Math.min(r.shadow, 2048);
+    r.pixelRatio = Math.min(r.pixelRatio, 2);
+    r.density = Math.max(0.25, q.density * 0.6);
+    r.photoWidth = Math.min(r.photoWidth, 2048);
+    r.photoPasses = Math.min(r.photoPasses, 48);
+    r.msaa = !!(q.msaa && strongGpu);
+  }
+  return r;
+}
+
+/** Niveau inférieur (pour la réduction automatique), ou null s'il n'y en a pas. */
+export function lowerQuality(id) {
+  const i = QUALITY_ORDER.indexOf(id);
+  return i > 0 ? QUALITY_ORDER[i - 1] : null;
 }

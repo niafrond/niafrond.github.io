@@ -1,7 +1,7 @@
 // Logique pure du worker 3D (gl-worker-core.js) et pool synchrone.
 import { runJob, placePlants, groupsFromRecords, packRecords, slimPlant, kindOf, heightFactor, transferablesOf, mulberry32 } from '../../gl-worker-core.js';
 import { createPool, poolSize } from '../../gl-pool.js';
-import { QUALITIES, autoQuality, isSoftwareRenderer, resolveQuality } from '../../gl-quality.js';
+import { QUALITIES, autoQuality, isSoftwareRenderer, resolveQuality, isStrongMobileGpu, lowerQuality } from '../../gl-quality.js';
 import { allPlants } from '../../catalog.js';
 
 const P = allPlants();
@@ -83,6 +83,22 @@ describe('qualité', () => {
     expect(autoQuality('ANGLE (NVIDIA GeForce GTX 1060)')).toBe('high');
     expect(autoQuality('ANGLE (Intel, Intel(R) UHD Graphics 630)')).toBe('medium');
   });
+  test('profil mobile : Basse par défaut, Moyenne si GPU costaud', () => {
+    expect(autoQuality('Mali-G52', { mobile: true })).toBe('low');
+    expect(autoQuality('Adreno (TM) 730', { mobile: true })).toBe('medium');
+    expect(autoQuality('Apple GPU', { mobile: true })).toBe('medium');
+    expect(autoQuality('SwiftShader', { mobile: true })).toBe('low');
+    expect(isStrongMobileGpu('Adreno (TM) 640')).toBe(false);
+  });
+  test('resolveQuality mobile : ombres, pixelRatio, densité, photo bornés, MSAA selon le GPU', () => {
+    const m = resolveQuality('ultra', { maxTextureSize: 16384, dpr: 3, mobile: true });
+    expect(m.shadow).toBe(2048); expect(m.pixelRatio).toBe(2); expect(m.photoWidth).toBe(2048); expect(m.photoPasses).toBe(48);
+    expect(m.density).toBeLessThan(QUALITIES.ultra.density); expect(m.msaa).toBe(false);
+    expect(resolveQuality('medium', { mobile: true, strongGpu: true }).msaa).toBe(true);
+    expect(resolveQuality('low', { mobile: true, strongGpu: true }).msaa).toBe(false);
+    expect(resolveQuality('high', { maxTextureSize: 16384 }).msaa).toBe(true);
+  });
+  test('lowerQuality', () => { expect(lowerQuality('ultra')).toBe('high'); expect(lowerQuality('low')).toBeNull(); });
   test('shadow map bornée par maxTextureSize', () => {
     expect(resolveQuality('ultra', { maxTextureSize: 4096 }).shadow).toBe(4096);
     expect(resolveQuality('low', { maxTextureSize: 16384 }).shadow).toBe(QUALITIES.low.shadow);

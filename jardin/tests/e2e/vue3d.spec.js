@@ -25,7 +25,7 @@ async function ouvrir(page) {
     const { mountView3D, isDesktop3DCapable } = await import('./ui/view3d.js');
     window.__capable = isDesktop3DCapable();
     const div = document.createElement('div'); document.body.appendChild(div);
-    window.__un = mountView3D(div, { garden: g, onClose() {} });
+    window.__un = mountView3D(div, { garden: g, onClose() { window.__closed = true; window.__un(); } });
     await window.__un.ready;
   });
 }
@@ -77,4 +77,60 @@ test('vue 3D : canvas WebGL, image non vide, l’heure change l’image, rendu p
   await page.evaluate(() => window.__un());
   await expect(page.locator('[data-role=view3d]')).toHaveCount(0);
   expect(errors.filter((e) => !/GPU stall|ReadPixels/i.test(e))).toEqual([]);
+});
+
+// ── Mobile : émulation Pixel 5 (écran 393×727, tactile), WebGL logiciel ──
+test.describe('mobile', () => {
+  test.use({ viewport: { width: 393, height: 727 }, hasTouch: true, isMobile: true, deviceScaleFactor: 2.75 });
+
+  test('vue 3D mobile : image non vide, panneau repliable, joystick, Fermer et Retour', async ({ page }) => {
+    test.setTimeout(90_000);
+    const errors = [];
+    page.on('pageerror', (e) => errors.push(String(e)));
+    page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()); });
+    await ouvrir(page);
+    expect(await page.evaluate(() => window.__capable)).toBe(true);
+    await expect(page.locator('.v3d--mobile')).toHaveCount(1);
+    await expect(page.locator('[data-role=canvas]')).toBeVisible();
+
+    const url = await page.evaluate(() => window.__un.api.snapshot());
+    expect((await stats(page, url)).colors).toBeGreaterThan(40);
+    expect(await page.evaluate(() => window.__un.api.info().quality)).toBe('low');
+
+    // panneau en feuille repliable (replié par défaut)
+    const panel = page.locator('[data-role=panel]');
+    await expect(panel).toBeHidden();
+    await page.locator('[data-act=toggle-panel]').tap();
+    await expect(panel).toBeVisible();
+    const hb = await page.locator('[data-act=close]').boundingBox();
+    expect(hb.height).toBeGreaterThanOrEqual(44);
+    await page.locator('[data-act=toggle-panel]').tap();
+    await expect(panel).toBeHidden();
+
+    // à hauteur d'yeux : joystick virtuel
+    await page.evaluate(() => window.__un.api.setView('eye'));
+    await expect(page.locator('[data-role=joystick]')).toBeVisible();
+    await page.evaluate(() => window.__un.api.setView('top'));
+    await expect(page.locator('[data-role=joystick]')).toBeHidden();
+
+    // rendu photo mobile (les plafonds 2048 px / 48 passes sont vérifiés en unitaire ; ici petite taille, portrait lent en WebGL logiciel)
+    const photo = await page.evaluate(async () => { const r = await window.__un.api.photo({ passes: 2, width: 480, download: false }); return { w: r.width, p: r.passes }; });
+    expect(photo.w).toBe(480);
+    expect(photo.p).toBe(2);
+
+    // Fermer
+    await page.locator('[data-act=close]').tap();
+    await expect(page.locator('[data-role=view3d]')).toHaveCount(0);
+    expect(await page.evaluate(() => window.__closed)).toBe(true);
+    expect(errors.filter((e) => !/GPU stall|ReadPixels/i.test(e))).toEqual([]);
+  });
+
+  test('le bouton Retour d’Android ferme la vue 3D', async ({ page }) => {
+    test.setTimeout(60_000);
+    await ouvrir(page);
+    await expect(page.locator('[data-role=view3d]')).toHaveCount(1);
+    await page.goBack();
+    await expect(page.locator('[data-role=view3d]')).toHaveCount(0);
+    expect(await page.evaluate(() => window.__closed)).toBe(true);
+  });
 });

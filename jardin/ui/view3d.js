@@ -4,46 +4,65 @@ import { h, saveBlob } from './draw-util.js';
 import { getPlant } from '../catalog.js';
 import { buildSceneAsync, sunDirection } from '../render-gl.js';
 import { createPool, poolSize } from '../gl-pool.js';
-import { QUALITIES, QUALITY_ORDER, autoQuality, resolveQuality, isSoftwareRenderer } from '../gl-quality.js';
+import { QUALITIES, QUALITY_ORDER, autoQuality, resolveQuality, isSoftwareRenderer, isStrongMobileGpu, lowerQuality } from '../gl-quality.js';
 import { renderPhoto } from '../gl-photo.js';
 
 const MOIS = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'];
 const FORCE_KEY = 'jardin-force-3d';
 let webgl2Cache = null;
+let webgl2Gpu = '';
 
-/** WebGL2 est-il disponible dans ce navigateur ? (résultat mémorisé) */
+/** WebGL2 est-il disponible dans ce navigateur ? (résultat mémorisé, avec le nom du GPU) */
 export function hasWebGL2() {
   if (webgl2Cache !== null) return webgl2Cache;
   try {
     const c = document.createElement('canvas');
     const gl = c.getContext('webgl2');
     webgl2Cache = !!gl;
+    try {
+      const ext = gl && gl.getExtension && gl.getExtension('WEBGL_debug_renderer_info');
+      webgl2Gpu = String((ext && gl.getParameter(ext.UNMASKED_RENDERER_WEBGL)) || '');
+    } catch (e) { webgl2Gpu = ''; }
     const lose = gl && gl.getExtension && gl.getExtension('WEBGL_lose_context');
     if (lose) lose.loseContext();
   } catch (e) { webgl2Cache = false; }
   return webgl2Cache;
 }
 /** Vide le cache de détection WebGL2 (tests). */
-export function resetWebGL2Cache() { webgl2Cache = null; }
+export function resetWebGL2Cache() { webgl2Cache = null; webgl2Gpu = ''; }
+
+const mq = (q) => { try { return typeof globalThis.matchMedia === 'function' && !!globalThis.matchMedia(q).matches; } catch (e) { return false; } };
+
+/** Appareil mobile : pointeur tactile (coarse), écran < 900 px ou UA Android. */
+export function isMobileDevice() {
+  let ua = '';
+  try { ua = String(globalThis.navigator && globalThis.navigator.userAgent); } catch (e) { /* ignoré */ }
+  const w = Number(globalThis.innerWidth) || 0;
+  return mq('(pointer: coarse)') || (w > 0 && w < 900) || /Android/i.test(ua);
+}
 
 /**
- * La vue 3D est-elle proposée ? PC : écran ≥ 900 px et pointeur précis, WebGL2, sans « économie de données ».
- * `?3d=1` dans l'URL ou `localStorage['jardin-force-3d']` forcent la proposition (WebGL2 reste indispensable).
+ * La vue 3D est-elle viable ici ? WebGL2 requis, pas d'« économie de données » ; sur mobile : pas de rendu logiciel pur,
+ * `navigator.deviceMemory` ≥ 3 si connu et au moins 2 cœurs. `?3d=1` ou `localStorage['jardin-force-3d']` forcent
+ * (WebGL2 reste indispensable).
  */
-export function isDesktop3DCapable() {
+export function isView3DCapable() {
   let forced = false;
   try { forced = /[?&]3d=1(&|$)/.test(String(globalThis.location && globalThis.location.search)); } catch (e) { /* ignoré */ }
   try { const v = globalThis.localStorage && globalThis.localStorage.getItem(FORCE_KEY); if (v && v !== '0' && v !== 'false') forced = true; } catch (e) { /* stockage indisponible */ }
   if (!hasWebGL2()) return false;
   if (forced) return true;
-  try {
-    const mm = globalThis.matchMedia;
-    if (typeof mm !== 'function') return false;
-    if (!mm.call(globalThis, '(min-width: 900px) and (pointer: fine)').matches) return false;
-    if (mm.call(globalThis, '(prefers-reduced-data: reduce)').matches) return false;
-    return true;
-  } catch (e) { return false; }
+  if (mq('(prefers-reduced-data: reduce)')) return false;
+  if (isMobileDevice()) {
+    if (isSoftwareRenderer(webgl2Gpu)) return false;
+    const nav = globalThis.navigator || {};
+    if (Number.isFinite(nav.deviceMemory) && nav.deviceMemory < 3) return false;
+    if (Number.isFinite(nav.hardwareConcurrency) && nav.hardwareConcurrency < 2) return false;
+  }
+  return true;
 }
+/** Ancien nom (vue réservée au PC), conservé pour compatibilité. */
+export const isDesktop3DCapable = isView3DCapable;
 
 function injectCss() {
   try {
@@ -76,6 +95,8 @@ export function mountView3D(el, { garden, onClose } = {}) {
   root.append(stage, loading);
   el.appendChild(root);
 
+  const mobile = isMobileDevice();
+  if (mobile) root.classList.add('v3d--mobile');
   let disposed = false;
   let THREE = null; let OrbitControls = null;
   let renderer = null; let canvas = null; let camera = null; let controls = null; let api3 = null; let pool = null;
@@ -87,7 +108,7 @@ export function mountView3D(el, { garden, onClose } = {}) {
     gpu: '', software: false, fps: 0, view: 'ne', mode: 'orbit', playing: false, growing: false, photoBusy: false,
   };
   const cores = (typeof navigator !== 'undefined' && navigator.hardwareConcurrency) || 2;
-  let qParams = resolveQuality('medium');
+  let qParams = resolveQuality('medium', { mobile });
 
   // ── panneau ──
   const q$ = (sel) => root.querySelector(sel);
@@ -132,9 +153,14 @@ export function mountView3D(el, { garden, onClose } = {}) {
   const closeBtn = h('button', { type: 'button', class: 'v3d-btn v3d-close', 'data-act': 'close', 'aria-label': 'Fermer la vue 3D (Échap)' }, '✕ Fermer');
   const top = h('header', { class: 'v3d-top' }, h('strong', { class: 'v3d-title' }, `🧊 ${g.name || 'Mon jardin'} — vue 3D`), h('span', { class: 'v3d-spacer' }), toggle, closeBtn);
   const help = h('div', { class: 'v3d-help', 'data-role': 'help' }, 'Clic gauche : tourner · clic droit : déplacer · molette : zoom · « À hauteur d’yeux » : ZQSD/WASD + souris · Échap : fermer');
-  const hud = h('div', { class: 'v3d-hud' }, info, h('div', { class: 'v3d-fps' }, fpsEl));
-  root.append(top, panel, hud, help, prog);
+  const hud = h('div', { class: 'v3d-hud' }, mobile ? null : info, h('div', { class: 'v3d-fps' }, fpsEl));
+  if (mobile) panelBody.append(h('section', null, h('h3', null, 'Informations'), info));
+  const notice = h('div', { class: 'v3d-notice', hidden: true, role: 'status', 'data-role': 'notice' });
+  const joyKnob = h('i', { class: 'v3d-joy-knob' });
+  const joy = h('div', { class: 'v3d-joy', hidden: true, 'data-role': 'joystick', 'aria-label': 'Joystick de déplacement' }, joyKnob);
+  root.append(top, panel, hud, help, prog, notice, joy);
 
+  if (mobile) { panel.classList.add('is-collapsed'); toggle.setAttribute('aria-expanded', 'false'); }
   toggle.addEventListener('click', () => {
     const open = panel.classList.toggle('is-collapsed') === false;
     toggle.setAttribute('aria-expanded', String(open));
@@ -163,7 +189,7 @@ export function mountView3D(el, { garden, onClose } = {}) {
       ? `Scène générée en ${gen.ms} ms sur ${gen.workers} cœur${gen.workers > 1 ? 's' : ''} (${gen.instances.toLocaleString('fr-FR')} instances)`
       : `Scène générée en ${gen.ms} ms sur 1 cœur (mode synchrone, ${gen.instances.toLocaleString('fr-FR')} instances)`);
     if (S.gpu) lines.push(`GPU : ${S.gpu}${S.software ? ' — rendu logiciel' : ''}`);
-    if (renderer) lines.push(`WebGL2 · qualité ${QUALITIES[S.qualityResolved].label}${S.quality === 'auto' ? ' (auto)' : ''} · ombres ${qParams.shadow} px`);
+    if (renderer) lines.push(`${mobile ? 'Mobile · ' : ''}WebGL2 · qualité ${QUALITIES[S.qualityResolved].label}${S.quality === 'auto' ? ' (auto)' : ''} · ombres ${qParams.shadow} px`);
     info.textContent = '';
     for (const l of lines) info.append(h('div', null, l));
     const width = qParams.photoWidth;
@@ -215,8 +241,11 @@ export function mountView3D(el, { garden, onClose } = {}) {
     controls.addEventListener('change', markDirty);
     attachLook();
   }
+  function computeQuality() {
+    return resolveQuality(S.qualityResolved, { maxTextureSize: renderer.capabilities.maxTextureSize, dpr: window.devicePixelRatio || 1, mobile, strongGpu: isStrongMobileGpu(S.gpu) });
+  }
   function applyRendererQuality() {
-    qParams = resolveQuality(S.qualityResolved, { maxTextureSize: renderer.capabilities.maxTextureSize, dpr: window.devicePixelRatio || 1 });
+    qParams = computeQuality();
     renderer.setPixelRatio(qParams.pixelRatio);
     const sm = renderer.shadowMap;
     const type = qParams.softShadows ? THREE.PCFSoftShadowMap : THREE.PCFShadowMap;
@@ -276,7 +305,7 @@ export function mountView3D(el, { garden, onClose } = {}) {
   let tween = null;
   const fitDist = () => {
     const b = api3.bounds; const fov = (camera.fov * Math.PI) / 180;
-    const vert = Math.max(b.depth, b.width / camera.aspect) * 0.72 + 3;
+    const vert = Math.max(b.depth, b.width / camera.aspect) * (mobile ? 0.5 : 0.72) + (mobile ? 2 : 3);
     return vert / Math.tan(fov / 2);
   };
   function flyTo(pos, target, ms = 800) {
@@ -293,12 +322,17 @@ export function mountView3D(el, { garden, onClose } = {}) {
     if (k >= 1) tween = null;
     return true;
   }
-  const fp = { x: 0, z: 0, yaw: 0, pitch: 0, keys: new Set(), look: null };
+  const fp = { x: 0, z: 0, yaw: 0, pitch: 0, keys: new Set(), look: null, joy: { x: 0, y: 0 } };
   function eyeStart() {
     const b = ((g.boundary || []).length >= 3 ? g.boundary : [{ x: api3.bounds.minX, y: api3.bounds.minZ }]);
     const c = { x: api3.bounds.cx, y: api3.bounds.cz };
     const p0 = b[0];
-    fp.x = p0.x + (c.x - p0.x) * 0.18; fp.z = p0.y + (c.y - p0.y) * 0.18;
+    // départ hors des bâtiments : premier point libre entre le 1er sommet et le centre
+    const bats = (g.obstacles || []).filter((o) => (o.kind === 'house' || o.kind === 'shed') && (o.points || []).length >= 3);
+    const inside = (x, y, pts) => { let r = false; for (let i = 0, j = pts.length - 1; i < pts.length; j = i++) { if ((pts[i].y > y) !== (pts[j].y > y) && x < ((pts[j].x - pts[i].x) * (y - pts[i].y)) / (pts[j].y - pts[i].y) + pts[i].x) r = !r; } return r; };
+    let k = 0.18;
+    for (const t of [0.18, 0.3, 0.42, 0.55, 0.7]) { k = t; const x = p0.x + (c.x - p0.x) * t; const y = p0.y + (c.y - p0.y) * t; if (!bats.some((o) => inside(x, y, o.points) || o.points.some((q) => Math.hypot(q.x - x, q.y - y) < 3.5))) break; }
+    fp.x = p0.x + (c.x - p0.x) * k; fp.z = p0.y + (c.y - p0.y) * k;
     fp.yaw = Math.atan2(c.x - fp.x, -(c.y - fp.z)); fp.pitch = -0.05;
   }
   function applyEye() {
@@ -312,9 +346,10 @@ export function mountView3D(el, { garden, onClose } = {}) {
     const b = api3.bounds; const c = new THREE.Vector3(b.cx, 0, b.cz);
     controls.autoRotate = false;
     if (id === 'eye') {
-      S.mode = 'eye'; controls.enabled = false; eyeStart(); applyEye();
+      S.mode = 'eye'; controls.enabled = false; eyeStart(); applyEye(); joy.hidden = !(mobile || (navigator.maxTouchPoints > 0));
     } else {
       if (S.mode === 'eye') { S.mode = 'orbit'; controls.enabled = true; controls.target.copy(c); }
+      joy.hidden = true; fp.joy = { x: 0, y: 0 };
       const d = fitDist();
       if (id === 'top') flyTo(new THREE.Vector3(b.cx, d * 1.05, b.cz + 0.01), c);
       else if (id === 'fly') { flyTo(new THREE.Vector3(b.cx + d * 0.75, d * 0.55, b.cz + d * 0.75), c, 900); controls.autoRotate = true; controls.autoRotateSpeed = 1.1; }
@@ -335,6 +370,21 @@ export function mountView3D(el, { garden, onClose } = {}) {
     };
     const up = () => { fp.look = null; };
     canvas.addEventListener('pointerdown', down); canvas.addEventListener('pointermove', move); canvas.addEventListener('pointerup', up); canvas.addEventListener('pointercancel', up);
+  }
+  {
+    let id = null; let cx = 0; let cy = 0;
+    const R = 44;
+    const set = (e) => {
+      let dx = e.clientX - cx; let dy = e.clientY - cy; const L = Math.hypot(dx, dy);
+      if (L > R) { dx = (dx / L) * R; dy = (dy / L) * R; }
+      fp.joy = { x: dx / R, y: dy / R };
+      joyKnob.style.transform = `translate(${dx}px, ${dy}px)`;
+      markDirty();
+    };
+    joy.addEventListener('pointerdown', (e) => { const r = joy.getBoundingClientRect(); cx = r.left + r.width / 2; cy = r.top + r.height / 2; id = e.pointerId; try { joy.setPointerCapture(id); } catch (err) { /* ignoré */ } set(e); e.preventDefault(); });
+    joy.addEventListener('pointermove', (e) => { if (e.pointerId === id) set(e); });
+    const end = (e) => { if (e.pointerId !== id) return; id = null; fp.joy = { x: 0, y: 0 }; joyKnob.style.transform = ''; };
+    joy.addEventListener('pointerup', end); joy.addEventListener('pointercancel', end);
   }
   const KEYMAP = { z: 'f', w: 'f', arrowup: 'f', s: 'b', arrowdown: 'b', q: 'l', a: 'l', arrowleft: 'l', d: 'r', arrowright: 'r' };
   const onKeyDown = (e) => {
@@ -364,9 +414,9 @@ export function mountView3D(el, { garden, onClose } = {}) {
   }
   async function setQuality(id) {
     S.quality = id;
-    S.qualityResolved = id === 'auto' ? autoQuality(S.gpu) : id;
+    S.qualityResolved = id === 'auto' ? autoQuality(S.gpu, { mobile }) : id;
     qualSel.value = id;
-    const wantMsaa = QUALITIES[S.qualityResolved].msaa;
+    const wantMsaa = computeQuality().msaa;
     if (wantMsaa !== S.msaa) { createRenderer(wantMsaa); }
     applyRendererQuality();
     await buildAll();
@@ -390,7 +440,7 @@ export function mountView3D(el, { garden, onClose } = {}) {
       const dateTxt = `${S.date.getDate()} ${MOIS[S.date.getMonth()]} ${S.date.getFullYear()} · ${hLabel(S.hour)} (heure solaire)`;
       const res = await renderPhoto(THREE, {
         renderer, scene: api3.scene, camera, sun: api3.sun,
-        width: opts.width || qParams.photoWidth, passes: opts.passes || qParams.photoPasses, msaa: qParams.msaa,
+        width: mobile ? Math.min(opts.width || qParams.photoWidth, 2048) : (opts.width || qParams.photoWidth), passes: mobile ? Math.min(opts.passes || qParams.photoPasses, 48) : (opts.passes || qParams.photoPasses), msaa: qParams.msaa,
         watermark: `${g.name || 'Mon jardin'} · ${dateTxt}`,
         isCancelled: () => cancelPhoto || disposed,
         onProgress: (i, n) => { const p = Math.round((i / n) * 100); bar.style.width = `${p}%`; txt.textContent = `${p} % (${i}/${n} passes)`; },
@@ -412,17 +462,31 @@ export function mountView3D(el, { garden, onClose } = {}) {
 
   // ── boucle ──
   let last = performance.now(); let frames = 0; let fpsT = last;
+  let lastRender = 0; let avgDt = 0; let activeMs = 0; let lastReduce = 0; let noticeTimer = 0;
+  function showNotice(msg) {
+    notice.textContent = msg; notice.hidden = false;
+    clearTimeout(noticeTimer); noticeTimer = setTimeout(() => { notice.hidden = true; }, 7000);
+  }
+  /** FPS < 20 en continu : on baisse d'un niveau (la qualité peut être remontée à la main dans les réglages). */
+  function autoReduce(now) {
+    activeMs = 0; avgDt = 0;
+    const lower = lowerQuality(S.qualityResolved);
+    if (!lower || now - lastReduce < 8000 || busy) return;
+    lastReduce = now;
+    showNotice('Qualité réduite automatiquement (modifiable dans les réglages).');
+    setQuality(lower);
+  }
   function frame(now) {
     raf = requestAnimationFrame(frame);
     const dt = Math.min(0.1, (now - last) / 1000); last = now;
     if (!renderer || !api3 || busy || document.hidden) return;
     let animated = stepTween(now);
-    if (S.mode === 'eye' && fp.keys.size) {
+    if (S.mode === 'eye' && (fp.keys.size || fp.joy.x || fp.joy.y)) {
       const sp = (fp.keys.has('shift') ? 5 : 2.2) * dt;
       const fx = Math.sin(fp.yaw); const fz = -Math.cos(fp.yaw);
-      const dx = (fp.keys.has('f') ? fx : 0) - (fp.keys.has('b') ? fx : 0) + (fp.keys.has('r') ? -fz : 0) - (fp.keys.has('l') ? -fz : 0);
-      const dz = (fp.keys.has('f') ? fz : 0) - (fp.keys.has('b') ? fz : 0) + (fp.keys.has('r') ? fx : 0) - (fp.keys.has('l') ? fx : 0);
-      fp.x += dx * sp; fp.z += dz * sp; applyEye(); animated = true;
+      const f = (fp.keys.has('f') ? 1 : 0) - (fp.keys.has('b') ? 1 : 0) - fp.joy.y;
+      const r = (fp.keys.has('r') ? 1 : 0) - (fp.keys.has('l') ? 1 : 0) + fp.joy.x;
+      fp.x += (f * fx - r * fz) * sp; fp.z += (f * fz + r * fx) * sp; applyEye(); animated = true;
     }
     if (S.playing) { setHour(S.hour + dt * 1.6); if (S.hour >= 20.99) { S.playing = false; refreshLabels(); } animated = true; }
     if (S.growing) { setAge(Math.min(1, S.age + dt / 6)); if (S.age >= 1) S.growing = false; animated = true; }
@@ -431,9 +495,20 @@ export function mountView3D(el, { garden, onClose } = {}) {
       dirty = false;
       renderer.render(api3.scene, camera);
       frames++;
-      if (now - fpsT > 500) { S.fps = Math.round((frames * 1000) / (now - fpsT)); fpsEl.textContent = `${S.fps} FPS`; frames = 0; fpsT = now; }
+      const dr = now - lastRender; lastRender = now;
+      if (dr < 150) {
+        avgDt = avgDt ? avgDt * 0.92 + dr * 0.08 : dr; activeMs += dr;
+        if (activeMs > 3000 && 1000 / avgDt < 20) autoReduce(now);
+      } else { activeMs = 0; avgDt = 0; }
+      if (now - fpsT > 500) { if (avgDt) S.fps = Math.round(1000 / avgDt); fpsEl.textContent = `${S.fps || '—'} FPS`; frames = 0; fpsT = now; }
     } else if (now - fpsT > 1500) { fpsEl.textContent = `${S.fps || '—'} FPS (au repos)`; fpsT = now; frames = 0; }
   }
+
+  // Retour (Android) = fermer la vue : un état d'historique est poussé à l'ouverture.
+  let histPushed = false;
+  try { history.pushState({ v3d: true }, ''); histPushed = true; } catch (e) { /* ignoré */ }
+  const onPop = () => { if (disposed) return; histPushed = false; close(); };
+  window.addEventListener('popstate', onPop);
 
   const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(() => resize()) : null;
   ro && ro.observe(stage);
@@ -453,12 +528,12 @@ export function mountView3D(el, { garden, onClose } = {}) {
       if (disposed) return;
       camera = new THREE.PerspectiveCamera(45, 1.6, 0.1, 3000);
       pool = createPool({ size: poolSize(cores) });
-      createRenderer(true); // contexte d'essai pour lire le nom du GPU
+      createRenderer(!mobile); // contexte d'essai pour lire le nom du GPU
       S.gpu = gpuName(renderer.getContext());
       S.software = isSoftwareRenderer(S.gpu);
-      S.qualityResolved = autoQuality(S.gpu);
+      S.qualityResolved = autoQuality(S.gpu, { mobile });
       qualSel.value = 'auto';
-      if (!QUALITIES[S.qualityResolved].msaa) createRenderer(false);
+      if (computeQuality().msaa !== S.msaa) createRenderer(computeQuality().msaa);
       applyRendererQuality();
       await buildAll();
       if (disposed) return;
@@ -479,6 +554,9 @@ export function mountView3D(el, { garden, onClose } = {}) {
     disposed = true;
     cancelAnimationFrame(raf);
     ro && ro.disconnect();
+    window.removeEventListener('popstate', onPop);
+    clearTimeout(noticeTimer);
+    if (histPushed) { histPushed = false; try { if (history.state && history.state.v3d) history.back(); } catch (e) { /* ignoré */ } }
     document.removeEventListener('keydown', onKeyDown); document.removeEventListener('keyup', onKeyUp);
     try { api3 && api3.dispose(); } catch (e) { /* ignoré */ }
     try { envTex && envTex.dispose(); pmrem && pmrem.dispose(); } catch (e) { /* ignoré */ }
