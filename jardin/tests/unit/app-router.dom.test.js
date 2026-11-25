@@ -13,8 +13,9 @@ describe('parseRoute', () => {
     expect(parseRoute('#/garden/abc/advice')).toEqual({ name: 'advice', id: 'abc' });
     expect(gardenHash('x y', 'sun')).toBe('#/garden/x%20y/sun');
     expect(STEP_IDS).toHaveLength(8);
-    expect(STEP_IDS.indexOf('items')).toBe(STEP_IDS.indexOf('zones') + 1);
-    expect(STEP_IDS.indexOf('plants')).toBe(STEP_IDS.indexOf('items') + 1);
+    // le mobilier se pose AVANT le dessin des zones
+    expect(STEP_IDS.indexOf('zones')).toBe(STEP_IDS.indexOf('items') + 1);
+    expect(STEP_IDS.indexOf('plants')).toBe(STEP_IDS.indexOf('zones') + 1);
     expect(parseRoute('#/garden/abc/items')).toEqual({ name: 'wizard', id: 'abc', step: 'items' });
   });
 });
@@ -52,18 +53,18 @@ describe('app (accueil → assistant)', () => {
     expect(saved.wishedZoneTypes).toContain('pond');
   });
 
-  test('étape « Aménagements » entre les zones et les essences', async () => {
+  test('étape « Aménagements » avant le dessin des zones', async () => {
     const id = window.__jardin.state.garden.id;
     document.querySelector('.step[data-step="items"]').click();
     await wait(400);
     expect(location.hash).toBe(`#/garden/${id}/items`);
     expect(document.querySelector('[data-role=items-editor]')).not.toBeNull();
     expect(document.querySelector('.step-title').textContent).toContain('Aménagements');
-    expect(document.getElementById('btn-prev').textContent).toContain('Dessin des zones');
-    expect(document.getElementById('btn-next').textContent).toContain('Essences');
+    expect(document.getElementById('btn-prev').textContent).toContain('Soleil');
+    expect(document.getElementById('btn-next').textContent).toContain('Dessin des zones');
     document.getElementById('btn-next').click();
     await wait(300);
-    expect(location.hash).toMatch(/\/plants$/);
+    expect(location.hash).toMatch(/\/zones$/);
     expect(document.querySelector('[data-role=items-editor]')).toBeNull();
   });
 });

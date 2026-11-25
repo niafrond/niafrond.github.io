@@ -6,8 +6,8 @@ export const STEPS = [
   { id: 'boundary', label: 'Terrain', icon: '📐' },
   { id: 'wished', label: 'Zones souhaitées', icon: '✅' },
   { id: 'sun', label: 'Soleil', icon: '☀️' },
-  { id: 'zones', label: 'Dessin des zones', icon: '🗺️' },
   { id: 'items', label: 'Aménagements', icon: '🪑' },
+  { id: 'zones', label: 'Dessin des zones', icon: '🗺️' },
   { id: 'plants', label: 'Essences', icon: '🌿' },
   { id: 'render', label: 'Rendu', icon: '🖼️' },
 ];
