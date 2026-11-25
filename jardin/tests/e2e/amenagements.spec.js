@@ -83,6 +83,6 @@ test('banc, taille en cm, mur de 2 m, porte de garage sur la maison', async ({ p
   await page.reload();
   await page.waitForSelector('[data-role=items-editor]');
   await expect(page.locator('[data-role=count]')).toHaveText('1');
-  await expect(page.locator('#btn-next')).toContainText('Essences');
+  await expect(page.locator('#btn-next')).toContainText('Dessin des zones');
   expect(errors).toEqual([]);
 });
