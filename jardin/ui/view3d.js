@@ -204,7 +204,8 @@ export function mountView3D(el, { garden, onClose } = {}) {
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.shadowMap.enabled = S.shadows;
     S.msaa = !!msaa;
-    canvas.addEventListener('webglcontextlost', (e) => { e.preventDefault(); showError('Le contexte graphique (GPU) a été perdu. Fermez puis rouvrez la vue 3D.'); });
+    const mine = canvas;
+    canvas.addEventListener('webglcontextlost', (e) => { e.preventDefault(); if (mine !== canvas || disposed) return; showError('Le contexte graphique (GPU) a été perdu. Fermez puis rouvrez la vue 3D.'); });
     pmrem = new THREE.PMREMGenerator(renderer);
     envTex = null; envElev = -99;
     controls && controls.dispose();
@@ -275,7 +276,7 @@ export function mountView3D(el, { garden, onClose } = {}) {
   let tween = null;
   const fitDist = () => {
     const b = api3.bounds; const fov = (camera.fov * Math.PI) / 180;
-    const vert = Math.max(b.depth, b.width / camera.aspect) * 0.9 + 4;
+    const vert = Math.max(b.depth, b.width / camera.aspect) * 0.72 + 3;
     return vert / Math.tan(fov / 2);
   };
   function flyTo(pos, target, ms = 800) {

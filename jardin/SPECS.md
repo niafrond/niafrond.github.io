@@ -312,7 +312,7 @@ Dossier web : `jardin/` (ES modules, sans build, sans dépendance runtime). Enve
 
 ## 17. État de l'implémentation
 
-**Fait** (379 tests unitaires Jest + 1 parcours Playwright `jardin/tests/e2e/parcours.spec.js`, projet `jardin` de `playwright.config.js`) :
+**Fait** (810 tests unitaires Jest, 11 parcours Playwright dans `jardin/tests/e2e/`, projet `jardin` de `playwright.config.js` ; CI : job `test` et job `jardin-e2e` de `.github/workflows/ci.yml`) :
 - Logique pure : géométrie et conversion GPS, modèle et validation, trajectoire du soleil et carte d'ensoleillement estimée, stockage IndexedDB avec export/import JSON, climat par département (96 + Corse), catalogue de 213 essences (111 ligneuses, 102 herbacées), score de compatibilité, quantités, cohérence, « Surprends-moi », météo Open-Meteo, géocodage, commune, altitude, bilan hydrique et planification des notifications, conseils et calendrier 12 mois.
 - Interface : accueil (plusieurs jardins, vignettes, dupliquer, supprimer, import/export), assistant en 7 étapes, tracé du contour au doigt avec saisie des longueurs et relevé GPS, obstacles, zones (polygone, cercle, ligne), ensoleillement uniforme, peint ou estimé, choix des essences avec raisons, rendu SVG plan/illustré/jeunes plants, export SVG et PNG, validation, conseils par onglets, tâches du mois, réglages de notifications.
 - Android : `jardin-android/` (Capacitor, API 33 minimum, notifications locales, géolocalisation) et workflow `.github/workflows/apk-jardin.yml`.
@@ -324,3 +324,30 @@ Dossier web : `jardin/` (ES modules, sans build, sans dépendance runtime). Enve
 - Les données du catalogue sont issues de connaissances horticoles générales, non vérifiées en ligne : à relire avant diffusion.
 
 **Non vérifié** : GPS, boussole, notifications et build de l'APK sur appareil réel ou en CI (le workflow n'a pas encore tourné) ; les points « à vérifier » du §11 (altimétrie IGN, API Géo) n'ont pas été testés contre les services réels.
+
+## Vue 3D PC
+
+Visualiseur 3D temps réel du jardin, réservé au PC : GPU pour le rendu et les ombres, CPU multicœur pour la génération des instances.
+
+**Détection** (`isDesktop3DCapable()` dans `ui/view3d.js`) : `matchMedia('(min-width: 900px) and (pointer: fine)')` ET WebGL2 disponible ET pas de `prefers-reduced-data`. `?3d=1` ou `localStorage['jardin-force-3d']` (hors `0`/`false`) passent outre les critères d'écran (WebGL2 reste indispensable). Branchement : bouton « 🧊 Vue 3D (PC) » → `mountView3D(el, {garden, onClose})` (retourne `unmount()` ; `unmount.api` et `unmount.ready` servent au pilotage et aux tests).
+
+**Fichiers** : `vendor/three/` (three.js 0.170.0 MIT, `three.module.min.js`, `OrbitControls.js` réécrit sans import map, `LICENSE`), chargé UNIQUEMENT par `import()` dynamique à l'ouverture ; `render-gl.js` (`buildScene(THREE, garden, {month, age, plantsById, hour, date, quality})` → `{scene, bounds, update({month, age, hour, date}), dispose()}` et `buildSceneAsync` via le pool) ; `gl-worker-core.js` (logique pure : répartition, matrices d'instances, importable sans Worker) ; `gl-worker.js` (Worker module) ; `gl-pool.js` (pool de `min(cœurs − 1, 8)` workers, repli synchrone, `Float32Array` transférables) ; `gl-quality.js` ; `gl-textures.js` (canvas procéduraux : gazon, bois/dalles, gravier, terre, eau, toit, clôture, haie) ; `gl-structures.js` (maison à toit, abri, murs/clôtures/haies, portails, mobilier) ; `gl-photo.js` ; `ui/view3d.js` + `ui/view3d.css`.
+
+**Rendu** : sol et zones texturés, mare/piscine (eau réfléchissante + berge), obstacles et `boundaryEdges`/`openings`/`items` (import défensif de `items.js`). Plantes en `InstancedMesh` par essence et par partie (tronc, houppier de blobs irréguliers, cône pour les conifères, branches, touffes, fleurs) ; hauteur = `heightAdult` × (0,35 → 1) selon l'âge ; caducs ligneux dépouillés (branches) de décembre à mars, teinte automnale en octobre-novembre ; herbacées caduques en repos l'hiver ; fleurs visibles seulement les mois de `bloom`. Soleil = `DirectionalLight` selon `sunPosition` (latitude du jardin, sinon 46,5 °N), date, heure solaire et `northAngle` ; ciel dégradé (shader) et brouillard ; l'élévation règle couleurs et intensités (nuit comprise).
+
+**Qualité** : Basse / Moyenne / Haute / Ultra (shadow map 1024 → 8192 bornée par `maxTextureSize`, MSAA, pixelRatio, détail des houppiers, densité de fleurs/touffes) ; mode Auto selon le nom du GPU (SwiftShader/llvmpipe/Software → Basse). Le changement de qualité régénère la scène via les workers. Infos affichées : « Scène générée en N ms sur K cœurs », nom du GPU (`WEBGL_debug_renderer_info`), FPS, WebGL2.
+
+**Interface** : OrbitControls amortis ; vues Dessus, 4 coins, « À hauteur d'yeux » (ZQSD/WASD + souris), Survol automatique ; heure 6 h–21 h et date avec « journée accélérée », saisons, âge avec animation « Pousse », ombres, grille 1 m, légende des essences ; Échap = fermer. **Rendu photo** : N passes (16 à 256 selon la qualité) avec micro-décalage de caméra et jitter du soleil, moyenne HDR demi-flottante sur le GPU, tone mapping ACES à l'affichage, barre de progression, annulation, export PNG jusqu'à 4096 px (`saveBlob`) avec filigrane nom du jardin + date.
+
+**Limites** : pas de précache `sw.js` (`vendor/three` ≈ 0,7 Mo : vue 3D hors ligne seulement après une première ouverture en ligne mise en cache par le navigateur) ; absente de l'APK (étape « Copy web assets » de `apk-jardin.yml` supprime `vendor/three`) ; l'heure est solaire (pas d'heure légale) ; la répartition des plants est celle de `gl-worker-core.js` (sans import de `render-common.js` pour ne pas charger le catalogue dans les workers) : elle diffère légèrement du plan 2D (remplissage des haies en ligne et des couvre-sol), à unifier ; modèles stylisés (pas de textures photo) ; pas de collision en marche à hauteur d'yeux.
+
+**Tests** : `tests/unit/render-gl.test.js`, `gl-worker.test.js`, `view3d.dom.test.js` ; e2e `tests/e2e/vue3d.spec.js` (WebGL logiciel SwiftShader ; variable `PW_CHROMIUM_PATH` pour un Chromium local).
+
+### Ajouts depuis la première version
+
+- **Saisie en cm** par appui long / toucher une cote (contour), éditeur de zones refait (§4, §5 bis), étape « Aménagements » (mobilier, murs, clôtures, haies, portails, portes de garage).
+- **Essences** : photos Wikipédia avec repli en couleurs, prix moyens indicatifs et budget en direct, « Surprends-moi » par zone et pour tout le jardin.
+- **Plan final** : vraies couleurs de feuillage et de floraison selon la saison, vues dessus / 4 isométriques / 4 élévations, feuille « Toutes les vues ».
+- **Transfert PC → téléphone** : lien, QR code, code à coller, fichier ; liens profonds Android (`jardin://import/…`).
+- **Vue 3D PC** (WebGL2, three.js chargé à la demande, hors APK) : bouton « 🧊 Vue 3D (PC) » sur l'écran du plan, uniquement sur grand écran avec souris et WebGL2.
+- **Limites connues** : prix, couleurs et titres Wikipédia du catalogue issus de connaissances générales, non vérifiés ; positions des plants de la vue 3D légèrement différentes du plan 2D ; rien n'a été essayé sur un téléphone réel ni dans le build d'APK en CI.
