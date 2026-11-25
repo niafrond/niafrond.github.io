@@ -38,3 +38,8 @@
 @media (hover: hover) and (pointer: fine) and (min-width: 900px) {
   .jd-btn:focus-visible, .btn:focus-visible { outline: 2px solid var(--jd-accent, #2f7d4f); outline-offset: 2px; }
 }
+
+/* Éditeurs de dessin : la zone de dessin occupe toute la hauteur restante de l'écran (pas de vide en bas) */
+.app:has(> .step-body) { display: flex; flex-direction: column; min-height: 100vh; min-height: 100dvh; }
+.app:has(> .step-body) > .step-body { flex: 1 1 auto; min-height: 0; }
+.step-body > .jd-editor { flex: 1 1 auto; height: auto; min-height: 420px; }
