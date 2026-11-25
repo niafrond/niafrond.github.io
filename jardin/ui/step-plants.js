@@ -417,6 +417,7 @@ export function mountPlants(el, { garden, onChange, getPhoto = getPlantPhoto, IO
     allBtn.textContent = key === 'all' ? '🎲 Autre proposition' : ALL_LABEL;
     surprise.textContent = key !== 'all' ? '🎲 Autre proposition' : ZONE_LABEL;
     refresh();
+    drawZoneInfo();
     const sm = summarizeGarden(garden, getPlant);
     summaryEl.textContent = summaryText(sm, targets) + (max && sm.total > max ? ` (au-dessus du budget de ${formatEuro(max, { digits: 0 })})` : '');
     toast('Sélection proposée : retouchez-la à votre guise ou annulez-la.');
