@@ -3,6 +3,7 @@ import { buildAdvice, calendar, frostProtection } from '../advice.js';
 import { hydrozones, monthlySchedule, planWatering } from '../watering.js';
 import { climateForDepartement, adjustTminForAltitude } from '../climate.js';
 import { WATER_LABELS } from '../model.js';
+import { getExistingKind } from '../existing.js';
 import { injectStyles, h, fr } from './draw-util.js';
 
 const MONTHS = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'];
@@ -95,8 +96,30 @@ export function mountAdvice(el, { garden, onChange } = {}) {
     out.push(...zoneCards((p) => p.planting, 'plant'));
     return out;
   }
+  function existingCard() {
+    const ex = advice.existing;
+    if (!ex || (!ex.entries.length && !ex.toRemove.length)) return null;
+    const card = h('section', { class: 'jd-card', 'data-role': 'existing-advice' }, h('h3', {}, 'Vos plantes existantes'));
+    for (const e of ex.entries) {
+      const kindEmoji = (getExistingKind(e.kind) || {}).emoji || '🌿';
+      card.append(h('div', { style: { margin: '8px 0' }, 'data-existing': e.id },
+        h('b', {}, `${kindEmoji} ${e.label}`), ' ', h('em', { class: 'jd-msg', style: { padding: 0 } }, e.plant ? (e.plant.latinName || '') : 'espèce non précisée : conseils généraux'),
+        ...e.now.map((t) => h('p', { class: 'jd-tag', style: { display: 'block' } }, t)),
+        h('p', {}, `${e.pruning}${e.notes ? ' ' + e.notes : ''}`),
+        h('p', { class: 'jd-msg', style: { padding: 0 } }, `Taille : ${monthList(e.pruneMonths)} · Engrais : ${monthList(e.fertMonths)}`),
+        ...e.tips.map((t) => h('p', {}, '• ' + t)),
+        e.userNotes ? h('p', {}, h('i', {}, `Vos notes : ${e.userNotes}`)) : null));
+    }
+    if (ex.toRemove.length) {
+      card.append(h('h4', { style: { margin: '10px 0 2px' } }, '🪓 À retirer ou remplacer'));
+      for (const r of ex.toRemove) card.append(h('p', { 'data-remove': r.id }, h('b', {}, r.label), ' : ', r.tip));
+    }
+    return card;
+  }
   function tabCare() {
     const out = zoneCards((p) => `${p.pruning}${p.notes ? ' ' + p.notes : ''}`, 'care');
+    const exCard = existingCard();
+    if (exCard) out.unshift(exCard);
     const dep = g.context && g.context.departement;
     const clim = dep ? climateForDepartement(dep) : null;
     if (clim && typeof clim.tminC === 'number') {

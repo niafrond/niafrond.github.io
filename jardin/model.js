@@ -1,6 +1,7 @@
 // Modèle de données du jardin : constantes, création, validation (pur, sans DOM).
-import { polygonArea, isSimplePolygon, shapePolygon, shapeArea, polygonInside, overlapArea } from './geometry.js';
+import { polygonArea, isSimplePolygon, shapePolygon, shapeArea, polygonInside, overlapArea, pointInPolygon } from './geometry.js';
 import { getItemKind, getOpeningKind, itemPolygon, resolveSide } from './items.js';
+import { ensureExisting, existingLabel } from './existing.js';
 
 /** Types de zones. `layer` : 'ground' (au sol, exclusif) ou 'canopy' (au-dessus, superposable). */
 export const ZONE_TYPES = [
@@ -70,11 +71,13 @@ export function createGarden(name = 'Mon jardin') {
     context: {
       location: null, commune: null, departement: null, region: null, altitude: null,
       orientation: null, northAngle: 0, soil: null, slope: null, wind: null, roofArea: null,
+      bedMode: 'manual', // 'manual' = je dessine mes massifs, 'auto' = l'app calcule les massifs (absent = 'manual')
     },
     boundary: [],
     boundaryClosed: false,
     obstacles: [],
     items: [],
+    existing: [],
     boundaryEdges: [],
     openings: [],
     sun: { mode: 'unknown', uniform: null, regions: [] },
@@ -85,11 +88,17 @@ export function createGarden(name = 'Mon jardin') {
   };
 }
 
+/** Mode des massifs d'un jardin : 'manual' (défaut, y compris champ absent) ou 'auto'. */
+export const BED_MODES = ['manual', 'auto'];
+export function bedModeOf(g) {
+  return g && g.context && g.context.bedMode === 'auto' ? 'auto' : 'manual';
+}
+
 /** Nouvelle zone d'un type donné (lève une erreur si le type est inconnu). */
 export function createZone(typeId, shape) {
   const t = getZoneType(typeId);
   if (!t) throw new Error(`Type de zone inconnu : ${typeId}`);
-  const z = { id: newId('z_'), type: typeId, label: t.label, shape, plantings: [], notes: '', ambiance: null };
+  const z = { id: newId('z_'), type: typeId, label: t.label, shape, plantings: [], notes: '', ambiance: null, auto: false };
   if (typeId === 'pool') { z.variant = 'inground'; }
   return z;
 }
@@ -144,6 +153,7 @@ export function ensureAmenagements(g) {
   if (!Array.isArray(g.items)) g.items = [];
   if (!Array.isArray(g.boundaryEdges)) g.boundaryEdges = [];
   if (!Array.isArray(g.openings)) g.openings = [];
+  ensureExisting(g);
   return g;
 }
 
@@ -216,6 +226,14 @@ export function validateGarden(g) {
     const k = getOpeningKind(op.kind);
     const nom = (k && k.label) || `Ouverture ${i + 1}`;
     if (!resolveSide(g, op.ref)) warnings.push(`Ouverture « ${nom} » : le côté qui la porte n'existe plus.`);
+  });
+
+  // Plantes existantes : centre (ou tracé de haie) hors du terrain.
+  const existing = Array.isArray(g && g.existing) ? g.existing : [];
+  existing.forEach((e, i) => {
+    if (!contourValide || !e) return;
+    const pts = Array.isArray(e.points) && e.points.length ? e.points : [{ x: e.x, y: e.y }];
+    if (pts.some((p) => !pointInPolygon(p, contour))) warnings.push(`Plante existante « ${existingLabel(e) || `Plante ${i + 1}`} » : sort du contour du terrain.`);
   });
 
   // Zones souhaitées sans forme dessinée.

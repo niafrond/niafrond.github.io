@@ -1,6 +1,7 @@
 // Conseils de plantation, entretien, arrosage et calendrier (pur, textes en français).
 // Les fiches d'essence (`plant.care`) priment ; les champs manquants sont complétés par `genericCare(category)`.
 import { allPlants } from './catalog.js';
+import { existingLabel, getExistingKind } from './existing.js';
 
 const TYPE_LABEL = {
   pond: 'Mare', pool: 'Piscine', terrace: 'Terrasse', path: 'Allée', lawn: 'Pelouse', lowplants: 'Couvre-sols',
@@ -219,7 +220,7 @@ export function buildAdvice(garden, opts = {}) {
       : 'Récupérer l\'eau de pluie d\'un toit dans une cuve réduit l\'arrosage au robinet.',
     emptyHint: zones.every((z) => !z.plants.length) ? 'Aucune essence choisie pour le moment : ajoutez-en pour obtenir des conseils détaillés.' : null,
   };
-  return { zones, plantingOrder, general };
+  return { zones, plantingOrder, general, existing: existingAdvice(garden, { plantsById }) };
 }
 
 /** Calendrier de 12 mois : `[{month, tasks:[{kind, zoneId, plantId?, text}]}]`. */
@@ -278,4 +279,52 @@ export function frostProtection(garden, tminC, opts = {}) {
     });
   }
   return out;
+}
+
+const EXISTING_CATEGORY = { tree: 'tree', shrub: 'shrub', hedge: 'hedge', climber: 'climber', perennial: 'perennial', other: 'shrub' };
+const REMOVAL_TIP = {
+  tree: 'Pour un arbre, demandez conseil à un élagueur et renseignez-vous en mairie avant l\'abattage (certains arbres sont protégés) ; l\'automne et l\'hiver conviennent le mieux.',
+  hedge: 'Arrachez la haie hors période de nidification (évitez avril à juillet) et dessouchez ou broyez les souches.',
+  shrub: 'Arrachez l\'arbuste hors gel, en gardant une motte si vous voulez le replanter ailleurs.',
+  climber: 'Coupez les tiges à la base et laissez sécher avant de décrocher du support, pour ne pas abîmer le mur.',
+  perennial: 'Divisez ou levez les touffes à l\'automne ou au printemps ; elles peuvent se replanter ailleurs.',
+  fence: 'Démontez la clôture panneau par panneau (poteaux scellés : prévoyez de quoi les déterrer) et triez les matériaux pour la déchetterie ou le réemploi.',
+  other: 'Retirez la plante hors gel, en gardant la motte si vous voulez la replanter.',
+};
+const KIND_TIP = {
+  tree: 'Sous un arbre existant, privilégiez des plantes d\'ombre ; ses racines sont proches du sol, plantez à distance du tronc.',
+  hedge: 'Taillez la haie plus large à la base qu\'au sommet pour que la lumière arrive en bas.',
+};
+
+/**
+ * Conseils pour les plantes déjà présentes : espèce connue = conseils du catalogue (à la saison `month`), sinon conseils
+ * génériques du type. `{entries:[{id, kind, label, plant, keep, now:string[], pruning, fertilizer, watering, notes, tips, pruneMonths, fertMonths}], toRemove:[{id,label,kind,tip}]}`.
+ */
+export function existingAdvice(garden, opts = {}) {
+  const plantsById = opts.plantsById || defaultPlantsById();
+  const month = Number.isFinite(opts.month) ? opts.month : new Date().getMonth() + 1;
+  const list = (garden && garden.existing) || [];
+  const entries = [];
+  const toRemove = [];
+  for (const e of list) {
+    const k = getExistingKind(e.kind);
+    if (!k) continue;
+    const label = existingLabel(e, (id) => plantsById[id]);
+    if (e.keep === false) { toRemove.push({ id: e.id, label, kind: e.kind, tip: REMOVAL_TIP[e.kind] || REMOVAL_TIP.other }); continue; }
+    if (e.kind === 'fence') continue; // une clôture n'est pas une plante : pas de conseils d'entretien
+    const plant = e.plantId ? plantsById[e.plantId] || null : null;
+    const c = plant ? mergedCare(plant) : genericCare(EXISTING_CATEGORY[e.kind] || FALLBACK_CAT);
+    const now = [];
+    if (c.pruneMonths.includes(month)) now.push(`Tailler / entretenir ce mois-ci : ${c.pruning}`);
+    if (c.fertMonths.includes(month)) now.push(`Fertiliser ce mois-ci : ${c.fertilizer}`);
+    if (plant && ((plant.water === 'high' && month >= 4 && month <= 10) || (plant.water !== 'low' && month >= 6 && month <= 8))) now.push('Surveiller l\'arrosage en période chaude.');
+    entries.push({
+      id: e.id, kind: e.kind, label, plant, keep: true, now,
+      pruning: c.pruning, fertilizer: c.fertilizer, watering: c.watering, notes: c.notes,
+      pruneMonths: c.pruneMonths, fertMonths: c.fertMonths, known: !!plant,
+      tips: KIND_TIP[e.kind] ? [KIND_TIP[e.kind]] : [],
+      ...(e.notes ? { userNotes: e.notes } : {}),
+    });
+  }
+  return { entries, toRemove, month };
 }

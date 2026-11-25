@@ -2,6 +2,7 @@
 // Repère du plan : x vers la droite, y vers le bas ; `northAngle` = rotation du nord (degrés, sens horaire).
 import { bounds, pointInPolygon, shapePolygon } from './geometry.js';
 import { edgeObstacles, itemObstacles } from './items.js';
+import { existingShadowObstacles } from './existing.js';
 
 const rad = (d) => (d * Math.PI) / 180;
 const deg = (r) => (r * 180) / Math.PI;
@@ -125,10 +126,10 @@ export function sunHoursOnPoint(point, { lat, lon, northAngle = 0, obstacles = [
 
 /**
  * Obstacles d'ombre d'un jardin : obstacles dessinés, côtés de contour mur/clôture/haie (hauteurs par défaut
- * 2 / 1,2 / 1,8 m) et éléments hauts (pergola, parasol, abri…). Les passages (portails) ne sont pas décomptés.
+ * 2 / 1,2 / 1,8 m), éléments hauts (pergola, parasol, abri…) et plantes existantes conservées (arbres, haies…). Les passages (portails) ne sont pas décomptés.
  */
 export function shadowObstacles(garden) {
-  return [...((garden && garden.obstacles) || []), ...edgeObstacles(garden), ...itemObstacles(garden)];
+  return [...((garden && garden.obstacles) || []), ...edgeObstacles(garden), ...itemObstacles(garden), ...existingShadowObstacles(garden)];
 }
 
 /**
@@ -192,6 +193,50 @@ export function estimateSunMap(garden, { date, step = 0.5 } = {}) {
  * @returns {{level:string|null, dominant:string|null, share:{full:number, partial:number, shade:number}}}
  */
 export function zoneSunLevel(garden, zone) {
+  const base = zoneSunLevelBase(garden, zone);
+  if (!base.level) return base;
+  const ex = existingShadowObstacles(garden);
+  const loc = garden.context && garden.context.location;
+  const poly = shapePolygon(zone.shape);
+  if (!ex.length || !loc || poly.length < 3) return base;
+  // L'ombre des plantes existantes ne peut qu'assombrir : niveau retenu = le plus sombre des deux estimations.
+  const d = new Date(Date.UTC(new Date().getUTCFullYear(), 5, 21, 12));
+  const samples = echantillonsSoleil(loc.lat, loc.lon, garden.context.northAngle || 0, d);
+  const b = bounds(poly);
+  const pas = Math.max(0.2, Math.min(0.5, Math.max(b.width, b.height) / 30));
+  const rang = { full: 2, partial: 1, shade: 0 };
+  const cpt = { full: 0, partial: 0, shade: 0 };
+  let total = 0;
+  for (let y = b.minY + pas / 2; y < b.maxY; y += pas) {
+    for (let x = b.minX + pas / 2; x < b.maxX; x += pas) {
+      const p = { x, y };
+      if (!pointInPolygon(p, poly)) continue;
+      const lvEx = levelFromHours(heuresAvecEchantillons(p, samples, ex));
+      const lvBase = pointBaseLevel(garden, p) || base.dominant;
+      cpt[rang[lvEx] < rang[lvBase] ? lvEx : lvBase]++;
+      total++;
+    }
+  }
+  if (!total) return base;
+  const share = { full: cpt.full / total, partial: cpt.partial / total, shade: cpt.shade / total };
+  let dominant = 'full';
+  for (const k of ['partial', 'shade']) if (share[k] > share[dominant]) dominant = k;
+  return { level: dominant, dominant, share };
+}
+
+/** Niveau déclaré en un point (uniforme ou région peinte), ou null. */
+function pointBaseLevel(garden, p) {
+  const sun = garden.sun;
+  if (!sun) return null;
+  if (sun.mode === 'uniform') return sun.uniform || null;
+  if (sun.mode !== 'map' || !sun.regions) return null;
+  for (let i = sun.regions.length - 1; i >= 0; i--) {
+    if (pointInPolygon(p, sun.regions[i].points)) return sun.regions[i].level;
+  }
+  return null;
+}
+
+function zoneSunLevelBase(garden, zone) {
   const vide = { level: null, dominant: null, share: { full: 0, partial: 0, shade: 0 } };
   const sun = garden.sun;
   if (!sun || sun.mode === 'unknown') return vide;
