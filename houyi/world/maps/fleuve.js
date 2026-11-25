@@ -192,7 +192,7 @@ export default {
             ]
         },
         npcs: [
-            { id: 'carp_jin', x: 6, y: 17 },
+            { id: 'carp_jin', x: 7, y: 18 },
             { id: 'mud_imp_pit', x: 14, y: 13 },
             { id: 'captain_lo', x: 16, y: 13 },
             { id: 'fleuve_wild_old_surveyor', x: 32, y: 4 }

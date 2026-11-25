@@ -1104,6 +1104,12 @@ body.charge-paused .class-pick::before { animation-play-state: paused; }
 .action-beads { position: relative; margin: 0 0 3px; cursor: pointer; -webkit-tap-highlight-color: transparent; }
 .action-beads:focus-visible { outline: 2px solid #2f7bbd; outline-offset: 2px; border-radius: 6px; }
 .action-beads[hidden] { display: none; }
+.action-beads .queue-announce { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 26px; animation: queue-announce-in 0.5s ease both; pointer-events: none; }
+.action-beads .queue-announce-line { font-size: 12px; line-height: 14px; font-weight: 700; text-align: center; }
+.action-beads .queue-announce-hero { color: #1f6b3d; }
+.action-beads .queue-announce-foe { color: #7d1f19; }
+@keyframes queue-announce-in { 0% { opacity: 0; transform: translateY(2px); } 15% { opacity: 1; transform: none; } 80% { opacity: 1; } 100% { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .action-beads .queue-announce { animation: none; } }
 .action-beads .queue-head { position: relative; display: flex; align-items: center; height: 26px; }   /* toute la ligne se touche : un clic déplie ou replie la frise */
 .action-beads .queue-dots { position: relative; flex: 1 1 auto; display: flex; justify-content: center; align-items: center; gap: 6px; height: 10px; }
 .action-beads .queue-dots::before { content: ""; position: absolute; left: 8%; right: 8%; top: 50%; height: 1px; background: rgba(120, 100, 90, 0.35); }

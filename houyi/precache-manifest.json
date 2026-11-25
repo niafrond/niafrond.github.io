@@ -214,6 +214,7 @@
   "world/junctions.js",
   "world/legends.js",
   "world/levelDesign.js",
+  "world/liquidPatrols.js",
   "world/manifest.js",
   "world/manifest2.js",
   "world/mapKit.js",
