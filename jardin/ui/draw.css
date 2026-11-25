@@ -223,3 +223,25 @@
 .jd-chips.compact .jd-tcard .jd-ticon { font-size: 18px; }
 .jd-chips.compact .jd-tcard .jd-tname { font-size: 12px; max-width: 80px; }
 .jd-chips.compact .jd-tcard .jd-tstat { display: none; }
+
+/* Pastille du nord (haut droite du plan) et fenêtre « Orienter le plan » */
+.jd-north {
+  position: absolute; right: 4px; top: 4px; z-index: 5; width: 46px; height: 46px; opacity: .9; padding: 0; border: 0; border-radius: 50%;
+  background: transparent; cursor: pointer; touch-action: manipulation; pointer-events: auto; -webkit-tap-highlight-color: transparent;
+  margin-top: env(safe-area-inset-top, 0px); margin-right: env(safe-area-inset-right, 0px);
+  filter: drop-shadow(0 1px 3px rgba(0,0,0,.28));
+}
+.jd-north:focus-visible { outline: 3px solid var(--jd-accent, #2e7d32); outline-offset: 2px; }
+.jd-north-svg { width: 100%; height: 100%; display: block; overflow: visible; pointer-events: none; }
+.jd-north-needle, .jd-north-n { transition: transform .35s ease; transform-box: fill-box; transform-origin: center; }
+.jd-north-needle { transform-box: view-box; transform-origin: 0 0; }
+.jd-north.is-unknown { opacity: .85; }
+@media (prefers-reduced-motion: reduce) { .jd-north-needle, .jd-north-n { transition: none; } }
+.jd-north-pop .jd-north-prev { display: flex; align-items: center; gap: 12px; margin: 4px 0 8px; }
+.jd-north-pop .jd-north-prev svg { width: 72px; height: 72px; flex: 0 0 auto; }
+.jd-north-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin: 6px 0; }
+.jd-north-grid .jd-btn { width: 100%; }
+.jd-north-status { font-size: 13px; color: var(--jd-muted); margin: 4px 0; min-height: 18px; }
+.jd-north-status.warn { color: var(--jd-warn); }
+/* la fenêtre du nord couvre l'écran (le plan peut être trop petit, ex. étape Soleil) */
+.jd-pop.jd-north-pop { position: fixed; top: calc(8px + env(safe-area-inset-top, 0px)); left: 8px; right: 8px; z-index: 60; max-height: calc(100dvh - 16px); overflow-y: auto; }
