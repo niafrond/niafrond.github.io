@@ -84,6 +84,47 @@ test('vue 3D : canvas WebGL, image non vide, l’heure change l’image, rendu p
   expect(errors.filter((e) => !/GPU stall|ReadPixels/i.test(e))).toEqual([]);
 });
 
+test('saisons : curseur, puces, année accélérée', async ({ page }) => {
+  test.setTimeout(90_000);
+  const errors = [];
+  page.on('pageerror', (e) => errors.push(String(e)));
+  page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()); });
+  await ouvrir(page);
+  const api = (fn, ...a) => page.evaluate(([f, args]) => window.__un.api[f](...args), [fn, a]);
+  await api('setHour', 13);
+  const slider = page.locator('[data-role=season]');
+  const label = page.locator('[data-role=season-label]');
+
+  await slider.fill('172');
+  await expect(label).toHaveText('Été · 21 juin');
+  const ete = await stats(page, await api('snapshot'));
+  await slider.fill('15');
+  await expect(label).toHaveText('Hiver · 15 janvier');
+  const hiver = await stats(page, await api('snapshot'));
+  expect(Math.abs(ete.lum - hiver.lum)).toBeGreaterThan(6); // feuillage, floraison, pelouse et ciel changent l'image
+
+  // puces de saison : elles positionnent le curseur
+  for (const [id, nom, jour] of [['printemps', 'Printemps', '105'], ['automne', 'Automne', '288'], ['été', 'Été', '172'], ['hiver', 'Hiver', '15']]) {
+    await page.locator(`[data-season="${id}"]`).click();
+    await expect(label).toContainText(nom);
+    await expect(slider).toHaveValue(jour);
+    await expect(page.locator(`[data-season="${id}"]`)).toHaveAttribute('aria-pressed', 'true');
+  }
+
+  // année accélérée : démarre (le curseur avance), s'arrête (il se fige)
+  const play = page.locator('[data-act=play-year]');
+  await play.click();
+  await expect(play).toHaveAttribute('aria-pressed', 'true');
+  await expect.poll(async () => Number(await slider.inputValue()), { timeout: 15_000 }).toBeGreaterThan(20);
+  await play.click();
+  await expect(play).toHaveAttribute('aria-pressed', 'false');
+  const v1 = await slider.inputValue();
+  await page.waitForTimeout(700);
+  expect(await slider.inputValue()).toBe(v1);
+
+  expect(errors.filter((e) => !/GPU stall|ReadPixels/i.test(e))).toEqual([]);
+});
+
 // ── Mobile : émulation Pixel 5 (écran 393×727, tactile), WebGL logiciel ──
 test.describe('mobile', () => {
   test.use({ userAgent: UA_ANDROID, viewport: { width: 393, height: 727 }, hasTouch: true, isMobile: true, deviceScaleFactor: 2.75 });
@@ -111,6 +152,19 @@ test.describe('mobile', () => {
     expect(hb.height).toBeGreaterThanOrEqual(44);
     await page.locator('[data-act=toggle-panel]').tap();
     await expect(panel).toBeHidden();
+
+    // bandeau « saison » toujours visible quand la feuille est repliée (cible ≥ 44 px), masqué quand elle est ouverte
+    const bar = page.locator('[data-role=season-bar]');
+    await expect(bar).toBeVisible();
+    expect((await page.locator('[data-role=season-strip]').boundingBox()).height).toBeGreaterThanOrEqual(44);
+    expect((await page.locator('[data-act=play-year-strip]').boundingBox()).width).toBeGreaterThanOrEqual(44);
+    await page.locator('[data-role=season-strip]').fill('172');
+    await expect(page.locator('[data-role=strip-label]')).toContainText('Été');
+    await page.locator('[data-act=toggle-panel]').tap();
+    await expect(bar).toBeHidden();
+    await expect(page.locator('[data-role=season-label]')).toHaveText('Été · 21 juin');
+    await page.locator('[data-act=toggle-panel]').tap();
+    await expect(bar).toBeVisible();
 
     // à hauteur d'yeux : joystick virtuel
     await page.evaluate(() => window.__un.api.setView('eye'));

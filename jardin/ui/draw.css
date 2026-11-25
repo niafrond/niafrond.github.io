@@ -216,3 +216,10 @@
 .jd-sdlg-text { font-size: 17px; font-weight: 600; line-height: 1.35; margin-bottom: 4px; }
 .jd-sdlg-box .jd-btn { min-height: 50px; white-space: normal; font-size: 16px; }
 .jd-slink[hidden] { display: none; }
+
+/* Palette de zones compacte quand une zone est sélectionnée (reste visible pour enchaîner) */
+.jd-chips.compact { padding: 4px 6px; gap: 6px; }
+.jd-chips.compact .jd-chip.jd-tcard { min-height: 44px; padding: 4px 8px; flex-direction: row; gap: 6px; align-items: center; }
+.jd-chips.compact .jd-tcard .jd-ticon { font-size: 18px; }
+.jd-chips.compact .jd-tcard .jd-tname { font-size: 12px; max-width: 80px; }
+.jd-chips.compact .jd-tcard .jd-tstat { display: none; }

@@ -1,5 +1,5 @@
 /** @jest-environment jsdom */
-import { createGarden } from '../../model.js';
+import { createGarden, createZone } from '../../model.js';
 import { mountItemEditor } from '../../ui/draw-items.js';
 import { ITEM_KINDS } from '../../items.js';
 
@@ -223,5 +223,26 @@ describe('éditeur d’aménagements (DOM)', () => {
     const m = monter();
     m.unmount();
     expect(m.el.querySelector('[data-role=items-editor]')).toBeNull();
+  });
+});
+
+describe('éditeur d’aménagements : zones déjà dessinées', () => {
+  afterEach(() => { document.body.innerHTML = ''; });
+
+  test('les zones de l’étape précédente sont affichées sous les aménagements, avec leur nom', () => {
+    const g = jardin();
+    const R = (x0, y0, x1, y1) => [{ x: x0, y: y0 }, { x: x1, y: y0 }, { x: x1, y: y1 }, { x: x0, y: y1 }];
+    g.zones.push(createZone('terrace', { kind: 'polygon', points: R(1, 1, 5, 4) }));
+    g.zones.push(createZone('trees', { kind: 'circle', center: { x: 9, y: 5 }, radius: 1.5 }));
+    const { el } = monter(g);
+    const polys = [...el.querySelectorAll('.jd-svg polygon')].filter((p) => p.getAttribute('pointer-events') === 'none' && /fill-opacity/.test(p.outerHTML));
+    expect(polys.length).toBeGreaterThanOrEqual(2);
+    expect(el.querySelector('.jd-svg').textContent).toContain('Terrasse');
+    expect(el.querySelector('.jd-svg').textContent).toContain('Arbres');
+  });
+
+  test('sans zone dessinée, rien de plus que le contour', () => {
+    const { el } = monter();
+    expect([...el.querySelectorAll('.jd-svg polygon')].filter((p) => p.getAttribute('pointer-events') === 'none').length).toBe(0);
   });
 });

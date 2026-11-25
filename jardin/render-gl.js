@@ -4,9 +4,12 @@ import { sunPosition } from './sun.js';
 import { shapePolygon, bounds as polyBounds, signedArea } from './geometry.js';
 import { ZONE_TYPES } from './model.js';
 import {
-  placePlants, runJob, slimPlant, groupsFromRecords, hashStr, kindOf, isDeciduousWoody, isWoody, heightFactor, LAWN_PLANT,
+  placePlants, runJob, slimPlant, groupsFromRecords, hashStr, kindOf, isDeciduousWoody, isWoody, heightFactor, LAWN_PLANT, mulberry32,
 } from './gl-worker-core.js';
 import * as tx from './gl-textures.js';
+import {
+  dayOfYear, seasonDoy, plantSeasonState, groundState, seasonWarmth, leafFall, mixHex,
+} from './gl-season.js';
 import { polyGeometry, buildBuilding, buildLinear, buildOpening, buildItem, segmentsWithGaps } from './gl-structures.js';
 
 export { placePlants };
@@ -130,9 +133,14 @@ export function buildScene(THREE, garden, opts = {}) {
     age: clamp(Number.isFinite(opts.age) ? opts.age : 1, 0, 1),
     hour: Number.isFinite(opts.hour) ? opts.hour : 14,
     date: opts.date instanceof Date ? opts.date : new Date(new Date().getFullYear(), (opts.month || 6) - 1, 15),
-    month: null,
+    month: null, doy: null, leaves: opts.leaves !== false,
   };
   state.month = Number.isFinite(opts.month) ? opts.month : state.date.getMonth() + 1;
+  state.doy = Number.isFinite(opts.doy) ? opts.doy : dayOfYear(state.date);
+  const gloc = g.context && g.context.location;
+  const glat = gloc && Number.isFinite(gloc.lat) ? gloc.lat : DEFAULT_LAT;
+  const dry = 0.2 + 0.7 * ((hashStr(String(g.id || g.name || 'jardin')) % 1000) / 1000); // sécheresse estivale propre au jardin
+  const sdoy = () => seasonDoy(state.doy, glat);
 
   const tracked = [];
   const track = (o) => { tracked.push(o); return o; };
@@ -180,6 +188,8 @@ export function buildScene(THREE, garden, opts = {}) {
   if (outer.material.map) outer.material.map.repeat.set(outerSize / 4, outerSize / 4);
   scene.add(outer);
   const ground = new THREE.Mesh(track(polyGeometry(THREE, boundary)), ctx.mat('#ffffff', { map: ctx.tex('ground', tx.groundTexture) }));
+  const groundMats = [outer.material, ground.material];
+  const lawnMats = [];
   ground.position.y = 0; ground.receiveShadow = true; ground.name = 'sol';
   scene.add(ground);
 
@@ -216,6 +226,7 @@ export function buildScene(THREE, garden, opts = {}) {
     const mesh = new THREE.Mesh(track(polyGeometry(THREE, poly, zm.depth)), zm.mat);
     mesh.position.y = zm.y; mesh.receiveShadow = true; mesh.castShadow = zm.depth > 0; mesh.name = `zone-${z.type}-${z.id}`;
     zonesGroup.add(mesh);
+    if (z.type === 'lawn') lawnMats.push(zm.mat);
   }
 
   // ── structures : obstacles, côtés du contour, ouvertures, mobilier ──
@@ -363,49 +374,120 @@ export function buildScene(THREE, garden, opts = {}) {
   scene.add(sky);
   scene.fog = new THREE.Fog('#cfe6f5', radius * 4, radius * 16);
 
+  // ── feuilles qui tombent (particules légères, désactivées en qualité Basse / mobile) ──
+  let fx = null;
+  const fxMax = Math.max(0, Math.round(quality.particles || 0));
+  if (fxMax > 0) {
+    const srcs = [];
+    for (const im of meshes) {
+      const { plantId, part } = im.userData; const plant = slims[plantId];
+      if (part !== 'crown' || !plant || !isDeciduousWoody(plant)) continue;
+      const a = im.instanceMatrix.array;
+      const hue = plantSeasonState(plant, 300).hue;
+      for (let i = 0; i < im.count; i++) srcs.push({ x: a[i * 16 + 12], y: a[i * 16 + 13] + Math.hypot(a[i * 16 + 4], a[i * 16 + 5], a[i * 16 + 6]) * 0.3, z: a[i * 16 + 14], r: Math.hypot(a[i * 16], a[i * 16 + 1], a[i * 16 + 2]) * 0.8, hue });
+    }
+    if (srcs.length) {
+      const rnd = mulberry32(hashStr('feuilles'));
+      const pos = new Float32Array(fxMax * 3); const col = new Float32Array(fxMax * 3);
+      const own = new Array(fxMax); const vel = new Float32Array(fxMax); const ph = new Float32Array(fxMax);
+      const tc = new THREE.Color();
+      for (let i = 0; i < fxMax; i++) {
+        const sr = srcs[Math.floor(rnd() * srcs.length)]; own[i] = sr;
+        const a = rnd() * 6.283; const d = Math.sqrt(rnd()) * sr.r;
+        pos[i * 3] = sr.x + Math.cos(a) * d; pos[i * 3 + 1] = rnd() * sr.y; pos[i * 3 + 2] = sr.z + Math.sin(a) * d;
+        vel[i] = 0.45 + rnd() * 0.7; ph[i] = rnd() * 6.283;
+        tc.set(sr.hue).offsetHSL((rnd() - 0.5) * 0.04, 0, (rnd() - 0.5) * 0.12);
+        col[i * 3] = tc.r; col[i * 3 + 1] = tc.g; col[i * 3 + 2] = tc.b;
+      }
+      const geo = new THREE.BufferGeometry();
+      geo.setAttribute('position', new THREE.BufferAttribute(pos, 3)); geo.setAttribute('color', new THREE.BufferAttribute(col, 3));
+      geo.setDrawRange(0, 0);
+      const pts = new THREE.Points(track(geo), track(new THREE.PointsMaterial({ size: 0.24, vertexColors: true, sizeAttenuation: true, transparent: true, opacity: 0.92, depthWrite: false })));
+      pts.frustumCulled = false; pts.visible = false; pts.name = 'feuilles-qui-tombent';
+      scene.add(pts);
+      fx = { points: pts, pos, vel, ph, own, rnd, t: 0, max: fxMax, rng: rnd };
+    }
+  }
+  const fxCount = () => (fx && state.leaves ? Math.round(fx.max * (state.fall || 0)) : 0);
+  function fxApply() {
+    if (!fx) return;
+    const n = fxCount();
+    fx.points.geometry.setDrawRange(0, n); fx.points.visible = n > 0;
+  }
+  function fxTick(dt) {
+    if (!fx) return false;
+    const n = fxCount();
+    if (!n) return false;
+    fx.t += dt;
+    const { pos, vel, ph, own, rnd } = fx;
+    for (let i = 0; i < n; i++) {
+      pos[i * 3 + 1] -= vel[i] * dt;
+      pos[i * 3] += Math.sin(fx.t * 1.3 + ph[i]) * 0.3 * dt;
+      pos[i * 3 + 2] += Math.cos(fx.t * 1.1 + ph[i]) * 0.2 * dt;
+      if (pos[i * 3 + 1] < 0.03) {
+        const sr = own[i]; const a = rnd() * 6.283; const d = Math.sqrt(rnd()) * sr.r;
+        pos[i * 3] = sr.x + Math.cos(a) * d; pos[i * 3 + 1] = sr.y * (0.6 + rnd() * 0.5); pos[i * 3 + 2] = sr.z + Math.sin(a) * d;
+      }
+    }
+    fx.points.geometry.attributes.position.needsUpdate = true;
+    return true;
+  }
+
   // ── mise à jour ──
-  const tmpA = new THREE.Color(); const tmpB = new THREE.Color('#c8742a');
-  const woodyDecid = new Map();
+  const tmpA = new THREE.Color(); const tmpB = new THREE.Color();
+  const TENDER = new THREE.Color('#b4de6e'); const DRY = new THREE.Color('#a8955f');
+  const baseOf = (plant) => plant.foliageColor || FOLIAGE_DEFAULT[plant.category] || '#5a9a45';
   const applySeason = () => {
-    const m = state.month; const on = leavesOn(m);
+    const doy = sdoy();
+    const cache = new Map();
+    const st = (plantId) => { let v = cache.get(plantId); if (!v) { v = plantSeasonState(slims[plantId] || LAWN_PLANT, doy); cache.set(plantId, v); } return v; };
     for (const im of meshes) {
       const { plantId, part } = im.userData; const plant = slims[plantId];
       if (!plant) continue;
-      const woodyDec = isDeciduousWoody(plant);
-      woodyDecid.set(plantId, woodyDec);
-      if (part === 'flower') { im.visible = (plant.bloom || []).includes(m); continue; }
-      if (part === 'branch') { im.visible = woodyDec && !on; continue; }
-      if (part === 'trunk') continue;
+      const ps = st(plantId);
       const mat = im.material;
-      if (isWoody(plant)) {
-        im.visible = woodyDec ? on : true;
-        if (woodyDec) {
-          const base = plant.foliageColor || FOLIAGE_DEFAULT[plant.category] || '#5a9a45';
-          const t = m === 10 ? 0.35 : m === 11 ? 0.7 : m === 4 ? -0.15 : 0;
-          tmpA.set(base);
-          if (t > 0) tmpA.lerp(tmpB, t); else if (t < 0) tmpA.lerp(new THREE.Color('#c9e08a'), -t);
-          mat.color.copy(tmpA);
-        }
+      if (part === 'flower') {
+        im.visible = ps.flower > 0.02;
+        if (!mat.transparent) { mat.transparent = true; mat.needsUpdate = true; }
+        mat.opacity = ps.flower; mat.depthWrite = ps.flower > 0.9;
+        continue;
+      }
+      if (part === 'branch') { im.visible = ps.kind === 'woody' && ps.leafDensity < 0.97; continue; }
+      if (part === 'trunk') continue;
+      if (ps.kind === 'woody') {
+        im.visible = ps.leafDensity > 0.03;
+        const hash = ps.leafDensity < 0.985;
+        if (mat.alphaHash !== hash) { mat.alphaHash = hash; mat.needsUpdate = true; }
+        mat.opacity = hash ? Math.max(0.04, ps.leafDensity) : 1;
+        tmpA.set(baseOf(plant));
+        if (ps.spring > 0) tmpA.lerp(TENDER, ps.spring * 0.75);
+        if (ps.tint > 0) tmpA.lerp(tmpB.set(ps.hue), ps.tint);
+        mat.color.copy(tmpA);
         im.scale.y = 1;
       } else {
-        const dec = plant.foliage === 'deciduous' && part !== 'flower' && plant.category !== 'lawn';
-        const f = dec ? dormancy(m) : 1;
-        im.visible = true; im.scale.y = f;
-        const base = plant.foliageColor || FOLIAGE_DEFAULT[plant.category] || '#5a9a45';
-        tmpA.set(base);
-        if (dec && f < 1) tmpA.lerp(new THREE.Color('#9b8a63'), 1 - f);
+        im.visible = true; im.scale.y = ps.scaleY;
+        tmpA.set(baseOf(plant));
+        if (ps.tint > 0) tmpA.lerp(DRY, ps.tint);
         mat.color.copy(tmpA);
       }
     }
+    // sol : vert vif → vert doux → paille → terne
+    const gs = groundState(doy, dry);
+    for (const m of lawnMats) m.color.set(gs.lawnTint);
+    for (const m of groundMats) m.color.set(gs.groundTint);
+    state.fall = leafFall(doy);
+    fxApply();
   };
   const applySun = () => {
     const s = sunDirection(g, { date: state.date, hour: state.hour });
     const sk = skyState(s.elevation);
     const mix = (v) => (Array.isArray(v) ? new THREE.Color(v[0]).lerp(new THREE.Color(v[1]), v[2]) : new THREE.Color(v));
-    const top = mix(sk.top); const hor = mix(sk.hor);
+    const wm = seasonWarmth(sdoy()); const winter = Math.max(0, -wm); const summer = Math.max(0, wm);
+    const top = mix(sk.top).lerp(new THREE.Color('#8ea3ba'), 0.32 * winter);
+    const hor = mix(sk.hor).lerp(new THREE.Color('#f7e2bd'), 0.14 * summer).lerp(new THREE.Color('#e3e9ee'), 0.3 * winter);
     skyMat.uniforms.top.value.copy(top); skyMat.uniforms.hor.value.copy(hor);
     skyMat.uniforms.ground.value.copy(hor).multiplyScalar(0.75);
-    const warm = new THREE.Color('#ff9f55').lerp(new THREE.Color('#fff4e2'), smooth(2, 35, s.elevation));
+    const warm = new THREE.Color('#ff9f55').lerp(new THREE.Color('#fff4e2'), smooth(2, 35, s.elevation)).lerp(new THREE.Color('#d4e3ff'), 0.4 * winter).lerp(new THREE.Color('#ffe2b0'), 0.25 * summer);
     sun.color.copy(warm);
     skyMat.uniforms.sunCol.value.copy(warm);
     skyMat.uniforms.glow.value = s.elevation > -1 ? 1 : 0;
@@ -416,6 +498,7 @@ export function buildScene(THREE, garden, opts = {}) {
     hemi.color.copy(top).lerp(new THREE.Color('#ffffff'), 0.35); hemi.groundColor.set('#5f5440').lerp(hor, 0.2);
     hemi.intensity = sk.hemi;
     scene.fog.color.copy(hor);
+    scene.fog.near = radius * 4 * (1 - 0.4 * winter); scene.fog.far = radius * 16 * (1 - 0.3 * winter);
     skyMat.uniforms.sunDir.value.set(s.dir.x, s.dir.y, s.dir.z);
     state.sun = s;
     return s;
@@ -449,18 +532,25 @@ export function buildScene(THREE, garden, opts = {}) {
     },
     update(patch = {}) {
       let seasonDirty = false;
-      if (patch.date instanceof Date) { state.date = patch.date; if (!Number.isFinite(patch.month)) state.month = patch.date.getMonth() + 1; seasonDirty = true; }
+      if (patch.date instanceof Date) { state.date = patch.date; if (!Number.isFinite(patch.month)) state.month = patch.date.getMonth() + 1; state.doy = dayOfYear(patch.date); seasonDirty = true; }
       if (Number.isFinite(patch.month)) {
         state.month = patch.month;
         if (!(patch.date instanceof Date)) state.date = new Date(state.date.getFullYear(), patch.month - 1, 15);
+        state.doy = dayOfYear(state.date);
         seasonDirty = true;
       }
+      if (Number.isFinite(patch.doy)) { state.doy = patch.doy; seasonDirty = true; }
+      if (typeof patch.leaves === 'boolean' && patch.leaves !== state.leaves) { state.leaves = patch.leaves; seasonDirty = true; }
       if (Number.isFinite(patch.hour)) state.hour = patch.hour;
       if (Number.isFinite(patch.age)) { const a = clamp(patch.age, 0, 1); if (a !== state.age) { state.age = a; growth(a); } }
       if (seasonDirty) applySeason();
       applySun();
       return state;
     },
+    /** Anime les feuilles qui tombent (dt en s) ; renvoie true si des particules bougent. */
+    tick(dt) { return fxTick(dt); },
+    fxActive() { return fxCount() > 0; },
+    leafFx: () => fx,
     setShadowSize(n) {
       sun.shadow.mapSize.set(n, n);
       if (sun.shadow.map) { sun.shadow.map.dispose(); sun.shadow.map = null; }

@@ -77,3 +77,21 @@
 .v3d--mobile .v3d-panel:not(.is-collapsed) ~ .v3d-hud { display: none; }
 .v3d--mobile .v3d-info { font-size: 12px; }
 .v3d--mobile .v3d-progress-card .v3d-btn { width: 100%; }
+
+/* ── saisons ── */
+.v3d-season { padding-top: 10px !important; }
+.v3d-season-label { display: block; font-size: 17px; font-weight: 700; color: #fff; margin: 2px 0 4px; }
+.v3d-ticks { display: flex; justify-content: space-between; padding: 0 3px; margin: -2px 0 8px; font-size: 10.5px; color: #9db3a2; letter-spacing: 0; }
+.v3d-ticks span { width: 1em; text-align: center; }
+.v3d-lapse { display: flex; gap: 8px; align-items: center; margin: 6px 0; }
+.v3d-lapse .v3d-btn { flex: 1 1 0; min-width: 0; margin: 0; width: auto; padding: 7px 8px; }
+.v3d-lapse select { margin: 0; flex: 0 0 98px; width: 98px; min-width: 0; }
+.v3d-strip { display: none; }
+.v3d--mobile .v3d-strip { position: absolute; left: 0; right: 0; bottom: 0; z-index: 3; display: flex; align-items: center; gap: 8px; min-height: 56px; padding: 6px calc(10px + env(safe-area-inset-right, 0px)) calc(6px + env(safe-area-inset-bottom, 0px)) calc(10px + env(safe-area-inset-left, 0px)); background: #141d17ee; border-top: 1px solid #ffffff24; backdrop-filter: blur(8px); }
+.v3d--mobile .v3d-panel:not(.is-collapsed) ~ .v3d-strip { display: none; }
+.v3d-strip-label { flex: none; min-width: 7.6em; font-size: 12.5px; font-weight: 600; color: #fff; }
+.v3d-strip input[type=range] { flex: 1; min-width: 0; height: 44px; margin: 0; accent-color: #5fbf84; }
+.v3d--mobile .v3d-strip .v3d-btn { flex: none; width: 48px; padding: 0; }
+.v3d--mobile .v3d-hud { bottom: calc(66px + env(safe-area-inset-bottom, 0px)); }
+.v3d--mobile .v3d-joy { bottom: calc(84px + env(safe-area-inset-bottom, 0px)); }
+.v3d--mobile .v3d-lapse select { min-height: 44px; }

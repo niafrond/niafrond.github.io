@@ -262,11 +262,11 @@ function emitPlant(G, rec, plant, age, density) {
     for (let k = 0; k < 11; k++) {
       const a = (k / 11) * Math.PI * 2 + rng(); const tilt = 0.5 + rng() * 0.55;
       const len = ch * (0.5 + rng() * 0.35);
-      G.push(id, 'branch', 1, x, trunkH * (0.78 + rng() * 0.22), z, a, tilt, r * 0.5, len, r * 0.5);
+      G.push(id, 'branch', 1, x, trunkH * (0.78 + rng() * 0.22), z, a, tilt, r * 0.3, len, r * 0.3);
     }
-    for (let k = 0; k < 9; k++) {
-      const a = rng() * Math.PI * 2; const tilt = 0.7 + rng() * 0.5;
-      G.push(id, 'branch', 1, x + Math.cos(a) * R * 0.25, base + ch * (0.25 + rng() * 0.3), z + Math.sin(a) * R * 0.25, a, tilt, r * 0.22, ch * (0.28 + rng() * 0.2), r * 0.22);
+    for (let k = 0; k < 16; k++) {
+      const a = rng() * Math.PI * 2; const tilt = 0.7 + rng() * 0.6;
+      G.push(id, 'branch', 1, x + Math.cos(a) * R * 0.25, base + ch * (0.25 + rng() * 0.3), z + Math.sin(a) * R * 0.25, a, tilt, r * 0.11, ch * (0.22 + rng() * 0.2), r * 0.11);
     }
     const nf = nFlowers(fruit ? 22 : 16);
     for (let k = 0; k < nf; k++) {

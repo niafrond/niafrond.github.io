@@ -560,6 +560,8 @@ export function mountContourEditor(el, { garden, onChange } = {}) {
       mutate(() => { g.obstacles.push({ id: newId('o_'), kind: 'tree', center: p, radius: 2, height: k.height }); st.selObstacle = g.obstacles.length - 1; });
       return;
     }
+    // toucher le 1er point (≥ 3 points) = fermer la forme
+    if (st.draft && st.draft.points.length >= 3 && k.poly && distance(w, st.draft.points[0]) <= cv.px(24)) { finishDraft(); return; }
     if (!st.draft) st.draft = { kind: k.id, points: [] };
     st.draft.points.push(p);
     if (k.poly && st.rect && st.draft.points.length === 2) { finishDraft(); return; }
@@ -679,7 +681,8 @@ export function mountContourEditor(el, { garden, onChange } = {}) {
     }
     if (st.draft && st.draft.points.length) {
       s += `<polyline points="${poly(st.draft.points)}" fill="none" stroke="#d81b60" stroke-width="2.5" stroke-dasharray="6 4" ${NS}/>`;
-      st.draft.points.forEach((p) => { s += `<circle cx="${p.x}" cy="${p.y}" r="${hr}" fill="#d81b60" ${NS}/>`; });
+      const poly3 = st.draft.points.length >= 3 && (OBSTACLE_KINDS.find((x) => x.id === st.draft.kind) || {}).poly;
+      st.draft.points.forEach((p, i) => { s += (i === 0 && poly3) ? `<circle cx="${p.x}" cy="${p.y}" r="${hr * 1.8}" fill="#2e7d32" stroke="#fff" stroke-width="3" ${NS}/>` : `<circle cx="${p.x}" cy="${p.y}" r="${hr}" fill="#d81b60" ${NS}/>`; });
     }
     gMain.innerHTML = s;
     drawTop();
