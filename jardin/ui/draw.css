@@ -169,3 +169,50 @@
 .jd-zacts .jd-btn { min-width: 0; padding: 0 6px; font-size: 13px; }
 .jd-start .jd-grid2 .jd-btn { overflow: hidden; text-overflow: ellipsis; display: block; line-height: 44px; }
 .jd-start .jd-grid2 [data-act=start-more] { grid-column: 1 / -1; }
+
+/* ---------- Relevé GPS guidé (ui/gps-survey-ui.js) ---------- */
+.jd-editor.jd-survey-on { position: fixed; inset: 0; z-index: 1000; height: auto; min-height: 0; padding-bottom: env(safe-area-inset-bottom); }
+.jd-survey-on > .jd-bar, .jd-survey-on > .jd-info, .jd-survey-on > .jd-msg, .jd-survey-on > .jd-panel, .jd-survey-on > .jd-sheet,
+.jd-survey-on .jd-start, .jd-survey-on .jd-pop { display: none !important; }
+.jd-shead { background: var(--jd-card); border-bottom: 1px solid var(--jd-line); padding: 6px 10px 8px; padding-top: max(6px, env(safe-area-inset-top)); }
+.jd-shead[hidden], .jd-sfoot[hidden], .jd-sguide[hidden], .jd-sdlg[hidden], .jd-sreview[hidden], .jd-swalk[hidden], .jd-serr[hidden] { display: none; }
+.jd-shead-row { display: flex; align-items: center; gap: 8px; min-height: 40px; flex-wrap: wrap; }
+.jd-stitle { font-size: 17px; }
+.jd-scount { flex: 1 1 auto; color: var(--jd-muted); font-size: 14px; }
+.jd-sq { min-height: 40px; }
+.jd-gpill { display: inline-flex; align-items: center; padding: 6px 14px; border-radius: 20px; font-weight: 700; font-size: 15px; color: #fff; background: #757575; font-variant-numeric: tabular-nums; }
+.jd-gpill.q-good { background: #2e7d32; }
+.jd-gpill.q-medium { background: #e65100; }
+.jd-gpill.q-weak { background: #c62828; }
+.jd-sdist { font-size: 15px; font-weight: 600; color: #1565c0; font-variant-numeric: tabular-nums; }
+.jd-sinstr { font-size: 17px; font-weight: 600; line-height: 1.3; margin-top: 4px; }
+.jd-sguide { position: absolute; left: 10px; right: 10px; top: 10px; z-index: 5; background: color-mix(in srgb, var(--jd-card) 94%, transparent); border: 1px solid var(--jd-line); border-radius: 14px; padding: 12px 14px; box-shadow: 0 4px 18px rgba(0,0,0,.18); max-width: 440px; margin: 0 auto; }
+.jd-ssteps { margin: 0; padding-left: 26px; font-size: 18px; line-height: 1.35; }
+.jd-ssteps li { padding: 3px 0; color: var(--jd-muted); }
+.jd-ssteps li.now { color: var(--jd-fg); font-weight: 700; }
+.jd-ssteps li.done { color: var(--jd-accent); text-decoration: line-through; text-decoration-thickness: 1px; }
+.jd-serr-t { font-size: 17px; font-weight: 600; color: var(--jd-err); margin-bottom: 8px; }
+.jd-sfoot { background: var(--jd-card); border-top: 1px solid var(--jd-line); padding: 8px 10px 10px; }
+.jd-smsg { min-height: 20px; font-size: 14px; color: var(--jd-muted); padding: 0 2px 6px; }
+.jd-smsg.warn { color: var(--jd-warn); font-weight: 600; }
+.jd-smsg.err { color: var(--jd-err); font-weight: 600; }
+.jd-sbig { position: relative; overflow: hidden; width: 100%; min-height: 64px; border-radius: 16px; border: 0; background: var(--jd-accent); color: #fff; font: inherit; font-size: 21px; font-weight: 800; cursor: pointer; touch-action: manipulation; }
+.jd-sbig:disabled { background: color-mix(in srgb, var(--jd-fg) 22%, var(--jd-card)); color: color-mix(in srgb, var(--jd-fg) 60%, var(--jd-card)); cursor: default; }
+.jd-sbig.is-capturing:disabled { background: color-mix(in srgb, var(--jd-accent) 38%, var(--jd-card)); color: var(--jd-fg); }
+.jd-sbig-t { position: relative; z-index: 1; }
+.jd-sprog { position: absolute; inset: 0; z-index: 0; }
+.jd-sprog > i { display: block; height: 100%; width: 0; background: var(--jd-accent); transition: width .1s linear; }
+.jd-slink { display: block; margin: 6px auto 0; min-height: 44px; background: none; border: 0; color: var(--jd-err); font: inherit; font-size: 15px; text-decoration: underline; cursor: pointer; }
+.jd-sfoot .jd-srow, .jd-serr .jd-srow, .jd-sreview .jd-srow { display: flex; gap: 8px; margin-top: 8px; }
+.jd-sfoot .jd-srow .jd-btn, .jd-serr .jd-srow .jd-btn { flex: 1 1 0; min-width: 0; white-space: normal; line-height: 1.15; font-size: 15px; padding: 4px 6px; }
+.jd-sreview .jd-srow .jd-btn { flex: 1 1 0; min-height: 52px; white-space: normal; font-size: 16px; }
+.jd-rtitle { font-weight: 800; font-size: 18px; margin-bottom: 4px; }
+.jd-rstats { display: flex; flex-wrap: wrap; gap: 2px 14px; font-size: 16px; margin-bottom: 6px; }
+.jd-rtoggle { width: 100%; justify-content: flex-start; margin-top: 6px; min-height: 48px; white-space: normal; text-align: left; font-size: 15px; }
+.jd-rtoggle[aria-pressed="true"] { background: color-mix(in srgb, var(--jd-accent) 18%, var(--jd-card)); color: var(--jd-fg); border-color: var(--jd-accent); }
+.jd-rhint { font-size: 13px; color: var(--jd-muted); margin-top: 6px; }
+.jd-sdlg { position: absolute; inset: 0; z-index: 20; background: rgba(0,0,0,.45); display: flex; align-items: center; justify-content: center; padding: 16px; }
+.jd-sdlg-box { background: var(--jd-card); border-radius: 16px; padding: 16px; width: 100%; max-width: 380px; display: flex; flex-direction: column; gap: 8px; box-shadow: 0 8px 30px rgba(0,0,0,.35); }
+.jd-sdlg-text { font-size: 17px; font-weight: 600; line-height: 1.35; margin-bottom: 4px; }
+.jd-sdlg-box .jd-btn { min-height: 50px; white-space: normal; font-size: 16px; }
+.jd-slink[hidden] { display: none; }

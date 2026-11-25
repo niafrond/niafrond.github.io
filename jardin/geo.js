@@ -48,6 +48,98 @@ export async function getPosition({ samples = 5, timeoutMs = 15000, sampleDelayM
   return averageSamples(got);
 }
 
+/** Message français pour une erreur de géolocalisation (code `denied` | `unavailable` | `timeout` | `unsupported`). */
+export function geoErrorMessage(e) {
+  const code = e && (e.code === 1 ? 'denied' : e.code === 2 ? 'unavailable' : e.code === 3 ? 'timeout' : e.code);
+  if (code === 'denied') return 'Localisation refusée : autorisez la position pour cette application dans les réglages du téléphone.';
+  if (code === 'unsupported') return 'Géolocalisation indisponible sur cet appareil.';
+  if (code === 'timeout') return 'Le GPS met trop de temps à répondre : sortez à découvert et réessayez.';
+  return 'Signal GPS indisponible : sortez à découvert et vérifiez que la localisation est activée.';
+}
+const geoError = (e) => {
+  const code = e && (e.code === 1 ? 'denied' : e.code === 2 ? 'unavailable' : e.code === 3 ? 'timeout' : e.code) || 'unavailable';
+  return Object.assign(new Error(geoErrorMessage({ code })), { code });
+};
+
+/**
+ * Demande de maintien de l'écran allumé (Wake Lock) ; repli silencieux si absent ou refusé.
+ * Se réactive au retour de l'application au premier plan. Renvoie `release()`.
+ */
+export function keepScreenOn() {
+  let sentinel = null; let off = false;
+  const nav = globalThis.navigator;
+  const doc = globalThis.document;
+  const acquire = async () => {
+    try {
+      if (off || !nav?.wakeLock?.request) return;
+      const s = await nav.wakeLock.request('screen');
+      if (off) { try { await s.release(); } catch { /* déjà libéré */ } return; }
+      sentinel = s;
+    } catch { /* repli silencieux */ }
+  };
+  const onVisible = () => { if (doc && doc.visibilityState === 'visible' && (!sentinel || sentinel.released)) acquire(); };
+  try { doc?.addEventListener?.('visibilitychange', onVisible); } catch { /* sans document */ }
+  acquire();
+  return function release() {
+    off = true;
+    try { doc?.removeEventListener?.('visibilitychange', onVisible); } catch { /* ignoré */ }
+    const s = sentinel; sentinel = null;
+    if (s) { try { Promise.resolve(s.release()).catch(() => {}); } catch { /* ignoré */ } }
+  };
+}
+
+/**
+ * Suivi continu de la position (haute précision, sans cache). `cb({lat, lon, accuracy, t, speed, heading})`,
+ * `onError(Error{code, message en français})` (refus, indisponible, délai dépassé, non pris en charge).
+ * Garde l'écran allumé tant que le suivi est actif (`keepAwake: false` pour l'éviter). Renvoie `stop()`.
+ */
+export function watchFix(cb, { onError, keepAwake = true, timeoutMs = 20000 } = {}) {
+  let stopped = false; let clear = null;
+  const release = keepAwake ? keepScreenOn() : null;
+  const fail = (e) => { if (!stopped && onError) onError(geoError(e)); };
+  const emit = (p) => {
+    if (stopped || !p || !p.coords) return;
+    cb({
+      lat: p.coords.latitude, lon: p.coords.longitude, accuracy: p.coords.accuracy,
+      speed: p.coords.speed ?? null, heading: p.coords.heading ?? null,
+      t: typeof p.timestamp === 'number' && p.timestamp > 0 ? p.timestamp : Date.now(),
+    });
+  };
+  const plugin = cap().Geolocation;
+  (async () => {
+    try {
+      if (plugin?.watchPosition) {
+        if (plugin.checkPermissions) {
+          let perm = await plugin.checkPermissions();
+          if (perm && perm.location !== 'granted' && perm.coarseLocation !== 'granted' && plugin.requestPermissions) {
+            perm = await plugin.requestPermissions({ permissions: ['location'] });
+          }
+          if (perm && perm.location === 'denied') { fail({ code: 'denied' }); return; }
+        }
+        if (stopped) return;
+        const id = await plugin.watchPosition({ enableHighAccuracy: true, timeout: timeoutMs, maximumAge: 0 }, (pos, err) => {
+          if (err) fail({ code: /den|perm/i.test(String(err.message || err.code || '')) ? 'denied' : 'unavailable' });
+          else emit(pos);
+        });
+        if (stopped) { try { plugin.clearWatch({ id }); } catch { /* ignoré */ } return; }
+        clear = () => plugin.clearWatch({ id });
+        return;
+      }
+      const nav = globalThis.navigator?.geolocation;
+      if (!nav?.watchPosition) { fail({ code: 'unsupported' }); return; }
+      const wid = nav.watchPosition(emit, (e) => fail(e), { enableHighAccuracy: true, maximumAge: 0, timeout: timeoutMs });
+      clear = () => nav.clearWatch(wid);
+      if (stopped) clear();
+    } catch (e) { fail(e && e.code ? e : { code: /den|perm/i.test(String(e && e.message)) ? 'denied' : 'unavailable' }); }
+  })();
+  return function stop() {
+    if (stopped) return;
+    stopped = true;
+    try { if (clear) clear(); } catch { /* ignoré */ }
+    if (release) release();
+  };
+}
+
 /** Déclinaison magnétique approchée pour la France (°, positive = est), dérive ~+0,15°/an. */
 export function magneticDeclination(lat, lon, date = new Date()) {
   const year = date.getUTCFullYear() + date.getUTCMonth() / 12;

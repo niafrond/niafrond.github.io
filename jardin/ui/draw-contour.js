@@ -5,6 +5,7 @@ import {
 } from '../geometry.js';
 import { newId } from '../model.js';
 import { getPosition } from '../geo.js';
+import { createSurveyUI } from './gps-survey-ui.js';
 import {
   injectStyles, h, createCanvas, gridPath, snap, clone, esc, fr, frLen, frArea, parseNum, parseLength, toCm,
 } from './draw-util.js';
@@ -37,8 +38,14 @@ export function mountContourEditor(el, { garden, onChange } = {}) {
   let timer = null;
   let destroyed = false;
 
-  const snapshot = () => clone({ boundary: g.boundary, boundaryClosed: !!g.boundaryClosed, obstacles: g.obstacles });
-  const restore = (s) => { g.boundary = clone(s.boundary); g.boundaryClosed = s.boundaryClosed; g.obstacles = clone(s.obstacles); st.sel = null; st.selObstacle = null; st.closePrompt = null; };
+  let survey = null; // relevé GPS guidé (ui/gps-survey-ui.js)
+  const surveyOn = () => !!(survey && survey.isActive());
+
+  const snapshot = () => clone({ boundary: g.boundary, boundaryClosed: !!g.boundaryClosed, obstacles: g.obstacles, gpsOrigin: (g.context && g.context.gpsOrigin) || null });
+  const restore = (s) => {
+    g.boundary = clone(s.boundary); g.boundaryClosed = s.boundaryClosed; g.obstacles = clone(s.obstacles);
+    if (s.gpsOrigin) g.context.gpsOrigin = clone(s.gpsOrigin); else if ('gpsOrigin' in s) delete g.context.gpsOrigin;
+    st.sel = null; st.selObstacle = null; st.closePrompt = null; };
   const changed = () => { if (onChange) onChange(g); draw(); refreshUI(); };
   const mutate = (fn) => { st.history.push(snapshot()); if (st.history.length > 100) st.history.shift(); st.future = []; fn(); changed(); };
   const undo = () => { if (!st.history.length) return; st.future.push(snapshot()); restore(st.history.pop()); changed(); };
@@ -79,7 +86,7 @@ export function mountContourEditor(el, { garden, onChange } = {}) {
   const bClose = btn('', 'close', () => (closed() ? reopen() : tryClose()));
   const bDel = btn('🗑 Sommet', 'del-vertex', () => deleteVertex(), 'danger');
   const bSides = btn('📏 Côtés', 'sides', () => { st.sheet = !st.sheet; refreshUI(); });
-  const bGps = btn('📍 Point ici', 'gps-point', () => posePointGps());
+  const bGps = btn('📍 Relevé GPS', 'gps-point', () => startSurvey());
   const bLive = btn('🛰 Ma position', 'gps-live', () => toggleLive(), '', { 'aria-pressed': 'false' });
   bar2.append(bClose, bDel, bSides, bGps, bLive);
 
@@ -88,9 +95,26 @@ export function mountContourEditor(el, { garden, onChange } = {}) {
   const gMain = document.createElementNS('http://www.w3.org/2000/svg', 'g');
   const gTop = document.createElementNS('http://www.w3.org/2000/svg', 'g');
 
-  const cv = createCanvas(wrap, { onView: () => draw(), handlers: { down: onDown, tap: onTap, hover: onHover, long: onLong } });
+  const cv = createCanvas(wrap, { onView: () => { if (survey) survey.viewChanged(); draw(); }, handlers: { down: onDown, tap: onTap, hover: onHover, long: onLong } });
   wrap.append(startEl, pop);
   cv.svg.append(gGrid, gMain, gTop);
+  survey = createSurveyUI({
+    root, wrap, cv, garden: g,
+    persist: () => { if (onChange) onChange(g); },
+    redraw: () => draw(),
+    onApply: ({ points, origin }) => {
+      mutate(() => {
+        g.boundary = points.map((p) => ({ x: p.x, y: p.y })); g.boundaryClosed = true;
+        g.context.gpsOrigin = { lat: origin.lat, lon: origin.lon };
+        delete g.context.gpsSurveyDraft;
+        st.sel = null; st.closePrompt = null;
+      });
+      fitView();
+      announceValidity();
+    },
+    onManual: () => { st.sheet = true; say('GPS indisponible : saisissez les côtés à la main (longueur et direction).', 'warn'); refreshUI(); },
+    onExit: () => { fitView(); refreshUI(); },
+  });
   cv.svg.setAttribute('aria-label', 'Plan du terrain : touchez pour poser les sommets du contour');
 
   const fitView = () => {
@@ -151,6 +175,7 @@ export function mountContourEditor(el, { garden, onChange } = {}) {
   };
 
   function onDown(w) {
+    if (surveyOn()) return null;
     if (st.pop) closePop();
     if (st.tool === 'obstacle') return downObstacle(w);
     const vi = hitVertex(w);
@@ -198,7 +223,7 @@ export function mountContourEditor(el, { garden, onChange } = {}) {
     return best;
   }
   function onLong(w) {
-    if (st.tool !== 'draw') return;
+    if (surveyOn() || st.tool !== 'draw') return;
     const vi = hitVertex(w, 26);
     if (vi >= 0) { openVertexPop(vi); return; }
     const si = sideAt(w);
@@ -358,6 +383,7 @@ export function mountContourEditor(el, { garden, onChange } = {}) {
   }
 
   function onTap(w) {
+    if (surveyOn()) return undefined;
     if (st.tool === 'obstacle') return tapObstacle(w);
     const lab = labelAt(w);
     if (lab >= 0) { openSidePop(lab); return; }
@@ -386,6 +412,7 @@ export function mountContourEditor(el, { garden, onChange } = {}) {
   }
 
   function onHover(w) {
+    if (surveyOn()) return;
     if (st.tool === 'draw' && !closed()) st.ghost = snapAt(w).p;
     else if (st.tool === 'obstacle') st.ghost = snapAt(w, { from: null }).p;
     else st.ghost = null;
@@ -553,28 +580,8 @@ export function mountContourEditor(el, { garden, onChange } = {}) {
 
   // ---------- GPS ----------
   const gpsOrigin = () => (g.context && g.context.gpsOrigin) || null;
-  async function posePointGps() {
-    if (st.busy) return;
-    if (closed()) { say('Contour fermé : rouvrez-le pour poser un nouveau point.', 'warn'); return; }
-    st.busy = true; refreshUI();
-    say('Mesure GPS en cours… restez immobile quelques secondes.');
-    try {
-      const fix = await getPosition({ samples: 5 });
-      if (destroyed) return;
-      st.fix = fix;
-      let origin = gpsOrigin();
-      let p;
-      if (!origin) { origin = { lat: fix.lat, lon: fix.lon }; g.context.gpsOrigin = origin; p = g.boundary.length ? { ...g.boundary[0] } : { x: 0, y: 0 }; if (g.boundary.length) g.context.gpsOrigin = origin; }
-      else p = gpsToLocal([{ lat: fix.lat, lon: fix.lon }], origin).points[0];
-      p = { x: Math.round(p.x * 100) / 100, y: Math.round(p.y * 100) / 100 };
-      mutate(() => { g.boundary.push(p); st.sel = null; });
-      const acc = Number(fix.accuracy);
-      if (acc > 5) say(`Point posé (précision ±${fr(acc, 1)} m). Le GPS d'un téléphone est peu fiable sous couvert : complétez au mètre à ruban (touche « Côtés »).`, 'warn');
-      else say(`Point posé (précision ±${fr(acc, 1)} m).`);
-    } catch (e) {
-      say(`Position indisponible : ${(e && e.message) || 'autorisation refusée ou signal absent'}. Vous pouvez saisir les côtés à la main.`, 'err');
-    } finally { st.busy = false; if (!destroyed) refreshUI(); }
-  }
+  /** Relevé GPS guidé plein écran (consignes, qualité du signal, point par point) : voir ui/gps-survey-ui.js. */
+  function startSurvey() { if (survey) survey.start(); }
   async function pollLive() {
     try {
       const fix = await getPosition({ samples: 1, timeoutMs: 8000 });
@@ -628,6 +635,12 @@ export function mountContourEditor(el, { garden, onChange } = {}) {
     const gp = gridPath(view, rect);
     gGrid.innerHTML = `<path d="${gp.minor}" stroke="var(--jd-grid,#e3e3da)" stroke-width="1" fill="none" ${NS}/><path d="${gp.major}" stroke="var(--jd-line,#cfcfc4)" stroke-width="1" fill="none" ${NS}/>`
       + `<path d="M-0.15 0H0.15M0 -0.15V0.15" stroke="var(--jd-muted,#777)" stroke-width="1" ${NS}/>`;
+    if (surveyOn()) {
+      const sv = survey.svg();
+      gMain.innerHTML = sv ? sv.main : '';
+      gTop.innerHTML = sv ? sv.top : '';
+      return;
+    }
     const fs = cv.px(12);
     const hr = cv.px(9);
     const b = g.boundary;
@@ -673,7 +686,7 @@ export function mountContourEditor(el, { garden, onChange } = {}) {
   }
 
   function drawTop() {
-    if (destroyed) return;
+    if (destroyed || surveyOn()) return;
     let s = '';
     const b = g.boundary;
     if (st.tool === 'draw' && !closed() && b.length && st.ghost) {
@@ -718,8 +731,8 @@ export function mountContourEditor(el, { garden, onChange } = {}) {
     bDel.hidden = st.tool !== 'draw';
     bSides.hidden = st.tool !== 'draw';
     bGps.hidden = st.tool !== 'draw';
-    bGps.disabled = st.busy;
-    bGps.textContent = st.busy ? '⏳ Mesure…' : '📍 Poser un point ici';
+    const draft = survey && survey.draft();
+    bGps.textContent = draft ? `📍 Reprendre le relevé (${draft.points.length})` : '📍 Relevé GPS';
     bClose.hidden = st.tool !== 'draw';
 
     const pts = g.boundary;
@@ -746,9 +759,12 @@ export function mountContourEditor(el, { garden, onChange } = {}) {
         h('div', { class: 'jd-row' },
           btn('▭ Je connais les dimensions', 'start-rect', () => openRectPop({ x: 0, y: 0 }), 'primary'),
           btn('✏️ Je dessine au doigt', 'start-draw', () => say('Touchez le plan pour poser chaque angle du terrain.')),
-          btn('📍 Je fais le tour au GPS', 'start-gps', () => posePointGps())),
+          btn('📍 Je fais le tour au GPS', 'start-gps', () => startSurvey())),
       );
     }
+    const resume = survey && survey.draft();
+    const resumeBtn = startEl.querySelector('[data-act=start-gps]');
+    if (resumeBtn) resumeBtn.textContent = resume ? `📍 Reprendre le relevé GPS (${resume.points.length} point${resume.points.length > 1 ? 's' : ''})` : '📍 Je fais le tour au GPS';
     // assistant de fermeture
     promptEl.hidden = !st.closePrompt;
     if (st.closePrompt) {
@@ -848,6 +864,7 @@ export function mountContourEditor(el, { garden, onChange } = {}) {
 
   return function unmount() {
     destroyed = true;
+    if (survey) survey.destroy();
     if (timer) clearInterval(timer);
     cv.destroy();
     el.innerHTML = '';
