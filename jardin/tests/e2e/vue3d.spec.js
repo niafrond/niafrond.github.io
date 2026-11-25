@@ -101,7 +101,7 @@ test('saisons : curseur, puces, année accélérée', async ({ page }) => {
   await slider.fill('15');
   await expect(label).toHaveText('Hiver · 15 janvier');
   const hiver = await stats(page, await api('snapshot'));
-  expect(Math.abs(ete.lum - hiver.lum)).toBeGreaterThan(6); // neige, feuillage et ciel changent l'image
+  expect(Math.abs(ete.lum - hiver.lum)).toBeGreaterThan(6); // feuillage, floraison, pelouse et ciel changent l'image
 
   // puces de saison : elles positionnent le curseur
   for (const [id, nom, jour] of [['printemps', 'Printemps', '105'], ['automne', 'Automne', '288'], ['été', 'Été', '172'], ['hiver', 'Hiver', '15']]) {

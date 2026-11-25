@@ -1,6 +1,6 @@
-// État saisonnier pur : feuillage, teinte, floraison, neige, sol (gl-season.js).
+// État saisonnier pur : feuillage, teinte, floraison, sol (gl-season.js).
 import {
-  plantSeasonState, flowerAmount, snowAmount, groundState, seasonName, seasonLabel, seasonDoy, dayOfYear, dormancy, leafFall, seasonWarmth, SEASON_DOY, AUTUMN_HUES, mixHex,
+  plantSeasonState, flowerAmount, groundState, seasonName, seasonLabel, seasonDoy, dayOfYear, dormancy, leafFall, seasonWarmth, SEASON_DOY, AUTUMN_HUES, mixHex,
 } from '../../gl-season.js';
 
 const caduc = { id: 'erable', category: 'tree', foliage: 'deciduous', bloom: [4, 5], heightAdult: 10, widthAdult: 6 };
@@ -74,12 +74,6 @@ describe('persistants, herbacées, floraison', () => {
 });
 
 describe('sol, neige, ciel, calendrier', () => {
-  test('neige : hiver oui, été non, fonte progressive', () => {
-    expect(snowAmount(hiver)).toBe(1); expect(snowAmount(été)).toBe(0); expect(snowAmount(automne)).toBe(0);
-    expect(snowAmount(48)).toBeGreaterThan(0); expect(snowAmount(48)).toBeLessThan(1);
-    expect(snowAmount(365)).toBe(1); expect(snowAmount(345)).toBeLessThan(0.5);
-    expect(groundState(hiver).snow).toBe(1); expect(groundState(été).snow).toBe(0);
-  });
   test('pelouse : vert vif au printemps, paille l’été sec, terne l’hiver', () => {
     const lum = (h) => parseInt(h.slice(1, 3), 16) + parseInt(h.slice(3, 5), 16) + parseInt(h.slice(5, 7), 16);
     expect(groundState(printemps).lawnTint).toBe('#ffffff');

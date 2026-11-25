@@ -98,12 +98,6 @@ export function plantSeasonState(plant, doy) {
   return out;
 }
 
-/** Couverture de neige / givre du sol (0–1) : pleine du 28 décembre au 5 février, fonte jusqu'au 1er mars. */
-export function snowAmount(doy) {
-  const d = doy > 183 ? doy - 365 : doy; // −181 … 183
-  return d < 0 ? smooth(-26, -3, d) : 1 - smooth(36, 60, d);
-}
-
 const hex = (h) => [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16)];
 const toHex = (c) => `#${c.map((v) => Math.round(clamp(v, 0, 255)).toString(16).padStart(2, '0')).join('')}`;
 export const mixHex = (a, b, t) => { const x = hex(a); const y = hex(b); return toHex(x.map((v, i) => v + (y[i] - v) * t)); };
@@ -119,8 +113,7 @@ export function groundState(doy, dry = 0.4) {
   let c = mixHex(a[1], b[1], (doy - a[0]) / (b[0] - a[0] || 1));
   const summer = smooth(180, 215, doy) * (1 - smooth(250, 285, doy));
   c = mixHex(c, '#e8d48c', clamp(dry, 0, 1) * summer * 0.75);
-  const snow = snowAmount(doy);
-  return { lawnTint: c, groundTint: mixHex(c, '#ffffff', 0.15), dryness: clamp(dry, 0, 1) * summer, snow };
+  return { lawnTint: c, groundTint: mixHex(c, '#ffffff', 0.15), dryness: clamp(dry, 0, 1) * summer };
 }
 
 /** Chaleur de la lumière : +1 au solstice d'été, −1 au solstice d'hiver. */

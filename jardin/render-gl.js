@@ -8,7 +8,7 @@ import {
 } from './gl-worker-core.js';
 import * as tx from './gl-textures.js';
 import {
-  dayOfYear, seasonDoy, plantSeasonState, groundState, snowAmount, seasonWarmth, leafFall, mixHex,
+  dayOfYear, seasonDoy, plantSeasonState, groundState, seasonWarmth, leafFall, mixHex,
 } from './gl-season.js';
 import { polyGeometry, buildBuilding, buildLinear, buildOpening, buildItem, segmentsWithGaps } from './gl-structures.js';
 
@@ -133,7 +133,7 @@ export function buildScene(THREE, garden, opts = {}) {
     age: clamp(Number.isFinite(opts.age) ? opts.age : 1, 0, 1),
     hour: Number.isFinite(opts.hour) ? opts.hour : 14,
     date: opts.date instanceof Date ? opts.date : new Date(new Date().getFullYear(), (opts.month || 6) - 1, 15),
-    month: null, doy: null, snow: opts.snow !== false, leaves: opts.leaves !== false,
+    month: null, doy: null, leaves: opts.leaves !== false,
   };
   state.month = Number.isFinite(opts.month) ? opts.month : state.date.getMonth() + 1;
   state.doy = Number.isFinite(opts.doy) ? opts.doy : dayOfYear(state.date);
@@ -190,7 +190,6 @@ export function buildScene(THREE, garden, opts = {}) {
   const ground = new THREE.Mesh(track(polyGeometry(THREE, boundary)), ctx.mat('#ffffff', { map: ctx.tex('ground', tx.groundTexture) }));
   const groundMats = [outer.material, ground.material];
   const lawnMats = [];
-  const snowTargets = [outer, ground];
   ground.position.y = 0; ground.receiveShadow = true; ground.name = 'sol';
   scene.add(ground);
 
@@ -228,7 +227,6 @@ export function buildScene(THREE, garden, opts = {}) {
     mesh.position.y = zm.y; mesh.receiveShadow = true; mesh.castShadow = zm.depth > 0; mesh.name = `zone-${z.type}-${z.id}`;
     zonesGroup.add(mesh);
     if (z.type === 'lawn') lawnMats.push(zm.mat);
-    if (['lawn', 'terrace', 'path', 'vegetable', 'lowplants', 'midplants', 'tallplants'].includes(z.type)) snowTargets.push(mesh);
   }
 
   // ── structures : obstacles, côtés du contour, ouvertures, mobilier ──
@@ -278,22 +276,6 @@ export function buildScene(THREE, garden, opts = {}) {
       try { structures.add(buildItem(ctx, it, ITEMS.getItemKind(it.kind))); } catch (e) { /* élément invalide */ }
     }
   }
-
-  // ── neige / givre : surcouches blanches sur le sol, les zones et les toits ──
-  const snowMat = new THREE.MeshStandardMaterial({ color: '#f2f6ff', roughness: 0.95, transparent: true, opacity: 0, depthWrite: false, emissive: '#c4d2e6', emissiveIntensity: 0.4, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2, side: THREE.DoubleSide });
-  tracked.push(snowMat);
-  const snowMeshes = [];
-  const addSnow = (m, lift) => {
-    if (!m.parent) return;
-    const sm = new THREE.Mesh(m.geometry, snowMat);
-    sm.position.copy(m.position); sm.position.y += lift; sm.rotation.copy(m.rotation); sm.scale.copy(m.scale);
-    sm.receiveShadow = true; sm.visible = false; sm.renderOrder = 2; sm.name = 'neige';
-    m.parent.add(sm); snowMeshes.push(sm);
-  };
-  for (const m of snowTargets) addSnow(m, 0.011);
-  const roofs = [];
-  structures.traverse((o) => { if (o.userData && o.userData.snow) roofs.push(o); });
-  for (const m of roofs) addSnow(m, 0);
 
   // ── plantes (instances) ──
   const plantsGroup = new THREE.Group(); plantsGroup.name = 'plantes'; scene.add(plantsGroup);
@@ -489,14 +471,10 @@ export function buildScene(THREE, garden, opts = {}) {
         mat.color.copy(tmpA);
       }
     }
-    // sol : vert vif → vert doux → paille → terne ; neige / givre
+    // sol : vert vif → vert doux → paille → terne
     const gs = groundState(doy, dry);
     for (const m of lawnMats) m.color.set(gs.lawnTint);
     for (const m of groundMats) m.color.set(gs.groundTint);
-    const snow = state.snow ? gs.snow : 0;
-    snowMat.opacity = snow > 0.02 ? 0.3 + 0.64 * snow : 0;
-    for (const sm of snowMeshes) sm.visible = snow > 0.02;
-    state.snowAmount = snow;
     state.fall = leafFall(doy);
     fxApply();
   };
@@ -562,7 +540,6 @@ export function buildScene(THREE, garden, opts = {}) {
         seasonDirty = true;
       }
       if (Number.isFinite(patch.doy)) { state.doy = patch.doy; seasonDirty = true; }
-      if (typeof patch.snow === 'boolean' && patch.snow !== state.snow) { state.snow = patch.snow; seasonDirty = true; }
       if (typeof patch.leaves === 'boolean' && patch.leaves !== state.leaves) { state.leaves = patch.leaves; seasonDirty = true; }
       if (Number.isFinite(patch.hour)) state.hour = patch.hour;
       if (Number.isFinite(patch.age)) { const a = clamp(patch.age, 0, 1); if (a !== state.age) { state.age = a; growth(a); } }

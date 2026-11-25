@@ -106,7 +106,7 @@ export function mountView3D(el, { garden, onClose } = {}) {
   const viewGroupItems = {};
   const S = {
     hour: 15, date: new Date(), age: 1, quality: 'auto', qualityResolved: 'medium', shadows: true, grid: false,
-    gpu: '', software: false, fps: 0, view: 'ne', mode: 'orbit', playing: false, growing: false, photoBusy: false, doyF: 0, lapse: false, speed: 1, snow: true, leaves: true,
+    gpu: '', software: false, fps: 0, view: 'ne', mode: 'orbit', playing: false, growing: false, photoBusy: false, doyF: 0, lapse: false, speed: 1, leaves: true,
   };
   S.doyF = dayOfYear(S.date);
   const glat = g.context && g.context.location && Number.isFinite(g.context.location.lat) ? g.context.location.lat : 46.5;
@@ -125,7 +125,6 @@ export function mountView3D(el, { garden, onClose } = {}) {
   const ticks = h('div', { class: 'v3d-ticks', 'aria-hidden': 'true' }, 'JFMAMJJASOND'.split('').map((l) => h('span', null, l)));
   const lapseBtn = h('button', { type: 'button', class: 'v3d-btn v3d-primary', 'data-act': 'play-year', 'aria-pressed': 'false' }, '▶ Année accélérée');
   const speedSel = h('select', { 'data-role': 'lapse-speed', 'aria-label': 'Vitesse de l’année accélérée' }, h('option', { value: '0.5' }, '× 0,5 (30 s)'), h('option', { value: '1', selected: true }, '× 1 (15 s)'), h('option', { value: '2' }, '× 2 (8 s)'));
-  const snowCb = h('input', { type: 'checkbox', checked: true, 'data-role': 'snow' });
   const leavesCb = h('input', { type: 'checkbox', checked: true, 'data-role': 'leaves' });
   const leavesTxt = h('span', null, ' Feuilles qui tombent');
   const stripIn = h('input', { type: 'range', min: '1', max: '365', step: '1', value: String(Math.round(S.doyF)), 'data-role': 'season-strip', 'aria-label': 'Saison : jour de l’année' });
@@ -152,7 +151,6 @@ export function mountView3D(el, { garden, onClose } = {}) {
   const panelBody = h('div', { class: 'v3d-panel-body' },
     h('section', { class: 'v3d-season' }, h('h3', null, 'Saisons'), seasonLbl, seasonIn, ticks, seasons,
       h('div', { class: 'v3d-lapse' }, lapseBtn, speedSel),
-      h('label', { class: 'v3d-check' }, snowCb, ' Neige et givre en hiver'),
       h('label', { class: 'v3d-check' }, leavesCb, leavesTxt)),
     h('section', null, h('h3', null, 'Vues'), viewBtns),
     h('section', null, h('h3', null, 'Soleil'),
@@ -315,7 +313,7 @@ export function mountView3D(el, { garden, onClose } = {}) {
     api3.sun.castShadow = S.shadows;
     camera.far = Math.max(2000, api3.sky.geometry.parameters.radius * 2.6);
     camera.updateProjectionMatrix();
-    api3.update({ date: S.date, doy: S.doyF, hour: S.hour, month, snow: S.snow, leaves: S.leaves });
+    api3.update({ date: S.date, doy: S.doyF, hour: S.hour, month, leaves: S.leaves });
     updateEnvironment(true);
     if (savedView) { camera.position.copy(savedView.p); controls.target.copy(savedView.t); controls.update(); }
     refreshLegend(); refreshInfo(); markDirty();
@@ -455,7 +453,6 @@ export function mountView3D(el, { garden, onClose } = {}) {
   seasonIn.addEventListener('change', () => updateEnvironment(true)); stripIn.addEventListener('change', () => updateEnvironment(true));
   lapseBtn.addEventListener('click', () => playYear()); stripBtn.addEventListener('click', () => playYear());
   speedSel.addEventListener('change', () => { S.speed = Number(speedSel.value) || 1; });
-  snowCb.addEventListener('change', () => { S.snow = snowCb.checked; if (api3) api3.update({ snow: S.snow }); markDirty(); });
   leavesCb.addEventListener('change', () => { S.leaves = leavesCb.checked; if (api3) api3.update({ leaves: S.leaves }); markDirty(); });
   ageIn.addEventListener('input', () => { S.growing = false; setAge(ageIn.value); });
   playBtn.addEventListener('click', () => { S.playing = !S.playing; if (S.playing) S.lapse = false; if (S.playing && S.hour >= 20.9) setHour(6); refreshLabels(); markDirty(); });
