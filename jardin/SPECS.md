@@ -369,3 +369,4 @@ Visualiseur 3D temps réel du jardin (PC, et mobile quand c'est viable) : GPU po
 - **Transfert PC → téléphone** : lien, QR code, code à coller, fichier ; liens profonds Android (`jardin://import/…`).
 - **Vue 3D PC** (WebGL2, three.js chargé à la demande, hors APK) : bouton « 🧊 Vue 3D (PC) » sur l'écran du plan, uniquement sur grand écran avec souris et WebGL2.
 - **Limites connues** : prix, couleurs et titres Wikipédia du catalogue issus de connaissances générales, non vérifiés ; positions des plants de la vue 3D légèrement différentes du plan 2D ; rien n'a été essayé sur un téléphone réel ni dans le build d'APK en CI.
+- **Enchaînement des zones** : la palette des types de zones reste toujours visible (compacte quand une zone est sélectionnée) pour pouvoir enchaîner plusieurs affectations ; à l'étape « Aménagements », les zones déjà dessinées sont affichées sous le mobilier (couleur du type et nom).

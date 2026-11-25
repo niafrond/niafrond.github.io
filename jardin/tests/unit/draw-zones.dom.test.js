@@ -304,3 +304,21 @@ describe('éditeur de zones : avertissements', () => {
     expect(t.el.innerHTML).toBe('');
   });
 });
+
+describe('éditeur de zones : enchaîner les zones', () => {
+  test('la palette reste visible après une création et pendant la sélection, pour enchaîner', async () => {
+    const t = await setup({ wished: ['terrace', 'lawn', 'trees'] });
+    t.click('[data-type=terrace]');
+    t.tap(1, 1); t.tap(4, 3);
+    // la zone créée est sélectionnée, mais la palette est toujours là (compacte)
+    expect(t.q('[data-role=zone-panel]').hidden).toBe(false);
+    expect(t.q('[data-role=palette]').hidden).toBe(false);
+    expect(t.q('[data-role=palette]').classList.contains('compact')).toBe(true);
+    // on enchaîne tout de suite avec un autre type
+    t.click('[data-type=lawn]');
+    t.tap(5, 1); t.tap(9, 6);
+    expect(t.g.zones.map((z) => z.type)).toEqual(['terrace', 'lawn']);
+    expect(t.q('[data-role=palette]').hidden).toBe(false);
+    t.unmount();
+  });
+});

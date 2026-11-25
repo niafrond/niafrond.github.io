@@ -1,6 +1,6 @@
 // Éditeur d'aménagements : mobilier et équipements, murs / clôtures / haies, portes et accès.
-import { distance, bounds, polygonInside, centroid } from '../geometry.js';
-import { createItem, createOpening, ensureAmenagements, newId } from '../model.js';
+import { distance, bounds, polygonInside, centroid, shapePolygon } from '../geometry.js';
+import { createItem, createOpening, ensureAmenagements, newId, getZoneType } from '../model.js';
 import {
   ITEM_KINDS, ITEM_CATEGORIES, OPENING_KINDS, OPENING_SWINGS, EDGE_KINDS, getItemKind, getOpeningKind, getEdgeKind,
   itemPolygon, itemContains, itemRadius, itemHalfSize, boundarySides, obstacleSides, edgeKindOf, edgeHeightOf,
@@ -572,6 +572,23 @@ export function mountItemEditor(el, { garden, onChange } = {}) {
     return `<polygon points="${poly(o.points)}" fill="#bdbdbd" fill-opacity=".5" stroke="#424242" stroke-width="2" ${NS}/><text x="${c.x}" y="${c.y}" font-size="${cv.px(11)}" text-anchor="middle" fill="#37474f">${o.kind === 'house' ? 'Maison' : 'Abri'}</text>`;
   }
 
+  /** Zones déjà dessinées (étape précédente) : fond coloré par type + nom, sous les aménagements. */
+  function zonesSvg(u) {
+    let out = '';
+    for (const z of g.zones || []) {
+      const t = getZoneType(z.type);
+      if (!t || !z.shape) continue;
+      let pts;
+      try { pts = shapePolygon(z.shape, 40); } catch { continue; }
+      if (!pts || pts.length < 3) continue;
+      out += `<polygon points="${poly(pts)}" fill="${t.color}" fill-opacity=".42" stroke="${t.color}" stroke-width="1.5" stroke-opacity=".9" pointer-events="none" ${NS}/>`;
+      const c = centroid(pts);
+      const label = `${t.icon} ${z.label || t.label}`;
+      out += `<text x="${c.x}" y="${c.y}" font-size="${u * 12}" text-anchor="middle" dominant-baseline="central" fill="var(--jd-fg,#222)" stroke="var(--jd-canvas,#fff)" stroke-width="${u * 3}" paint-order="stroke" pointer-events="none">${esc(label)}</text>`;
+    }
+    return out;
+  }
+
   function draw() {
     if (destroyed || !cv) return;
     const r = cv.svg.getBoundingClientRect();
@@ -586,6 +603,7 @@ export function mountItemEditor(el, { garden, onChange } = {}) {
         ? `<polygon points="${poly(b)}" fill="var(--jd-accent,#2e7d32)" fill-opacity=".1" stroke="var(--jd-fg,#222)" stroke-width="1.5" stroke-linejoin="round" ${NS}/>`
         : `<polyline points="${poly(b)}" fill="none" stroke="var(--jd-fg,#222)" stroke-width="1.5" ${NS}/>`;
     }
+    s += zonesSvg(u);
     for (const o of g.obstacles) s += obstacleSvg(o, st.sel && st.sel.t === 'obst' && st.sel.id === o.id);
     s += renderItemsSVG(g, {
       scale: 1, px: u, bg: 'var(--jd-canvas,#fbfaf4)',

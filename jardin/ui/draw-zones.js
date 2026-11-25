@@ -356,7 +356,7 @@ export function mountZoneEditor(el, { garden, onChange } = {}) {
       g.zones.push(z);
       st.sel = z.id;
       st.typeId = null; st.kind = null; st.ghost = null; st.snapMark = null;
-      st.msg = `Zone « ${z.label} » ajoutée (${frArea(shapeArea(shape))}). Touchez ↶ pour annuler.`;
+      st.msg = `Zone « ${z.label} » ajoutée (${frArea(shapeArea(shape))}). Choisissez un autre type pour enchaîner, ou ↶ pour annuler.`;
     });
   }
 
@@ -721,7 +721,9 @@ export function mountZoneEditor(el, { garden, onChange } = {}) {
       refreshChips();
       refreshKindBar();
     }
-    chips.hidden = !!(sel && !st.typeId);
+    // La palette reste toujours visible (pour enchaîner les zones) ; compacte quand une zone est sélectionnée.
+    chips.hidden = false;
+    chips.classList.toggle('compact', !!(sel && !st.typeId));
     const { n: ov } = overlapIds();
     const out = g.zones.filter(isOut).length;
     const wished = (g.wishedZoneTypes || []).filter((id) => !g.zones.some((z) => z.type === id));
@@ -729,7 +731,7 @@ export function mountZoneEditor(el, { garden, onChange } = {}) {
       + (ov ? `<span class="jd-msg warn" style="padding:0">⚠ ${ov} chevauchement${ov > 1 ? 's' : ''}</span>` : '')
       + (out ? `<span class="jd-msg err" style="padding:0">⚠ ${out} hors du terrain</span>` : '')
       + (wished.length ? `<span class="jd-msg" style="padding:0">À dessiner : ${wished.map((id) => (getZoneType(id) || { label: id }).label).join(', ')}</span>` : '');
-    info.hidden = !!(sel && !st.typeId);
+    info.hidden = false;
     refreshMsg();
     refreshStart();
     panel.hidden = !sel || !!st.typeId;
