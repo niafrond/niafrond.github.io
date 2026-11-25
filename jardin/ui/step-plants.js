@@ -381,15 +381,14 @@ export function mountPlants(el, { garden, onChange, getPhoto = getPlantPhoto, IO
   function askAmbiances(zones) {
     return new Promise((resolve) => {
       const pk = openAmbiancePicker(document.body, { zones, onConfirm: (m) => resolve(m), onCancel: () => resolve(null) });
-      // Rappel du niveau d'entretien (modifiable) juste avant les boutons.
+      // Rappel du niveau d'entretien (modifiable) sous le titre.
       const single = zones.length === 1 ? zones[0] : null;
       const rem = maintenanceReminder({
         get: () => levelForZone(garden, single),
         set: (id) => { if (single) single.maintenance = id; else garden.context.maintenance = id; change(); syncMaint(); drawZoneInfo(); },
       });
       const dlg = pk && pk.el && pk.el.querySelector('.amb-dialog');
-      const actions = dlg && dlg.querySelector('.amb-actions');
-      if (dlg) dlg.insertBefore(rem, actions || null);
+      if (dlg) dlg.insertBefore(rem, dlg.children[2] || null);
     });
   }
   /** « 8 essences · ambiance bucolique · floraison de mars à octobre · ≈ 210 € » */

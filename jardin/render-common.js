@@ -1,7 +1,7 @@
 // Briques communes aux rendus 2D (render.js) et 3D (render3d.js) : couleurs réelles des essences,
 // placement déterministe des plants, légende « Essences », cadre (cartouche, nord, échelle). Pur, sans DOM.
 import { bounds, polygonArea, centroid, pointInPolygon, shapePolygon } from './geometry.js';
-import { ZONE_TYPES, getZoneType, SUN_LABELS } from './model.js';
+import { ZONE_TYPES, getZoneType, SUN_LABELS, isAbovePool, POOL_ABOVE_LABEL } from './model.js';
 import { getPlant } from './catalog.js';
 
 export const FONT = 'Helvetica, Arial, sans-serif';
@@ -176,6 +176,7 @@ export function patternBody(typeId, stroke) {
   switch (typeId) {
     case 'pond': return `<path d="M0 3 Q2.5 0 5 3 T10 3 M0 8 Q2.5 5 5 8 T10 8" ${s}/>`;
     case 'pool': return `<path d="M0 0H10V10 M0 5H10 M5 0V10" ${s} stroke-opacity=".55"/>`;
+    case 'pool-above': return `<path d="M0 3 Q2.5 0 5 3 T10 3 M0 8 Q2.5 5 5 8 T10 8" ${s} stroke-opacity=".7"/>`;
     case 'terrace': return `<path d="M0 0H10V10H0Z M5 0V5 M0 5H10" ${s} stroke-opacity=".6"/>`;
     case 'path': return `<circle cx="2.5" cy="2.5" r="1" fill="${stroke}" opacity=".6"/><circle cx="7.5" cy="7.5" r="1" fill="${stroke}" opacity=".6"/><circle cx="7.5" cy="2.5" r=".6" fill="${stroke}" opacity=".6"/>`;
     case 'lawn': return `<path d="M2 8 L2 5 M3.2 8 L4 5.5 M7 4 L7 1 M8.2 4 L9 1.5" ${s}/>`;
@@ -245,8 +246,17 @@ export function buildLegendItems(garden, lookup, layers, { P, compact = false, s
   const used = new Set(zones.map((z) => z.type));
   const obstacles = garden.obstacles || [];
   li(24, `<text font-size="13" font-weight="700" fill="#222" font-family="${FONT}">Légende</text>`);
+  const above = zones.some((z) => isAbovePool(z));
+  const inground = zones.some((z) => z.type === 'pool' && !isAbovePool(z));
   for (const t of ZONE_TYPES.filter((q) => used.has(q.id))) {
-    li(20, `<rect y="-11" width="22" height="14" fill="${t.color}" fill-opacity=".7" stroke="${darken(t.color, 0.35)}"/><rect y="-11" width="22" height="14" fill="url(#${P}-pat-${t.id})"/><text x="30" font-size="11" fill="#222" font-family="${FONT}">${esc(trunc(t.label, 24))}</text>`);
+    const variants = t.id !== 'pool' ? [{ pat: t.id, label: t.label }] : [
+      ...(inground || !above ? [{ pat: 'pool', label: t.label }] : []),
+      ...(above ? [{ pat: 'pool-above', label: POOL_ABOVE_LABEL, wall: true }] : []),
+    ];
+    for (const v of variants) {
+      const wall = v.wall ? `<rect y="-11" width="22" height="14" fill="none" stroke="#e6e1d6" stroke-width="3"/><rect y="-11" width="22" height="14" fill="none" stroke="#546e7a" stroke-width=".8"/>` : '';
+      li(20, `<rect y="-11" width="22" height="14" fill="${t.color}" fill-opacity=".7" stroke="${darken(t.color, 0.35)}"/><rect y="-11" width="22" height="14" fill="url(#${P}-pat-${v.pat})"/>${wall}<text x="30" font-size="11" fill="#222" font-family="${FONT}">${esc(trunc(v.label, 24))}</text>`);
+    }
   }
   const groups = essenceGroups(garden, lookup);
   if (groups.length) {
@@ -380,6 +390,7 @@ export function patternDefs(P, usedTypes, illus) {
   for (const t of ZONE_TYPES) {
     if (!usedTypes.has(t.id)) continue;
     defs.push(`<pattern id="${P}-pat-${t.id}" width="10" height="10" patternUnits="userSpaceOnUse">${patternBody(t.id, darken(t.color, 0.45))}</pattern>`);
+    if (t.id === 'pool') defs.push(`<pattern id="${P}-pat-pool-above" width="10" height="10" patternUnits="userSpaceOnUse">${patternBody('pool-above', darken(t.color, 0.45))}</pattern>`);
     if (illus) defs.push(`<linearGradient id="${P}-g-${t.id}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${lighten(t.color, 0.35)}"/><stop offset="1" stop-color="${t.color}"/></linearGradient>`);
   }
   return defs;

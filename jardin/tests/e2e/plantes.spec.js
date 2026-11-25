@@ -38,6 +38,7 @@ test('essences : vignettes, prix, budget, proposition pour tout le jardin puis a
   await page.waitForSelector('.plant-card');
 
   // vignettes : repli immédiat, puis photo paresseuse + crédit
+  await page.locator('.plant-card').first().scrollIntoViewIfNeeded(); // le sélecteur d'entretien en tête repousse la liste sous le pli
   await expect(page.locator('.plant-card').first().locator('.plant-thumb')).toBeVisible();
   await expect(page.locator('.plant-card').first().locator('.thumb-box img')).toBeVisible();
   await expect(page.locator('.plant-card').first().locator('.photo-credit')).toHaveText('Photo : Wikipédia');

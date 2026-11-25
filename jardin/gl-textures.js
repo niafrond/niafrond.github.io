@@ -155,3 +155,17 @@ export function waterTexture(THREE, base = '#3c8dbc') {
   }
   return toTexture(THREE, c, 6);
 }
+
+/** Paroi de piscine hors sol : tôle ondulée bleu-gris (nervures verticales). Tuile 1,5 m. */
+export function poolWallTexture(THREE, base = '#9fb4c0') {
+  const c = canvasOf(256); if (!c) return null;
+  const g = c.getContext('2d');
+  g.fillStyle = base; g.fillRect(0, 0, 256, 256);
+  for (let x = 0; x < 256; x += 16) {
+    const grad = g.createLinearGradient(x, 0, x + 16, 0);
+    grad.addColorStop(0, shade(base, 0.82)); grad.addColorStop(0.5, shade(base, 1.08)); grad.addColorStop(1, shade(base, 0.82));
+    g.fillStyle = grad; g.fillRect(x, 0, 16, 256);
+  }
+  g.fillStyle = shade(base, 0.7); g.fillRect(0, 118, 256, 4);
+  return toTexture(THREE, c, 1.5);
+}

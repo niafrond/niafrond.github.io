@@ -2,7 +2,7 @@
 // Repère 3D : x = plan x, z = plan y (vers le bas du plan = vers le sud si northAngle = 0), y = haut. Unités : mètres.
 import { sunPosition } from './sun.js';
 import { shapePolygon, bounds as polyBounds, signedArea } from './geometry.js';
-import { ZONE_TYPES } from './model.js';
+import { ZONE_TYPES, isAbovePool } from './model.js';
 import {
   placePlants, runJob, slimPlant, groupsFromRecords, hashStr, kindOf, isDeciduousWoody, isWoody, heightFactor, LAWN_PLANT, mulberry32,
 } from './gl-worker-core.js';
@@ -10,7 +10,7 @@ import * as tx from './gl-textures.js';
 import {
   dayOfYear, seasonDoy, plantSeasonState, groundState, seasonWarmth, leafFall, mixHex,
 } from './gl-season.js';
-import { polyGeometry, buildBuilding, buildLinear, buildOpening, buildItem, segmentsWithGaps } from './gl-structures.js';
+import { polyGeometry, buildBuilding, buildLinear, buildOpening, buildItem, buildPoolLadder, segmentsWithGaps } from './gl-structures.js';
 
 export { placePlants };
 
@@ -63,6 +63,10 @@ export function skyState(elev) {
 export const leavesOn = (month) => month >= 4 && month <= 11;
 /** Facteur de hauteur des herbacées caduques (repos hivernal). */
 export const dormancy = (month) => ([12, 1, 2].includes(month) ? 0.22 : [3, 11].includes(month) ? 0.6 : 1);
+
+/** Piscine hors sol : hauteur de paroi et niveau de l'eau (m). */
+export const ABOVE_POOL_H = 1.2;
+export const ABOVE_POOL_WATER_H = 1.05;
 
 function offsetPoly(poly, d) {
   const n = poly.length; const s = Math.sign(signedArea(poly)) || 1;
@@ -212,6 +216,29 @@ export function buildScene(THREE, garden, opts = {}) {
     let poly = [];
     try { poly = shapePolygon(z.shape, 40); } catch (e) { poly = []; }
     if (poly.length < 3) continue;
+    if (isAbovePool(z)) {
+      // piscine hors sol : paroi en caisson / cylindre (selon la forme), épaisseur, margelle, eau à 1,05 m, échelle
+      const poolPoly = z.shape.kind === 'circle' ? shapePolygon(z.shape, 64) : poly;
+      const H = ABOVE_POOL_H;
+      const wall = new THREE.Mesh(track(polyGeometry(THREE, offsetPoly(poolPoly, 0.07), H, [poolPoly])), ctx.mat('#ffffff', { map: ctx.tex('poolwall', tx.poolWallTexture, 1.5, 1.5), roughness: 0.6, metalness: 0.15 }));
+      wall.castShadow = true; wall.receiveShadow = true; wall.name = `paroi-${z.id}`;
+      const lip = new THREE.Mesh(track(polyGeometry(THREE, offsetPoly(poolPoly, 0.15), 0.05, [offsetPoly(poolPoly, 0.0)])), ctx.mat('#eceff1', { roughness: 0.5 }));
+      lip.position.y = H; lip.castShadow = true; lip.name = `margelle-${z.id}`;
+      const water = new THREE.Mesh(track(polyGeometry(THREE, poolPoly)), ctx.mat('#27b9d2', { roughness: 0.04, metalness: 0.25, envMapIntensity: 1.6 }));
+      water.position.y = ABOVE_POOL_WATER_H; water.receiveShadow = true; water.name = `eau-${z.id}`;
+      const floor = new THREE.Mesh(track(polyGeometry(THREE, poolPoly)), ctx.mat('#78909c', { roughness: 0.9 }));
+      floor.position.y = 0.02; floor.name = `fond-${z.id}`;
+      zonesGroup.add(wall, lip, water, floor); waterMeshes.push(water);
+      // échelle : sur le sommet du côté sud (z maximal), à l'extérieur
+      let pick = poolPoly[0];
+      for (const p of poolPoly) if (p.y > pick.y) pick = p;
+      const cx = poolPoly.reduce((s0, p) => s0 + p.x, 0) / poolPoly.length; const cy = poolPoly.reduce((s0, p) => s0 + p.y, 0) / poolPoly.length;
+      const ux = pick.x - cx; const uy = pick.y - cy; const ul = Math.hypot(ux, uy) || 1;
+      const ladder = buildPoolLadder(ctx, pick.x + (ux / ul) * 0.07, pick.y + (uy / ul) * 0.07, ux / ul, uy / ul, H);
+      ladder.name = `echelle-${z.id}`;
+      zonesGroup.add(ladder);
+      continue;
+    }
     if (z.type === 'pond' || z.type === 'pool') {
       const pool = z.type === 'pool';
       const rim = new THREE.Mesh(track(polyGeometry(THREE, offsetPoly(poly, pool ? 0.22 : 0.32), 0.1, [poly])), ctx.mat(pool ? '#e6e1d6' : '#a39d90', { roughness: 0.95 }));

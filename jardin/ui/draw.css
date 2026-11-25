@@ -259,3 +259,16 @@
 .jd-zsheet .amb-chip { flex: 0 0 auto; }
 .jd-detect { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: 6px 0; padding: 6px 8px; border-radius: 10px; background: color-mix(in srgb, var(--jd-accent) 14%, var(--jd-card)); font-size: 14px; }
 .jd-detect[hidden] { display: none; }
+
+/* Rotation des formes de zones et variante de piscine (bandeau de sélection) */
+.jd-rot { margin: 6px 0; }
+.jd-rot-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.jd-rot-head .jd-flabel { flex: 0 0 auto; }
+.jd-rot-input { width: 76px; min-height: 44px; text-align: center; font-variant-numeric: tabular-nums; }
+.jd-rot-acts { gap: 6px; margin-top: 6px; }
+.jd-rot-acts .jd-btn { flex: 1 1 auto; }
+.jd-rot .jd-btn:disabled, .jd-rot .jd-input:disabled { opacity: .4; }
+.jd-poolvar { margin: 6px 0; }
+.jd-segs { display: flex; gap: 8px; margin: 4px 0; }
+.jd-seg { flex: 1 1 0; justify-content: center; border-width: 2px; }
+.jd-seg[aria-checked="true"] { background: var(--jd-accent); color: #fff; border-color: var(--jd-accent); font-weight: 600; }

@@ -269,3 +269,33 @@ export function buildItem(ctx, item, kind) {
   g.rotation.y = -(((item.rotation || 0) * Math.PI) / 180);
   return shadowed(g);
 }
+
+/**
+ * Échelle d'accès d'une piscine hors sol : marches extérieures et intérieures, posées au point (x, z) du bord,
+ * `ux, uz` = direction du centre de la piscine vers l'extérieur, `h` = hauteur de la paroi.
+ */
+export function buildPoolLadder(ctx, x, z, ux, uz, h) {
+  const { THREE } = ctx;
+  const grp = new THREE.Group(); grp.name = 'echelle-piscine';
+  const metal = ctx.mat('#b0bec5', { roughness: 0.35, metalness: 0.7 });
+  const top = h + 0.35;
+  const rail = (x0, y0, x1, y1, zc) => {
+    const L = Math.hypot(x1 - x0, y1 - y0);
+    const m = new THREE.Mesh(ctx.track(new THREE.CylinderGeometry(0.025, 0.025, L, 8)), metal);
+    m.position.set((x0 + x1) / 2, (y0 + y1) / 2, zc);
+    m.rotation.z = -Math.atan2(x1 - x0, y1 - y0);
+    grp.add(m);
+  };
+  for (const zc of [-0.22, 0.22]) {
+    rail(0.55, 0, 0.12, top, zc); // montants extérieurs
+    rail(0.12, top, -0.4, h - 0.55, zc); // montants intérieurs (vers l'eau)
+  }
+  for (const t of [0.25, 0.5, 0.75]) {
+    const rung = new THREE.Mesh(ctx.track(new THREE.CylinderGeometry(0.02, 0.02, 0.44, 8)), metal);
+    rung.rotation.x = Math.PI / 2; rung.position.set(0.55 - 0.43 * t, top * t, 0);
+    grp.add(rung);
+  }
+  grp.position.set(x, 0, z);
+  grp.rotation.y = -Math.atan2(uz, ux);
+  return shadowed(grp);
+}

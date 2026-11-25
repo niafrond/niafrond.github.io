@@ -89,7 +89,37 @@ export function createGarden(name = 'Mon jardin') {
 export function createZone(typeId, shape) {
   const t = getZoneType(typeId);
   if (!t) throw new Error(`Type de zone inconnu : ${typeId}`);
-  return { id: newId('z_'), type: typeId, label: t.label, shape, plantings: [], notes: '', ambiance: null };
+  const z = { id: newId('z_'), type: typeId, label: t.label, shape, plantings: [], notes: '', ambiance: null };
+  if (typeId === 'pool') { z.variant = 'inground'; }
+  return z;
+}
+
+/** Variantes d'une piscine : enterrée (défaut, absente = enterrée) ou hors sol. */
+export const POOL_VARIANTS = [
+  { id: 'inground', label: 'Enterrée' },
+  { id: 'above', label: 'Hors sol' },
+];
+export const POOL_ABOVE_LABEL = 'Piscine hors sol';
+
+/** Variante effective d'une zone (« inground » par défaut, seulement pour une piscine ; null sinon). */
+export function poolVariant(zone) {
+  if (!zone || zone.type !== 'pool') return null;
+  return zone.variant === 'above' ? 'above' : 'inground';
+}
+export const isAbovePool = (zone) => poolVariant(zone) === 'above';
+
+/**
+ * Change la variante d'une piscine. Le libellé suit la variante tant qu'il est le libellé par défaut
+ * (« Piscine » ↔ « Piscine hors sol », numéro éventuel conservé) ; un nom saisi n'est jamais écrasé.
+ */
+export function setPoolVariant(zone, variant) {
+  if (!zone || zone.type !== 'pool') return zone;
+  const v = variant === 'above' ? 'above' : 'inground';
+  const base = getZoneType('pool').label;
+  const m = /^(Piscine(?: hors sol)?)( \d+)?$/.exec(zone.label || '');
+  zone.variant = v;
+  if (m) zone.label = `${v === 'above' ? POOL_ABOVE_LABEL : base}${m[2] || ''}`;
+  return zone;
 }
 
 /** Nouvel élément d'aménagement (lève une erreur si le type est inconnu). Cercle : `radius` et width = depth = diamètre. */

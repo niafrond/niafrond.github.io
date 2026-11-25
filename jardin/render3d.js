@@ -2,7 +2,7 @@
 // renderViewSVG(garden, opts) → string SVG autonome (pur, sans DOM). Projection orthographique + algorithme du peintre.
 import { renderPlanSVG, plantKind } from './render.js';
 import { shapePolygon, bounds, centroid, signedArea, pointInPolygon, polygonArea } from './geometry.js';
-import { getZoneType } from './model.js';
+import { getZoneType, isAbovePool } from './model.js';
 import { getPlant } from './catalog.js';
 import {
   FONT, BARE_WOOD, BARE_HERB, esc, f, darken, lighten, mixHex, rng, rngOf, hash32, normMonth, monthLabel, plantState,
@@ -81,6 +81,10 @@ function hull(points) {
   const up = []; for (let i = p.length - 1; i >= 0; i--) { const q = p[i]; while (up.length >= 2 && cross(up[up.length - 2], up[up.length - 1], q) <= 0) up.pop(); up.push(q); }
   return lo.slice(0, -1).concat(up.slice(0, -1));
 }
+
+/** Piscine hors sol : hauteur de paroi et niveau de l'eau (m). */
+const ABOVE_POOL_H = 1.2;
+const ABOVE_POOL_WATER_H = 1.05;
 
 const ITEM_H = {
   bench: 0.45, table: 0.75, table_round: 0.75, chair: 0.9, lounge: 0.6, sunbed: 0.35, hammock: 1.6, bbq: 0.9, firepit: 0.35,
@@ -197,7 +201,12 @@ export function renderViewSVG(garden, opts = {}) {
     if (zp.length < 3) continue;
     const water = z.type === 'pond' || z.type === 'pool';
     const canopy = t.layer === 'canopy';
-    if (flatMode) {
+    const above = isAbovePool(z);
+    if (above && flatMode) {
+      addBox(zp, 0, ABOVE_POOL_H, { wall: '#c9d3d8', roof: '#4aa3d8', seg: 2, tag: 'pool' });
+    } else if (above) {
+      addAbovePool(zp);
+    } else if (flatMode) {
       if (!canopy && ['terrace', 'path', 'pond', 'pool'].includes(z.type)) {
         addBox(zp, 0, FLAT_H[z.type] || 0.05, { wall: water ? '#3a8fc4' : t.color, roof: water ? '#4aa3d8' : t.color, seg: 4, noShadow: true });
       }
@@ -228,9 +237,51 @@ export function renderViewSVG(garden, opts = {}) {
       ground.push((T) => `<polygon points="${poly(T, top)}" fill="${st.foliage}" fill-opacity=".7"/><polygon points="${poly(T, top)}" fill="url(#${id})"/>${dots.length ? `<g data-flower="1" fill="${st.flower}" stroke="${darken(st.flower, 0.35)}" stroke-width=".4">${dots.map((d) => `<circle cx="${T.p(d).split(',')[0]}" cy="${T.p(d).split(',')[1]}" r="1.5"/>`).join('')}</g>` : ''}`);
     }
     if (layers.names && !flatMode && polygonArea(zp) > 1.2) {
-      const c = centroid(zp); const pc = pr(c.x, c.y, 0.05);
+      const c = centroid(zp); const pc = pr(c.x, c.y, above ? ABOVE_POOL_H + 0.1 : 0.05);
       labels.push({ pt: pc, text: z.label || t.label });
     }
+  }
+
+  // ---- piscine hors sol : paroi extrudée, bord (margelle), eau plus basse, échelle d'accès
+  /** Paroi + eau + margelle + échelle (`data-pool="above"`). */
+  function addAbovePool(zp) {
+    const before = prims.length;
+    const H = ABOVE_POOL_H; const W = ABOVE_POOL_WATER_H; const WALL = '#c9d3d8';
+    const c = centroid(zp);
+    const rim = zp.map((p) => pr(p.x, p.y, H));
+    const wat = zp.map((p) => pr(p.x, p.y, W));
+    [...rim, ...wat].forEach(grow);
+    // parois extérieures visibles (faces ombrées selon l'orientation)
+    addBox(zp, 0, H, { wall: WALL, seg: 2, noRoof: true, tag: 'pool' });
+    // parois intérieures côté opposé, puis eau (dessinées avant les parois avant)
+    const inner = [];
+    for (let i = 0; i < zp.length; i++) {
+      const a = zp[i]; const b = zp[(i + 1) % zp.length];
+      const dx = b.x - a.x; const dy = b.y - a.y; const L = Math.hypot(dx, dy) || 1;
+      let nx = dy / L; let ny = -dx / L;
+      if (nx * ((a.x + b.x) / 2 - c.x) + ny * ((a.y + b.y) / 2 - c.y) < 0) { nx = -nx; ny = -ny; }
+      if (cam.facing(nx, ny) >= -0.001) continue;
+      const nc = cam.nComp(-nx, -ny);
+      inner.push({ pts: [pr(a.x, a.y, H), pr(b.x, b.y, H), pr(b.x, b.y, W), pr(a.x, a.y, W)], col: shade('#9fb4be', [nc.e, nc.n, 0]) });
+    }
+    const r = Math.sqrt(polygonArea(zp) / Math.PI);
+    const hl = [[-0.35, -0.2, 0.05, -0.25], [-0.1, 0.2, 0.3, 0.15]].map(([x1, y1, x2, y2]) => [pr(c.x + r * x1, c.y + r * y1, W), pr(c.x + r * x2, c.y + r * y2, W)]);
+    const dFar = Math.max(...rim.map((q) => q[2])) + 0.02;
+    prims.push({ d: dFar, fn: (T) => `${inner.map((q) => `<polygon points="${poly(T, q.pts)}" fill="${q.col}" stroke="#78909c" stroke-width=".5" stroke-linejoin="round"/>`).join('')}<polygon points="${poly(T, wat)}" fill="url(#${P}-water)" stroke="#2b7fb5" stroke-width=".7" stroke-linejoin="round" data-role="pool-water"/><polygon points="${poly(T, wat)}" fill="url(#${P}-pat-pool-above)" fill-opacity=".35"/><path d="${hl.map((q) => `M${T.p(q[0])}L${T.p(q[1])}`).join('')}" stroke="#fff" stroke-opacity=".7" stroke-width="2" stroke-linecap="round" fill="none"/>` });
+    // margelle (bord supérieur)
+    const dNear = Math.min(...rim.map((q) => q[2])) - 0.05;
+    prims.push({ d: dNear, fn: (T) => `<polygon points="${poly(T, rim)}" fill="none" stroke="#607d8b" stroke-width="3.6" stroke-linejoin="round"/><polygon points="${poly(T, rim)}" fill="none" stroke="#eceff1" stroke-width="2.2" stroke-linejoin="round" data-role="pool-rim"/>` });
+    // échelle d'accès sur le sommet le plus proche de la caméra
+    let near = zp[0]; let nd = Infinity;
+    for (const p of zp) { const q = pr(p.x, p.y, 0)[2]; if (q < nd) { nd = q; near = p; } }
+    const ox = near.x - c.x; const oy = near.y - c.y; const ol = Math.hypot(ox, oy) || 1;
+    const ux = ox / ol; const uy = oy / ol; const tx0 = -uy * 0.2; const ty0 = ux * 0.2;
+    const foot = { x: near.x + ux * 0.55, y: near.y + uy * 0.55 }; const top = { x: near.x + ux * 0.1, y: near.y + uy * 0.1 };
+    const rails = [-1, 1].map((k) => [pr(foot.x + tx0 * k, foot.y + ty0 * k, 0), pr(top.x + tx0 * k, top.y + ty0 * k, H + 0.35)]);
+    const rungs = [0.25, 0.5, 0.75].map((t) => [pr(foot.x + (top.x - foot.x) * t - tx0, foot.y + (top.y - foot.y) * t - ty0, (H + 0.35) * t), pr(foot.x + (top.x - foot.x) * t + tx0, foot.y + (top.y - foot.y) * t + ty0, (H + 0.35) * t)]);
+    [...rails.flat(), ...rungs.flat()].forEach(grow);
+    prims.push({ d: nd - 0.08, fn: (T) => `<g data-role="pool-ladder" stroke="#78909c" stroke-width="1.6" stroke-linecap="round">${[...rails, ...rungs].map((q) => `<line x1="${T.p(q[0]).split(',')[0]}" y1="${T.p(q[0]).split(',')[1]}" x2="${T.p(q[1]).split(',')[0]}" y2="${T.p(q[1]).split(',')[1]}"/>`).join('')}</g>` });
+    for (let i = before; i < prims.length; i++) { const fn = prims[i].fn; prims[i].fn = (T) => `<g data-pool="above">${fn(T)}</g>`; }
   }
 
   // ---- extrusions

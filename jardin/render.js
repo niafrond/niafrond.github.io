@@ -1,7 +1,7 @@
 // Rendu vectoriel du plan : renderPlanSVG(garden, opts) → string SVG autonome (pur, sans DOM).
 // Les essences sont dessinées avec leurs vraies couleurs (feuillage + floraison selon la saison).
 import { bounds, centroid, pointInPolygon, shapePolygon, shapeBounds, signedArea, distance } from './geometry.js';
-import { getZoneType } from './model.js';
+import { getZoneType, isAbovePool } from './model.js';
 import { getPlant } from './catalog.js';
 import { renderItemsSVG, itemsLegendEntries } from './render-items.js';
 import { gardenCost, formatEuro } from './pricing.js';
@@ -325,7 +325,10 @@ export function renderPlanSVG(garden, opts = {}) {
         }
       } else placed.push({ pp, z });
     }
-    out.push(`<g data-zone="${esc(z.id)}">${geom(`fill="${fill}" fill-opacity="${op}" stroke="${stroke}" stroke-width="1.4"${canopy ? ' stroke-dasharray="6 3"' : ''}${illus ? ` filter="url(#${P}-shadow)"` : ''}`)}${geom(`fill="url(#${P}-pat-${t.id})" fill-opacity="${illus ? 0.35 : 0.8}" stroke="none"`)}${extra}</g>`);
+    // piscine hors sol : paroi (double contour : liseré sombre, margelle claire, liseré fin) et motif d'eau
+    const above = isAbovePool(z);
+    const wall = above ? `<g data-pool-wall="1">${geom('fill="none" stroke="#455a64" stroke-width="7" stroke-linejoin="round"')}${geom('fill="none" stroke="#e6e1d6" stroke-width="4.6" stroke-linejoin="round"')}${geom('fill="none" stroke="#455a64" stroke-width="1" stroke-linejoin="round"')}</g>` : '';
+    out.push(`<g data-zone="${esc(z.id)}"${above ? ' data-pool="above"' : ''}>${geom(`fill="${fill}" fill-opacity="${op}" stroke="${stroke}" stroke-width="1.4"${canopy ? ' stroke-dasharray="6 3"' : ''}${illus ? ` filter="url(#${P}-shadow)"` : ''}`)}${geom(`fill="url(#${P}-pat-${above ? 'pool-above' : t.id})" fill-opacity="${illus ? 0.35 : 0.8}" stroke="none"`)}${wall}${extra}</g>`);
     labels.push({ z, t, c: centroid(poly) });
   }
   placed.sort((a, b) => (a.pp.plant.heightAdult || 0) - (b.pp.plant.heightAdult || 0));
