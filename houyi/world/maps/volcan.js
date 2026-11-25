@@ -39,7 +39,7 @@ export default {
             { id: 'trainer_barbarian', x: 20, y: 9 },
             { id: 'trainer_alchemist', x: 19, y: 12 },
             { id: 'merchant_volcan', x: 20, y: 11 },
-            { id: 'lizard_zao', x: 8, y: 10 },
+            { id: 'lizard_zao', x: 5, y: 15 },
             { id: 'hua_volcan', x: 23, y: 14 },
             { id: 'young_miner_bo', x: 12, y: 11 },
             { id: 'geologist_zhou', x: 6, y: 11 },
@@ -89,7 +89,7 @@ export default {
         ],
         npcs: [
             { id: 'bath_mu', x: 11, y: 6 },
-            { id: 'dragonet_xiaohong', x: 21, y: 16 },
+            { id: 'dragonet_xiaohong', x: 8, y: 17 },
             { id: 'bath_old_wang', x: 16, y: 8 },
             { id: 'volcan_hamlet_steam_keeper', x: 12, y: 15 }
         ],
@@ -180,7 +180,7 @@ export default {
         ],
         npcs: [
             { id: 'forge_spirit', x: 21, y: 14 },
-            { id: 'lava_fish_bi', x: 11, y: 9 },
+            { id: 'lava_fish_bi', x: 13, y: 9 },
             { id: 'ghost_miner_shu', x: 5, y: 10 },
             { id: 'volcan_wild_ash_sweeper', x: 31, y: 15 }
         ],

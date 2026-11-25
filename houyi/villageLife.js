@@ -10,7 +10,7 @@ const ROAM = 3;   // rayon max (en cases) autour de la place d'origine
 const RIM = 3;    // bande de bord (passages vers les cartes voisines) : on n'y traîne pas
 
 const isVillageScreen = s => s.kind === 'village' || /_(village|hamlet)$/.test(s.id || '');
-// PNJ qui restent à leur poste : marchands, géants, ceux qui défilent déjà (accourent) ou liés à une scène.
+// PNJ qui restent à leur poste (aussi ceux qui vivent dans l'eau ou la lave : ils ne quittent pas leur case) : marchands, géants, ceux qui défilent déjà (accourent) ou liés à une scène.
 const stays = n => n.merchant || n.span || n.stay || n.injured || n.ambient;
 
 function stepOpen(screen, x, y, dx, dy) {
@@ -32,7 +32,7 @@ export function stepVillageLife(session, dtMs, rng = Math.random, frozenIds = []
     if (rt.changeMode || !isVillageScreen(screen)) { rt.villageLife = null; return false; }
     if (!rt.villageLife || rt.villageLife.screenId !== screen.id) {
         rt.villageLife = { screenId: screen.id, clock: 0, walkers: new Map() };
-        (screen.npcs || []).filter(n => !stays(n)).forEach((n, i) => {
+        (screen.npcs || []).filter(n => !stays(n) && !isTerrainBlocked(screen, n.x, n.y)).forEach((n, i) => {
             rt.villageLife.walkers.set(n.id, { ...n, hx: n.x, hy: n.y, wanders: true, next: 600 + i * 450 });
         });
     }

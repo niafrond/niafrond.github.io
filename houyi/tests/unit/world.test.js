@@ -25,6 +25,8 @@ const DIRS = [[1, 0], [-1, 0], [0, 1], [0, -1]];
 // Régions marines (world/PLAN-MAREES.md) : toute l'eau est franchissable avec le Pas de Yu ; pas de hameau ni de patrouilleurs, leurs rencontres sont aquatiques et aléatoires.
 const WATER_REGIONS = new Set(['marees']);
 const onWater = screen => WATER_REGIONS.has(screen.region);
+// PNJ adaptés à l'eau ou à la lave : seuls à se tenir sur une case de liquide (on leur parle depuis la rive).
+const LIQUID_NPCS = new Set(['carp_jin', 'crab_old_gong', 'lava_fish_bi', 'lizard_zao', 'dragonet_xiaohong']);
 
 function reach(screen, from, blocked = () => false) {
     const seen = new Set([`${from.x},${from.y}`]);
@@ -48,6 +50,7 @@ const entitiesOf = s => [
 ];
 // Une entité (PNJ, coffre, ennemi, pierre) bloque le passage : on l'atteint depuis une tuile voisine libre.
 const adjacentReached = (seen, e) => DIRS.some(([dx, dy]) => seen.has(`${e.x + dx},${e.y + dy}`));
+const inRects = (rects, x, y) => rects.some(([rx, ry, rw, rh]) => x >= rx && x < rx + rw && y >= ry && y < ry + rh);
 const exitPos = s => new Set(exitsOf(s, SCREENS).map(e => `${e.x},${e.y}`));
 
 describe('mapKit', () => {
@@ -149,7 +152,8 @@ describe('Grand Monde : cartes', () => {
             const seen = new Set();
             [...entitiesOf(s), ...exitsOf(s, SCREENS).map(e => ({ kind: 'exit', id: e.to, x: e.x, y: e.y }))].forEach(e => {
                 const key = `${e.x},${e.y}`;
-                expect(`${s.id} ${e.kind}:${e.id} ${isTerrainBlocked(s, e.x, e.y)}`).toBe(`${s.id} ${e.kind}:${e.id} false`);
+                const liquidOk = e.kind === 'npc' && LIQUID_NPCS.has(e.id) && inRects(s.liquids || [], e.x, e.y) && !inRects(s.obstacles || [], e.x, e.y);
+                expect(`${s.id} ${e.kind}:${e.id} ${liquidOk ? false : isTerrainBlocked(s, e.x, e.y)}`).toBe(`${s.id} ${e.kind}:${e.id} false`);
                 expect(`${s.id} ${key} ${seen.has(key)}`).toBe(`${s.id} ${key} false`);
                 seen.add(key);
             });
