@@ -3,6 +3,7 @@
 import {
   distance, shapePolygon, shapeArea, shapeBounds, bounds, overlapArea, polygonInside, pointInPolygon, centroid,
 } from '../geometry.js';
+import { attachNorthBadge } from './north-pop.js';
 import { ZONE_TYPES, getZoneType, createZone } from '../model.js';
 import {
   injectStyles, h, createCanvas, gridPath, snap, clone, esc, fr, frLen, frArea, parseLength, toCm,
@@ -27,6 +28,7 @@ export function mountZoneEditor(el, { garden, onChange } = {}) {
     history: [], future: [], msg: '', lineWidth: 1, pop: false, cotes: [],
   };
   let destroyed = false;
+  let north = null; // pastille du nord
 
   const snap0 = () => clone(g.zones);
   const zoneById = (id) => g.zones.find((z) => z.id === id);
@@ -69,6 +71,7 @@ export function mountZoneEditor(el, { garden, onChange } = {}) {
   const cv = createCanvas(wrap, { onView: () => draw(), handlers: { down: onDown, tap: onTap, hover: onHover, long: onLong } });
   wrap.append(liveEl, startEl, pop);
   cv.svg.append(gGrid, gMain, gTop);
+  north = attachNorthBadge(wrap, { garden: g, onChange: () => { if (onChange) onChange(g); } });
   cv.svg.setAttribute('aria-label', 'Plan des zones');
 
   const fitView = () => {
@@ -550,6 +553,7 @@ export function mountZoneEditor(el, { garden, onChange } = {}) {
   }
   function draw() {
     if (destroyed) return;
+    if (north) north.update();
     const r = cv.svg.getBoundingClientRect();
     const gp = gridPath(cv.view, { width: r.width || 390, height: r.height || 520 });
     gGrid.innerHTML = `<path d="${gp.minor}" stroke="var(--jd-grid,#e3e3da)" fill="none" stroke-width="1" ${NS}/><path d="${gp.major}" stroke="var(--jd-line,#cfcfc4)" fill="none" stroke-width="1" ${NS}/>`;
@@ -813,5 +817,5 @@ export function mountZoneEditor(el, { garden, onChange } = {}) {
   requestAnimationFrame(() => { if (!destroyed) fitView(); });
   setTimeout(() => { if (!destroyed) fitView(); }, 60);
 
-  return function unmount() { destroyed = true; cv.destroy(); el.innerHTML = ''; };
+  return function unmount() { destroyed = true; if (north) north.destroy(); cv.destroy(); el.innerHTML = ''; };
 }

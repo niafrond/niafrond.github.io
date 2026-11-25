@@ -5,6 +5,7 @@ import { estimateSunMap } from '../sun.js';
 import {
   injectStyles, h, createCanvas, gridPath, clone, fr,
 } from './draw-util.js';
+import { attachNorthBadge } from './north-pop.js';
 
 const NS = 'vector-effect="non-scaling-stroke"';
 const COLORS = { full: '#ffc107', partial: '#ff8f00', shade: '#5c6bc0' };
@@ -18,6 +19,7 @@ export function mountSunPainter(el, { garden, onChange } = {}) {
   g.sun.regions = g.sun.regions || [];
   const st = { level: 'full', tool: 'brush', size: 2, stroke: null, poly: [], history: [], future: [], msg: '' };
   let destroyed = false;
+  let north = null; // pastille du nord
 
   const snap0 = () => clone(g.sun);
   const changed = () => { if (onChange) onChange(g); draw(); refreshUI(); };
@@ -49,6 +51,7 @@ export function mountSunPainter(el, { garden, onChange } = {}) {
   const gMain = document.createElementNS('http://www.w3.org/2000/svg', 'g');
   const cv = createCanvas(wrap, { onView: () => draw(), handlers: { down: onDown, tap: onTap } });
   cv.svg.append(gGrid, gMain);
+  north = attachNorthBadge(wrap, { garden: g, onChange: () => { if (onChange) onChange(g); } });
   cv.svg.setAttribute('aria-label', 'Carte d\'ensoleillement');
   const fitView = () => { if (g.boundary && g.boundary.length >= 3) cv.fit(bounds(g.boundary), 1.25); else { cv.view.cx = 5; cv.view.cy = 4; cv.view.mpp = 0.04; cv.apply(); } };
 
@@ -102,6 +105,7 @@ export function mountSunPainter(el, { garden, onChange } = {}) {
   const poly = (pts) => pts.map((p) => `${p.x},${p.y}`).join(' ');
   function draw() {
     if (destroyed) return;
+    if (north) north.update();
     const r = cv.svg.getBoundingClientRect();
     const gp = gridPath(cv.view, { width: r.width || 390, height: r.height || 520 });
     gGrid.innerHTML = `<path d="${gp.minor}" stroke="var(--jd-grid,#e3e3da)" fill="none" ${NS}/><path d="${gp.major}" stroke="var(--jd-line,#cfcfc4)" fill="none" ${NS}/>`;
@@ -176,5 +180,5 @@ export function mountSunPainter(el, { garden, onChange } = {}) {
   requestAnimationFrame(() => { if (!destroyed) fitView(); });
   setTimeout(() => { if (!destroyed) fitView(); }, 60);
   void inside;
-  return function unmount() { destroyed = true; cv.destroy(); el.innerHTML = ''; };
+  return function unmount() { destroyed = true; if (north) north.destroy(); cv.destroy(); el.innerHTML = ''; };
 }

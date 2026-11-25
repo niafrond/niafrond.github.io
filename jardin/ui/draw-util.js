@@ -376,3 +376,88 @@ export async function saveBlob(blob, filename, { share = true } = {}) {
   setTimeout(() => URL.revokeObjectURL(url), 4000);
   return 'downloaded';
 }
+
+// ---------- Indicateur du nord (pastille posée sur le plan) ----------
+
+/** Normalise un angle en degrés dans [0, 360) (entier arrondi ; NaN si illisible). */
+export function normAngle(deg) {
+  const n = Number(deg);
+  if (!Number.isFinite(n)) return NaN;
+  return (((Math.round(n) % 360) + 360) % 360);
+}
+
+const NORTH_DIRS = ['en haut', 'en haut à droite', 'à droite', 'en bas à droite', 'en bas', 'en bas à gauche', 'à gauche', 'en haut à gauche'];
+/** Libellé accessible : « Le nord est à droite du plan » (pas de 45°). */
+export function northLabel(angle) {
+  const a = normAngle(angle);
+  const d = NORTH_DIRS[Math.round((Number.isFinite(a) ? a : 0) / 45) % 8];
+  return `Le nord est ${d} du plan`;
+}
+export const NORTH_UNKNOWN_TIP = 'Orientation non renseignée : nord supposé en haut. Touchez pour la régler';
+
+/**
+ * Rose des vents simple (SVG 52×52) : l'aiguille (nord rouge, sud gris) est tournée de `angle` degrés
+ * dans le sens horaire (0 = nord en haut) ; le « N » reste lisible (contre-rotation).
+ * @returns {{el:SVGElement, set:(angle:number, known?:boolean)=>void}}
+ */
+export function createNorthRose() {
+  const svg = svgEl('svg', { class: 'jd-north-svg', viewBox: '-26 -26 52 52', 'aria-hidden': 'true', focusable: 'false' });
+  const disc = svgEl('circle', { class: 'jd-north-disc', r: 24, fill: 'var(--jd-card,#fff)', 'fill-opacity': '.92', stroke: 'var(--jd-line,#9a9a90)', 'stroke-width': 1.6 });
+  const needle = svgEl('g', { class: 'jd-north-needle' });
+  needle.append(
+    svgEl('path', { d: 'M0 -14 L5 1 L-5 1 Z', fill: 'var(--jd-err,#c62828)' }),
+    svgEl('path', { d: 'M0 15 L5 1 L-5 1 Z', fill: 'var(--jd-muted,#8d8d86)' }),
+  );
+  const nPos = svgEl('g', { transform: 'translate(0 -19.5)' });
+  const nRot = svgEl('g', { class: 'jd-north-n' });
+  const nTxt = svgEl('text', { y: 3.4, 'text-anchor': 'middle', 'font-size': 10, 'font-weight': 800, fill: 'var(--jd-fg,#222)' });
+  nTxt.textContent = 'N';
+  nRot.append(nTxt); nPos.append(nRot); needle.append(nPos);
+  const q = svgEl('text', { class: 'jd-north-q', x: 15, y: 20, 'text-anchor': 'middle', 'font-size': 10, 'font-weight': 700, fill: 'var(--jd-muted,#777)' });
+  q.textContent = '?';
+  svg.append(disc, needle, q);
+  let cum = 0; // angle cumulé : la rotation prend toujours le chemin le plus court
+  const set = (angle, known = true) => {
+    const a = normAngle(angle) || 0;
+    cum += ((a - cum) % 360 + 540) % 360 - 180;
+    needle.style.transform = `rotate(${cum}deg)`;
+    needle.setAttribute('data-angle', String(a));
+    nRot.style.transform = `rotate(${-cum}deg)`;
+    if (known) disc.removeAttribute('stroke-dasharray'); else disc.setAttribute('stroke-dasharray', '4 3');
+    q.style.display = known ? 'none' : '';
+  };
+  set(0, true);
+  return { el: svg, set };
+}
+
+/**
+ * Pastille « nord » en haut à droite du conteneur du plan. Bouton (≥ 44 px) ; `onClick` ouvre le réglage.
+ * @param {HTMLElement} wrap  conteneur positionné (jd-canvas-wrap)
+ * @param {{getAngle:()=>number, getKnown?:()=>boolean, onClick?:()=>void}} o
+ * @returns {{update:()=>void, destroy:()=>void, el:HTMLElement}}
+ */
+export function createNorthBadge(wrap, { getAngle, getKnown = () => true, onClick } = {}) {
+  injectStyles();
+  const rose = createNorthRose();
+  const el = h('button', { type: 'button', class: 'jd-north', 'data-role': 'north-badge', onclick: (e) => { e.stopPropagation(); if (onClick) onClick(); } });
+  el.append(rose.el);
+  wrap.appendChild(el);
+  let last = '';
+  const update = () => {
+    const a = normAngle(getAngle ? getAngle() : 0) || 0;
+    const known = !!getKnown();
+    const key = `${a}|${known}`;
+    if (key === last) return;
+    last = key;
+    rose.set(a, known);
+    const label = northLabel(a);
+    el.setAttribute('aria-label', known ? `${label}. Touchez pour régler l'orientation` : NORTH_UNKNOWN_TIP);
+    el.title = known ? `${label} (${a}°). Touchez pour régler` : NORTH_UNKNOWN_TIP;
+    el.dataset.angle = String(a);
+    el.dataset.known = known ? '1' : '0';
+    el.classList.toggle('is-unknown', !known);
+  };
+  update();
+  const destroy = () => { try { el.remove(); } catch { /* ok */ } };
+  return { update, destroy, el };
+}

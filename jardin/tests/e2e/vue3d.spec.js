@@ -5,6 +5,9 @@ import { test, expect } from '@playwright/test';
 // pour que l'application choisisse l'interface PC ; le bloc « mobile » rétablit l'agent Android.
 const UA_PC = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
 const UA_ANDROID = 'Mozilla/5.0 (Linux; Android 13; Pixel 5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36';
+// WebGL logiciel (SwiftShader) en CI : scènes lourdes, délai large et exécution en série pour ne pas affamer le navigateur.
+test.describe.configure({ mode: 'serial', timeout: 120_000 });
+
 test.use({
   userAgent: UA_PC,
   viewport: { width: 1280, height: 800 }, hasTouch: false, isMobile: false,

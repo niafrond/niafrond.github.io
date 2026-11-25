@@ -11,6 +11,7 @@ import {
   injectStyles, h, createCanvas, gridPath, clone, esc, fr, projectOnLine, parseLength, toCm,
 } from './draw-util.js';
 import { createPop } from './pop.js';
+import { attachNorthBadge } from './north-pop.js';
 
 const NS = 'vector-effect="non-scaling-stroke"';
 const GRIDS = [0.1, 0.5, 0];
@@ -54,6 +55,7 @@ export function mountItemEditor(el, { garden, onChange } = {}) {
     draft: null, msg: '', msgKind: '', ghost: null, dismissed: {},
   };
   let destroyed = false;
+  let north = null; // pastille du nord
 
   const snapshot = () => clone({ items: g.items, boundaryEdges: g.boundaryEdges, openings: g.openings, obstacles: g.obstacles });
   const restore = (s) => {
@@ -121,6 +123,7 @@ export function mountItemEditor(el, { garden, onChange } = {}) {
   const cv = createCanvas(wrap, { onView: () => draw(), handlers: { down: onDown, tap: onTap, hover: onHover, long: onLong } });
   wrap.append(startEl);
   cv.svg.append(gGrid, gMain, gTop);
+  north = attachNorthBadge(wrap, { garden: g, onChange: () => { if (onChange) onChange(g); } });
   cv.svg.setAttribute('aria-label', 'Plan du terrain : aménagements');
   const pop = createPop(wrap, { onClose: () => draw(), onWarn: (m) => say(m, 'warn') });
 
@@ -594,6 +597,7 @@ export function mountItemEditor(el, { garden, onChange } = {}) {
 
   function draw() {
     if (destroyed || !cv) return;
+    if (north) north.update();
     const r = cv.svg.getBoundingClientRect();
     const rect = { width: r.width || 390, height: r.height || 520 };
     const gp = gridPath(cv.view, rect);
@@ -808,6 +812,7 @@ export function mountItemEditor(el, { garden, onChange } = {}) {
   return function unmount() {
     destroyed = true;
     try { pop.close(); } catch { /* déjà fermé */ }
+    if (north) north.destroy();
     try { cv.destroy(); } catch { /* ok */ }
     root.remove();
   };

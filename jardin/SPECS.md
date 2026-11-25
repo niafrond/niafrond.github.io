@@ -98,6 +98,12 @@ Deux façons de tracer, combinables : **dessin manuel** (ci-dessous) ou **relev�
 - **Permissions** : localisation « pendant l'utilisation » uniquement ; refus géré (saisie manuelle toujours possible).
 - Le GPS ne sert qu'à localiser le jardin, il n'est jamais envoyé à un serveur autre que les API publiques du §11 (coordonnées arrondies à ~100 m dans les requêtes météo quand c'est suffisant).
 
+### Indicateur du nord
+
+- **Pastille** (`createNorthBadge`, `ui/draw-util.js`) : rose des vents ronde de 52 px (cible tactile ≥ 44 px) en haut à droite du plan, sur les écrans contour, zones, aménagements, ensoleillement et relevé GPS (partage le plan du contour). Aiguille rouge (nord, avec « N » toujours lisible) et grise (sud) tournée de `context.northAngle` degrés dans le sens horaire (0 = nord en haut), transition douce, thèmes via `--jd-*`. `aria-label`/`title` dynamiques par pas de 45° (« Le nord est à droite du plan »). Orientation jamais renseignée (`orientation` nul, `northAngle` 0, pas de `gpsOrigin`) : contour en pointillés, « ? », « Orientation non renseignée : nord supposé en haut. Touchez pour la régler ». Mise à jour à chaque redessin (réglage, annuler/rétablir, import) ; détruite au démontage.
+- **Réglage** (`ui/north-pop.js`, `openNorthDialog(container, {garden, onChange})`) : « Orienter le plan » avec aperçu, boutons « Nord en haut/à droite/en bas/à gauche » (appliquent aussitôt), saisie d'un angle 0–359, et « 🧭 Utiliser la boussole du téléphone » (`watchHeading` : haut du plan face à soi, `northAngle = 360 − cap`, puis « Valider » ; message clair si capteur absent ou refusé). `setNorthAngle(context, deg)` (pure) écrit `northAngle` et `orientation = (360 − northAngle) % 360` ensemble.
+- **Relevé GPS** : le plan est « nord en haut » ; la pastille affiche 0 pendant le relevé et, à la validation, `northAngle = orientation = 0` avec le message « Le relevé GPS place le nord en haut du plan ». La convention est la même que `northSVG` du rendu final (rotation horaire de `northAngle`). Tests : `north.test.js`, `north-badge.dom.test.js`, `north-gps.dom.test.js`, `e2e/nord.spec.js`.
+
 ## 5. Zones
 
 Types prédéfinis (icône, couleur, motif de remplissage, règles par défaut) :
@@ -338,6 +344,7 @@ Dossier web : `jardin/` (ES modules, sans build, sans dépendance runtime). Enve
 - Les données du catalogue sont issues de connaissances horticoles générales, non vérifiées en ligne : à relire avant diffusion.
 
 - Relevé GPS guidé (§4 bis) : tests Jest (`gps-survey`, `geo-watch`, `gps-survey-ui.dom`) et Playwright `gps.spec.js` avec géolocalisation simulée (rectangle 10 × 8 m, précision faible, refus, reprise). La précision réelle d'un récepteur, le comportement du verrouillage d'écran et du Wake Lock ne sont pas testables sans appareil.
+- Indicateur du nord (§4 bis) : pastille sur les éditeurs, réglage « Orienter le plan » (boutons, angle, boussole), tests Jest et Playwright `nord.spec.js`.
 
 **Non vérifié** : GPS, boussole, notifications et build de l'APK sur appareil réel ou en CI (le workflow n'a pas encore tourné) ; les points « à vérifier » du §11 (altimétrie IGN, API Géo) n'ont pas été testés contre les services réels.
 

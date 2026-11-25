@@ -6,6 +6,7 @@ import {
 import { newId } from '../model.js';
 import { getPosition } from '../geo.js';
 import { createSurveyUI } from './gps-survey-ui.js';
+import { attachNorthBadge, setNorthAngle } from './north-pop.js';
 import {
   injectStyles, h, createCanvas, gridPath, snap, clone, esc, fr, frLen, frArea, parseNum, parseLength, toCm,
 } from './draw-util.js';
@@ -37,6 +38,7 @@ export function mountContourEditor(el, { garden, onChange } = {}) {
   };
   let timer = null;
   let destroyed = false;
+  let north = null; // pastille du nord
 
   let survey = null; // relevé GPS guidé (ui/gps-survey-ui.js)
   const surveyOn = () => !!(survey && survey.isActive());
@@ -98,6 +100,13 @@ export function mountContourEditor(el, { garden, onChange } = {}) {
   const cv = createCanvas(wrap, { onView: () => { if (survey) survey.viewChanged(); draw(); }, handlers: { down: onDown, tap: onTap, hover: onHover, long: onLong } });
   wrap.append(startEl, pop);
   cv.svg.append(gGrid, gMain, gTop);
+  // pendant le relevé GPS le plan est « nord en haut » (x = est, y = −nord)
+  north = attachNorthBadge(wrap, {
+    garden: g,
+    onChange: () => { if (onChange) onChange(g); },
+    getAngle: () => (surveyOn() ? 0 : Number(g.context.northAngle) || 0),
+    getKnown: () => surveyOn() || g.context.orientation != null || !!g.context.gpsOrigin || (Number(g.context.northAngle) || 0) !== 0,
+  });
   survey = createSurveyUI({
     root, wrap, cv, garden: g,
     persist: () => { if (onChange) onChange(g); },
@@ -106,11 +115,13 @@ export function mountContourEditor(el, { garden, onChange } = {}) {
       mutate(() => {
         g.boundary = points.map((p) => ({ x: p.x, y: p.y })); g.boundaryClosed = true;
         g.context.gpsOrigin = { lat: origin.lat, lon: origin.lon };
+        setNorthAngle(g.context, 0); // le relevé GPS construit un plan nord en haut
         delete g.context.gpsSurveyDraft;
         st.sel = null; st.closePrompt = null;
       });
       fitView();
       announceValidity();
+      say(`${st.msg ? `${st.msg} ` : ''}Le relevé GPS place le nord en haut du plan.`, st.msgKind);
     },
     onManual: () => { st.sheet = true; say('GPS indisponible : saisissez les côtés à la main (longueur et direction).', 'warn'); refreshUI(); },
     onExit: () => { fitView(); refreshUI(); },
@@ -631,6 +642,7 @@ export function mountContourEditor(el, { garden, onChange } = {}) {
 
   function draw() {
     if (destroyed || !cv) return;
+    if (north) north.update();
     const view = cv.view;
     const r = cv.svg.getBoundingClientRect();
     const rect = { width: r.width || 390, height: r.height || 520 };
@@ -868,6 +880,7 @@ export function mountContourEditor(el, { garden, onChange } = {}) {
   return function unmount() {
     destroyed = true;
     if (survey) survey.destroy();
+    if (north) north.destroy();
     if (timer) clearInterval(timer);
     cv.destroy();
     el.innerHTML = '';
