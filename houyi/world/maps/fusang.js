@@ -143,7 +143,7 @@ export default {
             { id: 'fusang_road_spirit', at: '2', templateId: 'shu_jing', name: 'Esprit de la racine géante', kind: 'sentinel', offset: 0 },
             { id: 'fusang_road_monkey', at: '3', templateId: 'singe_demon', name: 'Singe-démon pillard', kind: 'sentinel', offset: -1 },
             { id: 'fusang_road_wyrm', at: '4', templateId: 'yinglong', name: 'Serpent de sève', kind: 'patrol', patrol: ['4', [7, 12]], offset: 0 },
-            { id: 'fusang_road_hopper', at: '5', templateId: 'jiangshi', name: 'Jiangshi sauteur des racines', kind: 'patrol', patrol: ['5', [38, 5]], offset: 0 }
+            { id: 'fusang_road_hopper', at: '5', templateId: 'jiangshi', name: 'Jiangshi sauteur des racines', kind: 'patrol', patrol: ['5', [31, 9]], offset: 0 }
         ]
     },
 

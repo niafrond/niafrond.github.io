@@ -129,7 +129,7 @@ export default {
         ],
         enemies: [
             { id: 'volcan_road_ember_wolf', x: 8, y: 6, templateId: 'loup_braise', name: 'Loup des galeries', pack: { min: 2, max: 3 }, kind: 'sentinel', offset: 0 },
-            { id: 'volcan_road_boar_patrol', x: 6, y: 12, templateId: 'sanglier_flammes', name: 'Sanglier de scories', pack: { min: 2, max: 3 }, kind: 'patrol', patrol: [[6, 12], [13, 12]], offset: 0 },
+            { id: 'volcan_road_boar_patrol', x: 6, y: 10, templateId: 'sanglier_flammes', name: 'Sanglier de scories', pack: { min: 2, max: 3 }, kind: 'patrol', patrol: [[6, 10], [13, 10]], offset: 0 },
             { id: 'volcan_road_basalt_guard', x: 24, y: 6, templateId: 'soldat_terre_cuite', name: 'Garde de basalte', kind: 'sentinel', offset: 0 },
             { id: 'volcan_road_tiger_patrol', x: 33, y: 5, templateId: 'tigre_embrase', name: 'Tigre des galeries', kind: 'patrol', patrol: [[33, 5], [38, 5]], offset: 0 },
             { id: 'volcan_road_lava_imp', x: 37, y: 8, templateId: 'petit_gui', name: 'Petit gui des coulées', kind: 'sentinel', offset: -1 }
