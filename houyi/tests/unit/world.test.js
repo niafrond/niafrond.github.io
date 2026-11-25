@@ -45,7 +45,7 @@ function reach(screen, from, blocked = () => false) {
 const entitiesOf = s => [
     ...s.npcs.map(e => ({ kind: 'npc', id: e.id, x: e.x, y: e.y })),
     ...s.chests.map(e => ({ kind: 'chest', id: e.id, x: e.x, y: e.y })),
-    ...s.enemies.map(e => ({ kind: 'enemy', id: e.id, x: e.x, y: e.y, guardsDoor: e.guardsDoor })),
+    ...s.enemies.map(e => ({ kind: 'enemy', id: e.id, x: e.x, y: e.y, guardsDoor: e.guardsDoor, liquid: !!e.liquidPatrol })),
     ...(s.waypoint ? [{ kind: 'waypoint', id: s.id, x: s.waypoint.x, y: s.waypoint.y }] : [])
 ];
 // Une entité (PNJ, coffre, ennemi, pierre) bloque le passage : on l'atteint depuis une tuile voisine libre.
@@ -152,7 +152,7 @@ describe('Grand Monde : cartes', () => {
             const seen = new Set();
             [...entitiesOf(s), ...exitsOf(s, SCREENS).map(e => ({ kind: 'exit', id: e.to, x: e.x, y: e.y }))].forEach(e => {
                 const key = `${e.x},${e.y}`;
-                const liquidOk = e.kind === 'npc' && LIQUID_NPCS.has(e.id) && inRects(s.liquids || [], e.x, e.y) && !inRects(s.obstacles || [], e.x, e.y);
+                const liquidOk = (e.liquid || (e.kind === 'npc' && LIQUID_NPCS.has(e.id))) && inRects(s.liquids || [], e.x, e.y) && !inRects(s.obstacles || [], e.x, e.y);
                 expect(`${s.id} ${e.kind}:${e.id} ${liquidOk ? false : isTerrainBlocked(s, e.x, e.y)}`).toBe(`${s.id} ${e.kind}:${e.id} false`);
                 expect(`${s.id} ${key} ${seen.has(key)}`).toBe(`${s.id} ${key} false`);
                 seen.add(key);
@@ -163,9 +163,9 @@ describe('Grand Monde : cartes', () => {
     test('tout est atteignable depuis l\'apparition (entités, sorties, pierre de voyage)', () => {
         screens.filter(s => s.kind).forEach(s => {
             // un gardien de porte tombe avant que la porte ne s'ouvre : il ne compte pas comme obstacle d'accès
-            const solid = new Set(entitiesOf(s).filter(e => !e.guardsDoor).map(e => `${e.x},${e.y}`));
+            const solid = new Set(entitiesOf(s).filter(e => !e.guardsDoor && !e.liquid).map(e => `${e.x},${e.y}`));
             const seen = reach(s, s.spawn, (x, y) => solid.has(`${x},${y}`) || exitPos(s).has(`${x},${y}`));
-            entitiesOf(s).forEach(e => expect(`${s.id} ${e.kind}:${e.id} ${adjacentReached(seen, e)}`).toBe(`${s.id} ${e.kind}:${e.id} true`));
+            entitiesOf(s).filter(e => !e.liquid).forEach(e => expect(`${s.id} ${e.kind}:${e.id} ${adjacentReached(seen, e)}`).toBe(`${s.id} ${e.kind}:${e.id} true`));
             exitsOf(s, SCREENS).forEach(e => expect(`${s.id} exit:${e.to} ${adjacentReached(seen, e)}`).toBe(`${s.id} exit:${e.to} true`));
         });
     });
@@ -221,8 +221,9 @@ describe('Grand Monde : cartes', () => {
         REGION_ORDER.forEach(region => {
             const wild = SCREENS[`${region}_wild`];
             const [min, max, patrols] = WATER_REGIONS.has(region) ? [2, 6, 0] : wild.native ? [8, 14, 3] : [5, 10, 2];
-            expect({ id: wild.id, n: wild.enemies.length >= min && wild.enemies.length <= max }).toEqual({ id: wild.id, n: true });
-            expect({ id: wild.id, patrols: wild.enemies.filter(e => e.kind === 'patrol').length >= patrols }).toEqual({ id: wild.id, patrols: true });
+            const land = wild.enemies.filter(e => !e.liquidPatrol);   // les rondes des eaux et de la lave (world/liquidPatrols.js) s'ajoutent aux ennemis de terre
+            expect({ id: wild.id, n: land.length >= min && land.length <= max }).toEqual({ id: wild.id, n: true });
+            expect({ id: wild.id, patrols: land.filter(e => e.kind === 'patrol').length >= patrols }).toEqual({ id: wild.id, patrols: true });
             noEnemyNearEntry(wild);
         });
     });
@@ -232,8 +233,9 @@ describe('Grand Monde : cartes', () => {
         roads.forEach(road => {
             expect(road.kind).toBe('wild');
             expect(road.id).toBe(`${road.region}_road`);
-            expect({ id: road.id, n: road.enemies.length >= 3 && road.enemies.length <= 6 }).toEqual({ id: road.id, n: true });
-            if (!WATER_REGIONS.has(road.region)) expect({ id: road.id, patrols: road.enemies.filter(e => e.kind === 'patrol').length >= 1 }).toEqual({ id: road.id, patrols: true });
+            const land = road.enemies.filter(e => !e.liquidPatrol);
+            expect({ id: road.id, n: land.length >= 3 && land.length <= 6 }).toEqual({ id: road.id, n: true });
+            if (!WATER_REGIONS.has(road.region)) expect({ id: road.id, patrols: land.filter(e => e.kind === 'patrol').length >= 1 }).toEqual({ id: road.id, patrols: true });
             noEnemyNearEntry(road);
         });
     });

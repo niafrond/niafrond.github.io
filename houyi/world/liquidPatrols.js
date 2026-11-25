@@ -78,7 +78,7 @@ export function addLiquidPatrols(screen) {
         screen.enemies.push({
             id: `${screen.id}_liquid_patrol_${i + 1}`, x: a.x, y: a.y, templateId: entry.templateId, name: entry.name || entry.templateId,
             kind: 'patrol', patrol: [[a.x, a.y], [b.x, b.y]], offset: Number.isInteger(entry.offset) ? entry.offset : 0,
-            sight: LIQUID_SIGHT, allAround: true, liquidPatrol: true
+            spriteKey: entry.templateId, sight: LIQUID_SIGHT, allAround: true, liquidPatrol: true
         });
     });
     return screen;
