@@ -5,7 +5,7 @@ import {
 } from '../geometry.js';
 import { attachNorthBadge } from './north-pop.js';
 import { renderItemsSVG } from '../render-items.js';
-import { itemPolygon, itemRadius } from '../items.js';
+import { itemPolygon, itemRadius, itemHalfSize, getItemKind } from '../items.js';
 import { OBSTACLE_LABELS } from '../render-common.js';
 import { ZONE_TYPES, getZoneType, createZone, POOL_VARIANTS, poolVariant, setPoolVariant } from '../model.js';
 import {
@@ -630,6 +630,11 @@ export function mountZoneEditor(el, { garden, onChange } = {}) {
     let out = '';
     try { out = renderItemsSVG(g, { scale: 1, px: cv.px(1), names: true, bg: '#fafaf5' }); } catch { out = ''; }
     const fs = cv.px(11);
+    for (const it of g.items || []) { // nom court sous chaque élément
+      const k = getItemKind(it.kind); if (!k) continue;
+      const r = itemRadius(it); const hd = r != null ? r : Math.max(itemHalfSize(it).hw, itemHalfSize(it).hd);
+      out += `<text x="${it.x}" y="${it.y + hd + fs * 1.05}" font-size="${fs * 0.95}" text-anchor="middle" fill="#37474f" stroke="#fff" stroke-width="${fs * 0.2}" paint-order="stroke" data-item-name="${esc(it.id)}">${esc(it.label || k.short)}</text>`;
+    }
     for (const o of g.obstacles || []) {
       const name = OBSTACLE_LABELS[o.kind];
       if (!name || o.kind === 'wall' || o.kind === 'fence') continue;
