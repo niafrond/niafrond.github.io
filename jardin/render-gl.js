@@ -109,7 +109,7 @@ export function jobsForGarden(garden, plantsById, { age = 1, density = 1, existi
     jobs.push({ zoneId: z.id, zone: { id: z.id, type: z.type, shape: z.shape, plantings: (z.plantings || []).map((p) => ({ plantId: p.plantId, count: p.count ?? p.quantity })) }, plants, age, density, lawnColor: lawnPlant && lawnPlant.foliageColor, walls: climbs ? wallSegments(garden) : [] });
   }
   // plantes existantes déclarées : taille actuelle (jamais jeunes/adultes), estompées si `keep === false`
-  const ex = existingEntries(garden, existing).filter((e) => e && !['fence', 'wall'].includes(e.kind) && (Number.isFinite(e.x) || (e.points && e.points.length >= 2)));
+  const ex = existingEntries(garden, existing).filter((e) => e && !['fence', 'wall'].includes(e.kind) && (e.plant || e.habit || ['tree', 'shrub', 'hedge'].includes(e.kind)) && (Number.isFinite(e.x) || (e.points && e.points.length >= 2)));
   if (ex.length) {
     const plants = {}; const extra = [];
     ex.forEach((e, i) => {

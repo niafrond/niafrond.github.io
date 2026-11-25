@@ -1,9 +1,11 @@
 // Vues du jardin sous différents angles : axonométrie depuis chaque coin, élévations de face.
 // renderViewSVG(garden, opts) → string SVG autonome (pur, sans DOM). Projection orthographique + algorithme du peintre.
-import { renderPlanSVG, plantKind } from './render.js';
+import { renderPlanSVG, plantKind, leafPath } from './render.js';
 import { shapePolygon, bounds, centroid, signedArea, pointInPolygon, polygonArea } from './geometry.js';
 import { getZoneType, isAbovePool } from './model.js';
 import { getPlant } from './catalog.js';
+import { culmColor, hedgeSeg, familyOf } from './gl-worker-core.js';
+import { habitOf, habitParams } from './habits.js';
 import {
   FONT, BARE_WOOD, BARE_HERB, esc, f, darken, lighten, mixHex, rng, rngOf, hash32, normMonth, monthLabel, plantState,
   placePlants, shadowDir, GradRegistry, buildLegendItems, makeFrame, northSVG, scaleBarSVG, cartoucheSVG, captionSVG,
@@ -13,6 +15,24 @@ import {
 // Module des aménagements (écrit en parallèle) : optionnel, le rendu marche sans.
 let ITEMS = null;
 try { ITEMS = await import('./items.js'); } catch { ITEMS = null; }
+// Plantes et clôtures existantes déclarées (existing.js) : import défensif, repli = aucune.
+let EXISTING = null;
+try { EXISTING = await import('./existing.js'); } catch { EXISTING = null; }
+const existingList = (garden, override) => {
+  if (Array.isArray(override)) return override;
+  try { return (EXISTING && EXISTING.existingForRender && EXISTING.existingForRender(garden)) || []; } catch { return []; }
+};
+/** Matériau effectif (défaut : bois pour une clôture, béton pour un mur). */
+const MATS = { wall: ['stone', 'concrete', 'brick'], fence: ['wood', 'metal', 'concrete', 'mesh'] };
+const matOf = (kind, m) => ((MATS[kind] || []).includes(m) ? m : (kind === 'wall' ? 'concrete' : 'wood'));
+const MAT_STYLE = {
+  wood: { wall: '#a0724a', roof: '#b98558', alpha: 1, slats: 1, post: '#6d4c36' },
+  metal: { wall: '#4a5459', roof: '#3b4348', alpha: 0.5, bars: 1, post: '#2f3a40' },
+  concrete: { wall: '#c8c8c3', roof: '#d6d6d1', alpha: 1, joints: 1, post: '#b5b5b0' },
+  mesh: { wall: '#9aa6ab', roof: '#8a979c', alpha: 0.28, mesh: 1, post: '#7b868b' },
+  stone: { wall: '#a89f91', roof: '#bdb4a6', alpha: 1, courses: 1, post: '#8f877a' },
+  brick: { wall: '#b5593c', roof: '#c9694a', alpha: 1, courses: 2, post: '#8f3f29' },
+};
 
 export const VIEWS = [
   { id: 'top', label: 'Dessus' },
@@ -326,7 +346,7 @@ export function renderViewSVG(garden, opts = {}) {
           const col = vis ? shade(o.wall, n3) : darken(o.wall, 0.3);
           const d = cam.depth((p0.x + p1.x) / 2, (p0.y + p1.y) / 2) + (vis ? 0 : 0.5);
           const fl = o.leaf ? faceLeaves(pts, o.leaf, `${o.tag}${i}${j}`, Math.max(3, Math.round(((o.leaf.n || 20) * seg) / 6))) : null;
-          add(d, pts, (T) => `<polygon points="${poly(T, pts)}" fill="${col}"${op < 1 ? ` fill-opacity="${op}"` : ''}${stroke}/>${o.slats ? slats(T, pts, o.slats) : ''}${fl ? fl(T, col) : ''}`);
+          add(d, pts, (T) => `<polygon points="${poly(T, pts)}" fill="${col}"${op < 1 ? ` fill-opacity="${op}"` : ''}${stroke}/>${o.slats ? slats(T, pts, o.slats, o.slatColor, o.slatOp) : ''}${o.hlines ? hlines(T, pts, o.hlines, o.slatColor, o.slatOp) : ''}${fl ? fl(T, col) : ''}`);
         }
       }
       if (isShortGable && fac > 0.001) {
@@ -381,7 +401,17 @@ export function renderViewSVG(garden, opts = {}) {
     }
   }
 
-  function slats(T, pts, n) {
+  function hlines(T, pts, n, col = '#000', op = 0.22) {
+    let s = '';
+    for (let i = 1; i < n; i++) {
+      const t = i / n;
+      const a = [pts[0][0] + (pts[3][0] - pts[0][0]) * t, pts[0][1] + (pts[3][1] - pts[0][1]) * t];
+      const b = [pts[1][0] + (pts[2][0] - pts[1][0]) * t, pts[1][1] + (pts[2][1] - pts[1][1]) * t];
+      s += `M${T.p(a)}L${T.p(b)}`;
+    }
+    return `<path d="${s}" stroke="${col}" stroke-opacity="${op}" stroke-width=".6" fill="none"/>`;
+  }
+  function slats(T, pts, n, col = '#000', op = 0.22) {
     let s = '';
     for (let i = 1; i < n; i++) {
       const t = i / n;
@@ -389,7 +419,7 @@ export function renderViewSVG(garden, opts = {}) {
       const b = [pts[3][0] + (pts[2][0] - pts[3][0]) * t, pts[3][1] + (pts[2][1] - pts[3][1]) * t];
       s += `M${T.p(a)}L${T.p(b)}`;
     }
-    return `<path d="${s}" stroke="#000" stroke-opacity=".22" stroke-width=".6" fill="none"/>`;
+    return `<path d="${s}" stroke="${col}" stroke-opacity="${op}" stroke-width=".6" fill="none"/>`;
   }
 
   /** Touffes de feuillage sur une face verticale (haie) : points dans le quadrilatère projeté. */
@@ -441,11 +471,17 @@ export function renderViewSVG(garden, opts = {}) {
   const linear = [];
   for (const o of garden.obstacles || []) {
     if ((o.kind === 'wall' || o.kind === 'fence') && o.points && o.points.length >= 2) {
-      for (let i = 0; i < o.points.length - 1; i++) linear.push({ kind: o.kind, a: o.points[i], b: o.points[i + 1], height: o.height });
+      for (let i = 0; i < o.points.length - 1; i++) linear.push({ kind: o.kind, a: o.points[i], b: o.points[i + 1], height: o.height, material: o.material });
     }
   }
   if (ITEMS && ITEMS.edgeObstacles) {
-    try { for (const e of ITEMS.edgeObstacles(garden)) linear.push({ kind: e.kind, a: e.points[0], b: e.points[1], height: e.height, edge: true }); } catch { /* aménagements absents */ }
+    try { for (const e of ITEMS.edgeObstacles(garden)) linear.push({ kind: e.kind, a: e.points[0], b: e.points[1], height: e.height, edge: true, material: ((garden.boundaryEdges || [])[e.edge] || {}).material }); } catch { /* aménagements absents */ }
+  }
+  const exList = existingList(garden, opts.existing);
+  for (const e of exList) {
+    if (e && (e.kind === 'fence' || e.kind === 'wall') && e.points && e.points.length >= 2) {
+      for (let i = 0; i < e.points.length - 1; i++) linear.push({ kind: e.kind, a: e.points[i], b: e.points[i + 1], height: e.height, material: e.material, ghost: e.keep === false });
+    }
   }
   const LIN = { wall: { th: 0.25, h: 2, wall: '#bdb4a8', roof: '#d0c9bf' }, fence: { th: 0.07, h: 1.2, wall: '#a77c5a', roof: '#b8906c', slats: 12 }, hedge: { th: 0.6, h: 1.8, wall: '#3f8f4a', roof: '#52a65c', leaf: true } };
   for (const l of linear) {
@@ -455,8 +491,24 @@ export function renderViewSVG(garden, opts = {}) {
     const o = { wall: spec.wall, roof: spec.roof, seg: 1.5, slats: spec.slats ? Math.max(2, Math.round(Math.hypot(l.b.x - l.a.x, l.b.y - l.a.y) * 3)) : 0, alpha: l.kind === 'fence' ? 0.92 : 1, tag: `lin${l.kind}` };
     if (spec.leaf) o.leaf = { n: 18, color: '#3f8f4a' };
     const before = prims.length;
+    let material = null;
+    if (l.kind === 'wall' || l.kind === 'fence') {
+      // matériau : bois = lattes, métal = barreaux ajourés, béton = panneaux à joints, grillage = maille, pierre / brique = assises
+      material = matOf(l.kind, l.material); const ms = MAT_STYLE[material]; const L = Math.hypot(l.b.x - l.a.x, l.b.y - l.a.y);
+      Object.assign(o, { wall: ms.wall, roof: ms.roof, alpha: ms.alpha, slats: 0, hlines: 0, slatColor: '#000', slatOp: 0.22 });
+      if (ms.slats) o.slats = Math.max(3, Math.round(L * 5));
+      if (ms.bars) { o.slats = Math.max(4, Math.round(L * 8)); o.slatColor = '#1b2226'; o.slatOp = 0.9; }
+      if (ms.joints) { o.slats = Math.max(1, Math.round(L / 2)); o.slatOp = 0.35; }
+      if (ms.mesh) { o.slats = Math.max(4, Math.round(L * 7)); o.hlines = Math.max(3, Math.round(h * 7)); o.slatColor = '#56646a'; o.slatOp = 0.7; }
+      if (ms.courses) { o.hlines = Math.max(3, Math.round(h * (ms.courses === 2 ? 9 : 4))); o.slatColor = '#3d2f26'; o.slatOp = 0.3; if (ms.courses === 1) o.slats = Math.max(2, Math.round(L * 2)); }
+      o.alpha = ms.alpha * (l.ghost ? 0.5 : 1);
+    }
     addBox(segBox(l.a, l.b, spec.th), 0, h, o);
-    tagNew(before, `data-obstacle="${l.kind}"`);
+    if (material && l.kind === 'fence') { // poteaux (et petit chapeau pour le bois)
+      const L = Math.hypot(l.b.x - l.a.x, l.b.y - l.a.y); const nP = Math.max(2, Math.ceil(L / 2.2) + 1); const ms = MAT_STYLE[material];
+      for (let k = 0; k < nP; k++) { const t = k / (nP - 1); const pc = { x: l.a.x + (l.b.x - l.a.x) * t, y: l.a.y + (l.b.y - l.a.y) * t }; addBox(segBox(pc, { x: pc.x + 0.001, y: pc.y }, 0.1), 0, h + (material === 'wood' ? 0.07 : 0.03), { wall: ms.post, roof: material === 'wood' ? darken(ms.post, 0.15) : ms.post, noShadow: true, seg: 3, alpha: l.ghost ? 0.5 : 1 }); }
+    }
+    tagNew(before, `data-obstacle="${l.kind}"${material ? ` data-material="${material}"` : ''}${l.ghost ? ' data-ghost="1"' : ''}`);
   }
   for (const o of garden.obstacles || []) {
     if ((o.kind === 'house' || o.kind === 'shed') && o.points && o.points.length >= 3) {
@@ -538,8 +590,8 @@ export function renderViewSVG(garden, opts = {}) {
   }
 
   /** Arbre : tronc + houppier en ellipsoïde ombré (feuillage, fleurs) ou branches nues. */
-  function addTree(x, y, Hm, a, st, R, fo, existing = false) {
-    const zc = 0.66 * Hm; const b = Math.max(0.2, 0.34 * Hm);
+  function addTree(x, y, Hm, a, st, R, fo, existing = false, shp = null, extraFn = null) {
+    const zc = (shp ? shp.zc : 0.66) * Hm; const b = Math.max(0.2, (shp ? shp.b : 0.34) * Hm);
     const [bx, by, dp] = pr(x, y, 0);
     const [cx, cy] = pr(x, y, zc);
     const rx = a; const ry = Math.sqrt((a * sn) ** 2 + (b * cs) ** 2);
@@ -564,6 +616,7 @@ export function renderViewSVG(garden, opts = {}) {
         }
       }
       if (st.flowering && st.flower) s += dotsSVG(T, flowerPts(cx, cy, rx * 0.85, ry * 0.85, R, clamp(Math.round(rx * T.s / 3), 6, 30)), st.flower, clamp(rx * T.s * 0.04, 1.1, 3));
+      if (extraFn && !st.bare) s += extraFn(T, cx, cy, rx, ry);
       return s;
     });
     if (!st.bare || existing) {
@@ -602,17 +655,18 @@ export function renderViewSVG(garden, opts = {}) {
   }
 
   /** Touffes basses : vivaces, graminées, bulbes (brins, fleurs au sommet). */
-  function addTuft(x, y, Hm, a, st, R, fo, kind) {
+  function addTuft(x, y, Hm, a, st, R, fo, kind, mode = 'fountain') {
     const [bx, by, dp] = pr(x, y, 0);
     const dormant = st.bare;
     const col = dormant ? BARE_HERB : fo;
     const hh = dormant ? Hm * 0.35 : Hm;
-    const n = kind === 'bulb' ? 4 : clamp(Math.round(a * 16), 5, kind === 'grass' ? 14 : 11);
+    const n = kind === 'bulb' ? 4 : mode === 'fine' ? clamp(Math.round(a * 34), 12, 30) : mode === 'spikes' ? clamp(Math.round(a * 14), 4, 9) : clamp(Math.round(a * 16), 5, kind === 'grass' ? 14 : 11);
     const blades = [];
     for (let k = 0; k < n; k++) {
       const spread = (k / (n - 1 || 1) - 0.5) * 2;
-      const tipDx = spread * a * 0.95 + (R() - 0.5) * a * 0.3;
-      const tipH = hh * (0.7 + 0.3 * R());
+      const up = mode === 'upright' || mode === 'spikes' || mode === 'reed';
+      const tipDx = spread * a * (up ? 0.3 : 0.95) + (R() - 0.5) * a * (up ? 0.12 : 0.3);
+      const tipH = hh * (up ? 0.8 + 0.2 * R() : 0.7 + 0.3 * R());
       blades.push({ x0: (R() - 0.5) * a * 0.3, tipDx, tip: tipH, lean: (R() - 0.5) * 0.4 });
     }
     add(dp, [[bx - a, by - hh * cs - 0.1], [bx + a, by + a * sn]], (T) => {
@@ -626,11 +680,11 @@ export function renderViewSVG(garden, opts = {}) {
         if (i % 2) d1 += seg; else d2 += seg;
         tips.push([(tx - T.ox) / T.s, (ty - T.oy) / T.s]);
       });
-      const w = clamp(a * T.s * 0.1, 0.9, 2.4);
+      const w = clamp(a * T.s * (mode === 'fine' ? 0.04 : 0.1), mode === 'fine' ? 0.5 : 0.9, 2.4);
       s += `<path d="${d2}" fill="none" stroke="${darken(col, 0.2)}" stroke-width="${f(w)}" stroke-linecap="round"${dormant ? ' data-bare="1"' : ''}/><path d="${d1}" fill="none" stroke="${col}" stroke-width="${f(w)}" stroke-linecap="round"/>`;
       if (st.flowering && st.flower && !dormant) {
         let t = '';
-        tips.forEach((p, i) => { if (i % (kind === 'perennial' ? 1 : 2) === 0 || kind === 'bulb') t += kind === 'grass' ? `<ellipse cx="${f(X(p[0]))}" cy="${f(Y(p[1]))}" rx="${f(clamp(a * T.s * 0.07, 0.9, 2.2))}" ry="${f(clamp(a * T.s * 0.18, 1.8, 5))}"/>` : `<circle cx="${f(X(p[0]))}" cy="${f(Y(p[1]))}" r="${f(clamp(a * T.s * (kind === 'bulb' ? 0.35 : 0.16), 1.4, 3.6))}"/>`; });
+        tips.forEach((p, i) => { if (i % (kind === 'perennial' ? 1 : 2) === 0 || kind === 'bulb') t += (kind === 'grass' || mode === 'spikes') ? `<ellipse cx="${f(X(p[0]))}" cy="${f(Y(p[1]))}" rx="${f(clamp(a * T.s * 0.07, 0.9, 2.2))}" ry="${f(clamp(a * T.s * 0.18, 1.8, 5))}"/>` : `<circle cx="${f(X(p[0]))}" cy="${f(Y(p[1]))}" r="${f(clamp(a * T.s * (kind === 'bulb' ? 0.35 : 0.16), 1.4, 3.6))}"/>`; });
         s += `<g data-flower="1" fill="${st.flower}" stroke="${darken(st.flower, 0.35)}" stroke-width=".45">${t}</g>`;
       }
       return s;
@@ -652,6 +706,185 @@ export function renderViewSVG(garden, opts = {}) {
     });
   }
 
+
+  const FAMILY_OF = (plant) => familyOf(plant);
+  const dotsFruit = (T, cx, cy, rx, ry, R) => { let d = ''; for (let k = 0; k < 8; k++) { const ph = R() * PI2; const r_ = Math.sqrt(R()) * 0.7; d += `<circle cx="${f(T.ox + (cx + Math.cos(ph) * r_ * rx) * T.s)}" cy="${f(T.oy + (cy + Math.sin(ph) * r_ * ry) * T.s)}" r="1.8"/>`; } return `<g data-fruit="1" fill="#d9482b" stroke="#7a1f10" stroke-width=".3">${d}</g>`; };
+  // ---- silhouettes propres à chaque port (en coordonnées écran projetées)
+  const wob = (R, k) => (R() - 0.5) * k;
+  /** Capsule verticale (colonne) du sol à la hauteur Hm, rayon a. */
+  function addColumn(x, y, Hm, a, st, R, fo, conifer) {
+    const [bx, by, dp] = pr(x, y, 0); const [tx_, ty_] = pr(x, y, Hm);
+    add(dp, [[bx - a, ty_ - a], [bx + a, by + a * sn]], (T) => {
+      const X = (m) => T.ox + m * T.s; const Y = (m) => T.oy + m * T.s; const rb = a * T.s; const rt = rb * 0.55;
+      const base = conifer ? darken(fo, 0.22) : fo;
+      let s = `<path d="M${f(X(bx) - rb)} ${f(Y(by))}L${f(X(tx_) - rt)} ${f(Y(ty_) + rt)}A${f(rt)} ${f(rt)} 0 0 1 ${f(X(tx_) + rt)} ${f(Y(ty_) + rt)}L${f(X(bx) + rb)} ${f(Y(by))}A${f(rb)} ${f(Math.max(1, rb * sn))} 0 0 1 ${f(X(bx) - rb)} ${f(Y(by))}Z" fill="url(#${grads.id(base)})" stroke="${darken(fo, 0.5)}" stroke-width=".7" data-shape="column"/>`;
+      for (let k = 0; k < 7; k++) { const t = (k + 0.5) / 7; s += `<ellipse cx="${f(X(bx) + wob(R, rb * 0.9))}" cy="${f(Y(by) + (Y(ty_) - Y(by)) * t)}" rx="${f(rb * (0.5 - 0.2 * t))}" ry="${f(Math.abs(Y(ty_) - Y(by)) / 14)}" fill="${k % 2 ? darken(fo, 0.35) : lighten(fo, 0.2)}" fill-opacity=".28"/>`; }
+      if (st.flowering && st.flower) s += dotsSVG(T, flowerPts(bx, (by + ty_) / 2, a * 0.7, Math.abs(by - ty_) / 2.4, R, 8), st.flower, 1.4);
+      return s;
+    });
+    shadows.push(ellipsePts(x + sv.x * Hm * 0.5, y + sv.y * Hm * 0.5, a * 0.8, 10).map((p) => pr(p.x, p.y, 0)));
+  }
+  /** Cône étagé (conifère) : 4 étages de jupes sombres. */
+  function addCone(x, y, Hm, a, st, R, fo, trunk) {
+    const [bx, by, dp] = pr(x, y, 0);
+    add(dp, [[bx - a, pr(x, y, Hm)[1]], [bx + a, by + a * sn]], (T) => {
+      const X = (m) => T.ox + m * T.s; const Y = (m) => T.oy + m * T.s;
+      let s = trunk ? `<line x1="${f(X(bx))}" y1="${f(Y(by))}" x2="${f(X(bx))}" y2="${f(Y(by) - Hm * 0.16 * cs * T.s)}" stroke="#5d4037" stroke-width="${f(Math.max(1.5, a * T.s * 0.12))}"/>` : '';
+      const tiers = 4;
+      for (let k = 0; k < tiers; k++) {
+        const z0 = Hm * (0.04 + (0.8 / tiers) * k); const r = a * (1 - 0.2 * k) * T.s; const z1 = z0 + Hm * (0.9 / tiers + 0.16);
+        const yb = Y(by) - z0 * cs * T.s; const yt = Y(by) - z1 * cs * T.s; const rr = Math.max(1, r * sn);
+        const col = darken(fo, 0.2 + 0.04 * k);
+        s += `<path d="M${f(X(bx) - r)} ${f(yb)}L${f(X(bx))} ${f(yt)}L${f(X(bx) + r)} ${f(yb)}A${f(r)} ${f(rr)} 0 0 1 ${f(X(bx) - r)} ${f(yb)}Z" fill="url(#${grads.id(col)})" stroke="${darken(fo, 0.55)}" stroke-width=".7" stroke-linejoin="round" data-tier="${k}"/>`;
+      }
+      return s;
+    });
+    shadows.push(ellipsePts(x + sv.x * Hm * 0.4, y + sv.y * Hm * 0.4, a * 0.9, 10).map((p) => pr(p.x, p.y, 0)));
+  }
+  /** Arbres à houppier particulier : pleureur, parasol, vase, palmier (tronc + silhouette). */
+  function addShapedTree(fam, x, y, Hm, a, st, R, fo, existing) {
+    const [bx, by, dp] = pr(x, y, 0);
+    const trunkFrac = { weeping: 0.38, umbrella: 0.55, vase: 0.22, palm: 0.72 }[fam];
+    const [tx_, ty_] = pr(x, y, Hm * trunkFrac);
+    const [cx, cy] = pr(x, y, Hm * (fam === 'weeping' ? 0.78 : fam === 'umbrella' ? 0.85 : fam === 'vase' ? 0.72 : 0.95));
+    const ry = Math.sqrt((a * sn) ** 2 + ((fam === 'umbrella' ? 0.1 : 0.14) * Hm * cs) ** 2);
+    add(dp, [[bx - a, cy - ry * 2], [bx + a, by + a * sn]], (T) => {
+      const X = (m) => T.ox + m * T.s; const Y = (m) => T.oy + m * T.s; const tw = Math.max(1.6, clamp(a * 0.1, 0.12, 0.35) * T.s);
+      const sway = fam === 'umbrella' ? wob(R, a * 0.5) * T.s : 0;
+      let s = `<path d="M${f(X(bx))} ${f(Y(by))}Q${f(X(bx) + sway)} ${f((Y(by) + Y(cy)) / 2)} ${f(X(cx))} ${f(Y(cy))}" stroke="#5d4037" stroke-width="${f(tw)}" fill="none" stroke-linecap="round"/>`;
+      if (st.bare) {
+        let d = ''; const n = fam === 'weeping' ? 14 : 8;
+        for (let k = 0; k < n; k++) { const ph = (k / n) * Math.PI - Math.PI / 2 + wob(R, 0.3); const ex = X(cx) + Math.sin(ph * 2) * a * T.s * 0.9; d += `M${f(X(cx))} ${f(Y(cy))}Q${f(X(cx) + Math.sin(ph * 2) * a * T.s * 0.5)} ${f(Y(cy) - (fam === 'weeping' ? -1 : 1) * a * T.s * 0.3)} ${f(ex)} ${f(fam === 'weeping' ? Y(by) - Hm * 0.1 * cs * T.s : Y(cy) - a * T.s * 0.3)}`; }
+        return `${s}<path d="${d}" fill="none" stroke="${BARE_WOOD}" stroke-width="1" stroke-linecap="round" data-bare="1"/>`;
+      }
+      if (fam === 'weeping') {
+        const rx = a * T.s; const top = Y(cy) - Hm * 0.12 * cs * T.s; const bot = Y(by) - 0.15 * T.s;
+        s += `<path d="M${f(X(cx) - rx * 0.5)} ${f(top)}Q${f(X(cx) - rx * 1.05)} ${f((top + bot) / 2)} ${f(X(cx) - rx)} ${f(bot)}` + [0, 1, 2, 3, 4, 5].map((k) => `Q${f(X(cx) - rx + (k + 0.5) * rx / 3)} ${f(bot + 4 + wob(R, 4))} ${f(X(cx) - rx + (k + 1) * rx / 3)} ${f(bot + wob(R, 3))}`).join('') + `Q${f(X(cx) + rx * 1.05)} ${f((top + bot) / 2)} ${f(X(cx) + rx * 0.5)} ${f(top)}Z" fill="${lighten(fo, 0.08)}" fill-opacity=".92" stroke="${darken(fo, 0.45)}" stroke-width=".7" data-shape="curtain"/>`;
+        let d = ''; for (let k = 0; k < 13; k++) { const u = -0.95 + (1.9 * k) / 12; d += `M${f(X(cx) + u * rx * 0.55)} ${f(top + 2)}L${f(X(cx) + u * rx)} ${f(bot - 2)}`; }
+        s += `<path d="${d}" stroke="${darken(fo, 0.35)}" stroke-width=".7" stroke-opacity=".55" fill="none"/>`;
+        s += `<ellipse cx="${f(X(cx))}" cy="${f(top + 2)}" rx="${f(rx * 0.55)}" ry="${f(Math.max(3, Hm * 0.12 * cs * T.s * 0.7))}" fill="url(#${grads.id(fo)})" stroke="${darken(fo, 0.45)}" stroke-width=".7"/>`;
+      } else if (fam === 'umbrella') {
+        for (let k = 0; k < 3; k++) { const dxk = (k - 1) * a * T.s * 0.28; s += `<ellipse cx="${f(X(cx) + dxk)}" cy="${f(Y(cy) - k * 2.4)}" rx="${f(a * T.s * (0.98 - 0.12 * k))}" ry="${f(Math.max(3, ry * T.s * (1 - 0.1 * k)))}" fill="url(#${grads.id(k % 2 ? lighten(fo, 0.08) : fo)})" stroke="${darken(fo, 0.45)}" stroke-width=".7" data-shape="umbrella"/>`; }
+      } else if (fam === 'vase') {
+        let d = ''; for (let k = 0; k < 5; k++) { const u = -1 + k * 0.5; d += `M${f(X(tx_))} ${f(Y(ty_))}L${f(X(cx) + u * a * T.s * 0.8)} ${f(Y(cy) - Hm * 0.12 * cs * T.s)}`; }
+        s += `<path d="${d}" stroke="#5d4037" stroke-width="${f(Math.max(1.2, tw * 0.5))}" fill="none"/><path d="M${f(X(cx) - a * T.s * 0.95)} ${f(Y(cy) - Hm * 0.16 * cs * T.s)}Q${f(X(cx))} ${f(Y(cy) + Hm * 0.2 * cs * T.s)} ${f(X(cx) + a * T.s * 0.95)} ${f(Y(cy) - Hm * 0.16 * cs * T.s)}A${f(a * T.s * 0.95)} ${f(Math.max(3, ry * T.s))} 0 0 0 ${f(X(cx) - a * T.s * 0.95)} ${f(Y(cy) - Hm * 0.16 * cs * T.s)}Z" fill="url(#${grads.id(fo)})" stroke="${darken(fo, 0.45)}" stroke-width=".7" data-shape="vase"/>`;
+      } else { // palmier : palmes arquées en couronne
+        let d = ''; const L = Math.min(Hm * 0.32, a * 1.4) * T.s;
+        for (let k = 0; k < 10; k++) { const ph = (k / 10) * Math.PI * 2; const ex = X(cx) + Math.cos(ph) * L; const ey = Y(cy) + Math.sin(ph) * L * (0.35 + 0.65 * Math.abs(Math.sin(ph))) * 0.5 + (Math.sin(ph) > 0 ? L * 0.35 : -L * 0.1); d += `M${f(X(cx))} ${f(Y(cy))}Q${f(X(cx) + Math.cos(ph) * L * 0.6)} ${f(Y(cy) - L * 0.55)} ${f(ex)} ${f(ey)}`; }
+        s += `<path d="${d}" fill="none" stroke="${fo}" stroke-width="${f(Math.max(2, L * 0.12))}" stroke-linecap="round" data-shape="palm"/><path d="${d}" fill="none" stroke="${darken(fo, 0.35)}" stroke-width="${f(Math.max(.8, L * 0.03))}"/>`;
+      }
+      if (st.flowering && st.flower && fam !== 'palm') s += dotsSVG(T, flowerPts(cx, cy, a * 0.8, ry, R, 10), st.flower, 1.6);
+      return s;
+    });
+    if (!st.bare || existing) shadows.push(ellipsePts(x + sv.x * Hm * 0.45, y + sv.y * Hm * 0.45, a * 0.9, 12).map((p) => pr(p.x, p.y, 0)));
+  }
+  /** Tiges arquées ou dressées d'un arbuste (touffe de rameaux + masse feuillée). */
+  function addStems(fam, x, y, Hm, a, st, R, fo) {
+    const [bx, by, dp] = pr(x, y, 0);
+    add(dp, [[bx - a, by - Hm * cs - 0.1], [bx + a, by + a * sn]], (T) => {
+      const X = (m) => T.ox + m * T.s; const Y = (m) => T.oy + m * T.s; let d = ''; let leaves = '';
+      const n = fam === 'arching' ? 9 : 7;
+      for (let k = 0; k < n; k++) {
+        const ph = (k / n) * Math.PI * 2 + wob(R, 0.5); const reach = a * (fam === 'arching' ? 0.95 : 0.35) * (0.8 + 0.3 * R());
+        const ex = bx + Math.cos(ph) * reach; const ez = Hm * (fam === 'arching' ? 0.5 : 0.92 + 0.08 * R());
+        const [px, py] = pr(x + Math.cos(ph) * reach * (-0) , y, 0); void px; void py;
+        const ex_ = X(bx) + Math.cos(ph) * reach * T.s; const ey_ = Y(by) - ez * cs * T.s + Math.sin(ph) * reach * sn * T.s;
+        const topx = X(bx) + Math.cos(ph) * reach * 0.35 * T.s; const topy = Y(by) - Hm * (fam === 'arching' ? 1.05 : 0.7) * cs * T.s;
+        d += `M${f(X(bx))} ${f(Y(by))}Q${f(topx)} ${f(topy)} ${f(ex_)} ${f(ey_)}`;
+        if (!st.bare) for (const t of [0.55, 0.8, 1]) { const lx = (1 - t) * (1 - t) * X(bx) + 2 * (1 - t) * t * topx + t * t * ex_; const ly = (1 - t) * (1 - t) * Y(by) + 2 * (1 - t) * t * topy + t * t * ey_; leaves += `<ellipse cx="${f(lx)}" cy="${f(ly)}" rx="${f(Math.max(2, a * T.s * 0.2))}" ry="${f(Math.max(2, a * T.s * 0.15))}"/>`; }
+      }
+      let s = `<path d="${d}" fill="none" stroke="${st.bare ? BARE_WOOD : darken(fo, 0.45)}" stroke-width="${f(clamp(a * T.s * 0.03, 0.8, 1.8))}" stroke-linecap="round"${st.bare ? ' data-bare="1"' : ''} data-shape="${fam}"/>`;
+      if (!st.bare) s += `<g fill="${fo}" fill-opacity=".82" stroke="${darken(fo, 0.4)}" stroke-width=".4">${leaves}</g>`;
+      if (st.flowering && st.flower && !st.bare) s += dotsSVG(T, flowerPts(bx, by - Hm * cs * 0.55, a * 0.8, Hm * cs * 0.35, R, 10), st.flower, 1.5);
+      return s;
+    });
+    if (!st.bare) shadows.push(ellipsePts(x + sv.x * Hm * 0.4, y + sv.y * Hm * 0.4, a * 0.85, 10).map((p) => pr(p.x, p.y, 0)));
+  }
+  /** Bambou : touffe de chaumes verticaux fins, nœuds visibles, plumeaux de feuilles en tête, base dense. */
+  function addBamboo(x, y, Hm, a, st, R, fo, culm) {
+    const [bx, by, dp] = pr(x, y, 0);
+    const n = clamp(Math.round(10 + a * 6), 9, 16);
+    const stems = [];
+    for (let k = 0; k < n; k++) {
+      const ph = R() * PI2; const d = Math.sqrt(R()) * a * 0.55; const Hc = Hm * (0.72 + 0.28 * R()); const lean = 0.05 + 0.16 * R();
+      const px = x + Math.cos(ph) * d; const py = y + Math.sin(ph) * d;
+      const [sx0, sy0, sd] = pr(px, py, 0); const [sx1, sy1] = pr(px + Math.cos(ph) * lean * Hc, py + Math.sin(ph) * lean * Hc, Hc);
+      stems.push({ sx0, sy0, sx1, sy1, sd, Hc });
+    }
+    stems.sort((p, q) => q.sd - p.sd);
+    add(dp, [[bx - a, by - Hm * cs - 0.5], [bx + a, by + a * sn]], (T) => {
+      const X = (m) => T.ox + m * T.s; const Y = (m) => T.oy + m * T.s; let s = '';
+      s += `<ellipse cx="${f(X(bx))}" cy="${f(Y(by) - Hm * 0.05 * T.s)}" rx="${f(a * T.s * 0.7)}" ry="${f(Math.max(2, a * T.s * 0.35))}" fill="${fo}" fill-opacity=".9" stroke="${darken(fo, 0.4)}" stroke-width=".5" data-shape="bamboo-base"/>`;
+      const sw = clamp(T.s * 0.035, 1, 2.6);
+      for (const st_ of stems) {
+        const x0 = X(st_.sx0); const y0 = Y(st_.sy0); const x1 = X(st_.sx1); const y1 = Y(st_.sy1);
+        const cxm = (x0 + x1) / 2 + (x1 - x0) * 0.1; const cym = (y0 + y1) / 2;
+        s += `<path d="M${f(x0)} ${f(y0)}Q${f(cxm)} ${f(cym)} ${f(x1)} ${f(y1)}" fill="none" stroke="${culm}" stroke-width="${f(sw)}" stroke-linecap="round" data-culm="1"/>`;
+        let nd = ''; for (let q = 1; q < 6; q++) { const t = q / 6; const px = (1 - t) * (1 - t) * x0 + 2 * (1 - t) * t * cxm + t * t * x1; const py = (1 - t) * (1 - t) * y0 + 2 * (1 - t) * t * cym + t * t * y1; nd += `M${f(px - sw * 0.9)} ${f(py)}L${f(px + sw * 0.9)} ${f(py)}`; }
+        s += `<path d="${nd}" stroke="${darken(culm, 0.5)}" stroke-width=".7" fill="none"/>`;
+        let pl = ''; const pLen = clamp(T.s * 0.16 * (1 + Hm * 0.04), 3, 11);
+        for (let q = 0; q < 3; q++) { const t = 0.72 + 0.14 * q; const px = (1 - t) * (1 - t) * x0 + 2 * (1 - t) * t * cxm + t * t * x1; const py = (1 - t) * (1 - t) * y0 + 2 * (1 - t) * t * cym + t * t * y1; for (const sd of [-1, 0, 1]) pl += `M${f(px)} ${f(py)}Q${f(px + sd * pLen * 0.7)} ${f(py - pLen * 0.7)} ${f(px + sd * pLen)} ${f(py - pLen * (sd ? 0.1 : 1))}`; }
+        s += `<path d="${pl}" fill="none" stroke="${fo}" stroke-width="${f(clamp(T.s * 0.03, 0.9, 2.2))}" stroke-linecap="round" data-plume="1"/>`;
+      }
+      return s;
+    });
+    shadows.push(ellipsePts(x + sv.x * Hm * 0.35, y + sv.y * Hm * 0.35, a * 0.8, 10).map((p) => pr(p.x, p.y, 0)));
+  }
+  /** Grimpante : support léger (treillis, câbles, tuteur) et tiges feuillées qui montent jusqu'à la hauteur. */
+  function addClimber(pp, Hm, st, R, fo) {
+    const { x, y } = pp; const hp = habitParams(pp.plant, { age });
+    const onWall = !!pp.wall; const sup = hp.support || 'trellis';
+    const a0 = pp.rot || 0; const dx = Math.cos(a0); const dy = Math.sin(a0);
+    const Wp = clamp(pp.r * 2 * 0.9, 0.8, 3); const Hs = onWall ? Math.min(Hm, (pp.wall.h || 2) * 1.02) : Math.min(Hm, sup === 'pergola' ? 2.3 : 2.4);
+    const corner = (u, v) => pr(x + dx * u, y + dy * u, v);
+    const quad = [corner(-Wp / 2, 0), corner(Wp / 2, 0), corner(Wp / 2, Hs), corner(-Wp / 2, Hs)];
+    const [, , dp] = pr(x, y, 0);
+    const blobs = []; const nb = clamp(Math.round(Wp * Hs * 7), 10, 40);
+    for (let k = 0; k < nb; k++) { const u = (R() - 0.5) * Wp; const v = Hs * (0.1 + 0.9 * Math.sqrt(R())); blobs.push({ p: corner(u, v), r: 0.14 + 0.1 * R() }); }
+    const stemsP = []; for (let k = 0; k < clamp(hp.stems, 2, 5); k++) { const u = (R() - 0.5) * Wp * 0.7; stemsP.push([corner(u, 0), corner(u + (R() - 0.5) * 0.4, Hs * 0.5), corner(u + (R() - 0.5) * 0.5, Hs * 0.95)]); }
+    add(dp, [...quad.map((q) => [q[0], q[1]]), ...blobs.map((b) => b.p)], (T) => {
+      const X = (m) => T.ox + m * T.s; const Y = (m) => T.oy + m * T.s; let s = '';
+      const qp = (q) => `${f(X(q[0]))},${f(Y(q[1]))}`;
+      if (!onWall && sup !== 'tripod') { // treillis : cadre et grille légère (câbles), ou pergola
+        let g = ''; for (let k = 1; k < 5; k++) { const t = k / 5; g += `M${f(X(quad[0][0] + (quad[1][0] - quad[0][0]) * t))} ${f(Y(quad[0][1] + (quad[1][1] - quad[0][1]) * t))}L${f(X(quad[3][0] + (quad[2][0] - quad[3][0]) * t))} ${f(Y(quad[3][1] + (quad[2][1] - quad[3][1]) * t))}M${f(X(quad[0][0] + (quad[3][0] - quad[0][0]) * t))} ${f(Y(quad[0][1] + (quad[3][1] - quad[0][1]) * t))}L${f(X(quad[1][0] + (quad[2][0] - quad[1][0]) * t))} ${f(Y(quad[1][1] + (quad[2][1] - quad[1][1]) * t))}`; }
+        s += `<g data-support="${sup === 'pergola' ? 'pergola' : 'trellis'}"><polygon points="${quad.map(qp).join(' ')}" fill="#e8dcc5" fill-opacity=".18" stroke="#8a6a48" stroke-width="1.4" stroke-linejoin="round"/><path d="${g}" stroke="#8a6a48" stroke-width=".7" fill="none"/></g>`;
+      } else if (sup === 'tripod' && !onWall) {
+        const top = pr(x, y, Math.min(Hm, 2)); let d = '';
+        for (let k = 0; k < 3; k++) { const ph = a0 + (k / 3) * PI2; const b = pr(x + Math.cos(ph) * 0.35, y + Math.sin(ph) * 0.35, 0); d += `M${f(X(b[0]))} ${f(Y(b[1]))}L${f(X(top[0]))} ${f(Y(top[1]))}`; }
+        s += `<path d="${d}" stroke="#6d4c41" stroke-width="1.6" fill="none" data-support="tripod"/>`;
+      } else s += `<line x1="${f(X(quad[0][0]))}" y1="${f(Y(quad[0][1]))}" x2="${f(X(quad[1][0]))}" y2="${f(Y(quad[1][1]))}" stroke="#4e4a44" stroke-width="1" opacity=".5" data-support="wall"/>`;
+      let d = ''; for (const c of stemsP) d += `M${qp(c[0])}Q${qp(c[1])} ${qp(c[2])}`;
+      s += `<path d="${d.replace(/,/g, ' ')}" fill="none" stroke="${st.bare ? BARE_WOOD : darken(fo, 0.45)}" stroke-width="${f(clamp(T.s * 0.03, 0.9, 1.8))}" stroke-linecap="round"${st.bare ? ' data-bare="1"' : ''} data-stems="1"/>`;
+      if (!st.bare) s += `<g fill="${fo}" fill-opacity=".88" stroke="${darken(fo, 0.4)}" stroke-width=".4">${blobs.map((b) => `<ellipse cx="${f(X(b.p[0]))}" cy="${f(Y(b.p[1]))}" rx="${f(b.r * T.s)}" ry="${f(b.r * T.s * 0.8)}"/>`).join('')}</g>`;
+      if (st.flowering && st.flower && !st.bare) s += dotsSVG(T, blobs.slice(0, 8).map((b) => [b.p[0], b.p[1]]), st.flower, 1.8);
+      return s;
+    });
+  }
+  /** Rosette : grandes feuilles larges posées autour d'un centre (hosta). */
+  function addRosette(x, y, Hm, a, st, R, fo) {
+    const [bx, by, dp] = pr(x, y, 0); const lift = Hm * cs * 0.4;
+    add(dp, [[bx - a, by - lift - a * sn], [bx + a, by + a * sn]], (T) => {
+      const col = st.bare ? BARE_HERB : fo; let s = '';
+      const k = Math.max(0.3, sn);
+      for (let i = 0; i < 9; i++) {
+        const ph = (i / 9) * PI2 + wob(R, 0.3); const L = a * T.s * (0.8 + 0.2 * R());
+        s += `<path d="${leafPath(0, 0, ph, L, L * 0.34)}" fill="${i % 2 ? col : lighten(col, 0.15)}" fill-opacity=".95" stroke="${darken(col, 0.45)}" stroke-width=".6" transform="translate(${f(T.ox + bx * T.s)} ${f(T.oy + (by - lift * (i % 3 === 0 ? 1 : 0.5)) * T.s)}) scale(1 ${f(k)})"/>`;
+      }
+      if (st.flowering && st.flower && !st.bare) s += `<g data-flower="1" stroke="${darken(st.flower, 0.35)}" stroke-width=".4" fill="${st.flower}">${[0, 1, 2].map((q) => `<ellipse cx="${f(T.ox + (bx + (q - 1) * a * 0.3) * T.s)}" cy="${f(T.oy + (by - Hm * cs * 1.3) * T.s)}" rx="1.6" ry="${f(Math.max(3, a * T.s * 0.3))}"/>`).join('')}</g>`;
+      return `<g${st.bare ? ' data-bare="1"' : ''}>${s}</g>`;
+    });
+  }
+  /** Tuteur / tipi de légume grimpant : trois cannes et plants feuillés. */
+  function addTipi(x, y, Hm, a, st, R, fo) {
+    const Ht = clamp(Hm, 1, 2); const top = pr(x, y, Ht); const [, , dp] = pr(x, y, 0);
+    const feet = [0, 1, 2].map((k) => pr(x + Math.cos(k * 2.09 + 0.5) * 0.32, y + Math.sin(k * 2.09 + 0.5) * 0.32, 0));
+    add(dp, [[top[0], top[1]], ...feet.map((q) => [q[0], q[1]])], (T) => {
+      const X = (m) => T.ox + m * T.s; const Y = (m) => T.oy + m * T.s; let d = ''; let lv = '';
+      for (const b of feet) { d += `M${f(X(b[0]))} ${f(Y(b[1]))}L${f(X(top[0]))} ${f(Y(top[1]))}`; if (!st.bare) for (const t of [0.25, 0.5, 0.75]) lv += `<ellipse cx="${f(X(b[0] + (top[0] - b[0]) * t))}" cy="${f(Y(b[1] + (top[1] - b[1]) * t))}" rx="${f(0.12 * T.s)}" ry="${f(0.1 * T.s)}"/>`; }
+      return `<path d="${d}" stroke="#6d4c41" stroke-width="1.6" fill="none" data-support="tripod"/><g fill="${fo}" fill-opacity=".88" stroke="${darken(fo, 0.4)}" stroke-width=".4">${lv}</g>`;
+    });
+  }
+
   const placedAll = [];
   for (const z of sortedZones) {
     if (!z.shape) continue;
@@ -659,17 +892,19 @@ export function renderViewSVG(garden, opts = {}) {
     const pl = placements.get(z);
     const zp = shapePolygon(z.shape, 32);
     // haie : volume continu
-    const hedges = pl.filter((pp) => !pp.fill && (pp.plant.category === 'hedge' || (z.type === 'hedge' && plantKind(pp.plant) === 'shrub')));
+    const hedges = pl.filter((pp) => !pp.fill && pp.family === 'hedge');
     if (hedges.length && zp.length >= 3) {
       const plantH = hedges.reduce((best, pp) => (plantHeightM(pp.plant, age) > plantHeightM(best.plant, age) ? pp : best), hedges[0]);
       const st = plantState(plantH.plant, month);
       const Hh = plantHeightM(plantH.plant, age);
       const flowering = hedges.find((pp) => plantState(pp.plant, month).flowering);
       const fo = st.bare ? BARE_WOOD : st.foliage;
+      const hb = prims.length;
       addBox(zp, 0, Hh, {
         wall: fo, roof: st.bare ? lighten(BARE_WOOD, 0.1) : lighten(fo, 0.12), seg: 1.5, tag: `h${z.id}`,
         leaf: { n: clamp(Math.round(polygonArea(zp) * 14), 10, 60), color: fo, flower: flowering ? plantState(flowering.plant, month).flower : null },
       });
+      for (let i = hb; i < prims.length; i++) { const fn = prims[i].fn; prims[i].fn = (T) => `<g data-plant="${esc(plantH.plant.id)}" data-kind="shrub" data-family="hedge" data-habit="hedge-clipped"${st.bare ? ' data-bare="1"' : ''}>${fn(T)}</g>`; }
     }
     for (const pp of pl) {
       if (hedges.includes(pp)) continue;
@@ -679,25 +914,69 @@ export function renderViewSVG(garden, opts = {}) {
       placedAll.push({ pp, zt });
     }
   }
-  for (const { pp } of placedAll) {
+  // plantes existantes déclarées : même moteur de ports, taille actuelle, estompées si `keep === false`
+  for (const [i, e] of exList.entries()) {
+    if (!e || e.kind === 'fence' || e.kind === 'wall' || !(e.plant || e.habit || ['tree', 'shrub', 'hedge'].includes(e.kind))) continue;
+    const hid = (e.habit && (e.habit.id || e.habit)) || null;
+    const base = e.plant || { id: `_ex_${e.id ?? i}`, commonName: 'Existant', category: e.kind === 'tree' ? 'tree' : e.kind === 'hedge' ? 'hedge' : 'shrub', foliage: 'deciduous', bloom: [], flowerColor: null, foliageColor: '#4f8a3c' };
+    const h = Number(e.height) > 0 ? Number(e.height) : (base.heightAdult || 3); const w = Number(e.width) > 0 ? Number(e.width) : (base.widthAdult || 2);
+    const plant = { ...base, heightAdult: h, widthAdult: w, habit: typeof hid === 'string' && habitOf({ habit: hid }).id === hid ? hid : (e.plant ? habitOf(e.plant).id : (e.kind === 'tree' ? 'tree-round' : e.kind === 'hedge' ? 'hedge-clipped' : 'shrub-round')) };
+    const fam = FAMILY_OF(plant);
+    const seed = rng(hash32(`ex${e.id ?? i}`))();
+    if (e.points && e.points.length >= 2 && fam === 'hedge') { // haie existante : volume continu le long des points
+      const st = plantState(plant, month); const fo = st.bare ? BARE_WOOD : st.foliage; const before = prims.length;
+      for (let k = 0; k < e.points.length - 1; k++) addBox(segBox(e.points[k], e.points[k + 1], Math.max(0.3, w)), 0, h, { wall: fo, roof: lighten(fo, 0.12), seg: 1.5, tag: `ex${i}${k}`, alpha: e.keep === false ? 0.45 : 1, leaf: { n: 16, color: fo } });
+      for (let q = before; q < prims.length; q++) { const fn = prims[q].fn; prims[q].fn = (T) => `<g data-plant="${esc(plant.id)}" data-existing="1" data-kind="shrub" data-family="hedge"${e.keep === false ? ' data-ghost="1"' : ''}>${fn(T)}</g>`; }
+      continue;
+    }
+    const pts0 = e.points && e.points.length ? e.points[0] : { x: e.x, y: e.y };
+    placedAll.push({ pp: { plant, x: Number.isFinite(e.x) ? e.x : pts0.x, y: Number.isFinite(e.y) ? e.y : pts0.y, r: w / 2, rand: seed, family: fam, habit: plant.habit, rot: 0, seg: hedgeSeg(plant) }, fixedH: h, ghost: e.keep === false, existing: true });
+  }
+  for (const { pp, fixedH, ghost, existing } of placedAll) {
     const plant = pp.plant;
     const st = plantState(plant, month);
     const kind = plantKind(plant);
+    const fam = pp.family || FAMILY_OF(plant);
     const R = rngOf(pp);
-    const Hm = plantHeightM(plant, age);
+    const Hm = fixedH || plantHeightM(plant, age);
     const a = pp.r;
-    const fo = st.foliage;
+    const fo = ghost ? mixHex(st.foliage, '#a3a69e', 0.55) : st.foliage;
     const before = prims.length;
-    if (kind === 'tree') addTree(pp.x, pp.y, Hm, a, st, R, fo);
-    else if (kind === 'shrub') addDome(pp.x, pp.y, plant.category === 'climber' ? Math.min(Hm, 2.4) : Hm, a, st, R, fo);
-    else if (kind === 'vegetable') addDome(pp.x, pp.y, Math.min(Hm, 0.6), a, st, R, fo);
-    else if (kind === 'groundcover') addMound(pp.x, pp.y, Math.min(Hm, 0.3), a, st, R, fo, false);
-    else if (kind === 'aquatic') addMound(pp.x, pp.y, 0.05, a, st, R, fo, true);
-    else addTuft(pp.x, pp.y, Math.min(Hm, 2.5), a, st, R, fo, kind);
-    // marque l'essence pour les tests / l'accessibilité
+    const sh0 = shadows.length;
+    const culm = culmColor(plant);
+    switch (fam) {
+      case 'round': addTree(pp.x, pp.y, Hm, a, st, R, fo, existing); break;
+      case 'fruit': addTree(pp.x, pp.y, Hm, a, st, R, fo, existing, { zc: 0.62, b: 0.36 }, (T, cx, cy, rx, ry) => ((month == null || (month >= 7 && month <= 10)) ? dotsFruit(T, cx, cy, rx, ry, R) : '')); break;
+      case 'spreading': addTree(pp.x, pp.y, Hm, a, st, R, fo, existing, { zc: 0.6, b: 0.22 }); break;
+      case 'weeping': case 'umbrella': case 'vase': case 'palm': addShapedTree(fam, pp.x, pp.y, Hm, a, st, R, fo, existing); break;
+      case 'column': addColumn(pp.x, pp.y, Hm, Math.max(0.15, a), st, R, fo, plant.foliage === 'evergreen'); break;
+      case 'cone': addCone(pp.x, pp.y, Hm, a, st, R, fo, habitOf(plant).id === 'tree-conical'); break;
+      case 'upright': case 'arching': addStems(fam, pp.x, pp.y, Hm, a, st, R, fo); break;
+      case 'bamboo': addBamboo(pp.x, pp.y, Hm, a, st, R, fo, culm); break;
+      case 'hedge': addDome(pp.x, pp.y, Hm, a, st, R, fo); break;
+      case 'climber': addClimber(pp, Hm, st, R, fo); break;
+      case 'rosette': addRosette(pp.x, pp.y, Math.min(Hm, 1), a, st, R, fo); break;
+      case 'tipi': addTipi(pp.x, pp.y, Hm, a, st, R, fo); break;
+      case 'mat': case 'creeping': addMound(pp.x, pp.y, Math.min(Hm, 0.3), a, st, R, fo, false); break;
+      case 'floating': addMound(pp.x, pp.y, 0.05, a, st, R, fo, true); break;
+      case 'fountain': case 'clump': case 'bulbclump': case 'bulbspike': addTuft(pp.x, pp.y, Math.min(Hm, 2.5), a, st, R, fo, kind === 'grass' || fam === 'fountain' ? 'grass' : kind === 'bulb' ? 'bulb' : 'perennial', 'fountain'); break;
+      case 'blades': addTuft(pp.x, pp.y, Math.min(Hm, 2.5), a, st, R, fo, 'grass', 'upright'); break;
+      case 'fine': addTuft(pp.x, pp.y, Math.min(Hm, 2.5), a, st, R, fo, 'grass', 'fine'); break;
+      case 'reed': addTuft(pp.x, pp.y, Math.min(Hm, 2.8), a, st, R, fo, 'grass', 'reed'); break;
+      case 'spikes': addTuft(pp.x, pp.y, Math.min(Hm, 2.5), a, st, R, fo, 'perennial', 'spikes'); break;
+      case 'fern': addTuft(pp.x, pp.y, Math.min(Hm, 1.5), a, st, R, fo, 'perennial', 'fountain'); break;
+      case 'row': addDome(pp.x, pp.y, Math.min(Hm, 0.6), a, st, R, fo); break;
+      case 'herb': case 'mound': addDome(pp.x, pp.y, Math.min(Hm, 1.2), a, st, R, fo); break;
+      default:
+        if (kind === 'tree') addTree(pp.x, pp.y, Hm, a, st, R, fo);
+        else if (kind === 'shrub') addDome(pp.x, pp.y, Hm, a, st, R, fo);
+        else addTuft(pp.x, pp.y, Math.min(Hm, 2.5), a, st, R, fo, kind);
+    }
+    void sh0;
+    // marque l'essence et son port pour les tests / l'accessibilité
     for (let i = before; i < prims.length; i++) {
       const fn = prims[i].fn;
-      prims[i].fn = (T) => `<g data-plant="${esc(plant.id)}" data-kind="${kind}"${st.bare ? ' data-bare="1"' : ''}${st.flowering ? ' data-flowering="1"' : ''}>${fn(T)}</g>`;
+      prims[i].fn = (T) => `<g data-plant="${esc(plant.id)}" data-kind="${kind}" data-family="${fam}" data-habit="${pp.habit || ''}"${existing ? ' data-existing="1"' : ''}${ghost ? ' data-ghost="1" opacity=".42"' : ''}${st.bare ? ' data-bare="1"' : ''}${st.flowering ? ' data-flowering="1"' : ''}>${fn(T)}</g>`;
     }
   }
 

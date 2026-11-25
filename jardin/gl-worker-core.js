@@ -324,6 +324,8 @@ export function applyPortLayout(list, poly, { walls = [], line = null } = {}) {
   if (hedges.length && poly.length >= 3) {
     const ax = polyAxis(poly);
     if (line && line.length >= 2) {
+      const along = spotsAlong(line, hedges.length);
+      hedges.forEach((q, k) => { if (along[k]) { q.x = along[k].x; q.y = along[k].y; } });
       for (const q of hedges) {
         let bd = Infinity; let ang = ax.ang;
         for (let i = 0; i < line.length - 1; i++) {
@@ -518,7 +520,7 @@ function emitPlant(G, rec, plant, age0, density) {
         }
       }
       if (!cover.length) {
-        const nb = cnt(clamp(Math.round(Wp * Hs * 7), 10, 46), 6);
+        const nb = cnt(clamp(Math.round(Wp * Hs * 12), 14, 80), 8);
         for (let k = 0; k < nb; k++) { const u = (rng() - 0.5) * Wp; const v = Hs * (0.1 + 0.9 * Math.sqrt(rng())); cover.push([x + dx * u, v, z + dz * u]); }
       }
       const ns = clamp(plant.stems || 3, 2, 6);
@@ -528,7 +530,7 @@ function emitPlant(G, rec, plant, age0, density) {
         for (let q = 0; q < segN; q++) { const lean = (rng() - 0.5) * 0.5; push('branch', 1, px, py, pz, -a, lean, 0.013, sl * 1.05, 0.013); px += dx * Math.sin(lean) * -sl; pz += dz * Math.sin(lean) * -sl; py += Math.cos(lean) * sl; }
       }
       const flat = onWall || sup === 'trellis' || sup === 'wall' ? 0.12 : 0.22;
-      for (const c of cover) blob(c[0], c[1], c[2], 0.2 + rng() * 0.14, 0.16 + rng() * 0.1, flat * (0.8 + rng() * 0.5));
+      for (const c of cover) blob(c[0], c[1], c[2], 0.16 + rng() * 0.1, 0.13 + rng() * 0.08, flat * (0.8 + rng() * 0.5));
       for (let k = 0, n = nFlowers(12); k < n; k++) { const c = cover[Math.floor(rng() * cover.length)]; push('flower', 1, c[0], c[1] + 0.06, c[2], 0, 0, fs * 1.2, fs * 1.2, fs * 1.2); }
       return;
     }

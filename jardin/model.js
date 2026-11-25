@@ -238,7 +238,9 @@ export function validateGarden(g) {
 
   // Zones souhaitées sans forme dessinée.
   const wished = Array.isArray(g && g.wishedZoneTypes) ? g.wishedZoneTypes : [];
+  const auto = bedModeOf(g) === 'auto';
   for (const id of wished) {
+    if (auto && (id === 'lowplants' || id === 'midplants' || id === 'tallplants')) continue; // massifs calculés par l'app
     if (!zones.some((z) => z.type === id)) {
       const t = getZoneType(id);
       warnings.push(`Zone souhaitée « ${t ? t.label : id} » : aucune forme dessinée.`);

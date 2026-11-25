@@ -7,7 +7,8 @@ import { attachNorthBadge } from './north-pop.js';
 import { renderItemsSVG } from '../render-items.js';
 import { itemPolygon, itemRadius, itemHalfSize, getItemKind } from '../items.js';
 import { OBSTACLE_LABELS } from '../render-common.js';
-import { ZONE_TYPES, getZoneType, createZone, POOL_VARIANTS, poolVariant, setPoolVariant } from '../model.js';
+import { ZONE_TYPES, getZoneType, createZone, POOL_VARIANTS, poolVariant, setPoolVariant, bedModeOf } from '../model.js';
+import { FLOWER_ZONE_TYPES } from '../massifs.js';
 import {
   rotatePoints, rotationOf, rotationCenter, rotateShapeBy, rotateShapeTo, rebuildRect, isRotatable, norm360,
 } from '../zone-rotate.js';
@@ -759,8 +760,10 @@ export function mountZoneEditor(el, { garden, onChange } = {}) {
 
   // ---------- interface ----------
   function typeList() {
-    const wished = (g.wishedZoneTypes || []).map(getZoneType).filter(Boolean);
-    const rest = ZONE_TYPES.filter((t) => !wished.includes(t));
+    // mode auto : les types massif ne sont plus proposés (l'app les calcule à l'étape Massifs)
+    const hide = (t) => bedModeOf(g) === 'auto' && FLOWER_ZONE_TYPES.includes(t.id);
+    const wished = (g.wishedZoneTypes || []).map(getZoneType).filter((t) => t && !hide(t));
+    const rest = ZONE_TYPES.filter((t) => !wished.includes(t) && !hide(t));
     return { wished, rest };
   }
   function refreshChips() {
@@ -776,6 +779,10 @@ export function mountZoneEditor(el, { garden, onChange } = {}) {
     };
     wished.forEach((t) => chips.append(card(t, true)));
     if (st.allTypes || !wished.length) rest.forEach((t) => chips.append(card(t, false)));
+    if (bedModeOf(g) === 'auto') {
+      chips.append(h('a', { class: 'jd-chip jd-tcard jd-tnote', 'data-role': 'beds-note', href: `#/garden/${encodeURIComponent(g.id)}/beds` },
+        h('span', { class: 'jd-ticon', 'aria-hidden': 'true' }, '🌸'), h('span', { class: 'jd-tname' }, 'Les massifs fleuris sont calculés à l’étape Massifs'), h('span', { class: 'jd-tstat' }, 'Ouvrir →')));
+    }
     if (wished.length) chips.append(h('button', { type: 'button', class: 'jd-chip jd-tcard jd-tmore', 'data-act': 'toggle-all', onclick: () => { st.allTypes = !st.allTypes; refreshChips(); } }, h('span', { class: 'jd-ticon' }, st.allTypes ? '−' : '＋'), h('span', { class: 'jd-tname' }, st.allTypes ? 'Masquer les autres' : 'Autres types')));
   }
   function chooseType(id) {
@@ -840,7 +847,7 @@ export function mountZoneEditor(el, { garden, onChange } = {}) {
     chips.classList.toggle('compact', !!(sel && !st.typeId));
     const { n: ov } = overlapIds();
     const out = g.zones.filter(isOut).length;
-    const wished = (g.wishedZoneTypes || []).filter((id) => !g.zones.some((z) => z.type === id));
+    const wished = (g.wishedZoneTypes || []).filter((id) => !g.zones.some((z) => z.type === id) && !(bedModeOf(g) === 'auto' && FLOWER_ZONE_TYPES.includes(id)));
     info.innerHTML = `<span><b data-role="zone-count">${g.zones.length}</b> zone${g.zones.length > 1 ? 's' : ''}</span>`
       + (ov ? `<span class="jd-msg warn" style="padding:0">⚠ ${ov} chevauchement${ov > 1 ? 's' : ''}</span>` : '')
       + (out ? `<span class="jd-msg err" style="padding:0">⚠ ${out} hors du terrain</span>` : '')
@@ -908,7 +915,7 @@ export function mountZoneEditor(el, { garden, onChange } = {}) {
     nameIn.addEventListener('input', refreshDetect);
     nameIn.addEventListener('change', () => { mutate(() => { commitName(); }, true); refreshDetect(); });
     if (naming) nameIn.addEventListener('focus', () => { try { nameIn.select(); } catch { /* */ } });
-    const typeSel = h('select', { class: 'jd-select', 'aria-label': 'Type de zone', 'data-role': 'zone-type' }, ZONE_TYPES.map((tt) => h('option', { value: tt.id, selected: tt.id === z.type }, `${tt.icon} ${tt.label}`)));
+    const typeSel = h('select', { class: 'jd-select', 'aria-label': 'Type de zone', 'data-role': 'zone-type' }, ZONE_TYPES.filter((tt) => tt.id === z.type || !(bedModeOf(g) === 'auto' && FLOWER_ZONE_TYPES.includes(tt.id))).map((tt) => h('option', { value: tt.id, selected: tt.id === z.type }, `${tt.icon} ${tt.label}`)));
     typeSel.addEventListener('change', () => { mutate(() => { const old = getZoneType(z.type); if (z.label === old.label) z.label = getZoneType(typeSel.value).label; z.type = typeSel.value; if (z.type === 'pool' && !z.variant) z.variant = 'inground'; }); });
     const nPl = (z.plantings || []).length;
     const setAmbiance = (id) => { mutate(() => { z.ambiance = id || null; }); };

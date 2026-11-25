@@ -1,0 +1,61 @@
+/* Étape « Massifs » : plan, réglages, cartes de massifs, mini-calendrier de floraison. */
+.beds-auto, .beds-manual { display: flex; flex-direction: column; gap: 12px; }
+.beds-manual { padding: 4px 0; }
+.beds-row { display: flex; flex-direction: column; gap: 8px; }
+.btn-block { width: 100%; }
+.beds-intro h2 { margin-bottom: .4rem; }
+.beds-intro p { margin: 0 0 .5rem; }
+
+.bed-plan-card { border-radius: var(--radius); overflow: hidden; border: 1px solid var(--border); background: var(--jd-canvas, #fbfaf4); }
+.bed-plan { height: 320px; min-height: 260px; flex: none; }
+.bed-zoom { position: absolute; right: 8px; bottom: 8px; display: flex; gap: 6px; z-index: 3; }
+.bed-zoom .jd-btn { min-width: 44px; min-height: 44px; font-size: 1.2rem; padding: 0; background: var(--jd-card, #fff); opacity: .9; }
+.bed-legend { margin: -4px 2px 0; }
+
+.bed-settings { display: flex; flex-direction: column; gap: 8px; }
+.bed-settings h3 { margin: 0; }
+.bed-settings .bed-sub { margin-top: 8px; }
+.bed-cov { display: flex; align-items: center; gap: 12px; }
+.bed-cov input[type=range] { flex: 1; min-height: 44px; accent-color: var(--primary); }
+.bed-cov-out { min-width: 3.4em; text-align: right; font-weight: 800; font-size: 1.1rem; }
+.bed-scroll { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 4px; -webkit-overflow-scrolling: touch; scrollbar-width: thin; }
+.bed-scroll .amb-chip { flex: none; }
+.bed-pal { display: inline-block; width: 18px; height: 18px; border-radius: 50%; border: 1px solid rgba(0,0,0,.25); flex: none; }
+
+.beds-actions { display: flex; flex-direction: column; gap: 8px; border: 2px solid var(--primary); }
+.beds-actions .notice { margin: 0; }
+.bed-progress { display: flex; flex-direction: column; gap: 4px; font-weight: 600; }
+.bed-progress[hidden] { display: none; }
+.bed-progress progress { width: 100%; height: 10px; accent-color: var(--primary); }
+
+.beds-results { display: flex; flex-direction: column; gap: 10px; }
+.beds-results[hidden] { display: none; }
+.beds-sum { margin: 0; font-weight: 700; text-align: center; }
+.bed-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 12px; }
+.bed-card { background: var(--surface); border: 1px solid var(--border); border-left: 6px solid var(--bed, var(--primary)); border-radius: 12px; padding: 12px; display: flex; flex-direction: column; gap: 8px; transition: box-shadow .3s; }
+.bed-card.locked { box-shadow: 0 0 0 2px var(--bed, var(--primary)) inset; }
+.bed-card.flash { box-shadow: 0 0 0 3px var(--bed, var(--primary)); }
+.bed-head { display: flex; align-items: center; gap: 10px; }
+.bed-num { flex: none; width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; color: #fff; font-weight: 800; text-shadow: 0 1px 2px rgba(0,0,0,.35); }
+.bed-title { display: flex; flex-direction: column; min-width: 0; flex: 1; }
+.bed-title strong { overflow-wrap: anywhere; }
+.bed-lock { font-size: 1.2rem; }
+.bed-why { margin: 0; font-weight: 600; }
+.bed-plants-why { margin: 0; }
+.bed-cal { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(12, 1fr); gap: 3px; }
+.bed-month { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.bed-bar { display: block; width: 100%; height: 14px; border-radius: 4px; background: color-mix(in srgb, var(--muted) 22%, transparent); }
+.bed-ml { font-size: .68rem; color: var(--muted); font-weight: 600; }
+.bed-dots { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.bed-dot { width: 18px; height: 18px; border-radius: 50%; border: 1px solid rgba(0,0,0,.25); display: inline-block; }
+.bed-cost { margin-left: auto; font-weight: 700; }
+.bed-comps { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 6px 8px; }
+.bed-comp { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.bed-thumb { flex: none; width: 36px; height: 36px; border-radius: 50%; overflow: hidden; border: 1px solid var(--border); display: block; }
+.bed-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.bed-comp-txt { display: flex; flex-direction: column; min-width: 0; line-height: 1.2; }
+.bed-comp-name { font-size: .82rem; font-weight: 600; overflow-wrap: anywhere; }
+.bed-comp-qty { font-size: .78rem; color: var(--muted); }
+.bed-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+.bed-actions .btn { flex: 1 1 auto; }
+.btn.btn-on { background: color-mix(in srgb, var(--primary) 18%, var(--surface)); border-color: var(--primary); }

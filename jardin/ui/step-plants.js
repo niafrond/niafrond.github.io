@@ -9,6 +9,7 @@ import { openAmbiancePicker, ambianceOf, ambianceEmoji, zoneAmbiance } from './a
 import { isTypical } from '../ambiances.js';
 import { plantEffort, fitsMaintenance, levelForZone, effortLabel } from '../maintenance.js';
 import { gardenMaintenancePicker, zoneMaintenancePicker, maintenanceReminder, effortIndicator, levelPhrase } from './maintenance-picker.js';
+import { designBed } from '../massifs.js';
 import { gardenCost, formatEuro, formatPrice, UNIT_LABEL, summarizeGarden } from '../pricing.js';
 
 const STATUS = { ideal: 'Idéale', possible: 'Possible', discouraged: 'Déconseillée' };
@@ -325,7 +326,26 @@ export function mountPlants(el, { garden, onChange, getPhoto = getPlantPhoto, IO
   }
   function safeQty(p, z) { try { return suggestQuantity(p, z); } catch { return 1; } }
 
-  const optLabel = (z) => { const t = getZoneType(z.type); const e = ambianceEmoji(zoneAmbiance(z)); return `${t ? t.icon + ' ' : ''}${z.label || (t && t.label) || 'Zone'}${e ? ' ' + e : ''}`; };
+  const optLabel = (z) => { const t = getZoneType(z.type); const e = ambianceEmoji(zoneAmbiance(z)); return `${t ? t.icon + ' ' : ''}${z.label || (t && t.label) || 'Zone'}${e ? ' ' + e : ''}${z.auto ? ' ✨' : ''}`; };
+  // massif calculé par l'app : on le redessine (autre combinaison de plantes, même forme)
+  let recalcRound = 0;
+  function recalcBed() {
+    const z = zone();
+    recalcRound++;
+    const info = z.autoInfo || (z.autoInfo = {});
+    const seed = (Number(info.seed) || 1) + recalcRound * 11 + (z.plantings || []).length;
+    let a = 0; try { a = shapeArea(z.shape); } catch { /* */ }
+    try {
+      const d = designBed(garden, { id: z.id, role: info.role, shape: z.shape, areaM2: Math.round(a * 10) / 10 }, { seed, ambiance: z.ambiance || null, maintenance: levelForZone(garden, z) });
+      if (!d.plantings.length) { toast('Aucune autre combinaison trouvée pour ce massif.'); return; }
+      z.plantings = d.plantings;
+      info.seed = seed;
+      info.summary = d.summary;
+      info.why = [String(info.why || '').split(' — ')[0], d.why].filter(Boolean).join(' — ');
+      limit = PAGE; refresh(); drawZoneInfo();
+      toast('Massif recalculé : nouvelle combinaison de plantes.');
+    } catch (e) { toast('Recalcul impossible : ' + (e && e.message ? e.message : 'erreur')); }
+  }
   const zoneSel = h('select', { id: 'zone-sel', onchange: (e) => { zoneId = e.target.value; limit = PAGE; drawZoneInfo(); drawChosen(); drawList(); drawBudget(); } },
     garden.zones.map((z) => h('option', { value: z.id, selected: z.id === zoneId }, optLabel(z))));
   const zoneInfo = h('p', { class: 'muted' });
@@ -344,10 +364,13 @@ export function mountPlants(el, { garden, onChange, getPhoto = getPlantPhoto, IO
     const amb = ambianceOf(zoneAmbiance(z));
     zoneHead.replaceChildren(
       h('div', { class: 'zone-head-txt' },
-        h('strong', { 'data-role': 'zone-head-name' }, z.label || 'Zone'),
+        h('strong', { 'data-role': 'zone-head-name' }, z.label || 'Zone', z.auto ? h('span', { class: 'auto-badge', 'data-role': 'auto-badge', title: 'Massif calculé par l’app' }, '✨ auto') : null),
         h('span', { class: 'amb-tag', 'data-role': 'zone-head-ambiance' }, amb ? `${amb.emoji} ambiance ${amb.label.toLowerCase()}` : 'Ambiance : peu importe')),
       h('button', { class: 'btn btn-sm', type: 'button', 'data-act': 'change-ambiance', onclick: changeAmbiance }, 'Changer l’ambiance'),
-      zoneMaintenancePicker(garden, z, { onChange: () => { limit = PAGE; refresh(); } }));
+      zoneMaintenancePicker(garden, z, { onChange: () => { limit = PAGE; refresh(); } }),
+      z.auto && z.autoInfo && z.autoInfo.why ? h('div', { class: 'auto-info', 'data-role': 'auto-info' },
+        h('p', null, z.autoInfo.why),
+        h('button', { class: 'btn btn-sm', type: 'button', 'data-act': 'recalc-bed', onclick: recalcBed }, '🎲 Recalculer ce massif')) : null);
     let a = 0; try { a = shapeArea(z.shape); } catch { /* */ }
     const t = getZoneType(z.type);
     zoneInfo.textContent = `${t ? t.label : z.type} · ${a.toFixed(a < 10 ? 1 : 0).replace('.', ',')} m²`;

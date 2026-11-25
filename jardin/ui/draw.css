@@ -272,3 +272,6 @@
 .jd-segs { display: flex; gap: 8px; margin: 4px 0; }
 .jd-seg { flex: 1 1 0; justify-content: center; border-width: 2px; }
 .jd-seg[aria-checked="true"] { background: var(--jd-accent); color: #fff; border-color: var(--jd-accent); font-weight: 600; }
+
+.jd-tcard.jd-tnote { border-style: dashed; text-decoration: none; color: inherit; }
+.jd-tcard.jd-tnote .jd-tname { white-space: normal; max-width: 150px; text-align: center; line-height: 1.2; }

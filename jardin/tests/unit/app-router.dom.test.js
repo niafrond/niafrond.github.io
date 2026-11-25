@@ -12,10 +12,11 @@ describe('parseRoute', () => {
     expect(parseRoute('#/garden/abc/zzz')).toEqual({ name: 'wizard', id: 'abc', step: 'context' });
     expect(parseRoute('#/garden/abc/advice')).toEqual({ name: 'advice', id: 'abc' });
     expect(gardenHash('x y', 'sun')).toBe('#/garden/x%20y/sun');
-    expect(STEP_IDS).toHaveLength(8);
+    expect(STEP_IDS).toHaveLength(9);
     // le mobilier se pose AVANT le dessin des zones
     expect(STEP_IDS.indexOf('zones')).toBe(STEP_IDS.indexOf('items') + 1);
-    expect(STEP_IDS.indexOf('plants')).toBe(STEP_IDS.indexOf('zones') + 1);
+    expect(STEP_IDS.indexOf('beds')).toBe(STEP_IDS.indexOf('zones') + 1);
+    expect(STEP_IDS.indexOf('plants')).toBe(STEP_IDS.indexOf('beds') + 1);
     expect(parseRoute('#/garden/abc/items')).toEqual({ name: 'wizard', id: 'abc', step: 'items' });
   });
 });
@@ -35,7 +36,7 @@ describe('app (accueil → assistant)', () => {
     document.getElementById('btn-new').click();
     await wait(300);
     expect(location.hash).toMatch(/^#\/garden\/.+\/context$/);
-    expect(document.querySelectorAll('.steps .step')).toHaveLength(8);
+    expect(document.querySelectorAll('.steps .step')).toHaveLength(9);
     expect(document.querySelector('.step[aria-current="step"]').dataset.step).toBe('context');
     expect(window.__jardin.state.garden.status).toBe('draft');
   });
