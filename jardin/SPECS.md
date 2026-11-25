@@ -370,3 +370,5 @@ Visualiseur 3D temps réel du jardin (PC, et mobile quand c'est viable) : GPU po
 - **Vue 3D PC** (WebGL2, three.js chargé à la demande, hors APK) : bouton « 🧊 Vue 3D (PC) » sur l'écran du plan, uniquement sur grand écran avec souris et WebGL2.
 - **Limites connues** : prix, couleurs et titres Wikipédia du catalogue issus de connaissances générales, non vérifiés ; positions des plants de la vue 3D légèrement différentes du plan 2D ; rien n'a été essayé sur un téléphone réel ni dans le build d'APK en CI.
 - **Enchaînement des zones** : la palette des types de zones reste toujours visible (compacte quand une zone est sélectionnée) pour pouvoir enchaîner plusieurs affectations ; à l'étape « Aménagements », les zones déjà dessinées sont affichées sous le mobilier (couleur du type et nom).
+- **Fermer une forme** : dans tous les éditeurs de formes (contour, zones en forme libre, obstacles polygonaux, murs et clôtures libres, polygones d'ensoleillement), toucher le 1er point (≥ 3 points posés) ferme la forme ; le 1er point devient un rond vert plus grand pour l'indiquer.
+

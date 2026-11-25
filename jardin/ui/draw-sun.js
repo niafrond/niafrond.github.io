@@ -1,5 +1,5 @@
 // Éditeur d'ensoleillement : niveau unique, ou carte peinte au pinceau / en polygones (3 niveaux).
-import { shapePolygon, bounds, polygonArea, pointInPolygon } from '../geometry.js';
+import { shapePolygon, bounds, polygonArea, pointInPolygon, distance } from '../geometry.js';
 import { newId, SUN_LABELS } from '../model.js';
 import { estimateSunMap } from '../sun.js';
 import {
@@ -71,7 +71,11 @@ export function mountSunPainter(el, { garden, onChange } = {}) {
   }
   function onTap(w) {
     if (g.sun.mode !== 'map') return;
-    if (st.tool === 'polygon') { st.poly.push(w); draw(); refreshUI(); return; }
+    if (st.tool === 'polygon') {
+      // toucher le 1er point (≥ 3 points) = fermer la forme
+      if (st.poly.length >= 3 && distance(w, st.poly[0]) <= cv.px(24)) { finishPoly(); return; }
+      st.poly.push(w); draw(); refreshUI(); return;
+    }
     if (st.tool === 'erase') {
       for (let i = g.sun.regions.length - 1; i >= 0; i--) {
         if (pointInPolygon(w, g.sun.regions[i].points)) { mutate(() => { g.sun.regions.splice(i, 1); }); return; }
@@ -115,7 +119,7 @@ export function mountSunPainter(el, { garden, onChange } = {}) {
       s += '</g>';
       if (st.poly.length) {
         s += `<polyline points="${poly(st.poly)}" fill="none" stroke="${COLORS[st.level]}" stroke-width="3" stroke-dasharray="6 4" ${NS}/>`;
-        st.poly.forEach((p) => { s += `<circle cx="${p.x}" cy="${p.y}" r="${cv.px(8)}" fill="${COLORS[st.level]}" stroke="#fff" stroke-width="2" ${NS}/>`; });
+        st.poly.forEach((p, i) => { s += (i === 0 && st.poly.length >= 3) ? `<circle cx="${p.x}" cy="${p.y}" r="${cv.px(15)}" fill="#2e7d32" stroke="#fff" stroke-width="3" ${NS}/>` : `<circle cx="${p.x}" cy="${p.y}" r="${cv.px(8)}" fill="${COLORS[st.level]}" stroke="#fff" stroke-width="2" ${NS}/>`; });
       }
     }
     gMain.innerHTML = s;
@@ -165,7 +169,7 @@ export function mountSunPainter(el, { garden, onChange } = {}) {
     const area = {};
     for (const rg of g.sun.regions) area[rg.level] = (area[rg.level] || 0) + polygonArea(rg.points);
     LEVELS.forEach((l) => legend.append(h('span', {}, h('i', { style: { background: COLORS[l] } }), `${SUN_LABELS[l]}${mode === 'map' && area[l] ? ` · ≈ ${fr(area[l], 0)} m²` : ''}`)));
-    msgEl.textContent = st.msg || (mode === 'map' ? (st.tool === 'brush' ? 'Peignez au doigt ; pincez ou utilisez deux doigts pour déplacer et zoomer.' : st.tool === 'polygon' ? 'Touchez les angles de la zone puis « Terminer ».' : 'Touchez une zone peinte pour l\'effacer.') : '');
+    msgEl.textContent = st.msg || (mode === 'map' ? (st.tool === 'brush' ? 'Peignez au doigt ; pincez ou utilisez deux doigts pour déplacer et zoomer.' : st.tool === 'polygon' ? 'Touchez les angles de la zone ; touchez le 1er point (vert) pour fermer la forme.' : 'Touchez une zone peinte pour l\'effacer.') : '');
   }
 
   draw(); refreshUI();

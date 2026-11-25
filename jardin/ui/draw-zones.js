@@ -308,7 +308,8 @@ export function mountZoneEditor(el, { garden, onChange } = {}) {
         if (!pts.length) { pts.push(p); st.ghost = null; draw(); refreshUI(); return; }
         finishRect(pts[0], p); return;
       }
-      if (d.kind === 'polygon' && pts.length >= 3 && distance(p, pts[0]) <= cv.px(18)) { finishDrawing(); return; }
+      // toucher le 1er point (avec au moins 3 points) = fermer la forme
+      if (d.kind === 'polygon' && pts.length >= 3 && (distance(w, pts[0]) <= cv.px(24) || distance(p, pts[0]) <= cv.px(24))) { finishDrawing(); return; }
       if (pts.length && distance(pts[pts.length - 1], p) < 1e-6) { if (pts.length >= (d.kind === 'line' ? 2 : 3)) finishDrawing(); return; }
       pts.push(p);
       draw(); refreshUI();
@@ -632,7 +633,11 @@ export function mountZoneEditor(el, { garden, onChange } = {}) {
           : `<polyline points="${poly(pts)}" fill="none" stroke="${PINK}" stroke-width="2" stroke-dasharray="6 4" ${NS}/>`;
         live = pts.length >= 3 ? `Surface ${frArea(shapeArea({ kind: 'polygon', points: pts }))} · ${pts.length} points` : pts.length === 2 ? `Côté ${frLen(distance(pts[0], pts[1]))}` : '';
       }
-      d.points.forEach((p, i) => { s += `<circle cx="${p.x}" cy="${p.y}" r="${cv.px(i === 0 ? 12 : 8)}" fill="${i === 0 ? PINK : '#fff'}" stroke="${PINK}" stroke-width="2" ${NS}/>`; });
+      const closable = d.kind === 'polygon' && d.points.length >= 3;
+      d.points.forEach((p, i) => {
+        if (i === 0 && closable) s += `<circle cx="${p.x}" cy="${p.y}" r="${cv.px(17)}" fill="#2e7d32" stroke="#fff" stroke-width="3" ${NS}/><text x="${p.x}" y="${p.y}" font-size="${cv.px(15)}" text-anchor="middle" dominant-baseline="central" fill="#fff" font-weight="700" pointer-events="none">✔</text>`;
+        else s += `<circle cx="${p.x}" cy="${p.y}" r="${cv.px(i === 0 ? 12 : 8)}" fill="${i === 0 ? PINK : '#fff'}" stroke="${PINK}" stroke-width="2" ${NS}/>`;
+      });
     }
     if (st.typeId && st.snapMark && (st.ghost || (d && d.points && !d.points.length))) {
       const m = st.snapMark;
@@ -679,7 +684,7 @@ export function mountZoneEditor(el, { garden, onChange } = {}) {
       if (st.kind === 'circle') return d && d.waiting ? 'Touchez le bord du cercle (ou glissez) pour fixer le rayon.' : 'Touchez le centre, puis glissez ou touchez le bord pour le rayon. Appui long : saisir le rayon.';
       if (st.kind === 'line') return `Touchez chaque point de la ligne puis « Terminer ». Largeur : ${frLen(st.lineWidth || 1)}. Appui long : saisir les mesures.`;
       if (st.mode === 'rect') return d && d.points.length ? 'Touchez (ou glissez jusqu’à) le coin opposé du rectangle.' : 'Touchez un premier coin, puis le coin opposé. Appui long : saisir largeur × longueur.';
-      return 'Touchez chaque angle, puis « Terminer » (ou touchez le 1er point). Appui long : saisir les mesures.';
+      return d && d.points.length >= 3 ? 'Touchez le 1er point (✔ vert) pour fermer la forme, ou continuez à poser des angles.' : 'Touchez chaque angle ; touchez le 1er point pour fermer la forme. Appui long : saisir les mesures.';
     }
     if (zoneById(st.sel)) return 'Glissez un rond pour déformer, un ＋ pour ajouter un sommet, la zone pour la déplacer. Appui long : dimensions en cm.';
     return g.zones.length ? 'Touchez une zone pour la sélectionner, ou choisissez un type pour en ajouter. Appui long sur une zone : dimensions.' : 'Choisissez un type de zone puis dessinez-la sur le plan.';

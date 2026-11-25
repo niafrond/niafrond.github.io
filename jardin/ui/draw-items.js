@@ -497,9 +497,12 @@ export function mountItemEditor(el, { garden, onChange } = {}) {
   }
   function startDraft(kind) {
     st.draft = { kind, points: [] }; st.sel = null; refreshUI(); draw();
-    say(`${FREE_KINDS[kind].label} libre : touchez les points successifs, puis « Terminer ».`);
+    say(`${FREE_KINDS[kind].label} libre : touchez les points successifs, puis « Terminer » (ou touchez le 1er point pour fermer la boucle).`);
   }
   function addDraftPoint(w) {
+    // toucher le 1er point (≥ 3 points) = fermer la boucle (mur ou clôture qui fait le tour)
+    const pts0 = st.draft.points;
+    if (pts0.length >= 3 && distance(w, pts0[0]) <= cv.px(24)) { pts0.push({ x: pts0[0].x, y: pts0[0].y }); finishDraft(); say('Boucle fermée.'); return; }
     const v = nearVertex(w);
     const p = v || snapGrid(w);
     const last = st.draft.points[st.draft.points.length - 1];
@@ -639,7 +642,7 @@ export function mountItemEditor(el, { garden, onChange } = {}) {
     if (st.draft) {
       const pts = st.draft.points;
       if (pts.length) top += `<polyline points="${poly(pts)}" fill="none" stroke="#d81b60" stroke-width="3" ${NS}/>`;
-      for (const p of pts) top += `<circle cx="${p.x}" cy="${p.y}" r="${u * 6}" fill="#d81b60"/>`;
+      pts.forEach((p, i) => { top += (i === 0 && pts.length >= 3) ? `<circle cx="${p.x}" cy="${p.y}" r="${u * 12}" fill="#2e7d32" stroke="#fff" stroke-width="3" ${NS}/>` : `<circle cx="${p.x}" cy="${p.y}" r="${u * 6}" fill="#d81b60"/>`; });
     }
     gTop.innerHTML = top;
   }
