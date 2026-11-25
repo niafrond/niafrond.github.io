@@ -78,7 +78,21 @@ Deux façons de tracer, combinables : **dessin manuel** (ci-dessous) ou **relev�
 
 ## 4 bis. GPS et boussole
 
-- **Relevé du contour au GPS** : l'utilisateur marche le long de sa limite et « pose un point » à chaque angle. Les coordonnées WGS84 sont converties en mètres dans le repère local (projection locale, Lambert-93 ou plan tangent). Chaque point peut être moyenné sur quelques secondes (précision affichée) ; au-delà de ~5 m de précision, l'app avertit que le GPS d'un téléphone est peu fiable sous couvert et propose de compléter au mètre à ruban (saisie des longueurs, §4). Les côtés relevés restent éditables.
+### Relevé GPS guidé du contour
+
+« 📍 Je fais le tour au GPS » (panneau de démarrage) et « 📍 Relevé GPS » (barre) ouvrent un **mode plein écran** : l'utilisateur marche le long de sa limite et pose un point à chaque angle ; la forme se construit seule sur le plan. Logique pure dans `gps-survey.js`, interface dans `ui/gps-survey-ui.js`, suivi dans `geo.js` (`watchFix`).
+
+- **Étapes affichées en gros** : 1. Placez-vous sur le 1er angle. 2. Attendez que la précision passe au vert. 3. Touchez « Mettre un point ici » et restez immobile. 4. Marchez jusqu'à l'angle suivant. 5. Après le dernier angle, « Terminer ». Une consigne contextuelle (« Marchez jusqu'à l'angle 3… ») suit l'état.
+- **États** : `idle → waiting-fix → ready → recording → closed`. **Qualité** (précision `accuracy` et récence, échantillon périmé après 15 s) : ≤ 3 m bonne (vert), ≤ 6 m moyenne (orange), > 6 m faible (rouge), sinon aucun signal. Pastille « ±2,4 m · bonne ». Le bouton « Mettre un point ici » est désactivé tant que le signal est faible ; « Poser quand même » demande confirmation.
+- **Capture d'un point** : fenêtre d'échantillons de ≈ 5 s (barre de progression dans le bouton) ; rejet des valeurs aberrantes par médiane (`combineFixes`), moyenne pondérée par 1/accuracy², précision estimée du point (≥ 0,5 m). Vibration et bip bref à chaque point. Point à moins de 1 m du précédent : refusé sauf confirmation.
+- **Repère** : plan tangent, x = est, y = −nord (nord en haut), origine = 1er point ; `garden.context.gpsOrigin = {lat, lon}`. L'origine précédente est remplacée.
+- **Sur le plan** : points numérotés (avec cercle de précision), côtés avec longueur en direct, trace du chemin, point bleu de la position et cercle de précision, segment pointillé « 12,4 m depuis le point 3 », cadrage automatique qui suit l'utilisateur (un geste le libère, « Recentrer » le rétablit), alerte si le contour se croise.
+- **Retour au départ** : à moins de 4 m du 1er point (≥ 3 points), « Vous êtes à 2,4 m du 1er point : fermer le tour ? » mesure un point de fermeture (non sommet) qui donne l'écart de fermeture.
+- **Terminer (≥ 3 points)** : écran de vérification : surface (± incertitude en m²), périmètre, écart de fermeture ; options réversibles avec aperçu avant (pointillé) / après : « Répartir l'écart de fermeture » (`closeGapReport`) et « Redresser les angles droits » (angles à moins de 8 ° de 90°, `squareCorners`). Valider écrit `garden.boundary` / `boundaryClosed` ; l'éditeur normal reprend (cotes en cm, appui long…) et « Où suis-je » continue de marcher.
+- **Contour existant** : « Remplacer le contour actuel par le relevé GPS ? » ; le remplacement se fait à la validation et s'annule avec ↶ (origine GPS comprise).
+- **Interruption** : le brouillon (points avec précisions) est conservé dans `garden.context.gpsSurveyDraft` à chaque point ; il est proposé à la reprise (bouton « Reprendre le relevé GPS (n points) »). Au retour de l'application au premier plan, le suivi est relancé ; l'écran est maintenu allumé (Wake Lock, repli silencieux).
+- **Erreurs** : refus, indisponible, délai dépassé ou non pris en charge → message en français et repli « Saisir les côtés à la main » ; au-delà de ~6 m de précision l'app avertit que le GPS d'un téléphone est peu fiable sous couvert.
+
 - **Orientation par boussole** : « Placez-vous dos à la maison / face au jardin et pointez le téléphone ». L'azimut (capteur magnétique, corrigé de la déclinaison locale) donne l'orientation du fond du jardin et le nord du plan. Avertissement si le capteur est mal calibré (geste en 8 proposé).
 - **Position de l'utilisateur sur le plan** : point GPS en direct sur le plan pour vérifier le tracé ou repérer où planter. Mode « sur le terrain » avec fond de carte satellite optionnel (§11) pour caler le plan.
 - **Permissions** : localisation « pendant l'utilisation » uniquement ; refus géré (saisie manuelle toujours possible).
@@ -322,6 +336,8 @@ Dossier web : `jardin/` (ES modules, sans build, sans dépendance runtime). Enve
 - Conseils, hydrozones et planning d'arrosage faits ; matériel d'arrosage suggéré et volume de cuve non faits.
 - Mode d'ensoleillement « mesuré » (capteur de lumière) non fait ; le mode « estimé » est enregistré comme `sun.mode = 'map'`.
 - Les données du catalogue sont issues de connaissances horticoles générales, non vérifiées en ligne : à relire avant diffusion.
+
+- Relevé GPS guidé (§4 bis) : tests Jest (`gps-survey`, `geo-watch`, `gps-survey-ui.dom`) et Playwright `gps.spec.js` avec géolocalisation simulée (rectangle 10 × 8 m, précision faible, refus, reprise). La précision réelle d'un récepteur, le comportement du verrouillage d'écran et du Wake Lock ne sont pas testables sans appareil.
 
 **Non vérifié** : GPS, boussole, notifications et build de l'APK sur appareil réel ou en CI (le workflow n'a pas encore tourné) ; les points « à vérifier » du §11 (altimétrie IGN, API Géo) n'ont pas été testés contre les services réels.
 
