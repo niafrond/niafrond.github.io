@@ -4,6 +4,9 @@ import {
   distance, shapePolygon, shapeArea, shapeBounds, bounds, overlapArea, polygonInside, pointInPolygon, centroid,
 } from '../geometry.js';
 import { attachNorthBadge } from './north-pop.js';
+import { renderItemsSVG } from '../render-items.js';
+import { itemPolygon, itemRadius } from '../items.js';
+import { OBSTACLE_LABELS } from '../render-common.js';
 import { ZONE_TYPES, getZoneType, createZone, POOL_VARIANTS, poolVariant, setPoolVariant } from '../model.js';
 import {
   rotatePoints, rotationOf, rotationCenter, rotateShapeBy, rotateShapeTo, rebuildRect, isRotatable, norm360,
@@ -90,6 +93,9 @@ export function mountZoneEditor(el, { garden, onChange } = {}) {
   const allVerts = () => {
     const v = [...g.boundary];
     g.zones.forEach((z) => { if (z.shape.points) v.push(...z.shape.points); });
+    // coins du mobilier et des obstacles posés avant les zones (points d'accroche)
+    for (const it of g.items || []) { try { if (itemRadius(it) == null) v.push(...itemPolygon(it)); } catch { /* */ } }
+    for (const o of g.obstacles || []) { if (o.points) v.push(...o.points); }
     return v;
   };
   const boundaryLines = () => {
@@ -620,6 +626,18 @@ export function mountZoneEditor(el, { garden, onChange } = {}) {
     }
     return out;
   }
+  function placedSVG() {
+    let out = '';
+    try { out = renderItemsSVG(g, { scale: 1, px: cv.px(1), names: true, bg: '#fafaf5' }); } catch { out = ''; }
+    const fs = cv.px(11);
+    for (const o of g.obstacles || []) {
+      const name = OBSTACLE_LABELS[o.kind];
+      if (!name || o.kind === 'wall' || o.kind === 'fence') continue;
+      const c = o.center ? o.center : (o.points && o.points.length >= 3 ? centroid(o.points) : null);
+      if (c) out += `<text x="${c.x}" y="${c.y + fs / 3}" font-size="${fs}" text-anchor="middle" fill="#37474f" stroke="#fff" stroke-width="${fs * 0.22}" paint-order="stroke" data-obstacle-name="${esc(o.kind)}">${esc(name)}</text>`;
+    }
+    return out;
+  }
   function draw() {
     if (destroyed) return;
     if (north) north.update();
@@ -637,6 +655,8 @@ export function mountZoneEditor(el, { garden, onChange } = {}) {
       else if (o.points && o.points.length >= 3) s += `<polygon points="${poly(o.points)}" fill="#9e9e9e" fill-opacity=".35" stroke="#616161" ${NS}/>`;
       else if (o.points) s += `<polyline points="${poly(o.points)}" fill="none" stroke="#616161" stroke-width="3" ${NS}/>`;
     }
+    // aménagements déjà posés (lecture seule, sous les zones) : mobilier, murs / clôtures / haies, ouvertures, obstacles nommés
+    s += `<g data-role="placed-layer" pointer-events="none">${placedSVG()}</g>`;
     const order = [...g.zones].sort((a, b) => ((getZoneType(a.type) || {}).layer === 'canopy') - ((getZoneType(b.type) || {}).layer === 'canopy'));
     const fs = cv.px(12);
     const ov = overlapIds().ids;
@@ -938,14 +958,14 @@ export function mountZoneEditor(el, { garden, onChange } = {}) {
         rotBtn('Remettre droit', 'rot-reset', () => straighten(z), 'Remettre droit : aligner le côté principal sur le plan')),
       rotOk ? null : h('div', { class: 'jd-hint' }, NO_ROT_TIP + '.'));
     rotIn.id = 'jd-zone-rot';
-    panel.append(
+    panel.append(...[
       nameHead,
       h('div', { class: 'jd-zhead' }, h('span', { class: 'jd-zdot', style: { background: t.color } }, t.icon),
         naming ? h('div', { class: 'jd-zname' }, nameIn) : nameIn,
         btn('✕', 'deselect', () => select(null), '', { 'aria-label': 'Désélectionner' })),
       nameSug, detEl, ambField,
       h('div', { class: 'jd-row' }, typeSel),
-      ...(poolField ? [poolField] : []),
+      poolField,
       h('div', { class: 'jd-row jd-zfacts' },
         h('span', {}, 'Surface : ', h('b', { 'data-role': 'zone-area' }, frArea(shapeArea(z.shape)))),
         h('span', { 'data-role': 'zone-dims' }, dimsText(z)),
@@ -954,7 +974,7 @@ export function mountZoneEditor(el, { garden, onChange } = {}) {
       h('div', { class: 'jd-row jd-zacts', 'data-role': 'zone-actions' },
         btn('📏 Dimensions…', 'dims', () => openDimsPop(z)),
         btn('⧉ Dupliquer', 'duplicate', () => duplicate(z)),
-        btn('🗑 Supprimer', 'delete-zone', () => remove(z), 'danger')));
+        btn('🗑 Supprimer', 'delete-zone', () => remove(z), 'danger'))].filter(Boolean));
     if (naming) nameIn.setAttribute('aria-describedby', 'jd-sug-label');
     refreshDetect();
     renderWarns(z);

@@ -164,18 +164,16 @@ export function habitParams(plant, { age = 1 } = {}) {
   const f = ageFactors(age);
   const heightAdult = num(plant && plant.heightAdult, 1);
   const widthAdult = num(plant && plant.widthAdult, Math.max(0.05, heightAdult / habit.ratio));
-  const height = Math.max(0.02, heightAdult * f.h);
-  const width = Math.max(0.02, widthAdult * f.w);
+  const height = Math.max(0.001, heightAdult * f.h);
+  const width = Math.max(0.001, widthAdult * f.w);
   const trunkHeight = habit.trunk === 'none' ? 0 : height * TRUNK_FRAC[habit.trunk];
 
   const range = tag.stems || habit.stems || null;
   let stems = 0;
   if (range) {
-    const spacing = num(plant && plant.spacing, widthAdult);
-    const fill = clamp(widthAdult / Math.max(0.2, spacing * 2), 0, 1.5);
-    const adult = range.min + (range.max - range.min) * clamp(fill * (widthAdult >= 0.3 ? 0.5 + 0.5 * clamp(widthAdult / 2, 0, 1) : 0.2), 0, 1);
-    stems = Math.max(habit.id === 'bamboo' ? 2 : 1, Math.round(adult * (0.3 + 0.7 * f.a)));
-    stems = clamp(stems, range.min > 1 ? 2 : 1, Math.max(range.max, 2));
+    const fill = clamp(widthAdult / 2, 0.05, 1);
+    const adult = range.min + (range.max - range.min) * fill;
+    stems = Math.max(range.min > 1 ? 2 : 1, Math.round(adult * (0.3 + 0.7 * f.a)));
   } else if (habit.trunk === 'multi') {
     stems = 3;
   } else if (habit.trunk !== 'none') {

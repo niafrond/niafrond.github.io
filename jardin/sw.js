@@ -10,6 +10,7 @@ const FILES = [
   'items.js', 'render-items.js', 'render3d.js', 'render-common.js', 'photos.js', 'pricing.js', 'ui/step-items.js', 'ui/draw-items.js', 'ui/draw-items.css', 'ui/pop.js', 'ui/draw-zones.js', 'ui/draw-contour.js', 'ui/gps-survey-ui.js', 'gps-survey.js', 'ui/draw-sun.js', 'ui/north-pop.js',
   'data/plants/extras-woody.js', 'data/plants/extras-herbaceous.js',
   'ambiances.js', 'data/plants/ambiances-tags.js', 'ui/ambiance-picker.js',
+  'habits.js', 'data/plants/habits-tags.js',
   'maintenance.js', 'ui/maintenance-picker.js',
 ];
 
