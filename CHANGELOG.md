@@ -1,3 +1,9 @@
+## [3.38.0](https://github.com/niafrond/niafrond.github.io/compare/v3.37.0...v3.38.0) (2026-11-25)
+
+### Features
+
+* **jardin:** guider le relevé GPS du contour point par point ([#799](https://github.com/niafrond/niafrond.github.io/issues/799)) ([5d76b50](https://github.com/niafrond/niafrond.github.io/commit/5d76b508f45c7e7e0a953cce64035ffe16b1c358))
+
 ## [3.37.0](https://github.com/niafrond/niafrond.github.io/compare/v3.36.0...v3.37.0) (2026-11-25)
 
 ### Features
