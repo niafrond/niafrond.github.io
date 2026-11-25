@@ -64,7 +64,8 @@ test('essences : vignettes, prix, budget, proposition pour tout le jardin puis a
 
   // proposition pour tout le jardin
   await page.locator('#btn-surprise-all').click();
-  await expect(page.locator('#proposal-summary')).toContainText(/essences?, floraison de .+ à .+, ≈ \d/);
+  await page.locator('[data-act=amb-ok]').click(); // fenêtre d'ambiance : « Peu importe » par défaut
+  await expect(page.locator('#proposal-summary')).toContainText(/essences? · floraison de .+ à .+ · ≈ \d/);
   const lire = () => page.evaluate(async (i) => { await window.__jardin.flush?.(); return (await window.__jardin.storage.getGarden(i)).zones.map((z) => z.plantings); }, id);
   const apres = await lire();
   expect(apres[0].length).toBeGreaterThan(0);

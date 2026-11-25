@@ -5,6 +5,7 @@ import {
 } from '../geometry.js';
 import { attachNorthBadge } from './north-pop.js';
 import { ZONE_TYPES, getZoneType, createZone } from '../model.js';
+import { ambianceChips, ambianceOf, ambianceEmoji, nameWithAmbiance, detectIn } from './ambiance-picker.js';
 import {
   injectStyles, h, createCanvas, gridPath, snap, clone, esc, fr, frLen, frArea, parseLength, toCm,
   projectOnLine, snapToLines, rectPoints, isRectangle,
@@ -25,7 +26,7 @@ export function mountZoneEditor(el, { garden, onChange } = {}) {
   g.boundary = g.boundary || [];
   const st = {
     typeId: null, kind: null, mode: 'rect', drawing: null, ghost: null, snapMark: null, sel: null, gridIdx: 0, allTypes: false,
-    history: [], future: [], msg: '', lineWidth: 1, pop: false, cotes: [],
+    history: [], future: [], msg: '', lineWidth: 1, pop: false, cotes: [], naming: null, focusName: false,
   };
   let destroyed = false;
   let north = null; // pastille du nord
@@ -156,7 +157,7 @@ export function mountZoneEditor(el, { garden, onChange } = {}) {
   };
 
   // ---------- gestes ----------
-  function select(id) { st.sel = id; st.msg = ''; closePop(); draw(); refreshUI(); }
+  function select(id) { st.sel = id; st.naming = null; st.msg = ''; closePop(); draw(); refreshUI(); }
 
   function onDown(w) {
     if (st.typeId) {
@@ -358,7 +359,7 @@ export function mountZoneEditor(el, { garden, onChange } = {}) {
       const same = g.zones.filter((q) => q.type === t.id).length;
       if (same) z.label = `${t.label} ${same + 1}`;
       g.zones.push(z);
-      st.sel = z.id;
+      st.sel = z.id; st.naming = z.id; st.focusName = true;
       st.typeId = null; st.kind = null; st.ghost = null; st.snapMark = null;
       st.msg = `Zone « ${z.label} » ajoutée (${frArea(shapeArea(shape))}). Choisissez un autre type pour enchaîner, ou ↶ pour annuler.`;
     });
@@ -582,7 +583,8 @@ export function mountZoneEditor(el, { garden, onChange } = {}) {
       const sw = out || selected ? 3.5 : ov.has(z.id) ? 2.5 : 1.5;
       s += `<polygon points="${poly(pl)}" fill="${t.color}" fill-opacity="${canopy ? 0.35 : 0.6}" stroke="${stroke}" stroke-width="${sw}"${canopy && !out ? ' stroke-dasharray="6 3"' : ''} stroke-linejoin="round" ${NS}${out ? ' data-out="1"' : ''}/>`;
       const c = centroid(pl);
-      s += label(c.x, c.y, `${out ? '⚠ ' : ''}${t.icon} ${esc(z.label)}`, fs, 'font-weight="700"');
+      const ae = ambianceEmoji(z.ambiance);
+      s += label(c.x, c.y, `${out ? '⚠ ' : ''}${t.icon} ${esc(z.label)}${ae ? ` ${ae}` : ''}`, fs, 'font-weight="700"');
       s += label(c.x, c.y + fs * 1.3, `${fr(shapeArea(z.shape), 1)} m²`, fs * 0.9);
       if (selected && !st.typeId && z.shape.kind !== 'circle') {
         const cs = cotesOf(z.shape.points, z.shape.kind === 'polygon');
@@ -675,7 +677,7 @@ export function mountZoneEditor(el, { garden, onChange } = {}) {
   }
   function chooseType(id) {
     const t = getZoneType(id);
-    stopDrawing(); st.sel = null; st.msg = ''; closePop();
+    stopDrawing(); st.sel = null; st.naming = null; st.msg = ''; closePop();
     if (st.typeId === id) { st.typeId = null; st.kind = null; } else {
       st.typeId = id; st.kind = t.shapeKinds[0]; st.mode = 'rect'; st.lineWidth = t.defaultWidth || 1;
     }
@@ -780,14 +782,50 @@ export function mountZoneEditor(el, { garden, onChange } = {}) {
   function renderPanel(z) {
     panel.innerHTML = '';
     const t = getZoneType(z.type);
-    const nameIn = h('input', { class: 'jd-input', type: 'text', value: z.label, 'aria-label': 'Nom de la zone', 'data-role': 'zone-name', maxlength: '60' });
-    nameIn.addEventListener('change', () => { mutate(() => { z.label = nameIn.value.trim() || t.label; }, true); });
+    const naming = st.naming === z.id;
+    panel.classList.toggle('naming', naming);
+    const nameIn = h('input', {
+      class: 'jd-input', type: 'text', value: z.label, 'aria-label': 'Nom de la zone', 'data-role': 'zone-name', maxlength: '60',
+      placeholder: 'ex. Massif bucolique devant la terrasse', enterkeyhint: 'done', autocomplete: 'off',
+    });
+    // détection d'un mot d'ambiance tapé dans le nom : proposée, jamais imposée
+    const detEl = h('div', { class: 'jd-detect', 'data-role': 'ambiance-detected', hidden: true, role: 'status', 'aria-live': 'polite' });
+    const commitName = () => { z.label = nameIn.value.trim() || t.label; };
+    const refreshDetect = () => {
+      const id = detectIn(nameIn.value);
+      const a = id && id !== z.ambiance ? ambianceOf(id) : null;
+      detEl.hidden = !a; detEl.textContent = '';
+      if (a) {
+        detEl.append(h('span', null, `Ambiance détectée : ${a.emoji} ${a.label}`),
+          btn('Appliquer', 'apply-ambiance', () => { mutate(() => { commitName(); z.ambiance = id; }); }, 'primary'));
+      }
+    };
+    nameIn.addEventListener('input', refreshDetect);
+    nameIn.addEventListener('change', () => { mutate(() => { commitName(); }, true); refreshDetect(); });
+    if (naming) nameIn.addEventListener('focus', () => { try { nameIn.select(); } catch { /* */ } });
     const typeSel = h('select', { class: 'jd-select', 'aria-label': 'Type de zone', 'data-role': 'zone-type' }, ZONE_TYPES.map((tt) => h('option', { value: tt.id, selected: tt.id === z.type }, `${tt.icon} ${tt.label}`)));
     typeSel.addEventListener('change', () => { mutate(() => { const old = getZoneType(z.type); if (z.label === old.label) z.label = getZoneType(typeSel.value).label; z.type = typeSel.value; }); });
     const nPl = (z.plantings || []).length;
+    const setAmbiance = (id) => { mutate(() => { z.ambiance = id || null; }); };
+    const ambField = h('div', { class: 'jd-field jd-amb', 'data-role': 'zone-ambiance-field' },
+      h('div', { class: 'jd-flabel', id: 'jd-amb-label' }, 'Ambiance'),
+      ambianceChips({ value: z.ambiance || null, none: 'Aucune', ariaLabel: 'Ambiance de la zone', dataRole: 'zone-ambiance', onPick: setAmbiance }));
+    const nameHead = naming ? h('div', { class: 'jd-naming-head', 'data-role': 'naming' },
+      h('label', { class: 'jd-flabel', for: 'jd-zone-name' }, 'Donnez-lui un nom'),
+      h('div', { class: 'jd-hint' }, 'Le nom s’affiche sur le plan : ajoutez l’ambiance voulue pour vous y retrouver.')) : null;
+    const nameSug = naming ? h('div', { class: 'jd-naming', 'data-role': 'naming-suggestions' },
+      h('div', { class: 'jd-suggest-label', id: 'jd-sug-label' }, 'Touchez une ambiance pour l’ajouter au nom'),
+      ambianceChips({
+        mode: 'action', ariaLabel: 'Suggestions d’ambiance pour le nom', dataRole: 'name-suggestions',
+        onPick: (id) => { mutate(() => { z.label = nameWithAmbiance(nameIn.value.trim() || z.label, id); z.ambiance = id; }); },
+      })) : null;
+    nameIn.id = 'jd-zone-name';
     panel.append(
-      h('div', { class: 'jd-zhead' }, h('span', { class: 'jd-zdot', style: { background: t.color } }, t.icon), nameIn,
+      nameHead,
+      h('div', { class: 'jd-zhead' }, h('span', { class: 'jd-zdot', style: { background: t.color } }, t.icon),
+        naming ? h('div', { class: 'jd-zname' }, nameIn) : nameIn,
         btn('✕', 'deselect', () => select(null), '', { 'aria-label': 'Désélectionner' })),
+      nameSug, detEl, ambField,
       h('div', { class: 'jd-row' }, typeSel),
       h('div', { class: 'jd-row jd-zfacts' },
         h('span', {}, 'Surface : ', h('b', { 'data-role': 'zone-area' }, frArea(shapeArea(z.shape)))),
@@ -797,13 +835,24 @@ export function mountZoneEditor(el, { garden, onChange } = {}) {
         btn('📏 Dimensions…', 'dims', () => openDimsPop(z)),
         btn('⧉ Dupliquer', 'duplicate', () => duplicate(z)),
         btn('🗑 Supprimer', 'delete-zone', () => remove(z), 'danger')));
+    if (naming) nameIn.setAttribute('aria-describedby', 'jd-sug-label');
+    refreshDetect();
     renderWarns(z);
+    if (naming && st.focusName) {
+      st.focusName = false;
+      // pas de clavier intempestif sur mobile : focus automatique seulement avec un pointeur précis (souris)
+      let fine = false;
+      try { fine = !!(window.matchMedia && window.matchMedia('(pointer: fine)').matches); } catch { /* */ }
+      if (fine) setTimeout(() => { if (!destroyed) nameIn.focus({ preventScroll: true }); }, 0);
+      setTimeout(() => { if (!destroyed && panel.scrollIntoView) { try { panel.scrollIntoView({ block: 'nearest' }); } catch { /* */ } } }, 0);
+    }
   }
 
   function duplicate(z) {
     mutate(() => {
       const c = createZone(z.type, translateShape(z.shape, 0.5, 0.5));
       c.label = `${z.label} (copie)`; c.notes = z.notes || '';
+      if (z.ambiance) c.ambiance = z.ambiance;
       g.zones.push(c);
       st.sel = c.id;
       st.msg = `Copie « ${c.label} » posée en décalé : glissez-la à sa place.`;

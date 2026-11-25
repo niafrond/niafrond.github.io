@@ -5,6 +5,8 @@ import { getPlant, searchPlants } from '../catalog.js';
 import { recommendForZone, suggestQuantity, checkCoherence, suggestSelection } from '../recommend.js';
 import { shapeArea } from '../geometry.js';
 import { getPlantPhoto } from '../photos.js';
+import { openAmbiancePicker, ambianceOf, ambianceEmoji, zoneAmbiance } from './ambiance-picker.js';
+import { isTypical } from '../ambiances.js';
 import { gardenCost, formatEuro, formatPrice, UNIT_LABEL, summarizeGarden } from '../pricing.js';
 
 const STATUS = { ideal: 'Idéale', possible: 'Possible', discouraged: 'Déconseillée' };
@@ -274,7 +276,7 @@ export function mountPlants(el, { garden, onChange, getPhoto = getPlantPhoto, IO
         h('div', { class: 'plant-head' },
           makeThumb(p, r),
           h('div', { class: 'grow' }, h('strong', null, p.commonName), h('br'), h('em', { class: 'muted' }, p.latinName),
-            swatches(p)),
+            swatches(p), typical(p, z) ? h('span', { class: 'amb-pill', 'data-role': 'ambiance-ok', title: 'Typique de l’ambiance de la zone' }, '✓ ambiance') : null),
           h('span', { class: 'badge ' + r.status }, `${STATUS[r.status] || r.status} · ${Math.round(r.score)}`)),
         h('p', { class: 'muted small' }, `${bloom ? 'Floraison : ' + bloom + ' · ' : ''}Hauteur adulte ${fmtNum(p.heightAdult)} m × ${fmtNum(p.widthAdult)} m`),
         h('p', { class: 'muted small' }, `${(p.sun || []).map((s) => SUNL[s]).join('/')} · ${WATER[p.water] || ''} · rustique à ${p.hardiness} °C`),
@@ -294,13 +296,35 @@ export function mountPlants(el, { garden, onChange, getPhoto = getPlantPhoto, IO
     });
     moreBox.replaceChildren(recs.length > limit ? h('button', { class: 'btn btn-block', type: 'button', onclick: () => { limit += PAGE; drawList(); } }, `Afficher plus (${recs.length - limit} restantes)`) : null);
   }
+  function typical(p, z) {
+    const a = zoneAmbiance(z);
+    if (!a) return false;
+    try { return isTypical(p, a); } catch { return false; }
+  }
   function safeQty(p, z) { try { return suggestQuantity(p, z); } catch { return 1; } }
 
+  const optLabel = (z) => { const t = getZoneType(z.type); const e = ambianceEmoji(zoneAmbiance(z)); return `${t ? t.icon + ' ' : ''}${z.label || (t && t.label) || 'Zone'}${e ? ' ' + e : ''}`; };
   const zoneSel = h('select', { id: 'zone-sel', onchange: (e) => { zoneId = e.target.value; limit = PAGE; drawZoneInfo(); drawChosen(); drawList(); drawBudget(); } },
-    garden.zones.map((z) => { const t = getZoneType(z.type); return h('option', { value: z.id, selected: z.id === zoneId }, `${t ? t.icon + ' ' : ''}${z.label || (t && t.label) || 'Zone'}`); }));
+    garden.zones.map((z) => h('option', { value: z.id, selected: z.id === zoneId }, optLabel(z))));
   const zoneInfo = h('p', { class: 'muted' });
+  const zoneHead = h('div', { class: 'zone-head', 'data-role': 'zone-head' });
+  function changeAmbiance() {
+    const z = zone();
+    openAmbiancePicker(document.body, { zones: [z], onConfirm: (m) => {
+      z.ambiance = m[z.id] || null;
+      limit = PAGE; refresh(); drawZoneInfo();
+      toast(z.ambiance ? `Ambiance « ${(ambianceOf(z.ambiance) || {}).label} » enregistrée pour cette zone.` : 'Ambiance retirée pour cette zone.');
+    } });
+  }
   function drawZoneInfo() {
     const z = zone();
+    Array.from(zoneSel.options).forEach((o) => { const q = garden.zones.find((x) => x.id === o.value); if (q) o.textContent = optLabel(q); });
+    const amb = ambianceOf(zoneAmbiance(z));
+    zoneHead.replaceChildren(
+      h('div', { class: 'zone-head-txt' },
+        h('strong', { 'data-role': 'zone-head-name' }, z.label || 'Zone'),
+        h('span', { class: 'amb-tag', 'data-role': 'zone-head-ambiance' }, amb ? `${amb.emoji} ambiance ${amb.label.toLowerCase()}` : 'Ambiance : peu importe')),
+      h('button', { class: 'btn btn-sm', type: 'button', 'data-act': 'change-ambiance', onclick: changeAmbiance }, 'Changer l’ambiance'));
     let a = 0; try { a = shapeArea(z.shape); } catch { /* */ }
     const t = getZoneType(z.type);
     zoneInfo.textContent = `${t ? t.label : z.type} · ${a.toFixed(a < 10 ? 1 : 0).replace('.', ',')} m²`;
@@ -317,7 +341,7 @@ export function mountPlants(el, { garden, onChange, getPhoto = getPlantPhoto, IO
   // ---------- « Surprends-moi » (zone ou jardin entier), annulable ----------
   const clonePl = (z) => (z.plantings || []).map((x) => ({ ...x }));
   function selectionFor(z, budget) {
-    const sel = suggestSelection(garden, z, { seed: baseSeed + round, ...(budget ? { budget } : {}) }) || [];
+    const sel = suggestSelection(garden, z, { seed: baseSeed + round, ambiance: z.ambiance || null, ...(budget ? { budget } : {}) }) || [];
     const next = [];
     for (const it of sel) {
       const id = it.plantId || (it.plant && it.plant.id) || it.id;
@@ -340,6 +364,22 @@ export function mountPlants(el, { garden, onChange, getPhoto = getPlantPhoto, IO
   const ALL_LABEL = '🎲 Surprends-moi pour tout le jardin';
   const ZONE_LABEL = '🎲 Surprends-moi';
 
+  function askAmbiances(zones) {
+    return new Promise((resolve) => {
+      openAmbiancePicker(document.body, { zones, onConfirm: (m) => resolve(m), onCancel: () => resolve(null) });
+    });
+  }
+  /** « 8 essences · ambiance bucolique · floraison de mars à octobre · ≈ 210 € » */
+  function summaryText(sm, targets) {
+    const parts = sm.text.split(', ');
+    const ids = [...new Set(targets.map((z) => z.ambiance || null))];
+    let amb = null;
+    if (ids.length === 1 && ids[0]) { const a = ambianceOf(ids[0]); if (a) amb = `ambiance ${a.label.toLowerCase()}`; }
+    else if (ids.length > 1 && ids.some(Boolean)) amb = 'ambiances variées selon les zones';
+    if (amb) parts.splice(1, 0, amb);
+    return parts.join(' · ');
+  }
+
   async function propose(key, pick) {
     const again = !!proposal && proposal.key === key;
     let targets;
@@ -348,6 +388,11 @@ export function mountPlants(el, { garden, onChange, getPhoto = getPlantPhoto, IO
       const r = await pick();
       if (!r) return;
       targets = r;
+      if (!targets.length) { toast('Aucune zone à garnir.'); return; }
+      // demande d'ambiance (une zone, ou zone par zone) avant toute proposition
+      const amb = await askAmbiances(targets);
+      if (!amb) return;
+      targets.forEach((z) => { z.ambiance = amb[z.id] || null; });
     }
     if (!targets.length) { toast('Aucune zone à garnir.'); return; }
     const snapshot = again ? proposal.snapshot : new Map(targets.map((z) => [z.id, clonePl(z)]));
@@ -373,7 +418,7 @@ export function mountPlants(el, { garden, onChange, getPhoto = getPlantPhoto, IO
     surprise.textContent = key !== 'all' ? '🎲 Autre proposition' : ZONE_LABEL;
     refresh();
     const sm = summarizeGarden(garden, getPlant);
-    summaryEl.textContent = sm.text + (max && sm.total > max ? ` (au-dessus du budget de ${formatEuro(max, { digits: 0 })})` : '');
+    summaryEl.textContent = summaryText(sm, targets) + (max && sm.total > max ? ` (au-dessus du budget de ${formatEuro(max, { digits: 0 })})` : '');
     toast('Sélection proposée : retouchez-la à votre guise ou annulez-la.');
   }
 
@@ -395,7 +440,7 @@ export function mountPlants(el, { garden, onChange, getPhoto = getPlantPhoto, IO
       summaryEl, undoBtn),
     warnBox,
     h('section', { class: 'card' },
-      h('div', { class: 'field' }, h('label', { for: 'zone-sel' }, 'Zone'), zoneSel), zoneInfo, chosenBox, surprise),
+      h('div', { class: 'field' }, h('label', { for: 'zone-sel' }, 'Zone'), zoneSel), zoneHead, zoneInfo, chosenBox, surprise),
     h('section', { class: 'card' },
       h('h3', null, 'Essences conseillées'),
       h('div', { class: 'field' }, h('label', { for: 'plant-search' }, 'Rechercher (nom commun ou latin)'),

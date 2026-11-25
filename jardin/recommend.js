@@ -4,6 +4,7 @@ import { climateForDepartement, adjustTminForAltitude } from './climate.js';
 import { shapeArea, shapePolygon, bounds } from './geometry.js';
 import { zoneSunLevel } from './sun.js';
 import { plantCost } from './pricing.js';
+import { getAmbiance, detectAmbiance, plantAmbianceScore, plantAvoids, isTypical } from './ambiances.js';
 
 const SUN_ORDER = { shade: 0, partial: 1, full: 2 };
 const SUN_LABEL = { full: 'plein soleil', partial: 'mi-ombre', shade: 'ombre' };
@@ -112,10 +113,31 @@ export function scorePlant(plant, ctx = {}) {
     }
   }
 
+  // Ambiance souhaitée (facultative).
+  let rank = null;
+  const amb = ctx.ambiance ? getAmbiance(ctx.ambiance) : null;
+  if (amb && !excluded) {
+    const s = plantAmbianceScore(plant, amb.id);
+    const name = amb.label.toLowerCase();
+    if (plantAvoids(plant).includes(amb.id)) {
+      score -= 20;
+      add(false, 'ambiance', `Peu adaptée à l'ambiance « ${name} »`);
+    } else if (s >= 0.7) {
+      score += Math.round(15 * (s - 0.5) / 0.5);
+      add(true, 'ambiance', `Convient à l'ambiance « ${name} »`);
+    } else {
+      if (s < 0.5) score -= Math.round((0.5 - s) * 20);
+      add(s < 0.5 ? false : null, 'ambiance', s < 0.5 ? `Ne correspond pas vraiment à l'ambiance « ${name} »` : `Compatible avec l'ambiance « ${name} »`);
+    }
+    rank = score;
+  }
+
   score = Math.max(0, Math.min(100, Math.round(score)));
   let status = score >= 75 ? 'ideal' : score >= 50 ? 'possible' : 'discouraged';
   if (excluded || forceDiscouraged) status = 'discouraged';
-  return { score, status, reasons, excluded };
+  const res = { score, status, reasons, excluded };
+  if (rank !== null) res.rank = rank; // score non plafonné, pour départager les essences à 100
+  return res;
 }
 
 /** Longueur d'une polyligne. */
@@ -134,7 +156,7 @@ function minDimensionOf(shape) {
 }
 
 /** Contexte de scoring d'une zone dans un jardin. */
-export function contextForZone(garden, zone) {
+export function contextForZone(garden, zone, { ambiance } = {}) {
   const c = garden?.context || {};
   const clim = climateForDepartement(c.departement);
   const tminC = clim ? adjustTminForAltitude(clim.tminC, c.altitude) : null;
@@ -154,17 +176,24 @@ export function contextForZone(garden, zone) {
     minDimension: minDimensionOf(zone.shape),
     soil: c.soil || null,
     windy,
+    ambiance: ambiance !== undefined ? ambiance : resolveAmbiance(zone),
   };
 }
 
+/** Ambiance d'une zone : explicite (`zone.ambiance`), sinon détectée dans son nom, sinon null. */
+export function resolveAmbiance(zone) {
+  if (zone?.ambiance) return getAmbiance(zone.ambiance) ? zone.ambiance : null;
+  return detectAmbiance(zone?.label);
+}
+
 /** Essences conseillées pour une zone, triées par score (les exclusions dures sont toujours retirées). */
-export function recommendForZone(garden, zone, { includeDiscouraged = false, filters, plants } = {}) {
-  const ctx = contextForZone(garden, zone);
+export function recommendForZone(garden, zone, { includeDiscouraged = false, filters, plants, ambiance } = {}) {
+  const ctx = contextForZone(garden, zone, { ambiance });
   const list = filterPlants(plants || allPlants(), filters || {});
   return list
     .map((plant) => ({ plant, ...scorePlant(plant, ctx) }))
     .filter((r) => !r.excluded && (includeDiscouraged || r.status !== 'discouraged'))
-    .sort((a, b) => b.score - a.score || PLANT_NAME(a.plant).localeCompare(PLANT_NAME(b.plant), 'fr'));
+    .sort((a, b) => (b.rank ?? b.score) - (a.rank ?? a.score) || PLANT_NAME(a.plant).localeCompare(PLANT_NAME(b.plant), 'fr'));
 }
 
 /** Quantité suggérée pour une zone. */
@@ -301,10 +330,11 @@ const heightLayer = (h) => (h < 0.5 ? 0 : h < 1.5 ? 1 : h < 4 ? 2 : 3);
  * `budget` (€, facultatif) : privilégie les essences peu coûteuses et réduit quantités/essences pour rester
  * sous le budget si possible (au moins une essence est toujours conservée).
  */
-export function suggestSelection(garden, zone, { seed = 1, plants, max, budget } = {}) {
+export function suggestSelection(garden, zone, { seed = 1, plants, max, budget, ambiance } = {}) {
   const rnd = mulberry32(hashSeed(seed));
   const strict = zone.type === 'vegetable' || zone.type === 'terrace';
-  let cands = recommendForZone(garden, zone, { plants }).filter((r) => !r.plant.invasive && !(strict && r.plant.toxic));
+  const amb = ambiance !== undefined ? (getAmbiance(ambiance) ? ambiance : null) : resolveAmbiance(zone);
+  let cands = recommendForZone(garden, zone, { plants, ambiance: amb }).filter((r) => !r.plant.invasive && !(strict && r.plant.toxic));
   if (!cands.length) return [];
   const area = shapeArea(zone.shape);
   const target = Math.min(cands.length, max || (area < 4 ? 2 : area < 15 ? 3 : area < 60 ? 4 : 5));
@@ -319,9 +349,17 @@ export function suggestSelection(garden, zone, { seed = 1, plants, max, budget }
   const layers = new Set();
   const months = new Set();
   const cats = new Set();
+  // Ambiance : au moins 70 % d'essences typiques quand le catalogue le permet.
+  const minTypical = amb ? Math.ceil(0.7 * target - 1e-9) : 0;
+  let typicalCount = 0;
   while (chosen.length < target && cands.length) {
     let best = null, bestV = -Infinity;
-    for (const c of cands) {
+    let pool = cands;
+    if (amb && minTypical - typicalCount >= target - chosen.length) {
+      const typ = cands.filter((c) => isTypical(c.plant, amb));
+      if (typ.length) pool = typ;
+    }
+    for (const c of pool) {
       const bloom = c.plant.bloom || [];
       const newMonths = bloom.filter((m) => !months.has(m)).length;
       const v = c.score / 100
@@ -329,10 +367,12 @@ export function suggestSelection(garden, zone, { seed = 1, plants, max, budget }
         + newMonths / 12
         + (cats.has(c.plant.category) ? 0 : 0.15)
         - (cap == null ? 0 : Math.min(1, estCost(c.plant) / cap) * 0.6)
+        + (amb ? plantAmbianceScore(c.plant, amb) * 1.5 : 0)
         + rnd() * 0.25;
       if (v > bestV) { bestV = v; best = c; }
     }
     chosen.push(best);
+    if (amb && isTypical(best.plant, amb)) typicalCount++;
     cands = cands.filter((c) => c !== best);
     layers.add(heightLayer(best.plant.heightAdult));
     (best.plant.bloom || []).forEach((m) => months.add(m));
@@ -361,4 +401,26 @@ export function suggestSelection(garden, zone, { seed = 1, plants, max, budget }
     } else break;
   }
   return sel;
+}
+
+const NO_PLANT_ZONES = new Set(['pool', 'path']);
+
+/**
+ * « Surprends-moi » pour tout le jardin : une sélection par zone plantable, chacune avec son ambiance
+ * (`ambiances[zone.id]`, sinon `zone.ambiance`, sinon détectée dans le nom ; `null` explicite = aucune).
+ * Retourne [{zoneId, selection}].
+ */
+export function suggestForGarden(garden, { seed = 1, budget, ambiances = {}, plants } = {}) {
+  const zones = (garden?.zones || []).filter((z) => !NO_PLANT_ZONES.has(z.type));
+  const cap = typeof budget === 'number' && Number.isFinite(budget) && budget > 0 ? budget : null;
+  return zones.map((zone, i) => {
+    const ambiance = zone.id in (ambiances || {}) ? ambiances[zone.id] : undefined;
+    const selection = suggestSelection(garden, zone, {
+      seed: `${seed}:${i}`,
+      plants,
+      ambiance,
+      ...(cap ? { budget: cap / zones.length } : {}),
+    });
+    return { zoneId: zone.id, selection };
+  });
 }

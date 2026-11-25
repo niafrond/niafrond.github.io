@@ -130,3 +130,32 @@ summary { cursor: pointer; min-height: var(--tap); display: flex; align-items: c
 .btn[hidden] { display: none; }
 .swatch { white-space: nowrap; }
 .plant-detail .swatches { align-self: flex-start; }
+
+/* Ambiances (pastilles, fenêtre « Quelle ambiance ? », en-tête de zone) */
+.amb-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.amb-chip {
+  display: inline-flex; align-items: center; gap: 6px; min-height: var(--tap, 44px); padding: 0 12px; border-radius: 99px;
+  border: 1px solid var(--jd-line, var(--border)); background: var(--jd-card, var(--surface)); color: var(--jd-fg, var(--text));
+  font: inherit; font-size: .9rem; cursor: pointer; text-align: left;
+}
+.amb-chip:focus-visible { outline: 3px solid var(--jd-accent, var(--primary)); outline-offset: 2px; }
+.amb-chip.on, .amb-chip[aria-checked="true"] { background: var(--jd-accent, var(--primary)); color: #fff; border-color: var(--jd-accent, var(--primary)); font-weight: 700; }
+:root[data-theme="dark"] .amb-chip.on { color: #08140c; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .amb-chip.on { color: #08140c; } }
+.amb-emoji { font-size: 1.15em; line-height: 1; }
+.amb-cards { flex-direction: column; flex-wrap: nowrap; }
+.amb-cards .amb-chip { border-radius: 12px; width: 100%; padding: 6px 12px; align-items: center; }
+.amb-txt { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.amb-txt small { font-size: .75rem; opacity: .85; font-weight: 400; line-height: 1.25; }
+.dialog.amb-dialog { max-width: 460px; max-height: 92vh; overflow: auto; display: flex; flex-direction: column; gap: 10px; }
+.amb-dialog h3, .amb-dialog p { margin: 0; }
+.amb-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 14px; }
+.amb-row { display: flex; flex-direction: column; gap: 6px; padding-bottom: 12px; border-bottom: 1px solid var(--border); }
+.amb-zname { font-size: 1rem; }
+.amb-same { padding: 8px; border: 1px dashed var(--border); border-radius: 12px; }
+.amb-same[hidden] { display: none; }
+.amb-actions { position: sticky; bottom: -16px; background: var(--surface); padding: 8px 0 2px; }
+.zone-head { display: flex; gap: 8px; align-items: center; justify-content: space-between; flex-wrap: wrap; }
+.zone-head-txt { display: flex; flex-direction: column; min-width: 0; }
+.amb-tag { font-size: .85rem; color: var(--muted); }
+.amb-pill { display: inline-block; margin-top: 4px; font-size: .75rem; font-weight: 700; padding: 2px 8px; border-radius: 99px; color: var(--ok); border: 1px solid var(--ok); }

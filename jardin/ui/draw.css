@@ -245,3 +245,17 @@
 .jd-north-status.warn { color: var(--jd-warn); }
 /* la fenêtre du nord couvre l'écran (le plan peut être trop petit, ex. étape Soleil) */
 .jd-pop.jd-north-pop { position: fixed; top: calc(8px + env(safe-area-inset-top, 0px)); left: 8px; right: 8px; z-index: 60; max-height: calc(100dvh - 16px); overflow-y: auto; }
+
+/* Nom et ambiance d'une zone (bandeau de sélection) */
+.jd-zsheet.naming { max-height: 62vh; border-top: 3px solid var(--jd-accent); }
+.jd-naming-head { margin-bottom: 4px; }
+.jd-flabel { display: block; font-weight: 700; font-size: 15px; }
+.jd-hint, .jd-suggest-label { font-size: 13px; color: var(--jd-muted); margin: 2px 0 4px; }
+.jd-zname { flex: 1 1 auto; min-width: 0; display: flex; }
+.jd-zname .jd-input { width: 100%; border: 2px solid var(--jd-accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--jd-accent) 25%, transparent); }
+.jd-naming { margin: 6px 0; }
+.jd-amb { margin: 6px 0; }
+.jd-zsheet .amb-chips { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 4px; -webkit-overflow-scrolling: touch; }
+.jd-zsheet .amb-chip { flex: 0 0 auto; }
+.jd-detect { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: 6px 0; padding: 6px 8px; border-radius: 10px; background: color-mix(in srgb, var(--jd-accent) 14%, var(--jd-card)); font-size: 14px; }
+.jd-detect[hidden] { display: none; }

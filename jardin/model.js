@@ -89,7 +89,7 @@ export function createGarden(name = 'Mon jardin') {
 export function createZone(typeId, shape) {
   const t = getZoneType(typeId);
   if (!t) throw new Error(`Type de zone inconnu : ${typeId}`);
-  return { id: newId('z_'), type: typeId, label: t.label, shape, plantings: [], notes: '' };
+  return { id: newId('z_'), type: typeId, label: t.label, shape, plantings: [], notes: '', ambiance: null };
 }
 
 /** Nouvel élément d'aménagement (lève une erreur si le type est inconnu). Cercle : `radius` et width = depth = diamètre. */

@@ -19,6 +19,7 @@ function jardin() {
 }
 const wait = (ms = 0) => new Promise((r) => setTimeout(r, ms));
 const click = (n) => n.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+const validerAmbiance = async () => { click(document.querySelector('[data-act=amb-ok]')); await wait(5); };
 
 let el;
 beforeEach(() => {
@@ -112,9 +113,10 @@ test('Surprends-moi pour tout le jardin : remplit les zones vides, change à cha
   expect(el.querySelector('#btn-undo').hidden).toBe(true);
   click(el.querySelector('#btn-surprise-all'));
   await wait(5);
+  await validerAmbiance();
   expect(g.zones[0].plantings.length).toBeGreaterThan(0);
   expect(g.zones[1].plantings).toEqual([{ plantId: 'h-gazon-rustique', count: 1 }]);
-  expect(el.querySelector('#proposal-summary').textContent).toMatch(/^\d+ essences?, floraison de \S+ à \S+, ≈ \d+ €$/);
+  expect(el.querySelector('#proposal-summary').textContent).toMatch(/^\d+ essences? · floraison de \S+ à \S+ · ≈ \d+ €$/);
   expect(el.querySelector('#btn-undo').hidden).toBe(false);
   expect(el.querySelector('#btn-surprise-all').textContent).toBe('🎲 Autre proposition');
   const seen = new Set([JSON.stringify(g.zones[0].plantings)]);
@@ -139,6 +141,7 @@ test('Surprends-moi (tout) avec zones déjà remplies : confirmation, puis annul
   expect(dlg).not.toBeNull();
   click([...dlg.querySelectorAll('button')].find((b) => b.textContent === 'Remplacer'));
   await wait(5);
+  await validerAmbiance();
   expect(JSON.stringify(g.zones)).not.toBe(before);
   click(el.querySelector('#btn-undo'));
   expect(JSON.stringify(g.zones)).toBe(before);
@@ -148,7 +151,7 @@ test('budget max : la proposition respecte le plafond quand c’est possible', a
   const g = jardin();
   mountPlants(el, { garden: g, onChange() {}, getPhoto: async () => null, IO: null, seed: 11 });
   const input = el.querySelector('#budget-max'); input.value = '150'; input.dispatchEvent(new Event('input'));
-  click(el.querySelector('#btn-surprise-all')); await wait(5);
+  click(el.querySelector('#btn-surprise-all')); await wait(5); await validerAmbiance();
   const m = el.querySelector('[data-role=budget-main]').textContent.match(/≈ ([\d ]+) €/);
   expect(Number(m[1].replace(/\s/g, ''))).toBeLessThanOrEqual(150);
 });
@@ -156,7 +159,7 @@ test('budget max : la proposition respecte le plafond quand c’est possible', a
 test('Surprends-moi par zone conservé et annulable', async () => {
   const g = jardin();
   mountPlants(el, { garden: g, onChange() {}, getPhoto: async () => null, IO: null, seed: 5 });
-  click(el.querySelector('#btn-surprise')); await wait(5);
+  click(el.querySelector('#btn-surprise')); await wait(5); await validerAmbiance();
   expect(g.zones[0].plantings.length).toBeGreaterThan(0);
   click(el.querySelector('#btn-undo'));
   expect(g.zones[0].plantings).toEqual([]);
