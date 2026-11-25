@@ -120,3 +120,9 @@ export function groundState(doy, dry = 0.4) {
 export const seasonWarmth = (doy) => Math.cos(((doy - 172) / 365) * Math.PI * 2);
 /** Intensité de la chute de feuilles (0–1) pour les particules : pic mi-novembre. */
 export const leafFall = (doy) => smooth(285, 312, doy) * (1 - smooth(338, 355, doy));
+
+/** Fructification (0–1) des arbres et arbustes fruitiers : mûrissement de juillet à octobre, chute en novembre. */
+export function fruitAmount(plant, doy) {
+  if (!plant || (plant.category !== 'fruit' && plant.habit !== 'vegetable-climbing')) return 0;
+  return smooth(180, 220, doy) * (1 - smooth(300, 335, doy));
+}

@@ -31,9 +31,9 @@ function monter(g = jardin()) {
 describe('éditeur d’aménagements (DOM)', () => {
   afterEach(() => { document.body.innerHTML = ''; });
 
-  test('trois onglets, palette complète avec dimensions et prix', () => {
+  test('quatre onglets, palette complète avec dimensions et prix', () => {
     const { el } = monter();
-    expect([...el.querySelectorAll('[role=tab]')].map((t) => t.dataset.tab)).toEqual(['furniture', 'edges', 'access']);
+    expect([...el.querySelectorAll('[role=tab]')].map((t) => t.dataset.tab)).toEqual(['furniture', 'edges', 'access', 'existing']);
     const cards = el.querySelectorAll('.jdi-card');
     expect(cards.length).toBe(ITEM_KINDS.length);
     const banc = el.querySelector('[data-kind=bench]');

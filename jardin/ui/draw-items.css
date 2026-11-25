@@ -32,3 +32,26 @@
 .jdi-start[hidden] { display: none; }
 .jdi-start b { display: block; margin-bottom: 2px; }
 .jdi .jd-pop { top: 4px; }
+
+/* --- onglet Existant --- */
+.jdi-tabs .jd-tab { white-space: normal; line-height: 1.15; font-size: 12px; min-height: 44px; }
+.jdi-card-fence { width: auto; min-width: 176px; padding: 4px 6px; gap: 4px; }
+.jdi-card-fence .jdi-fence-main { border: 0; background: none; color: inherit; font: inherit; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 2px; min-height: 44px; padding: 0; touch-action: manipulation; }
+.jdi-mats { display: flex; gap: 4px; flex-wrap: nowrap; }
+.jdi-mat { flex: 0 0 auto; min-width: 52px; min-height: 52px; padding: 2px; border-radius: 10px; border: 2px solid var(--jd-line); background: var(--jd-card); color: var(--jd-fg); font: inherit; font-size: 11px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; cursor: pointer; touch-action: manipulation; }
+.jdi-mat[aria-pressed="true"] { border-color: var(--jd-accent); background: color-mix(in srgb, var(--jd-accent) 16%, var(--jd-card)); font-weight: 600; }
+.jdi-mat-prev svg { display: block; }
+.jdi-plant-box { display: flex; flex-direction: column; gap: 4px; }
+.jdi-plant-head { display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; font-size: 14px; }
+.jdi-picked { font-size: 12.5px; color: var(--jd-accent); font-weight: 600; }
+.jdi-picked.jdi-unknown { color: var(--jd-muted); font-weight: 400; }
+.jdi-plant-search { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.jdi-detail .jdi-search { width: auto; flex: 1 1 160px; min-height: 44px; text-align: left; }
+.jdi-plants { padding: 2px 0; border: 0; background: none; }
+.jdi-plant { width: 112px; min-height: 76px; }
+.jdi-latin { font-style: italic; white-space: normal; overflow-wrap: anywhere; font-size: 10.5px; }
+.jdi-size { display: inline-flex; align-items: center; gap: 4px; font-size: 13px; }
+.jdi-size .jd-input { width: 76px; }
+.jdi-notes { width: auto !important; flex: 1 1 140px; text-align: left; min-height: 44px; }
+.jdi-detail .jd-btn { min-height: 44px; }
+.jdi-palette[data-role=existing-kinds] { align-items: flex-start; }

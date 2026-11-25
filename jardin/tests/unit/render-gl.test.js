@@ -25,6 +25,7 @@ function jardin() {
   return g;
 }
 const opts = (o = {}) => ({ plantsById: getPlant, month: 7, age: 1, hour: 14, quality: { density: 1, detail: 1, shadow: 1024 }, ...o });
+const blooms = (api, id) => [...visible(api, id, 'flower'), ...visible(api, id, 'spike')];
 const visible = (api, id, part) => api.meshes.filter((m) => m.userData.plantId === id && m.userData.part === part && m.visible);
 
 describe('buildScene', () => {
@@ -41,12 +42,12 @@ describe('buildScene', () => {
 
   test('fleurs visibles seulement les mois de floraison', () => {
     const api = buildScene(THREE, jardin(), opts({ month: arbreCaduc.bloom[0] }));
-    expect(visible(api, vivace.id, 'flower').length).toBe(vivace.bloom.includes(arbreCaduc.bloom[0]) ? 1 : 0);
+    expect(blooms(api, vivace.id).length > 0).toBe(vivace.bloom.includes(arbreCaduc.bloom[0]));
     const hors = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].find((mo) => !vivace.bloom.includes(mo));
     api.update({ month: vivace.bloom[0] });
-    expect(visible(api, vivace.id, 'flower').length).toBe(1);
+    expect(blooms(api, vivace.id).length).toBeGreaterThan(0);
     api.update({ month: hors });
-    expect(visible(api, vivace.id, 'flower').length).toBe(0);
+    expect(blooms(api, vivace.id).length).toBe(0);
     api.dispose();
   });
 

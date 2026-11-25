@@ -12,6 +12,7 @@ const FILES = [
   'ambiances.js', 'data/plants/ambiances-tags.js', 'ui/ambiance-picker.js',
   'habits.js', 'data/plants/habits-tags.js',
   'maintenance.js', 'ui/maintenance-picker.js',
+  'existing.js', 'ui/existing-panel.js',
 ];
 
 self.addEventListener('install', (e) => {

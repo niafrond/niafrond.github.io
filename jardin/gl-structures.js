@@ -1,6 +1,6 @@
 // Structures de la vue 3D : maison, abri, murs, clôtures, haies, portails, mobilier (three.js passé en paramètre).
 import { pointInPolygon, signedArea } from './geometry.js';
-import { fenceTexture, leafTexture, roofTexture } from './gl-textures.js';
+import { fenceTexture, leafTexture, roofTexture, brickTexture, stoneWallTexture } from './gl-textures.js';
 
 /** Hauteur par défaut (m) du mobilier sans `height` dans le catalogue. */
 const HAUTEUR_ITEM = {
@@ -141,23 +141,72 @@ export function segmentsWithGaps(L, gaps) {
   return out;
 }
 
-/** Mur / clôture / haie linéaire entre a et b (plan), hauteur h, épaisseur th. */
-export function buildLinear(ctx, kind, a, b, h, th, t0 = 0, t1 = 1) {
+/** Matériau effectif d'un mur (pierre|béton|brique, défaut béton) ou d'une clôture (bois|métal|béton|grillage, défaut bois). */
+export function linearMaterial(kind, material) {
+  if (kind === 'wall') return ['stone', 'concrete', 'brick'].includes(material) ? material : 'concrete';
+  if (kind === 'fence') return ['wood', 'metal', 'concrete', 'mesh'].includes(material) ? material : 'wood';
+  return null;
+}
+
+/** Mur / clôture / haie linéaire entre a et b (plan), hauteur h, épaisseur th ; `o.material`, `o.ghost` (estompé). */
+export function buildLinear(ctx, kind, a, b, h, th, t0 = 0, t1 = 1, o = {}) {
   const { THREE } = ctx;
   const L = Math.hypot(b.x - a.x, b.y - a.y) * (t1 - t0);
   if (L < 0.02) return null;
   const mx = a.x + (b.x - a.x) * (t0 + t1) / 2; const my = a.y + (b.y - a.y) * (t0 + t1) / 2;
-  let m;
-  if (kind === 'hedge') {
-    m = boxMesh(ctx, L, h, th, 0, 0, 0, '#ffffff', { roughness: 1, map: ctx.tex('leaf', leafTexture, L, h) });
-  } else if (kind === 'fence') {
-    m = boxMesh(ctx, L, h, th, 0, 0, 0, '#ffffff', { roughness: 0.85, map: ctx.tex('fence', fenceTexture, L, h) });
-  } else {
-    m = boxMesh(ctx, L, h, th, 0, 0, 0, '#d8d1c3', { roughness: 0.95 });
-  }
+  const material = linearMaterial(kind, o.material);
+  const gh = o.ghost ? { transparent: true, opacity: 0.38, depthWrite: false } : {};
+  const mt = (c, x = {}) => ctx.mat(c, { ...x, ...gh });
   const grp = new THREE.Group();
-  grp.add(m);
-  if (kind === 'wall') grp.add(boxMesh(ctx, L + 0.04, 0.08, th + 0.08, 0, h, 0, '#b9b2a4', { roughness: 0.9 }));
+  const box = (w, hh, d, x, y, z, color, opts) => { const m = new THREE.Mesh(ctx.track(new THREE.BoxGeometry(w, hh, d)), mt(color, opts)); m.position.set(x, y + hh / 2, z); grp.add(m); return m; };
+  const posts = (w, color, cap, capColor) => {
+    const n = Math.max(2, Math.ceil(L / 2.2) + 1);
+    for (let i = 0; i < n; i++) { const x = -L / 2 + (L * i) / (n - 1); box(w, h + 0.05, w, x, 0, 0, color, { roughness: 0.8 }); if (cap) box(w + 0.05, 0.04, w + 0.05, x, h + 0.05, 0, capColor || color, { roughness: 0.8 }); }
+  };
+  const bars = (count, bw, bh, color, horizontal) => { // barreaux / fils fins instanciés
+    const im = new THREE.InstancedMesh(ctx.track(new THREE.BoxGeometry(1, 1, 1)), mt(color, { roughness: 0.5, metalness: 0.4 }), count);
+    const m4 = new THREE.Matrix4();
+    for (let i = 0; i < count; i++) {
+      if (horizontal) { m4.makeScale(L, bw, bw); m4.setPosition(0, 0.08 + ((h - 0.12) * i) / Math.max(1, count - 1), 0); }
+      else { m4.makeScale(bw, bh, bw); m4.setPosition(-L / 2 + 0.05 + ((L - 0.1) * i) / Math.max(1, count - 1), 0.04 + bh / 2, 0); }
+      im.setMatrixAt(i, m4);
+    }
+    im.instanceMatrix.needsUpdate = true; grp.add(im); return im;
+  };
+  if (kind === 'hedge') {
+    box(L, h, th, 0, 0, 0, '#ffffff', { roughness: 1, map: ctx.tex('leaf', leafTexture, L, h) });
+  } else if (kind === 'fence') {
+    if (material === 'wood') {
+      box(L, h * 0.94, th, 0, h * 0.02, 0, '#ffffff', { roughness: 0.85, map: ctx.tex('fence', fenceTexture, L, h) });
+      posts(0.09, '#6d4c36', true, '#55392a');
+    } else if (material === 'metal') {
+      bars(Math.max(2, Math.floor(L / 0.11)), 0.018, h * 0.9, '#2f3a40', false);
+      bars(2, 0.04, 0, '#2b343a', true).userData.rail = true;
+      posts(0.06, '#2b343a', true);
+    } else if (material === 'concrete') {
+      box(L, h, th * 1.4, 0, 0, 0, '#c4c4bf', { roughness: 0.95 });
+      for (let x = -L / 2 + 2; x < L / 2 - 0.1; x += 2) box(0.025, h, th * 1.4 + 0.012, x, 0, 0, '#85857f', { roughness: 1 });
+      box(L, 0.05, th * 1.4 + 0.06, 0, h, 0, '#b0b0aa', { roughness: 0.9 });
+      posts(0.12, '#b5b5b0', false);
+    } else { // grillage : maille fine sur poteaux
+      bars(Math.max(2, Math.floor(L / 0.12)), 0.006, h * 0.92, '#9aa6ab', false);
+      bars(Math.max(2, Math.floor(h / 0.12)), 0.006, 0, '#9aa6ab', true);
+      box(L, 0.03, 0.03, 0, h, 0, '#7b868b', { roughness: 0.6, metalness: 0.4 });
+      posts(0.05, '#7b868b', false);
+    }
+  } else if (kind === 'wall') {
+    if (material === 'brick') box(L, h, th, 0, 0, 0, '#ffffff', { roughness: 0.9, map: ctx.tex('brick', brickTexture, L, h) });
+    else if (material === 'stone') box(L, h, th, 0, 0, 0, '#ffffff', { roughness: 1, map: ctx.tex('stonewall', stoneWallTexture, L, h) });
+    else {
+      box(L, h, th, 0, 0, 0, '#cfcfca', { roughness: 0.95 });
+      for (let x = -L / 2 + 2.5; x < L / 2 - 0.1; x += 2.5) box(0.02, h, th + 0.012, x, 0, 0, '#8d8d88', { roughness: 1 });
+    }
+    box(L + 0.04, 0.08, th + 0.08, 0, h, 0, '#b9b2a4', { roughness: 0.9 });
+  } else {
+    box(L, h, th, 0, 0, 0, '#d8d1c3', { roughness: 0.95 });
+  }
+  grp.userData = { kind, material };
+  grp.name = `linear-${kind}${material ? `-${material}` : ''}`;
   grp.position.set(mx, 0, my);
   grp.rotation.y = -Math.atan2(b.y - a.y, b.x - a.x);
   return shadowed(grp);

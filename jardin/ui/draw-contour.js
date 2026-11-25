@@ -10,6 +10,7 @@ import { attachNorthBadge, setNorthAngle } from './north-pop.js';
 import {
   injectStyles, h, createCanvas, gridPath, snap, clone, esc, fr, frLen, frArea, parseNum, parseLength, toCm,
 } from './draw-util.js';
+import { createExisting, ensureExisting } from '../existing.js';
 
 const OBSTACLE_KINDS = [
   { id: 'house', label: 'Maison', height: 6, poly: true },
@@ -27,6 +28,7 @@ export function mountContourEditor(el, { garden, onChange } = {}) {
   const g = garden;
   g.boundary = g.boundary || [];
   g.obstacles = g.obstacles || [];
+  ensureExisting(g);
   g.context = g.context || {};
 
   const st = {
@@ -568,7 +570,9 @@ export function mountContourEditor(el, { garden, onChange } = {}) {
     const k = obstacleKind();
     const { p } = snapAt(w, { from: null });
     if (k.id === 'tree') {
-      mutate(() => { g.obstacles.push({ id: newId('o_'), kind: 'tree', center: p, radius: 2, height: k.height }); st.selObstacle = g.obstacles.length - 1; });
+      // l'arbre existant vit dans `garden.existing` (modèle des plantes existantes), plus dans les obstacles
+      mutate(() => { g.existing = g.existing || []; const e = createExisting('tree', p); g.existing.push(e); st.selObstacle = null; });
+      say('Arbre existant posé : précisez l\'espèce et sa taille à l\'étape Aménagements, onglet Existant.');
       return;
     }
     // toucher le 1er point (≥ 3 points) = fermer la forme
@@ -662,6 +666,7 @@ export function mountContourEditor(el, { garden, onChange } = {}) {
     const isClosed = closed();
     let s = '';
     for (const [i, o] of g.obstacles.entries()) s += obstacleSvg(o, st.tool === 'obstacle' && st.selObstacle === i);
+    for (const e of g.existing || []) if (e.kind === 'tree') s += `<circle cx="${e.x}" cy="${e.y}" r="${(e.width || 4) / 2}" fill="#558b2f" fill-opacity=".25" stroke="#33691e" stroke-dasharray="6 4" stroke-width="2" ${NS}/><circle cx="${e.x}" cy="${e.y}" r="${cv.px(4)}" fill="#33691e"/>`;
     if (n >= 2) {
       if (isClosed) s += `<polygon points="${poly(b)}" fill="var(--jd-accent,#2e7d32)" fill-opacity=".12" stroke="var(--jd-fg,#222)" stroke-width="2.5" stroke-linejoin="round" ${NS}/>`;
       else s += `<polyline points="${poly(b)}" fill="none" stroke="var(--jd-fg,#222)" stroke-width="2.5" stroke-linejoin="round" ${NS}/>`;

@@ -233,7 +233,7 @@ export function validateGarden(g) {
   existing.forEach((e, i) => {
     if (!contourValide || !e) return;
     const pts = Array.isArray(e.points) && e.points.length ? e.points : [{ x: e.x, y: e.y }];
-    if (pts.some((p) => !pointInPolygon(p, contour))) warnings.push(`Plante existante « ${existingLabel(e) || `Plante ${i + 1}`} » : sort du contour du terrain.`);
+    if (pts.some((p) => !pointInPolygon(p, contour))) warnings.push(`${e.kind === 'fence' ? 'Clôture existante' : 'Plante existante'} « ${existingLabel(e) || `Élément ${i + 1}`} » : sort du contour du terrain.`);
   });
 
   // Zones souhaitées sans forme dessinée.

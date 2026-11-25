@@ -293,7 +293,6 @@ const REMOVAL_TIP = {
 };
 const KIND_TIP = {
   tree: 'Sous un arbre existant, privilégiez des plantes d\'ombre ; ses racines sont proches du sol, plantez à distance du tronc.',
-  hedge: 'Taillez la haie plus large à la base qu\'au sommet pour que la lumière arrive en bas.',
 };
 
 /**

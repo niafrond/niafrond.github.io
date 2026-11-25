@@ -5,18 +5,33 @@ import { shapePolygon, bounds as polyBounds, signedArea } from './geometry.js';
 import { ZONE_TYPES, isAbovePool } from './model.js';
 import {
   placePlants, runJob, slimPlant, groupsFromRecords, hashStr, kindOf, isDeciduousWoody, isWoody, heightFactor, LAWN_PLANT, mulberry32,
+  wallSegments, spotsAlong, hedgeSeg, familyOf, arcPt,
 } from './gl-worker-core.js';
+import { habitOf } from './habits.js';
 import * as tx from './gl-textures.js';
 import {
-  dayOfYear, seasonDoy, plantSeasonState, groundState, seasonWarmth, leafFall, mixHex,
+  dayOfYear, seasonDoy, plantSeasonState, groundState, seasonWarmth, leafFall, mixHex, fruitAmount,
 } from './gl-season.js';
-import { polyGeometry, buildBuilding, buildLinear, buildOpening, buildItem, buildPoolLadder, segmentsWithGaps } from './gl-structures.js';
+import { polyGeometry, buildBuilding, buildLinear, linearMaterial, buildOpening, buildItem, buildPoolLadder, segmentsWithGaps } from './gl-structures.js';
 
 export { placePlants };
 
 // Aménagements (items.js, écrit en parallèle) : import défensif.
 let ITEMS = null;
 try { ITEMS = await import('./items.js'); } catch (e) { ITEMS = null; }
+// Plantes existantes déclarées (existing.js, écrit en parallèle) : import défensif, repli = aucune.
+let EXISTING = null;
+try { EXISTING = await import('./existing.js'); } catch (e) { EXISTING = null; }
+/** Entrées « existant » à dessiner : `opts.existing` (tests) sinon `existingForRender(garden)`. */
+export function existingEntries(garden, override) {
+  if (Array.isArray(override)) return override;
+  try { return (EXISTING && EXISTING.existingForRender && EXISTING.existingForRender(garden)) || []; } catch (e) { return []; }
+}
+const GHOST_GREY = '#a3a69e';
+const edgeMaterial = (g, i) => { const e = g && Array.isArray(g.boundaryEdges) ? g.boundaryEdges[i] : null; return e && e.material; };
+const DOUBLE_SIDED = new Set(['tuft', 'plume', 'fountain', 'upright', 'fine', 'frond', 'leaf', 'pad', 'curtain', 'stem']);
+const STATIC_PARTS = new Set(['trunk', 'slat', 'culm']);
+const TOP_PARTS = new Set(['crown', 'cone', 'tuft', 'mound', 'plume', 'fountain', 'upright', 'fine', 'frond', 'leaf', 'curtain', 'hedgebox', 'culm', 'stem', 'spike']);
 
 const rad = (d) => (d * Math.PI) / 180;
 const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
@@ -82,7 +97,7 @@ function offsetPoly(poly, d) {
 }
 
 /** Tâches pour les workers : une par zone plantée ou pelouse, plus les arbres existants. */
-export function jobsForGarden(garden, plantsById, { age = 1, density = 1 } = {}) {
+export function jobsForGarden(garden, plantsById, { age = 1, density = 1, existing = null } = {}) {
   const get = (id) => (typeof plantsById === 'function' ? plantsById(id) : plantsById instanceof Map ? plantsById.get(id) : (plantsById || {})[id]);
   const jobs = [];
   for (const z of (garden && garden.zones) || []) {
@@ -90,7 +105,34 @@ export function jobsForGarden(garden, plantsById, { age = 1, density = 1 } = {})
     for (const pl of z.plantings || []) { const p = get(pl.plantId); if (p) plants[p.id] = slimPlant(p); }
     if (!Object.keys(plants).length && z.type !== 'lawn') continue;
     const lawnPlant = Object.values(plants).find((p) => p.category === 'lawn');
-    jobs.push({ zoneId: z.id, zone: { id: z.id, type: z.type, shape: z.shape, plantings: (z.plantings || []).map((p) => ({ plantId: p.plantId, count: p.count ?? p.quantity })) }, plants, age, density, lawnColor: lawnPlant && lawnPlant.foliageColor });
+    const climbs = Object.values(plants).some((p) => familyOf(p) === 'climber');
+    jobs.push({ zoneId: z.id, zone: { id: z.id, type: z.type, shape: z.shape, plantings: (z.plantings || []).map((p) => ({ plantId: p.plantId, count: p.count ?? p.quantity })) }, plants, age, density, lawnColor: lawnPlant && lawnPlant.foliageColor, walls: climbs ? wallSegments(garden) : [] });
+  }
+  // plantes existantes déclarées : taille actuelle (jamais jeunes/adultes), estompées si `keep === false`
+  const ex = existingEntries(garden, existing).filter((e) => e && !['fence', 'wall'].includes(e.kind) && (Number.isFinite(e.x) || (e.points && e.points.length >= 2)));
+  if (ex.length) {
+    const plants = {}; const extra = [];
+    ex.forEach((e, i) => {
+      const pid = `_ex_${e.id ?? i}`; const ghost = e.keep === false;
+      const base = e.plant ? slimPlant(e.plant) : { id: pid, category: e.kind === 'tree' ? 'tree' : e.kind === 'hedge' ? 'hedge' : 'shrub', heightAdult: 3, widthAdult: 2, foliage: 'deciduous', bloom: [], flowerColor: null, foliageColor: '#4f8a3c', spacing: 0, genus: '', stems: 0, support: null, culm: '#7aa04c' };
+      const hid = (e.habit && (e.habit.id || e.habit)) || null;
+      const habit = typeof hid === 'string' && habitOf({ habit: hid }).id === hid ? hid : (e.plant ? base.habit : (e.kind === 'tree' ? 'tree-round' : e.kind === 'hedge' ? 'hedge-clipped' : 'shrub-round'));
+      const h = Number(e.height) > 0 ? Number(e.height) : base.heightAdult; const w = Number(e.width) > 0 ? Number(e.width) : base.widthAdult;
+      const fo = base.foliageColor || FOLIAGE_DEFAULT[base.category];
+      plants[pid] = { ...base, id: pid, habit, heightAdult: h, widthAdult: w, fixed: true, ghost, foliageColor: ghost ? mixHex(fo, GHOST_GREY, 0.55) : fo, flowerColor: base.flowerColor && ghost ? mixHex(base.flowerColor, GHOST_GREY, 0.55) : base.flowerColor };
+      const r = (hashStr(String(e.id ?? i)) % 1000) / 1000;
+      if (e.points && e.points.length >= 2) {
+        let L = 0; for (let k = 0; k < e.points.length - 1; k++) L += Math.hypot(e.points[k + 1].x - e.points[k].x, e.points[k + 1].y - e.points[k].y);
+        const seg = habit === 'hedge-clipped' ? hedgeSeg(plants[pid]) : Math.max(0.5, w * 0.8);
+        const n = Math.max(1, Math.min(250, Math.ceil(L / seg)));
+        spotsAlong(e.points, n).forEach((sp, k) => {
+          let ang = 0; let bd = Infinity;
+          for (let q = 0; q < e.points.length - 1; q++) { const dx = e.points[q + 1].x - e.points[q].x; const dy = e.points[q + 1].y - e.points[q].y; const t = Math.max(0, Math.min(1, ((sp.x - e.points[q].x) * dx + (sp.y - e.points[q].y) * dy) / (dx * dx + dy * dy || 1))); const d = Math.hypot(sp.x - e.points[q].x - dx * t, sp.y - e.points[q].y - dy * t); if (d < bd) { bd = d; ang = Math.atan2(dy, dx); } }
+          extra.push({ plantId: pid, x: sp.x, y: sp.y, rot: ang, seed: ((r + k * 0.137) % 1) || 0.5, aux: habit === 'hedge-clipped' ? seg : 0 });
+        });
+      } else extra.push({ plantId: pid, x: e.x, y: e.y, rot: r * 6.28, seed: r || 0.5 });
+    });
+    jobs.push({ zoneId: '_existing', zone: null, plants, extra, age: 1, density });
   }
   const extra = []; const tplants = {};
   ((garden && garden.obstacles) || []).forEach((ob, i) => {
@@ -272,7 +314,7 @@ export function buildScene(THREE, garden, opts = {}) {
         const gaps = gapsOf((r) => r.type === 'obstacle' && r.obstacleId === ob.id && r.side === i);
         const L = Math.hypot(ob.points[i + 1].x - ob.points[i].x, ob.points[i + 1].y - ob.points[i].y);
         for (const [t0, t1] of segmentsWithGaps(L, gaps)) {
-          const m = buildLinear(ctx, ob.kind, ob.points[i], ob.points[i + 1], h, ob.kind === 'wall' ? 0.2 : 0.06, t0, t1);
+          const m = buildLinear(ctx, ob.kind, ob.points[i], ob.points[i + 1], h, ob.kind === 'wall' ? 0.2 : 0.06, t0, t1, { material: ob.material });
           if (m) structures.add(m);
         }
       }
@@ -287,9 +329,18 @@ export function buildScene(THREE, garden, opts = {}) {
       const L = Math.hypot(s.b.x - s.a.x, s.b.y - s.a.y);
       const gaps = gapsOf((r) => r.type === 'boundary' && r.side === s.i);
       for (const [t0, t1] of segmentsWithGaps(L, gaps)) {
-        const m = buildLinear(ctx, kind, s.a, s.b, h, ek.thickness || (kind === 'hedge' ? 0.6 : 0.15), t0, t1);
+        const m = buildLinear(ctx, kind, s.a, s.b, h, ek.thickness || (kind === 'hedge' ? 0.6 : 0.15), t0, t1, { material: edgeMaterial(g, s.i) });
         if (m) structures.add(m);
       }
+    }
+  }
+  // clôtures / murs existants déclarés (matériau, hauteur réelle, estompés si `keep === false`)
+  for (const e of existingEntries(g, opts.existing)) {
+    if (!e || !['fence', 'wall'].includes(e.kind) || !(e.points || []).length) continue;
+    const h = Number(e.height) > 0 ? Number(e.height) : (e.kind === 'wall' ? 2 : 1.2);
+    for (let i = 0; i < e.points.length - 1; i++) {
+      const m = buildLinear(ctx, e.kind, e.points[i], e.points[i + 1], h, e.kind === 'wall' ? 0.2 : 0.06, 0, 1, { material: e.material, ghost: e.keep === false });
+      if (m) { m.userData.existing = true; structures.add(m); }
     }
   }
   if (ITEMS) {
@@ -306,7 +357,7 @@ export function buildScene(THREE, garden, opts = {}) {
 
   // ── plantes (instances) ──
   const plantsGroup = new THREE.Group(); plantsGroup.name = 'plantes'; scene.add(plantsGroup);
-  const jobs = opts.jobs || jobsForGarden(g, plantsById, { age: state.age, density: quality.density });
+  const jobs = opts.jobs || jobsForGarden(g, plantsById, { age: state.age, density: quality.density, existing: opts.existing });
   const results = opts.results && opts.results.length === jobs.length ? opts.results : jobs.map((j) => runJob(j));
   const slims = { _lawn: LAWN_PLANT };
   for (const j of jobs) Object.assign(slims, j.plants);
@@ -316,7 +367,9 @@ export function buildScene(THREE, garden, opts = {}) {
   const partGeometry = (part) => {
     let geo = geoCache.get(part);
     if (geo) return geo;
-    if (part === 'trunk') { geo = new THREE.CylinderGeometry(0.6, 1, 1, 7, 1); geo.translate(0, 0.5, 0); }
+    const made = portGeometry(THREE, part, quality.detail);
+    if (made) geo = made;
+    else if (part === 'trunk') { geo = new THREE.CylinderGeometry(0.6, 1, 1, 7, 1); geo.translate(0, 0.5, 0); }
     else if (part === 'branch') { geo = new THREE.CylinderGeometry(0.1, 1, 1, 5, 1); geo.translate(0, 0.5, 0); }
     else if (part === 'cone') { geo = new THREE.ConeGeometry(1, 1, 9, 1); geo.translate(0, 0.5, 0); shadeVertical(THREE, geo, 0, 1, 0.62, 1.08); }
     else if (part === 'flower') geo = new THREE.IcosahedronGeometry(1, 0);
@@ -337,12 +390,16 @@ export function buildScene(THREE, garden, opts = {}) {
   };
   const partMaterial = (plantId, part) => {
     const plant = slims[plantId] || LAWN_PLANT;
-    if (part === 'trunk') return ctx.mat('#6b5242', { roughness: 1 });
-    if (part === 'branch') return ctx.mat('#5b4636', { roughness: 1 });
-    if (part === 'flower') { const c = plant.flowerColor || '#f4c2d7'; return ctx.mat(c, { roughness: 0.55, emissive: c, emissiveIntensity: 0.12, flatShading: true }); }
+    const ghost = plant.ghost ? { transparent: true, opacity: 0.38, depthWrite: false } : {};
+    if (part === 'trunk') return ctx.mat(plant.ghost ? '#8c8a86' : '#6b5242', { roughness: 1, ...ghost });
+    if (part === 'branch' || part === 'arc') return ctx.mat(plant.ghost ? '#8c8a86' : '#5b4636', { roughness: 1, ...ghost });
+    if (part === 'slat') return ctx.mat('#a88b63', { roughness: 0.85 });
+    if (part === 'culm') return ctx.mat(plant.ghost ? '#9a9c94' : (plant.culm || '#7aa04c'), { roughness: 0.55, vertexColors: true, ...ghost });
+    if (part === 'fruit') { const c = ['#d63a2a', '#e0932b', '#c9402a', '#8e2f5a'][hashStr(String(plant.id)) % 4]; return ctx.mat(c, { roughness: 0.5, flatShading: true, transparent: true }); }
+    if (part === 'flower' || part === 'spike') { const c = plant.flowerColor || '#f4c2d7'; return ctx.mat(c, { roughness: 0.55, emissive: c, emissiveIntensity: 0.12, flatShading: true }); }
     const c = plant.foliageColor || FOLIAGE_DEFAULT[plant.category] || '#5a9a45';
-    const o = { roughness: 0.88, vertexColors: true, flatShading: part === 'crown' || part === 'cone' || part === 'mound' };
-    if (part === 'tuft') o.side = THREE.DoubleSide;
+    const o = { roughness: 0.88, vertexColors: true, flatShading: ['crown', 'cone', 'mound', 'hedgebox'].includes(part), ...ghost };
+    if (DOUBLE_SIDED.has(part)) o.side = THREE.DoubleSide;
     return ctx.mat(c, o);
   };
   const meshes = [];
@@ -357,8 +414,8 @@ export function buildScene(THREE, garden, opts = {}) {
     for (let i = 0; i < gr.n; i++) { col[i * 3] = col[i * 3 + 1] = col[i * 3 + 2] = gr.tints[i]; }
     im.instanceColor = new THREE.InstancedBufferAttribute(col, 3);
     im.frustumCulled = false;
-    im.castShadow = ['trunk', 'branch', 'crown', 'cone'].includes(gr.part) || (smallShadows && gr.part === 'mound');
-    im.receiveShadow = gr.part !== 'flower';
+    im.castShadow = (['trunk', 'branch', 'crown', 'cone', 'hedgebox', 'curtain'].includes(gr.part) || (smallShadows && (gr.part === 'mound' || gr.part === 'culm'))) && !(slims[gr.plantId] && slims[gr.plantId].ghost);
+    im.receiveShadow = !['flower', 'spike', 'fruit'].includes(gr.part);
     im.name = `${gr.plantId}:${gr.part}`;
     im.userData = { plantId: gr.plantId, part: gr.part, key: `${gr.plantId}|${gr.part}` };
     plantsGroup.add(im); meshes.push(im);
@@ -473,24 +530,31 @@ export function buildScene(THREE, garden, opts = {}) {
       if (!plant) continue;
       const ps = st(plantId);
       const mat = im.material;
-      if (part === 'flower') {
+      const gh = plant.ghost ? 0.38 : 1;
+      if (part === 'flower' || part === 'spike') {
         im.visible = ps.flower > 0.02;
         if (!mat.transparent) { mat.transparent = true; mat.needsUpdate = true; }
-        mat.opacity = ps.flower; mat.depthWrite = ps.flower > 0.9;
+        mat.opacity = ps.flower * gh; mat.depthWrite = ps.flower > 0.9 && !plant.ghost;
         continue;
       }
-      if (part === 'branch') { im.visible = ps.kind === 'woody' && ps.leafDensity < 0.97; continue; }
-      if (part === 'trunk') continue;
+      if (part === 'fruit') {
+        const fa = fruitAmount(plant, doy) * (ps.kind === 'woody' ? Math.min(1, ps.leafDensity * 1.6) : 1);
+        im.visible = fa > 0.05; mat.opacity = fa * gh; mat.depthWrite = false;
+        continue;
+      }
+      if (part === 'branch' || part === 'arc') { im.visible = ps.kind === 'woody' ? ps.leafDensity < 0.97 : part === 'branch' && plant.habit !== 'bamboo'; continue; }
+      if (STATIC_PARTS.has(part)) continue;
       if (ps.kind === 'woody') {
         im.visible = ps.leafDensity > 0.03;
         const hash = ps.leafDensity < 0.985;
         if (mat.alphaHash !== hash) { mat.alphaHash = hash; mat.needsUpdate = true; }
-        mat.opacity = hash ? Math.max(0.04, ps.leafDensity) : 1;
+        mat.opacity = (hash ? Math.max(0.04, ps.leafDensity) : 1) * gh;
         tmpA.set(baseOf(plant));
         if (ps.spring > 0) tmpA.lerp(TENDER, ps.spring * 0.75);
         if (ps.tint > 0) tmpA.lerp(tmpB.set(ps.hue), ps.tint);
         mat.color.copy(tmpA);
         im.scale.y = 1;
+        if (plant.ghost) { mat.transparent = true; mat.depthWrite = false; }
       } else {
         im.visible = true; im.scale.y = ps.scaleY;
         tmpA.set(baseOf(plant));
@@ -551,7 +615,7 @@ export function buildScene(THREE, garden, opts = {}) {
     topHeight() {
       let top = 0;
       for (const im of meshes) {
-        if (!['crown', 'cone', 'tuft', 'mound'].includes(im.userData.part)) continue;
+        if (!TOP_PARTS.has(im.userData.part)) continue;
         const a = im.instanceMatrix.array;
         for (let i = 0; i < im.count; i++) top = Math.max(top, a[i * 16 + 13] + Math.hypot(a[i * 16 + 4], a[i * 16 + 5], a[i * 16 + 6]));
       }
@@ -599,7 +663,7 @@ export function buildScene(THREE, garden, opts = {}) {
 /** Comme `buildScene`, mais la génération des instances passe par un pool de Web Workers. */
 export async function buildSceneAsync(THREE, garden, opts = {}, pool = null) {
   const age = Number.isFinite(opts.age) ? opts.age : 1;
-  const jobs = jobsForGarden(garden, opts.plantsById || {}, { age, density: (opts.quality && opts.quality.density) || 1 });
+  const jobs = jobsForGarden(garden, opts.plantsById || {}, { age, density: (opts.quality && opts.quality.density) || 1, existing: opts.existing });
   let gen = { results: null, ms: 0, workers: 0 };
   if (pool) gen = await pool.run(jobs);
   else {
@@ -647,3 +711,146 @@ function shadeVertical(THREE, geo, y0, y1, lo, hi) {
   geo.setAttribute('color', new THREE.Float32BufferAttribute(c, 3));
 }
 export { heightFactor, kindOf };
+
+
+// ─── géométries des ports (unité = 1 m avant mise à l'échelle par instance) ───────
+const LCOL = (g, f0, f1) => { // couleurs de sommet : base sombre → pointe claire selon y relatif
+  const p = g.attributes.position; let lo = Infinity; let hi = -Infinity;
+  for (let i = 0; i < p.count; i++) { lo = Math.min(lo, p.getY(i)); hi = Math.max(hi, p.getY(i)); }
+  const c = new Float32Array(p.count * 3);
+  for (let i = 0; i < p.count; i++) { const t = hi > lo ? (p.getY(i) - lo) / (hi - lo) : 1; c[i * 3] = c[i * 3 + 1] = c[i * 3 + 2] = f0 + (f1 - f0) * t; }
+  g.setAttribute('color', new (g.attributes.position.constructor)(c, 3));
+  return g;
+};
+
+/** Ruban de feuille : `path(t)` → [r, y] (r = portée horizontale), `wid(t)` → largeur ; orienté selon `phi`. Ajoute à `out`. */
+function leafInto(out, { phi = 0, path, wid, segs = 6, cup = 0, ox = 0, oz = 0 }) {
+  const c = Math.cos(phi); const s = Math.sin(phi); const tx_ = -s; const tz_ = c;
+  const base = out.pos.length / 3;
+  for (let i = 0; i <= segs; i++) {
+    const t = i / segs; const [r, y] = path(t); const w = wid(t) / 2;
+    const cx0 = ox + c * r; const cz0 = oz + s * r;
+    const row = cup ? [[-w, cup * w], [0, 0], [w, cup * w]] : [[-w, 0], [w, 0]];
+    for (const [d, up] of row) { out.pos.push(cx0 + tx_ * d, y + up, cz0 + tz_ * d); out.col.push(0.55 + 0.6 * t); }
+  }
+  const per = cup ? 3 : 2;
+  for (let i = 0; i < segs; i++) {
+    for (let k = 0; k < per - 1; k++) {
+      const a = base + i * per + k; const b = a + 1; const c2 = a + per; const d = c2 + 1;
+      out.idx.push(a, b, c2, b, d, c2);
+    }
+  }
+}
+function finishLeaves(THREE, out, flat = false) {
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(out.pos, 3));
+  const col = []; for (const v of out.col) col.push(v, v, v);
+  g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
+  g.setIndex(out.idx); g.computeVertexNormals();
+  if (flat) { const n = g.attributes.normal; for (let i = 0; i < n.count; i++) n.setXYZ(i, 0, 1, 0); }
+  return g;
+}
+const newOut = () => ({ pos: [], col: [], idx: [] });
+const frac = (i, k) => ((i * k) % 97) / 97;
+
+function portGeometry(THREE, part, detail) {
+  const lo = detail < 2;
+  switch (part) {
+    case 'culm': { // chaume : cylindre effilé aux nœuds renflés, teinte plus sombre aux nœuds
+      const seg = lo ? 18 : 30; const g = new THREE.CylinderGeometry(0.62, 1, 1, 6, seg); g.translate(0, 0.5, 0);
+      const p = g.attributes.position; const col = new Float32Array(p.count * 3);
+      for (let i = 0; i < p.count; i++) {
+        const y = p.getY(i); const k = Math.round(y * 9); const dn = Math.abs(y * 9 - k) / 9; // distance au nœud le plus proche (en fraction de hauteur)
+        const node = Math.exp(-((dn / 0.012) ** 2));
+        const f = 1 + 0.5 * node; p.setX(i, p.getX(i) * f); p.setZ(i, p.getZ(i) * f);
+        const v = 1.05 - 0.3 * node - 0.1 * y; col[i * 3] = col[i * 3 + 1] = col[i * 3 + 2] = v;
+      }
+      g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3)); g.computeVertexNormals(); return g;
+    }
+    case 'stem': { const g = new THREE.CylinderGeometry(0.55, 1, 1, 4, 1); g.translate(0, 0.5, 0); return LCOL(g, 0.7, 1.05); }
+    case 'slat': { const g = new THREE.BoxGeometry(1, 1, 1); g.translate(0, 0.5, 0); return g; }
+    case 'fruit': return new THREE.IcosahedronGeometry(1, 0);
+    case 'spike': { // épi : fuseau effilé, renflé au tiers inférieur
+      const g = new THREE.CylinderGeometry(0.12, 0.55, 1, 6, 5); g.translate(0, 0.5, 0);
+      const p = g.attributes.position;
+      for (let i = 0; i < p.count; i++) { const y = p.getY(i); const f = (0.55 + 0.9 * Math.sin(Math.PI * Math.min(1, y * 1.15))) * (1 + 0.12 * Math.sin(y * 31 + p.getX(i) * 9)); p.setX(i, p.getX(i) * f); p.setZ(i, p.getZ(i) * f); }
+      g.computeVertexNormals(); return g;
+    }
+    case 'arc': { // tige arquée : monte puis retombe (plan XY, portée 1)
+      const N = lo ? 8 : 12; const g = new THREE.BufferGeometry(); const pos = []; const col = []; const idx = [];
+      for (let i = 0; i <= N; i++) {
+        const t = i / N; const [x, y] = arcPt(t); const r = 0.02 * (1 - 0.7 * t) + 0.004;
+        for (let k = 0; k < 5; k++) { const a = (k / 5) * Math.PI * 2; pos.push(x, y + Math.cos(a) * r, Math.sin(a) * r); col.push(1, 1, 1); }
+      }
+      for (let i = 0; i < N; i++) for (let k = 0; k < 5; k++) { const a = i * 5 + k; const b = i * 5 + ((k + 1) % 5); idx.push(a, b, a + 5, b, b + 5, a + 5); }
+      g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3)); g.setIndex(idx); g.computeVertexNormals(); return g;
+    }
+    case 'plume': { // plumeau de feuilles lancéolées au sommet d'un chaume
+      const o = newOut(); const n = lo ? 7 : 11;
+      for (let k = 0; k < n; k++) {
+        const th = 0.45 + 0.8 * frac(k + 1, 31); const az = k * 2.399; const L = 0.8 + 0.4 * frac(k, 17);
+        leafInto(o, { phi: az, segs: 4, path: (t) => [Math.sin(th) * L * t, Math.cos(th) * L * t - 0.45 * t * t * L * 0.5], wid: (t) => 0.07 * Math.sin(Math.PI * Math.min(1, t * 1.05)) ** 0.8 + 0.004 });
+      }
+      return finishLeaves(THREE, o);
+    }
+    case 'fountain': case 'upright': case 'fine': {
+      const o = newOut(); const n = part === 'fine' ? (lo ? 22 : 36) : (lo ? 14 : 22);
+      for (let k = 0; k < n; k++) {
+        const az = k * 2.399; const f1 = frac(k + 3, 29); const f2 = frac(k + 7, 41);
+        let reach; let hgt; let w0;
+        if (part === 'fountain') { reach = 0.45 + 0.55 * f1; hgt = 0.7 + 0.3 * f2; w0 = 0.05; }
+        else if (part === 'upright') { reach = 0.08 + 0.2 * f1; hgt = 0.82 + 0.18 * f2; w0 = 0.045; }
+        else { reach = 0.2 + 0.7 * f1; hgt = 0.5 + 0.5 * f2; w0 = 0.02; }
+        const bend = part === 'upright' ? 0.3 : 1;
+        leafInto(o, { phi: az, segs: 5, path: (t) => [reach * (t * 0.15 + 0.85 * t * t * bend), hgt * (1 - 0.55 * t * t * bend) * t + (1 - t) * 0], wid: (t) => w0 * (1 - t) ** 0.7 + 0.002, ox: Math.cos(az) * 0.04, oz: Math.sin(az) * 0.04 });
+      }
+      return finishLeaves(THREE, o);
+    }
+    case 'frond': { // fronde pennée (fougère, palme) : arc effilé aux bords dentelés
+      const o = newOut(); const segs = lo ? 8 : 14;
+      leafInto(o, { phi: 0, segs, cup: 0, path: (t) => { const [x, y] = arcPt(t); return [x, y]; }, wid: (t) => (0.2 * Math.sin(Math.PI * Math.min(1, t * 1.05)) ** 0.7 + 0.01) * (Math.round(t * segs) % 2 ? 0.55 : 1) });
+      return finishLeaves(THREE, o);
+    }
+    case 'leaf': { // grande feuille large en coupe (hosta) : base à l'origine, retombe vers l'extérieur
+      const o = newOut();
+      leafInto(o, { phi: 0, segs: 6, cup: 0.12, path: (t) => [t, 0.4 * t * (1 - 0.95 * t)], wid: (t) => 0.95 * Math.sin(Math.PI * Math.min(1, t ** 0.8)) ** 0.9 + 0.02 });
+      return finishLeaves(THREE, o);
+    }
+    case 'pad': { // feuille flottante : disque échancré
+      const g = new THREE.CircleGeometry(1, 12, 0.35, Math.PI * 2 - 0.5); g.rotateX(-Math.PI / 2);
+      const p = g.attributes.position; const col = new Float32Array(p.count * 3).fill(1); g.setAttribute('color', new THREE.BufferAttribute(col, 3)); void p;
+      return g;
+    }
+    case 'curtain': { // rideau retombant : cloche ouverte aux franges irrégulières
+      const A = 28; const RN = 5; const pos = []; const col = []; const idx = [];
+      for (let j = 0; j <= RN; j++) {
+        const y = j / RN;
+        for (let i = 0; i < A; i++) {
+          const a = (i / A) * Math.PI * 2; const rr = (0.5 + 0.5 * (1 - y) ** 0.8) * (1 + 0.1 * Math.sin(a * 9 + j) + 0.06 * Math.sin(a * 17));
+          const yy = j === 0 ? y + 0.06 * (0.5 + 0.5 * Math.sin(a * 11) + 0.4 * Math.sin(a * 5 + 1)) : y;
+          pos.push(Math.cos(a) * rr, yy, Math.sin(a) * rr); const v = 0.7 + 0.4 * yy; col.push(v, v, v);
+        }
+      }
+      for (let j = 0; j < RN; j++) for (let i = 0; i < A; i++) { const a = j * A + i; const b = j * A + ((i + 1) % A); idx.push(a, b, a + A, b, b + A, a + A); }
+      const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3)); g.setIndex(idx); g.computeVertexNormals(); return g;
+    }
+    case 'hedgebox': { // volume taillé : pavé aux arêtes arrondies, face feuillue légèrement bosselée (x : longueur, y : 0→1, z : épaisseur)
+      const n = lo ? 3 : 5; const g = new THREE.BoxGeometry(1, 1, 1, n, n, n); g.translate(0, 0.5, 0);
+      const p = g.attributes.position; const rr = 0.12;
+      for (let i = 0; i < p.count; i++) {
+        const x = p.getX(i); const y = p.getY(i) - 0.5; const z = p.getZ(i);
+        const ix = Math.max(-0.5 + rr, Math.min(0.5 - rr, x)); const iy = Math.max(-0.5 + rr, Math.min(0.5 - rr, y)); const iz = Math.max(-0.5 + rr, Math.min(0.5 - rr, z));
+        const dx = x - ix; const dy = y - iy; const dz = z - iz; const dl = Math.hypot(dx, dy, dz);
+        const bump = 1 + 0.025 * Math.sin(x * 23 + z * 17 + y * 13);
+        if (dl > 1e-6) p.setXYZ(i, ix + (dx / dl) * rr * bump, iy + (dy / dl) * rr * bump + 0.5, iz + (dz / dl) * rr * bump); else p.setY(i, y + 0.5);
+      }
+      g.computeVertexNormals();
+      const q = g.attributes.position; const col = new Float32Array(q.count * 3);
+      for (let i = 0; i < q.count; i++) { const v = 0.7 + 0.38 * q.getY(i); col[i * 3] = col[i * 3 + 1] = col[i * 3 + 2] = v; }
+      g.setAttribute('color', new THREE.BufferAttribute(col, 3));
+      return g;
+    }
+    default: return null;
+  }
+}
+export { portGeometry };

@@ -69,7 +69,7 @@ describe('runJob / matrices', () => {
   });
   test('packRecords / PRNG', () => {
     const { rec, ids } = packRecords([{ plantId: 'a', x: 1, y: 2, rot: 0, seed: 0.5 }, { plantId: 'b', x: 3, y: 4, rot: 1, seed: 0.2 }]);
-    expect(ids).toEqual(['a', 'b']); expect(rec[9]).toBe(1);
+    expect(ids).toEqual(['a', 'b']); expect(rec[10]).toBe(1);
     expect(mulberry32(5)()).toBe(mulberry32(5)());
   });
 });
