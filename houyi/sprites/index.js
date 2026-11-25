@@ -30,7 +30,9 @@ const gbaFailedAt = new Map();  // clé → date du dernier échec (pas de nouve
 // Alias : plusieurs PNJ partagent un même sprite généré (sentinelles de la brume, Hua, Chang'e).
 const GBA_ALIASES = { change_moon: 'change', crapaud_boue: 'rizieres_w_toad', changxi_calm: 'changxi', changxi_moon: 'changxi', moon_messenger: 'jade_hare',
     // Ennemis des quêtes de recrutement : même dessin que le compagnon qu'ils deviennent.
-    rice_thief: 'companion_xiao_gui', golden_carp: 'companion_yu', ember_pup: 'companion_braise' };
+    rice_thief: 'companion_xiao_gui', golden_carp: 'companion_yu', ember_pup: 'companion_braise',
+    // Hou Yi (classe de départ) : le sprite original de la planche tools/hero-source.png (clé `archer`), pas sa version recolorée en violet.
+    assassin: 'archer' };
 const GBA_ALIAS_PATTERNS = [[/^level_guard_/, 'level_guard'], [/^hua_/, 'hua']];
 // Gabarits « copies » d'ennemis nommés (champ `copyOf` de enemies.catalog.json) sans dessin propre : ils empruntent le dessin du
 // gabarit d'origine (SVG de repli ; côté GBA, un sprite généré propre au gabarit est prioritaire, voir gbaKey).
