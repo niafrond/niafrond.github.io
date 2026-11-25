@@ -130,7 +130,9 @@ export function createStorage(backend = backendParDefaut()) {
     },
     /** Sérialise un jardin : JSON `{format:'jardin-v1', garden}`. */
     exportGarden(g) {
-      return JSON.stringify({ format: FORMAT, garden: g }, null, 2);
+      // Les vues SVG du plan (plusieurs Mo) sont régénérables : on ne les met pas dans le fichier.
+      const copie = g && g.plan && g.plan.views ? { ...g, plan: { ...g.plan, views: undefined } } : g;
+      return JSON.stringify({ format: FORMAT, garden: copie }, null, 2);
     },
     /** Valide et importe un JSON exporté : nouvel id, enregistré et retourné. Lève une Error en français. */
     async importGarden(json) {
