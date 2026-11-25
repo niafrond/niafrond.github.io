@@ -1,3 +1,9 @@
+## [3.37.0](https://github.com/niafrond/niafrond.github.io/compare/v3.36.0...v3.37.0) (2026-11-25)
+
+### Features
+
+* **jardin:** ajouter l'application d'aménagement de jardin pour Android ([#798](https://github.com/niafrond/niafrond.github.io/issues/798)) ([643e511](https://github.com/niafrond/niafrond.github.io/commit/643e511dcf86484f44fa363a4a65cc9e588ab2b3))
+
 ## [3.36.0](https://github.com/niafrond/niafrond.github.io/compare/v3.35.0...v3.36.0) (2026-11-24)
 
 ### Features
