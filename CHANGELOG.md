@@ -1,3 +1,9 @@
+## [3.40.0](https://github.com/niafrond/niafrond.github.io/compare/v3.39.0...v3.40.0) (2026-11-25)
+
+### Features
+
+* **jardin:** indiquer le nord sur les plans dessinés au doigt ([#801](https://github.com/niafrond/niafrond.github.io/issues/801)) ([ba673fc](https://github.com/niafrond/niafrond.github.io/commit/ba673fc1ae5c87c551601c1f1ffc9a4aa9c7797c))
+
 ## [3.39.0](https://github.com/niafrond/niafrond.github.io/compare/v3.38.0...v3.39.0) (2026-11-25)
 
 ### Features
