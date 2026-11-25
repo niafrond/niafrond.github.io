@@ -147,6 +147,9 @@ export function mountPlants(el, { garden, onChange, getPhoto = getPlantPhoto, IO
 
   function drawChosen() {
     const z = zone();
+    resetThumbs('chosen');
+    let recById = new Map();
+    try { recById = new Map((recommendForZone(garden, z, { includeDiscouraged: true }) || []).map((x) => [x.plant.id, x])); } catch { /* fiche sans raisons */ }
     const rows = (z.plantings || []).map((pl) => {
       const p = getPlant(pl.plantId);
       const lineEl = h('span', { class: 'muted small line-total' });
@@ -160,6 +163,7 @@ export function mountPlants(el, { garden, onChange, getPhoto = getPlantPhoto, IO
       const step = (d) => () => { pl.count = Math.max(1, (Number(pl.count) || 1) + d); input.value = pl.count; afterQty(); };
       upd();
       return h('li', { class: 'chosen-row' },
+        p ? makeThumb(p, recById.get(p.id) || null, 'chosen') : null,
         h('span', { class: 'grow' }, h('strong', null, p ? p.commonName : pl.plantId), p ? h('em', { class: 'muted' }, ' ' + p.latinName) : null, h('br'), lineEl),
         h('button', { class: 'btn btn-icon', type: 'button', 'aria-label': 'Moins', onclick: step(-1) }, '−'),
         input,
@@ -205,18 +209,23 @@ export function mountPlants(el, { garden, onChange, getPhoto = getPlantPhoto, IO
     pending.set(job.node, job);
     io.observe(job.node);
   }
-  function resetThumbs() { if (io) { io.disconnect(); io = null; } pending.clear(); }
+  // `group` ('list' | 'chosen') : ne réinitialise que les vignettes de ce groupe ; sans groupe, tout.
+  function resetThumbs(group) {
+    if (!io) { pending.clear(); return; }
+    if (!group) { io.disconnect(); io = null; pending.clear(); return; }
+    for (const [node, job] of [...pending]) if (job.group === group) { io.unobserve(node); pending.delete(node); }
+  }
 
   function fallbackBox(p, cls) {
     return h('span', { class: cls, style: `background:${thumbBackground(p)}`, 'aria-hidden': 'true' }, CAT_EMOJI[p.category] || '🌱');
   }
 
-  function makeThumb(p, r) {
+  function makeThumb(p, r, group = 'list') {
     const fb = fallbackBox(p, 'thumb-fb');
     const box = h('span', { class: 'thumb-box' }, fb);
     const credit = h('span', { class: 'photo-credit' });
     const btn = h('button', { class: 'plant-thumb', type: 'button', 'aria-label': `Agrandir la fiche de ${p.commonName}`, onclick: () => openDetail(p, r) }, box);
-    observe({ plant: p, box, credit, node: btn });
+    observe({ plant: p, box, credit, node: btn, group });
     return h('div', { class: 'thumb-col' }, btn, credit);
   }
 
@@ -259,7 +268,7 @@ export function mountPlants(el, { garden, onChange, getPhoto = getPlantPhoto, IO
 
   function drawList() {
     const z = zone();
-    resetThumbs();
+    resetThumbs('list');
     let recs = [];
     try { recs = recommendForZone(garden, z, { includeDiscouraged: showDisc, filters: { ...filters } }) || []; } catch (e) { console.error(e); }
     if (filters.lowMaintenance) {

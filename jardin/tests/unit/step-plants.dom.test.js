@@ -181,3 +181,37 @@ test('rendu illustré : couleurs de floraison/feuillage ; budget dans le cartouc
   const b = renderPlanSVG(g, { view: 'plan', layers: { budget: true } });
   expect(b).toMatch(/Budget estimé ≈ \d+ €/);
 });
+
+test('« Dans cette zone » : chaque essence choisie a sa vignette (repli coloré puis photo), qui rouvre la fiche', async () => {
+  const g = jardin();
+  const plantes = allPlants().filter((p) => p.category === 'perennial').slice(0, 2);
+  g.zones[0].plantings = plantes.map((p) => ({ plantId: p.id, count: 3 }));
+  const { IO, inst } = fakeIO();
+  const getPhoto = jest.fn(async () => ({ url: 'data:image/gif;base64,R0lGODlhAQABAAAAACw=', medium: 'data:image/gif;base64,R0lGODlhAQABAAAAACw=', credit: 'Photo : Wikipédia', page: 'https://fr.wikipedia.org/wiki/X' }));
+  mountPlants(el, { garden: g, onChange() {}, getPhoto, IO });
+  const rows = el.querySelectorAll('.chosen-row');
+  expect(rows).toHaveLength(2);
+  for (const row of rows) {
+    expect(row.querySelector('.plant-thumb .thumb-fb')).not.toBeNull();
+    expect(row.querySelector('.plant-thumb').getAttribute('aria-label')).toMatch(/^Agrandir la fiche de /);
+  }
+  // les photos des essences choisies se chargent aussi quand elles deviennent visibles
+  inst.forEach((i) => i.fire());
+  await wait(5);
+  const demandes = getPhoto.mock.calls.map((c) => c[0].id);
+  for (const p of plantes) expect(demandes).toContain(p.id);
+  // toucher la vignette ouvre la fiche
+  click(rows[0].querySelector('.plant-thumb'));
+  expect(document.querySelector('[data-role=plant-detail]')).not.toBeNull();
+});
+
+test('retirer une essence choisie ne perd pas les vignettes des autres', async () => {
+  const g = jardin();
+  const plantes = allPlants().filter((p) => p.category === 'perennial').slice(0, 3);
+  g.zones[0].plantings = plantes.map((p) => ({ plantId: p.id, count: 1 }));
+  mountPlants(el, { garden: g, onChange() {}, getPhoto: async () => null, IO: undefined });
+  click(el.querySelector('.chosen-row .btn-danger'));
+  const rows = el.querySelectorAll('.chosen-row');
+  expect(rows).toHaveLength(2);
+  expect(rows[0].querySelector('.plant-thumb')).not.toBeNull();
+});

@@ -174,3 +174,8 @@ summary { cursor: pointer; min-height: var(--tap); display: flex; align-items: c
 .maint-reminder { display: flex; flex-direction: column; gap: 6px; padding: 8px; border: 1px dashed var(--border); border-radius: 12px; }
 .maint-reminder p { margin: 0; }
 .maint-reminder .amb-chips[hidden] { display: none; }
+
+/* « Dans cette zone » : vignette photo (ou repli coloré) devant chaque essence choisie */
+.chosen-row .thumb-col { flex: 0 0 48px; width: 48px; }
+.chosen-row .plant-thumb { width: 48px; height: 48px; }
+.chosen-row .photo-credit { display: none; }
