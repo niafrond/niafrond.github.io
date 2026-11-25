@@ -164,10 +164,12 @@ export function mountPlanStep(el, { garden, onValidate, onBack, onChange } = {})
       btn('🧭 Toutes les vues', 'export-sheet', exportSheet),
       btn(g.status === 'validated' ? '✅ Revalider le plan' : '✅ Valider le plan', 'validate', validate, 'primary'),
     );
-    // Vue 3D temps réel (GPU + CPU multicœur) : proposée seulement sur PC avec WebGL2.
-    import('./view3d.js').then(({ isDesktop3DCapable, mountView3D }) => {
-      if (destroyed || !isDesktop3DCapable()) return;
-      const b3 = btn('🧊 Vue 3D (PC)', 'view3d', () => {
+    // Vue 3D temps réel (WebGL2) : PC et mobile quand l'appareil le permet (qualité adaptée).
+    import('./view3d.js').then((m) => {
+      const { mountView3D } = m;
+      const capable = m.isView3DCapable || m.isDesktop3DCapable;
+      if (destroyed || !capable()) return;
+      const b3 = btn('🧊 Vue 3D', 'view3d', () => {
         const overlay = h('div', { class: 'jd-view3d-overlay', style: { position: 'fixed', inset: '0', zIndex: '1000', background: '#0b1410' } });
         document.body.append(overlay);
         let un = null;

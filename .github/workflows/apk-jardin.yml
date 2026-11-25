@@ -54,8 +54,7 @@ jobs:
           npx cap sync android
           # Les tests unitaires n'ont rien à faire dans l'APK
           rm -rf android/app/src/main/assets/public/tests
-          # La vue 3D est réservée au PC (three.js ≈ 0,7 Mo) : absente de l'APK
-          rm -rf android/app/src/main/assets/public/vendor/three
+          # La vue 3D (three.js ≈ 0,7 Mo) reste dans l'APK : elle est aussi proposée sur mobile
 
       - name: Android 13 minimum et icône de notification
         run: |
