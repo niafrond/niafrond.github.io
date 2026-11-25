@@ -19,7 +19,7 @@ import { RAGE_MAX } from './ultimates.js';
 import { ULTIMATE_CLASS, getSelectableUltimates } from './ultimates.js';
 import { statusBadgesHtml } from './statusBadges.js';
 import { actionSpells } from './skills.js';
-import { classProgress, classRemainingMs, classChargeInfo, isClassReady, chargeTick, spendClass, spendEnemy, isEnemyReady, chargeRunning, chargeSpeed, enqueueAction, takeNextDue, upcomingBeads, upcomingActions, actionTimes, isActionVisible, isActionLaunchable } from './classCharge.js';
+import { classProgress, classRemainingMs, classChargeInfo, isClassReady, chargeTick, spendClass, spendEnemy, isEnemyReady, chargeRunning, chargeSpeed, enqueueAction, takeNextDue, ACTION_ANNOUNCE_MS, queueSentence, upcomingBeads, upcomingActions, actionTimes, isActionVisible, isActionLaunchable } from './classCharge.js';
 import { renderPotionButtons } from './potionsView.js';
 import { isInTranse, describeTranse, transeEffectFor, TRANSE_TURNS } from './transe.js';
 import { escapeHtml } from './escapeHtml.js';
@@ -225,7 +225,7 @@ function trackRunning(item){
         if(gameState.runningAction !== item) return;
         const now = Date.now();
         const animating = typeof document !== 'undefined' && !!document.querySelector('.attack-overlay');
-        const shownLongEnough = now >= (item.enqueuedAt ?? item.startedAt) + MIN_DOT_MS;
+        const shownLongEnough = now >= (item.visibleAt ?? item.enqueuedAt ?? item.startedAt) + MIN_DOT_MS;
         if((item.settled && now >= (gameState.actionBusyUntil || 0) && shownLongEnough && !animating) || now - item.startedAt > RUNNING_MAX_MS) finish();
         else setTimeout(check, 80);
     };
@@ -248,9 +248,10 @@ function dispatchAction(owner, effect, turnBound, info = null){
         log(`${who} visait ${victim}, déjà à terre : coup perdu.`);
         if(turnBound) resumeAfterBoundary(); else endAction();
     };
-    const item = { owner, run, turnBound, info, enqueuedAt: Date.now(), dueAt: gameState.charge.now, ...actionTimes(Date.now()) };
+    const item = { owner, run, turnBound, info, enqueuedAt: Date.now(), dueAt: gameState.charge.now, ...actionTimes(Date.now(), ACTION_ANNOUNCE_MS) };
     enqueueAction(gameState.actionQueue, item);
-    renderActionBeads();
+    renderActionBeads();   // la file disparaît, le texte d'annonce prend sa place...
+    if(typeof setTimeout === 'function') setTimeout(renderActionBeads, ACTION_ANNOUNCE_MS + 30);   // ...puis s'efface : la file revient avec la pastille en plus
 }
 
 /**
@@ -321,6 +322,18 @@ export function renderActionBeads(){
     box.hidden = !on;
     if(!on){ box.innerHTML = ''; _beadKey = ''; return; }
     bindQueueToggle(box);
+    const announcing = gameState.actionQueue.filter(it => !isActionVisible(it, Date.now())).sort((a, b) => a.seq - b.seq);
+    if(announcing.length){   // annonce : la file disparaît, un court texte s'affiche au même endroit (ex. « Hou Yi prépare Arc du Chasseur → Dragon »)
+        const key = 'announce|' + announcing.map(it => it.seq).join(',');
+        if(key === _beadKey) return;
+        _beadKey = key;
+        const note = document.createElement('div');
+        note.className = 'queue-announce';
+        note.append(...announcing.slice(-2).map(it => Object.assign(document.createElement('span'), { className: `queue-announce-line queue-announce-${it.owner === 'enemy' ? 'foe' : 'hero'}`, textContent: queueSentence(it.info) })));
+        box.replaceChildren(note);
+        box.setAttribute('aria-label', announcing.map(it => queueSentence(it.info)).join(' ; '));
+        return;
+    }
     const visible = [...(gameState.runningAction ? [gameState.runningAction] : []), ...gameState.actionQueue.filter(it => isActionVisible(it, Date.now()))];   // l'action en cours d'exécution reste affichée jusqu'à sa fin
     const beads = upcomingBeads(gameState.charge, visible, !!gameState.enemyPending).slice(0, 12);
     const actions = upcomingActions(visible);

@@ -275,8 +275,9 @@ function openChestAt(s, id) {
 function talkTo(s, npcId) {
     const screen = Object.values(s.screens).find(sc => sc.npcs.some(n => n.id === npcId));
     if (!screen) throw new Error(`PNJ introuvable : ${npcId}`);
-    travel(s, screen.id);
     const npc = screen.npcs.find(n => n.id === npcId);
+    if (isTerrainBlocked(screen, npc.x, npc.y) && s.data.quests.sq_pas_de_yu !== 'done') playQuest(s, 'sq_pas_de_yu');   // PNJ dans l'eau ou la lave : seul le Pas de Yu permet de l'aborder
+    travel(s, screen.id);
     const res = walkTo(s, npc.x, npc.y);
     if (res.type !== 'talk' || res.npcId !== npcId) throw new Error(`PNJ ${npcId} non abordé : ${JSON.stringify(res)}`);
     return talkToNpc(s, npcId);
@@ -1338,6 +1339,18 @@ describe('quêtes secondaires', () => {
         expect(s.data.quests[id]).toBe('done');
         // aucune quête n'est restée coincée « active » sans pouvoir être terminée
         QUESTS.filter(q => s.data.quests[q.id] === 'active').forEach(q => expect(['active', 'ready']).toContain(questStatus(s, q)));
+    });
+
+    test('un PNJ dans l\'eau ou la lave est hors de portée depuis la rive, jusqu\'au Pas de Yu', () => {
+        const s = createSession({});
+        const screen = SCREENS.fleuve_wild;
+        const carp = screen.npcs.find(n => n.id === 'carp_jin');
+        expect(isTerrainBlocked(screen, carp.x, carp.y)).toBe(true);
+        travel(s, 'fleuve_wild');
+        s.data.x = carp.x; s.data.y = carp.y - 1;   // sur la rive, juste au-dessus de la flaque
+        expect(tryMove(s, 0, 1, { playerLevel: WORLD_LEVEL }).type).toBe('blocked');
+        s.data.quests.sq_pas_de_yu = 'done';
+        expect(tryMove(s, 0, 1, { playerLevel: WORLD_LEVEL })).toMatchObject({ type: 'talk', npcId: 'carp_jin' });
     });
 
     test('quête secondaire de bout en bout : le chapardeur des rizières', () => {

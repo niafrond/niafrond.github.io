@@ -1,3 +1,9 @@
+## [3.41.0](https://github.com/niafrond/niafrond.github.io/compare/v3.40.0...v3.41.0) (2026-11-25)
+
+### Features
+
+* **houyi:** PNJ dans l'eau et la lave, rondes du liquide, annonce de la file et réparation de la CI ([#803](https://github.com/niafrond/niafrond.github.io/issues/803)) ([3440228](https://github.com/niafrond/niafrond.github.io/commit/344022831daf232bbe03339c23a266e9c245a820))
+
 ## [3.40.0](https://github.com/niafrond/niafrond.github.io/compare/v3.39.0...v3.40.0) (2026-11-25)
 
 ### Features

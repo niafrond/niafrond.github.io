@@ -786,7 +786,8 @@ export function tryMove(session, dx, dy, ctx = {}) {
     const ent = entityAt(session, nx, ny);
     if (ent) {
         if (ent.type === 'wall') return { type: 'blocked' };
-        if (ent.type === 'npc') return { type: 'talk', npcId: ent.npc.id };
+        // un PNJ dans l'eau ou la lave (carpe, poisson de lave…) est hors de portée depuis la rive : seul le Pas de Yu permet de l'aborder
+        if (ent.type === 'npc') return isTerrainBlocked(screen, nx, ny, canWalkOnWater(session)) ? { type: 'blocked' } : { type: 'talk', npcId: ent.npc.id };
         if (ent.type === 'chest') return ent.opened ? { type: 'blocked' } : { type: 'chest', chestId: ent.chest.id };
         if (ent.type === 'waypoint') return activateWaypoint(session, ent.screenId);
         if (ent.type === 'rest') return { type: 'rest', kind: ent.rest.kind, name: ent.rest.name, message: REST_KINDS[ent.rest.kind].message };
@@ -1027,8 +1028,8 @@ export function findPath(session, tx, ty, { avoidLiquid = false } = {}) {
         if (cKey === target) break;
         for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
             const nx = cur.x + dx, ny = cur.y + dy;
-            if (nx < 0 || ny < 0 || nx >= screen.w || ny >= screen.h || isTerrainBlocked(screen, nx, ny, onWater)) continue;
             const nKey = key(nx, ny);
+            if (nx < 0 || ny < 0 || nx >= screen.w || ny >= screen.h || isTerrainBlocked(screen, nx, ny, onWater)) continue;
             if (done.has(nKey)) continue;
             // une case occupée ou une sortie n'est jamais un point de passage (seulement une destination)
             if (nKey !== target && (occupied.has(nKey) || exits.has(nKey))) continue;

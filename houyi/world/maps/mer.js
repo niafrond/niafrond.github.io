@@ -39,7 +39,7 @@ export default {
         npcs: [
             { id: 'merchant_mer', at: 'p' },
             { id: 'hua_mer', x: 13, y: 10 },
-            { id: 'crab_old_gong', x: 10, y: 18 },
+            { id: 'crab_old_gong', x: 10, y: 22 },
             { id: 'girl_net_mi', at: '0' },
             { id: 'sailor_tai', at: '1' },
             { id: 'priestess_mazu', at: '2' },

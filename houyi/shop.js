@@ -158,14 +158,14 @@ export function renderMerchant(npc, card, hooks = {}) {
             <button type="button" class="rc-btn" data-buy-potion="${size}"${(player.gold || 0) < price ? ' disabled' : ''}>${svgIcon('coin')} ${price}</button></div>`;
     }).join('')}`;
     const drawFuse = (note = '') => {
-        const offers = fusionOffers(player);
+        const offers = fusionOffers(player).filter(o => !o.have);   // les armes déjà forgées ne s'affichent plus
         card.innerHTML = `
             <h3>${svgIcon('coin')} ${escapeHtml(npc.name)}</h3>
             ${tabs('fuse')}
             <p class="shop-subtitle">Deux armes fondues en une seule, plus puissante. Les armes en main ne peuvent pas être fondues.</p>
             <div class="shop-gold-display">${svgIcon('coin')} Zhu disponibles : <strong>${player.gold || 0}</strong></div>
             ${note ? `<p class="merchant-note">${escapeHtml(note)}</p>` : ''}
-            ${offers.map(fuseRow).join('')}
+            ${offers.length ? offers.map(fuseRow).join('') : '<p class="merchant-note">Toutes les armes de la forge sont déjà forgées.</p>'}
             <button type="button" class="primary merchant-close">Fermer</button>`;
     };
     let pending = gameState.combatState === 'active' ? [] : surplusEntries(player).map(e => e.id);
