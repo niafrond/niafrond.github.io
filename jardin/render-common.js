@@ -384,13 +384,20 @@ export function describePlan(garden, lookup = getPlant) {
   return lines.join(' ; ');
 }
 
+/** Types de zones utilisés, plus « pool-above » si une piscine hors sol est présente (motif d'eau dédié). */
+export function usedZoneTypes(zones) {
+  const used = new Set((zones || []).map((z) => z.type));
+  if ((zones || []).some((z) => isAbovePool(z))) used.add('pool-above');
+  return used;
+}
+
 /** Définitions communes (motifs par type de zone). */
 export function patternDefs(P, usedTypes, illus) {
   const defs = [];
   for (const t of ZONE_TYPES) {
     if (!usedTypes.has(t.id)) continue;
     defs.push(`<pattern id="${P}-pat-${t.id}" width="10" height="10" patternUnits="userSpaceOnUse">${patternBody(t.id, darken(t.color, 0.45))}</pattern>`);
-    if (t.id === 'pool') defs.push(`<pattern id="${P}-pat-pool-above" width="10" height="10" patternUnits="userSpaceOnUse">${patternBody('pool-above', darken(t.color, 0.45))}</pattern>`);
+    if (t.id === 'pool' && usedTypes.has('pool-above')) defs.push(`<pattern id="${P}-pat-pool-above" width="10" height="10" patternUnits="userSpaceOnUse">${patternBody('pool-above', darken(t.color, 0.45))}</pattern>`);
     if (illus) defs.push(`<linearGradient id="${P}-g-${t.id}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${lighten(t.color, 0.35)}"/><stop offset="1" stop-color="${t.color}"/></linearGradient>`);
   }
   return defs;

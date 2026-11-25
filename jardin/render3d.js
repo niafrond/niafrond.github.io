@@ -7,7 +7,7 @@ import { getPlant } from './catalog.js';
 import {
   FONT, BARE_WOOD, BARE_HERB, esc, f, darken, lighten, mixHex, rng, rngOf, hash32, normMonth, monthLabel, plantState,
   placePlants, shadowDir, GradRegistry, buildLegendItems, makeFrame, northSVG, scaleBarSVG, cartoucheSVG, captionSVG,
-  patternDefs, lawnPatternDef, plantHeightM, describePlan,
+  patternDefs, usedZoneTypes, lawnPatternDef, plantHeightM, describePlan,
 } from './render-common.js';
 
 // Module des aménagements (écrit en parallèle) : optionnel, le rendu marche sans.
@@ -152,7 +152,7 @@ export function renderViewSVG(garden, opts = {}) {
   const add = (d, pts, fn) => { for (const p of pts) grow(p); prims.push({ d, fn }); };
   const poly = (T, pts) => pts.map((p) => T.p(p)).join(' ');
   const lawnPats = new Map();
-  const used = new Set(zones.map((z) => z.type));
+  const used = usedZoneTypes(zones);
 
   // ---- terrain
   const closed = garden.boundaryClosed !== false && (garden.boundary || []).length >= 3;
@@ -203,7 +203,9 @@ export function renderViewSVG(garden, opts = {}) {
     const canopy = t.layer === 'canopy';
     const above = isAbovePool(z);
     if (above && flatMode) {
+      const b0 = prims.length;
       addBox(zp, 0, ABOVE_POOL_H, { wall: '#c9d3d8', roof: '#4aa3d8', seg: 2, tag: 'pool' });
+      for (let i = b0; i < prims.length; i++) { const fn = prims[i].fn; prims[i].fn = (T) => `<g data-pool="above">${fn(T)}</g>`; }
     } else if (above) {
       addAbovePool(zp);
     } else if (flatMode) {
@@ -777,7 +779,7 @@ export function renderContactSheet(garden, opts = {}) {
     return `<g>${svg.replace(/^<svg [^>]*>/, `<svg x="${x}" y="${y}" width="${CW}" height="${CH}" viewBox="0 0 ${CW} ${CH}" font-family="${FONT}">`)}<rect x="${x}" y="${y}" width="${CW}" height="${CH}" fill="none" stroke="#9aa" stroke-width="1"/></g>`;
   });
   // case 6 : légende
-  const used = new Set((garden.zones || []).map((z) => z.type));
+  const used = usedZoneTypes(garden.zones);
   const items = buildLegendItems(garden, lookup, { legend: true, sun: false }, { P: 'cs', compact: false, sun: false });
   const lx = CW; const ly = TOP + CH * 2;
   let y = 50; let col = 0; const parts = [];

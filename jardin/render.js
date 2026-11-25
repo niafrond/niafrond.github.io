@@ -8,7 +8,7 @@ import { gardenCost, formatEuro } from './pricing.js';
 import {
   FONT, OBSTACLE_LABELS, BARE_WOOD, BARE_HERB, SUN_COLORS, esc, f, frNum, darken, lighten, mixHex, rngOf,
   normMonth, monthLabel, plantState, placePlants, shadowDir, GradRegistry, buildLegendItems, makeFrame, northSVG, scaleBarSVG,
-  cartoucheSVG, describePlan as describeCommon, patternDefs, plantHeightM, lawnPatternDef, captionSVG,
+  cartoucheSVG, describePlan as describeCommon, patternDefs, usedZoneTypes, plantHeightM, lawnPatternDef, captionSVG,
 } from './render-common.js';
 
 export { placePlants } from './render-common.js';
@@ -223,7 +223,7 @@ export function renderPlanSVG(garden, opts = {}) {
   if (wb.width < 1) wb = { ...wb, maxX: wb.minX + 1, width: 1 };
   if (wb.height < 1) wb = { ...wb, maxY: wb.minY + 1, height: 1 };
 
-  const used = new Set(zones.map((z) => z.type));
+  const used = usedZoneTypes(zones);
   let entries = [];
   try { entries = itemsLegendEntries(garden); } catch { entries = []; }
   const itemsExtra = (li) => {

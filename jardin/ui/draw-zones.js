@@ -198,7 +198,10 @@ export function mountZoneEditor(el, { garden, onChange } = {}) {
     };
   }
   function rotateBy(z, d) { mutate(() => { z.shape = roundShape(rotateShapeBy(z.shape, d)); }); }
-  function rotateTo(z, deg) { mutate(() => { z.shape = roundShape(rotateShapeTo(z.shape, deg)); }); }
+  function rotateTo(z, deg) {
+    if (Math.abs(((norm360(deg) - rotationOf(z.shape) + 540) % 360) - 180) < 0.01) return; // déjà à cet angle
+    mutate(() => { z.shape = roundShape(rotateShapeTo(z.shape, deg)); });
+  }
   function straighten(z) {
     const a = rotationOf(z.shape);
     rotateTo(z, norm360(Math.round(a / 90) * 90));
@@ -509,7 +512,7 @@ export function mountZoneEditor(el, { garden, onChange } = {}) {
     else if (isRectangle(s.points)) {
       // reconstruit le rectangle autour du même centre, avec le même angle (ou celui saisi)
       const deg = Number.isFinite(v.rot) ? v.rot : rotationOf(s);
-      s.points = rebuildRect(centroid(s.points), v.w, v.l, deg).map((p) => ({ x: round2(p.x), y: round2(p.y) }));
+      s.points = rebuildRect(centroid(s.points), v.w, v.l, deg).map((p) => ({ x: round3(p.x), y: round3(p.y) }));
     } else {
       const b = shapeBounds(s);
       const kx = v.w / ((b.maxX - b.minX) || 1); const ky = v.l / ((b.maxY - b.minY) || 1);
@@ -942,7 +945,7 @@ export function mountZoneEditor(el, { garden, onChange } = {}) {
         btn('✕', 'deselect', () => select(null), '', { 'aria-label': 'Désélectionner' })),
       nameSug, detEl, ambField,
       h('div', { class: 'jd-row' }, typeSel),
-      poolField,
+      ...(poolField ? [poolField] : []),
       h('div', { class: 'jd-row jd-zfacts' },
         h('span', {}, 'Surface : ', h('b', { 'data-role': 'zone-area' }, frArea(shapeArea(z.shape)))),
         h('span', { 'data-role': 'zone-dims' }, dimsText(z)),
