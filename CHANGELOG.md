@@ -1,3 +1,9 @@
+## [3.43.0](https://github.com/niafrond/niafrond.github.io/compare/v3.42.0...v3.43.0) (2026-11-25)
+
+### Features
+
+* **houyi:** réutiliser le sprite original de Hou Yi pour le héros de départ ([#804](https://github.com/niafrond/niafrond.github.io/issues/804)) ([994ec96](https://github.com/niafrond/niafrond.github.io/commit/994ec96d387ab266f6891352c010efd86efb662b))
+
 ## [3.42.0](https://github.com/niafrond/niafrond.github.io/compare/v3.41.0...v3.42.0) (2026-11-25)
 
 ### Features
