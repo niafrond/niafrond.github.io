@@ -116,6 +116,8 @@ export function takeNextDue(queue, canRun) {
 // Délais de lisibilité (ms) : ils sont à 0 — une action dont c'est le moment entre dans la file et part aussitôt, les actions s'enchaînent sans pause (seule l'animation de la précédente les retient). Réglables via actionTimes.
 export const ACTION_ENTER_DELAY_MS = 0;    // plus de pause artificielle : une action dont c'est le moment entre dans la file et part aussitôt (elles s'enchaînent)
 export const ACTION_LAUNCH_DELAY_MS = 0;
+/** Annonce d'une action choisie (joueur ou ennemi) : pendant ce délai la file disparaît et un court texte « X prépare Y » s'affiche à sa place ; l'action entre ensuite dans la file (pastille) et peut partir. */
+export const ACTION_ANNOUNCE_MS = 500;
 /** Dates (ms) d'entrée visible dans la file et de lancement possible d'une action choisie à `now`. */
 export const actionTimes = (now, enter = ACTION_ENTER_DELAY_MS, launch = ACTION_LAUNCH_DELAY_MS) => ({ visibleAt: now + enter, runAt: now + enter + launch });
 export const isActionVisible = (item, now) => now >= (item.visibleAt ?? 0);
