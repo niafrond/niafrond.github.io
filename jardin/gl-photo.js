@@ -40,8 +40,6 @@ export async function renderPhoto(THREE, o) {
   const displayMat = new THREE.ShaderMaterial({
     uniforms: { tex: { value: accRT.texture } }, vertexShader: VERT, depthTest: false, depthWrite: false, toneMapped: true,
     fragmentShader: `uniform sampler2D tex; varying vec2 vUv;
-      #include <tonemapping_pars_fragment>
-      #include <colorspace_pars_fragment>
       void main(){ gl_FragColor = vec4(texture2D(tex, vUv).rgb, 1.0);
         #include <tonemapping_fragment>
         #include <colorspace_fragment>

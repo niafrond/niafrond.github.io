@@ -169,9 +169,11 @@ export function mountPlanStep(el, { garden, onValidate, onBack, onChange } = {})
   seasonOut.textContent = seasonText();
   buildBar(); buildActions(); render();
   if (g.status === 'validated' && g.plan && g.plan.validatedAt) say(`Plan validé le ${new Date(g.plan.validatedAt).toLocaleDateString('fr-FR')}.`);
+  const onResize = () => { if (!destroyed) render(true); };
+  window.addEventListener('resize', onResize);
   const refit = () => { if (!destroyed) { render(true); } };
   requestAnimationFrame(refit);
   setTimeout(refit, 80);
   void esc;
-  return function unmount() { destroyed = true; pz.destroy(); el.innerHTML = ''; };
+  return function unmount() { destroyed = true; window.removeEventListener('resize', onResize); pz.destroy(); el.innerHTML = ''; };
 }

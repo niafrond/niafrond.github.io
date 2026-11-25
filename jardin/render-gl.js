@@ -347,8 +347,6 @@ export function buildScene(THREE, garden, opts = {}) {
     uniforms: { top: { value: new THREE.Color('#4a90d9') }, hor: { value: new THREE.Color('#cfe6f5') }, ground: { value: new THREE.Color('#9fb08a') }, sunDir: { value: new THREE.Vector3(0, 1, 0) }, sunCol: { value: new THREE.Color('#fff2dc') }, glow: { value: 1 } },
     vertexShader: 'varying vec3 vDir; void main(){ vDir = normalize(position); gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }',
     fragmentShader: `uniform vec3 top; uniform vec3 hor; uniform vec3 ground; uniform vec3 sunDir; uniform vec3 sunCol; uniform float glow; varying vec3 vDir;
-      #include <tonemapping_pars_fragment>
-      #include <colorspace_pars_fragment>
       void main(){
         float h = clamp(vDir.y, -0.2, 1.0);
         vec3 c = h >= 0.0 ? mix(hor, top, pow(h, 0.55)) : mix(hor, ground, smoothstep(0.0, 0.2, -h));

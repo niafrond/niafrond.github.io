@@ -143,4 +143,14 @@ describe('renderPlanSVG : vraies couleurs des essences', () => {
       expect(svg).toContain('data-role="legend"');
     }
   });
+
+  test('aménagements : éléments, côtés muraux et légende « Aménagements »', () => {
+    const g = jardinCouleurs();
+    g.items = [{ id: 'i1', kind: 'table', x: 6, y: 3, width: 1.8, depth: 0.9, rotation: 0 }];
+    g.boundaryEdges = [{ kind: 'wall' }];
+    const svg = renderPlanSVG(g, { plantLookup: lookup });
+    expect(svg).toContain('data-item="i1"');
+    expect(svg).toContain('Aménagements');
+    expect(svg).not.toMatch(/NaN|undefined/);
+  });
 });

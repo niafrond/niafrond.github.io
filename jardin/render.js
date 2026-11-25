@@ -3,6 +3,7 @@
 import { bounds, centroid, pointInPolygon, shapePolygon, shapeBounds, signedArea, distance } from './geometry.js';
 import { getZoneType } from './model.js';
 import { getPlant } from './catalog.js';
+import { renderItemsSVG, itemsLegendEntries } from './render-items.js';
 import { gardenCost, formatEuro } from './pricing.js';
 import {
   FONT, OBSTACLE_LABELS, BARE_WOOD, BARE_HERB, SUN_COLORS, esc, f, frNum, darken, lighten, mixHex, rngOf,
@@ -223,7 +224,14 @@ export function renderPlanSVG(garden, opts = {}) {
   if (wb.height < 1) wb = { ...wb, maxY: wb.minY + 1, height: 1 };
 
   const used = new Set(zones.map((z) => z.type));
-  const fr = makeFrame(W, H, layers, (compact) => buildLegendItems(garden, lookup, layers, { P, compact, sun: layers.sun }));
+  let entries = [];
+  try { entries = itemsLegendEntries(garden); } catch { entries = []; }
+  const itemsExtra = (li) => {
+    if (!entries.length) return;
+    li(22, `<text font-size="12" font-weight="700" fill="#222" font-family="${FONT}">Aménagements</text>`);
+    for (const e of entries) li(19, `<rect y="-11" width="22" height="14" rx="3" fill="${e.color || '#9e9e9e'}" fill-opacity=".8" stroke="#37474f"/><text x="30" font-size="11" fill="#222" font-family="${FONT}">${esc(e.label)}${e.count > 1 ? ` ×${e.count}` : ''}</text>`);
+  };
+  const fr = makeFrame(W, H, layers, (compact) => buildLegendItems(garden, lookup, layers, { P, compact, sun: layers.sun, extra: itemsExtra }));
   const { ax, ay, aw, ah, MARGIN, CART_H } = fr;
   const pad = 26;
   const S = Math.min((aw - pad * 2) / wb.width, (ah - pad * 2) / wb.height);
@@ -342,6 +350,7 @@ export function renderPlanSVG(garden, opts = {}) {
       nameAt.set(key, `<text x="${f(cx)}" y="${f(cy + rp + 11)}" font-size="10" text-anchor="middle" fill="#1b2a1b" stroke="#fff" stroke-width="2.6" paint-order="stroke" font-family="${FONT}">${esc(plant.commonName)}${cnt > 1 ? ` ×${cnt}` : ''}</text>`);
     }
   }
+  try { out.push(renderItemsSVG(garden, { scale: S, tx, ty, names: layers.names, bg: illus ? '#dfe9c8' : '#ffffff', px: 1 })); } catch { /* aménagements facultatifs */ }
   if (shadows.length) out.push(`<g filter="url(#${P}-blur)" fill="#000" fill-opacity=".24" data-role="shadows">${shadows.join('')}</g>`);
   out.push(...bodies);
   out.push(...nameAt.values());

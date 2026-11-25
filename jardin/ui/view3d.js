@@ -275,7 +275,7 @@ export function mountView3D(el, { garden, onClose } = {}) {
   let tween = null;
   const fitDist = () => {
     const b = api3.bounds; const fov = (camera.fov * Math.PI) / 180;
-    const vert = Math.max(b.depth, b.width / camera.aspect) * 0.62 + 2;
+    const vert = Math.max(b.depth, b.width / camera.aspect) * 0.9 + 4;
     return vert / Math.tan(fov / 2);
   };
   function flyTo(pos, target, ms = 800) {

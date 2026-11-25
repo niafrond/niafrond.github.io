@@ -7,7 +7,7 @@ const FILES = [
   'data/climate.js', 'data/plants/index.js', 'data/plants/woody.js', 'data/plants/herbaceous.js',
   'ui/home.js', 'ui/wizard.js', 'ui/step-context.js', 'ui/step-wished.js', 'ui/step-sun.js', 'ui/step-plants.js',
   'ui/draw.js', 'ui/draw.css', 'ui/draw-util.js', 'ui/plan-step.js', 'ui/advice-screen.js', 'ui/settings.js', 'ui/share-screen.js', 'ui/import-screen.js',
-  'items.js', 'render-items.js', 'photos.js', 'pricing.js', 'ui/step-items.js', 'ui/draw-items.js', 'ui/draw-items.css', 'ui/pop.js', 'ui/draw-zones.js', 'ui/draw-contour.js', 'ui/draw-sun.js',
+  'items.js', 'render-items.js', 'render3d.js', 'render-common.js', 'photos.js', 'pricing.js', 'ui/step-items.js', 'ui/draw-items.js', 'ui/draw-items.css', 'ui/pop.js', 'ui/draw-zones.js', 'ui/draw-contour.js', 'ui/draw-sun.js',
   'data/plants/extras-woody.js', 'data/plants/extras-herbaceous.js',
 ];
 
