@@ -970,7 +970,9 @@ export function findPath(session, tx, ty, { avoidLiquid = false } = {}) {
     if (!Number.isInteger(tx) || !Number.isInteger(ty)) return null;
     if (tx < 0 || ty < 0 || tx >= screen.w || ty >= screen.h) return null;
     const onWater = canWalkOnWater(session);
-    if (isTerrainBlocked(screen, tx, ty, onWater)) return null;
+    // un PNJ qui vit dans l'eau ou la lave (carpe, poisson de lave…) est une destination valable : on le rejoint depuis la rive, le dernier pas lui parle
+    const liquidNpc = isTerrainBlocked(screen, tx, ty, onWater) && visibleNpcs(session).some(n => n.x === tx && n.y === ty);
+    if (!liquidNpc && isTerrainBlocked(screen, tx, ty, onWater)) return null;
     if (tx === start.x && ty === start.y) return [];
 
     const key = (x, y) => y * screen.w + x;
@@ -1027,8 +1029,8 @@ export function findPath(session, tx, ty, { avoidLiquid = false } = {}) {
         if (cKey === target) break;
         for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
             const nx = cur.x + dx, ny = cur.y + dy;
-            if (nx < 0 || ny < 0 || nx >= screen.w || ny >= screen.h || isTerrainBlocked(screen, nx, ny, onWater)) continue;
             const nKey = key(nx, ny);
+            if (nx < 0 || ny < 0 || nx >= screen.w || ny >= screen.h || (isTerrainBlocked(screen, nx, ny, onWater) && !(liquidNpc && nKey === target))) continue;
             if (done.has(nKey)) continue;
             // une case occupée ou une sortie n'est jamais un point de passage (seulement une destination)
             if (nKey !== target && (occupied.has(nKey) || exits.has(nKey))) continue;
