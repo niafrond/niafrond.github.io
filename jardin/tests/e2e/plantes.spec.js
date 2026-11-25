@@ -38,6 +38,7 @@ test('essences : vignettes, prix, budget, proposition pour tout le jardin puis a
   await page.waitForSelector('.plant-card');
 
   // vignettes : repli immédiat, puis photo paresseuse + crédit
+  await page.locator('.plant-card').first().scrollIntoViewIfNeeded(); // le sélecteur d'entretien en tête repousse la liste sous le pli
   await expect(page.locator('.plant-card').first().locator('.plant-thumb')).toBeVisible();
   await expect(page.locator('.plant-card').first().locator('.thumb-box img')).toBeVisible();
   await expect(page.locator('.plant-card').first().locator('.photo-credit')).toHaveText('Photo : Wikipédia');
@@ -64,7 +65,8 @@ test('essences : vignettes, prix, budget, proposition pour tout le jardin puis a
 
   // proposition pour tout le jardin
   await page.locator('#btn-surprise-all').click();
-  await expect(page.locator('#proposal-summary')).toContainText(/essences?, floraison de .+ à .+, ≈ \d/);
+  await page.locator('[data-act=amb-ok]').click(); // fenêtre d'ambiance : « Peu importe » par défaut
+  await expect(page.locator('#proposal-summary')).toContainText(/essences? · floraison de .+ à .+ · ≈ \d/);
   const lire = () => page.evaluate(async (i) => { await window.__jardin.flush?.(); return (await window.__jardin.storage.getGarden(i)).zones.map((z) => z.plantings); }, id);
   const apres = await lire();
   expect(apres[0].length).toBeGreaterThan(0);

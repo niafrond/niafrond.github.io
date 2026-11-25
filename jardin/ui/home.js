@@ -2,6 +2,7 @@
 import { h, toast, confirmDialog, gardenHash } from './wizard.js';
 import { polygonArea } from '../geometry.js';
 import { codeFromUrl } from '../transfer.js';
+import { openSaveDialog, safeFilename } from './save-file.js';
 
 const MOIS = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'];
 
@@ -11,12 +12,7 @@ function surfaceOf(g) {
 const fmtSurface = (s) => (s > 0 ? `${s.toFixed(s < 10 ? 1 : 0).replace('.', ',')} m²` : 'Contour à tracer');
 
 function download(name, text) {
-  const url = URL.createObjectURL(new Blob([text], { type: 'application/json' }));
-  const a = h('a', { href: url, download: name });
-  document.body.append(a);
-  a.click();
-  a.remove();
-  setTimeout(() => URL.revokeObjectURL(url), 2000);
+  openSaveDialog({ filename: name, text, title: 'Exporter le jardin' });
 }
 
 /** mountHome(el, {storage, navigate, createGarden}) → unmount() */
@@ -146,7 +142,7 @@ export function mountHome(el, { storage, navigate, createGarden }) {
           g.status === 'validated' ? h('a', { class: 'btn btn-sm', href: gardenHash(g.id, 'render') }, 'Modifier') : null,
           h('button', { class: 'btn btn-sm', type: 'button', onclick: async () => { await storage.duplicateGarden(g.id); toast('Jardin dupliqué.'); refresh(); } }, 'Dupliquer'),
           h('a', { class: 'btn btn-sm', href: `#/garden/${encodeURIComponent(g.id)}/share` }, 'Envoyer vers le téléphone'),
-          h('button', { class: 'btn btn-sm', type: 'button', onclick: async () => download(`jardin-${(g.name || 'jardin').replace(/[^\w-]+/g, '_')}.json`, await storage.exportGarden(g)) }, 'Exporter'),
+          h('button', { class: 'btn btn-sm', type: 'button', onclick: async () => download(safeFilename(g.name), await storage.exportGarden(g)) }, 'Exporter'),
           h('button', { class: 'btn btn-sm btn-danger', type: 'button', onclick: async () => {
             if (await confirmDialog(`Supprimer « ${g.name} » ? Cette action est définitive.`, { ok: 'Supprimer', danger: true })) {
               await storage.deleteGarden(g.id); toast('Jardin supprimé.'); refresh();

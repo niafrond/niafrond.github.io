@@ -1,6 +1,7 @@
 // Étape 1 : contexte (localisation, exposition, sol, pente, vent).
 import { h, toast } from './wizard.js';
 import { getPosition, watchHeading, reverseCommune, fetchElevation, searchAddress } from '../geo.js';
+import { gardenMaintenancePicker } from './maintenance-picker.js';
 import { climateForDepartement, adjustTminForAltitude, hardinessZone } from '../climate.js';
 
 const ORIENT = [
@@ -169,7 +170,9 @@ export function mountContext(el, { garden, onChange }) {
       h('div', { class: 'field' },
         h('label', { for: 'roof' }, 'Surface de toit pour récupérer l’eau de pluie (m², facultatif)'),
         h('input', { id: 'roof', type: 'number', inputmode: 'decimal', min: '0', step: '1', value: c.roofArea != null ? String(c.roofArea) : '',
-          onchange: (e) => { c.roofArea = e.target.value === '' ? null : Number(e.target.value); change(); } }))));
+          onchange: (e) => { c.roofArea = e.target.value === '' ? null : Number(e.target.value); change(); } }))),
+    h('section', { class: 'card', 'data-role': 'maintenance-card' },
+      gardenMaintenancePicker(garden, { title: 'Votre niveau de jardinage', hint: 'Les essences conseillées s’adaptent au temps que vous voulez consacrer au jardin (modifiable à l’étape des essences).', onChange: () => change() })));
   drawSummary();
   drawOrient();
   return () => { dead = true; stopCompass(); el.replaceChildren(); };

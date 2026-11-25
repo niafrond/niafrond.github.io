@@ -155,3 +155,37 @@ export function waterTexture(THREE, base = '#3c8dbc') {
   }
   return toTexture(THREE, c, 6);
 }
+
+/** Paroi de piscine hors sol : tôle ondulée bleu-gris (nervures verticales). Tuile 1,5 m. */
+export function poolWallTexture(THREE, base = '#9fb4c0') {
+  const c = canvasOf(256); if (!c) return null;
+  const g = c.getContext('2d');
+  g.fillStyle = base; g.fillRect(0, 0, 256, 256);
+  for (let x = 0; x < 256; x += 16) {
+    const grad = g.createLinearGradient(x, 0, x + 16, 0);
+    grad.addColorStop(0, shade(base, 0.82)); grad.addColorStop(0.5, shade(base, 1.08)); grad.addColorStop(1, shade(base, 0.82));
+    g.fillStyle = grad; g.fillRect(x, 0, 16, 256);
+  }
+  g.fillStyle = shade(base, 0.7); g.fillRect(0, 118, 256, 4);
+  return toTexture(THREE, c, 1.5);
+}
+
+/** Briques en appareil à joints décalés. Tuile 1 m. */
+export function brickTexture(THREE, base = '#b5593c') {
+  const c = canvasOf(256); if (!c) return null;
+  const g = c.getContext('2d'); const r = mulberry32(81);
+  g.fillStyle = '#d8d1c3'; g.fillRect(0, 0, 256, 256);
+  const rows = 12; const bh = 256 / rows; const bw = 256 / 4;
+  for (let j = 0; j < rows; j++) for (let i = -1; i < 5; i++) {
+    g.fillStyle = shade(base, 0.82 + r() * 0.3); g.fillRect(i * bw + (j % 2 ? bw / 2 : 0) + 2, j * bh + 2, bw - 4, bh - 4);
+  }
+  return toTexture(THREE, c, 1);
+}
+/** Pierres irrégulières. Tuile 1 m. */
+export function stoneWallTexture(THREE, base = '#a89f91') {
+  const c = canvasOf(256); if (!c) return null;
+  const g = c.getContext('2d'); const r = mulberry32(83);
+  g.fillStyle = '#7c746a'; g.fillRect(0, 0, 256, 256);
+  for (let j = 0; j < 6; j++) { let x = -r() * 30; const y = j * 43; while (x < 256) { const w = 40 + r() * 40; g.fillStyle = shade(base, 0.8 + r() * 0.4); g.fillRect(x + 2, y + 2, w - 4, 39); x += w; } }
+  return toTexture(THREE, c, 1);
+}

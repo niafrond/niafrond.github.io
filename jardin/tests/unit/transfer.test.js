@@ -18,7 +18,7 @@ describe('aller-retour', () => {
   test('jardin riche conservé, plan.svg retiré', async () => {
     const g = riche();
     const code = await encodeGarden(g);
-    expect(code).toMatch(/^v1u?\.[A-Za-z0-9_-]+$/);
+    expect(code).toMatch(/^v2u?\.[0-9a-z]+\.[A-Za-z0-9_-]+$/);
     expect(code.length).toBeLessThan(JSON.stringify(g).length);
     const r = await decodeGarden(code);
     expect(r.name).toBe(g.name);
@@ -33,7 +33,7 @@ describe('aller-retour', () => {
     globalThis.CompressionStream = undefined;
     try {
       const code = await encodeGarden(riche());
-      expect(code.startsWith('v1u.')).toBe(true);
+      expect(code.startsWith('v2u.')).toBe(true);
       expect((await decodeGarden(code)).name).toBe(riche().name);
     } finally { globalThis.CompressionStream = CS; }
   });
@@ -93,4 +93,49 @@ test('describeGarden', () => {
 test('sizeInfo', () => {
   expect(sizeInfo('v1.abc')).toEqual({ length: 6, fitsQr: true });
   expect(sizeInfo('v1.' + 'a'.repeat(3000)).fitsQr).toBe(false);
+});
+
+describe('transfert : liens légers et détection des liens coupés', () => {
+  const riche = () => {
+    const g = createGarden('Gros');
+    g.boundary = [{ x: 0, y: 0 }, { x: 10, y: 0 }, { x: 10, y: 8 }, { x: 0, y: 8 }];
+    g.boundaryClosed = true;
+    g.status = 'validated';
+    // vues isométriques SVG du plan validé : plusieurs centaines de Ko, régénérables
+    g.plan = { svg: '<svg>' + 'x'.repeat(200000) + '</svg>', validatedAt: '2026-01-01', views: { 'iso-ne': '<svg>' + 'y'.repeat(300000) + '</svg>', 'iso-se': '<svg>' + 'z'.repeat(300000) + '</svg>' } };
+    g.context.gpsSurveyDraft = { points: Array.from({ length: 50 }, (_, i) => ({ x: i, y: i })) };
+    return g;
+  };
+
+  test('les vues du plan et le brouillon GPS ne sont jamais dans le code (lien court)', async () => {
+    const code = await encodeGarden(riche());
+    expect(code.length).toBeLessThan(4000);
+    const g = await decodeGarden(code);
+    expect(g.plan.views == null || Object.keys(g.plan.views).length === 0).toBe(true);
+    expect(g.name).toBe('Gros');
+  });
+
+  test('format v2 : longueur de contrôle, aller-retour', async () => {
+    const code = await encodeGarden(riche());
+    expect(code).toMatch(/^v2u?\.[0-9a-z]+\./);
+    expect((await decodeGarden(code)).boundary).toHaveLength(4);
+  });
+
+  test('un lien coupé est reconnu comme tel, avec un message clair', async () => {
+    const code = await encodeGarden(riche());
+    await expect(decodeGarden(code.slice(0, code.length - 30))).rejects.toThrow(/Lien coupé : \d+ caractères reçus sur \d+/);
+  });
+
+  test('code avec retours à la ligne ou encodage % : toujours lu', async () => {
+    const code = await encodeGarden(riche());
+    const coupe = code.replace(/(.{40})/g, '$1\n');
+    expect((await decodeGarden(coupe)).name).toBe('Gros');
+    expect(codeFromUrl(`https://niafrond.github.io/jardin/#/import/${code}`)).toBe(code);
+  });
+
+  test('les anciens codes v1 restent lisibles', async () => {
+    const json = JSON.stringify({ format: 'jardin-v1', garden: { name: 'Ancien', boundary: [{ x: 0, y: 0 }, { x: 4, y: 0 }, { x: 4, y: 4 }], zones: [] } });
+    const g = await decodeGarden('v1u.' + Buffer.from(json).toString('base64url'));
+    expect(g.name).toBe('Ancien');
+  });
 });

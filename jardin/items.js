@@ -67,6 +67,24 @@ export const EDGE_KINDS = [
 ];
 export const EDGE_IDS = EDGE_KINDS.map((k) => k.id);
 
+/** Matériaux des murs et clôtures (côtés du contour, clôtures libres, clôtures existantes). */
+export const MATERIALS = {
+  wood: { label: 'Bois', color: '#8d6e63' },
+  metal: { label: 'Métal', color: '#455a64' },
+  concrete: { label: 'Béton', color: '#9e9e9e' },
+  stone: { label: 'Pierre', color: '#a1887f' },
+  brick: { label: 'Brique', color: '#b5593c' },
+  mesh: { label: 'Grillage', color: '#78909c' },
+};
+export const EDGE_MATERIALS = { wall: ['stone', 'concrete', 'brick'], fence: ['wood', 'metal', 'concrete', 'mesh'] };
+export const defaultMaterial = (kind) => (kind === 'wall' ? 'stone' : kind === 'fence' ? 'wood' : null);
+/** Matériau effectif d'un côté de contour (ou d'une clôture libre) : valeur valide, sinon défaut du type. */
+export function materialOf(kind, material) {
+  const ids = EDGE_MATERIALS[kind];
+  if (!ids) return null;
+  return ids.includes(material) ? material : defaultMaterial(kind);
+}
+
 export const getItemKind = (id) => ITEM_KINDS.find((k) => k.id === id);
 export const getOpeningKind = (id) => OPENING_KINDS.find((k) => k.id === id);
 export const getEdgeKind = (id) => EDGE_KINDS.find((k) => k.id === id);
@@ -148,6 +166,13 @@ export function resolveSide(garden, ref) {
     const closedPoly = FERMES.has(ob.kind) && ob.points.length >= 3;
     return { a: s.a, b: s.b, outward: closedPoly ? (Math.sign(signedArea(ob.points)) || 1) : 1, kind: ob.kind };
   }
+  if (ref.type === 'existing') {
+    const ex = ((garden && garden.existing) || []).find((e) => e.id === ref.existingId);
+    if (!ex || ex.kind !== 'fence' || !Array.isArray(ex.points)) return null;
+    const s = obstacleSides(ex).find((x) => x.i === ref.side);
+    if (!s) return null;
+    return { a: s.a, b: s.b, outward: 1, kind: 'fence' };
+  }
   return null;
 }
 
@@ -206,6 +231,11 @@ export function snapOpeningToSides(garden, point, { kind = null, maxDist = Infin
     if (!['house', 'shed', 'wall', 'fence'].includes(ob.kind)) continue;
     if (kind && !openingAllowedOn(kind, ob.kind)) continue;
     for (const s of obstacleSides(ob)) essai(s.a, s.b, { type: 'obstacle', obstacleId: ob.id, side: s.i });
+  }
+  for (const ex of (garden && garden.existing) || []) {
+    if (ex.kind !== 'fence' || !Array.isArray(ex.points)) continue;
+    if (kind && !openingAllowedOn(kind, 'fence')) continue;
+    for (const s of obstacleSides(ex)) essai(s.a, s.b, { type: 'existing', existingId: ex.id, side: s.i });
   }
   return best;
 }

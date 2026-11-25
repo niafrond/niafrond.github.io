@@ -6,7 +6,9 @@ import { polygonArea } from './geometry.js';
 export const QR_MAX_BYTES = 2000;
 const SCHEME = 'jardin://import/';
 const HASH = '#/import/';
-const CHAMPS_LOURDS = new Set(['svg', 'photo', 'photos', 'thumb', 'history', 'historique', 'journal']);
+// Champs lourds ou régénérables : jamais dans le code de transfert (`views` = vues isométriques SVG du plan validé,
+// plusieurs Mo : elles rendaient le lien énorme, donc tronqué par les messageries).
+const CHAMPS_LOURDS = new Set(['svg', 'views', 'photo', 'photos', 'thumb', 'history', 'historique', 'journal', 'gpsSurveyDraft']);
 
 // ── base64url ───────────────────────────────────────────────────────────────
 function toB64u(bytes) {
@@ -42,14 +44,19 @@ function allege(v) {
   return v;
 }
 
-/** Jardin → code de transfert compact (`v1.…` compressé, ou `v1u.…` non compressé). */
+/**
+ * Jardin → code de transfert compact : `v2.<longueur>.<données>` (compressé) ou `v2u.<longueur>.<données>`.
+ * La longueur (base 36) permet de détecter un lien COUPÉ par une messagerie. Les anciens `v1.…` restent lisibles.
+ */
 export async function encodeGarden(garden) {
   const json = JSON.stringify({ format: 'jardin-v1', garden: allege(garden) });
   const bytes = new TextEncoder().encode(json);
+  let tag = 'v2u'; let data = null;
   if (canDeflate()) {
-    try { return 'v1.' + toB64u(await pipe(bytes, new CompressionStream('deflate-raw'))); } catch { /* repli */ }
+    try { data = toB64u(await pipe(bytes, new CompressionStream('deflate-raw'))); tag = 'v2'; } catch { /* repli */ }
   }
-  return 'v1u.' + toB64u(bytes);
+  if (data == null) data = toB64u(bytes);
+  return `${tag}.${data.length.toString(36)}.${data}`;
 }
 
 const fusion = (base, extra) => {
@@ -62,16 +69,28 @@ const fusion = (base, extra) => {
   return r;
 };
 const ILLISIBLE = 'Code illisible : il est incomplet ou abîmé. Recopiez le lien en entier, ou utilisez le fichier JSON.';
+const tronque = (recu, attendu) => `Lien coupé : ${recu} caractères reçus sur ${attendu}. Une messagerie a tronqué le lien : copiez-le directement (sans l’envoyer par SMS) ou utilisez le fichier JSON.`;
 
 /** Code de transfert → jardin (valeurs par défaut du modèle complétées). Lève une Error en français. */
 export async function decodeGarden(code) {
-  const c = String(code == null ? '' : code).replace(/\s+/g, '');
-  const m = /^v(\d+)(u?)\.([A-Za-z0-9_-]+)$/.exec(c);
-  if (!m) throw new Error(ILLISIBLE);
-  if (m[1] !== '1') throw new Error('Ce code vient d’une version plus récente de l’application : mettez Mon jardin à jour, puis réessayez.');
+  let c = String(code == null ? '' : code).replace(/\s+/g, '');
+  if (/%[0-9a-f]{2}/i.test(c)) { try { c = decodeURIComponent(c); } catch { /* garde tel quel */ } }
+  // v1 : `v1[u].<données>` ; v2 : `v2[u].<longueur base 36>.<données>` (longueur de contrôle).
+  const m = /^v(\d+)(u?)\.(?:([0-9a-z]+)\.)?([A-Za-z0-9_-]+)$/.exec(c);
+  if (!m) {
+    const t = /^v2u?\.([0-9a-z]+)\.([A-Za-z0-9_-]*)$/.exec(c);
+    if (t) throw new Error(tronque(t[2].length, parseInt(t[1], 36)));
+    throw new Error(ILLISIBLE);
+  }
+  if (m[1] !== '1' && m[1] !== '2') throw new Error('Ce code vient d’une version plus récente de l’application : mettez Mon jardin à jour, puis réessayez.');
+  if (m[1] === '2') {
+    const attendu = parseInt(m[3], 36);
+    if (!Number.isFinite(attendu)) throw new Error(ILLISIBLE);
+    if (m[4].length !== attendu) throw new Error(tronque(m[4].length, attendu));
+  }
   let data;
   try {
-    let bytes = fromB64u(m[3]);
+    let bytes = fromB64u(m[4]);
     if (!m[2]) {
       if (!canInflate()) throw new Error('Décompression indisponible sur cet appareil : utilisez le fichier JSON.');
       bytes = await pipe(bytes, new DecompressionStream('deflate-raw'));
@@ -108,7 +127,8 @@ export function codeFromUrl(urlOrText) {
   else if (/^jardin:\/\/import\//i.test(s)) s = s.replace(/^jardin:\/\/import\//i, '');
   else if (/^intent:\/\/import\//i.test(s)) s = s.replace(/^intent:\/\/import\//i, '').replace(/#Intent.*$/i, '');
   s = s.replace(/\s+/g, '').replace(/[?#].*$/, '');
-  return /^v\d+u?\.[A-Za-z0-9_-]+$/.test(s) ? s : null;
+  try { if (/%[0-9a-f]{2}/i.test(s)) s = decodeURIComponent(s); } catch { /* garde tel quel */ }
+  return /^v\d+u?\.(?:[0-9a-z]+\.)?[A-Za-z0-9_-]+$/.test(s) ? s : null;
 }
 
 /** Lien entrant (lien profond Android) → `#/import/<code>` ou `null`. */

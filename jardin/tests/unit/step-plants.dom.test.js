@@ -19,6 +19,7 @@ function jardin() {
 }
 const wait = (ms = 0) => new Promise((r) => setTimeout(r, ms));
 const click = (n) => n.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+const validerAmbiance = async () => { click(document.querySelector('[data-act=amb-ok]')); await wait(5); };
 
 let el;
 beforeEach(() => {
@@ -112,9 +113,10 @@ test('Surprends-moi pour tout le jardin : remplit les zones vides, change à cha
   expect(el.querySelector('#btn-undo').hidden).toBe(true);
   click(el.querySelector('#btn-surprise-all'));
   await wait(5);
+  await validerAmbiance();
   expect(g.zones[0].plantings.length).toBeGreaterThan(0);
   expect(g.zones[1].plantings).toEqual([{ plantId: 'h-gazon-rustique', count: 1 }]);
-  expect(el.querySelector('#proposal-summary').textContent).toMatch(/^\d+ essences?, floraison de \S+ à \S+, ≈ \d+ €$/);
+  expect(el.querySelector('#proposal-summary').textContent).toMatch(/^\d+ essences? · floraison de \S+ à \S+ · ≈ \d+ €$/);
   expect(el.querySelector('#btn-undo').hidden).toBe(false);
   expect(el.querySelector('#btn-surprise-all').textContent).toBe('🎲 Autre proposition');
   const seen = new Set([JSON.stringify(g.zones[0].plantings)]);
@@ -139,6 +141,7 @@ test('Surprends-moi (tout) avec zones déjà remplies : confirmation, puis annul
   expect(dlg).not.toBeNull();
   click([...dlg.querySelectorAll('button')].find((b) => b.textContent === 'Remplacer'));
   await wait(5);
+  await validerAmbiance();
   expect(JSON.stringify(g.zones)).not.toBe(before);
   click(el.querySelector('#btn-undo'));
   expect(JSON.stringify(g.zones)).toBe(before);
@@ -148,7 +151,7 @@ test('budget max : la proposition respecte le plafond quand c’est possible', a
   const g = jardin();
   mountPlants(el, { garden: g, onChange() {}, getPhoto: async () => null, IO: null, seed: 11 });
   const input = el.querySelector('#budget-max'); input.value = '150'; input.dispatchEvent(new Event('input'));
-  click(el.querySelector('#btn-surprise-all')); await wait(5);
+  click(el.querySelector('#btn-surprise-all')); await wait(5); await validerAmbiance();
   const m = el.querySelector('[data-role=budget-main]').textContent.match(/≈ ([\d ]+) €/);
   expect(Number(m[1].replace(/\s/g, ''))).toBeLessThanOrEqual(150);
 });
@@ -156,7 +159,7 @@ test('budget max : la proposition respecte le plafond quand c’est possible', a
 test('Surprends-moi par zone conservé et annulable', async () => {
   const g = jardin();
   mountPlants(el, { garden: g, onChange() {}, getPhoto: async () => null, IO: null, seed: 5 });
-  click(el.querySelector('#btn-surprise')); await wait(5);
+  click(el.querySelector('#btn-surprise')); await wait(5); await validerAmbiance();
   expect(g.zones[0].plantings.length).toBeGreaterThan(0);
   click(el.querySelector('#btn-undo'));
   expect(g.zones[0].plantings).toEqual([]);
@@ -177,4 +180,38 @@ test('rendu illustré : couleurs de floraison/feuillage ; budget dans le cartouc
   expect(renderPlanSVG(g, { view: 'plan', month: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].find((m) => !p.bloom.includes(m)) })).not.toContain('data-flower');
   const b = renderPlanSVG(g, { view: 'plan', layers: { budget: true } });
   expect(b).toMatch(/Budget estimé ≈ \d+ €/);
+});
+
+test('« Dans cette zone » : chaque essence choisie a sa vignette (repli coloré puis photo), qui rouvre la fiche', async () => {
+  const g = jardin();
+  const plantes = allPlants().filter((p) => p.category === 'perennial').slice(0, 2);
+  g.zones[0].plantings = plantes.map((p) => ({ plantId: p.id, count: 3 }));
+  const { IO, inst } = fakeIO();
+  const getPhoto = jest.fn(async () => ({ url: 'data:image/gif;base64,R0lGODlhAQABAAAAACw=', medium: 'data:image/gif;base64,R0lGODlhAQABAAAAACw=', credit: 'Photo : Wikipédia', page: 'https://fr.wikipedia.org/wiki/X' }));
+  mountPlants(el, { garden: g, onChange() {}, getPhoto, IO });
+  const rows = el.querySelectorAll('.chosen-row');
+  expect(rows).toHaveLength(2);
+  for (const row of rows) {
+    expect(row.querySelector('.plant-thumb .thumb-fb')).not.toBeNull();
+    expect(row.querySelector('.plant-thumb').getAttribute('aria-label')).toMatch(/^Agrandir la fiche de /);
+  }
+  // les photos des essences choisies se chargent aussi quand elles deviennent visibles
+  inst.forEach((i) => i.fire());
+  await wait(5);
+  const demandes = getPhoto.mock.calls.map((c) => c[0].id);
+  for (const p of plantes) expect(demandes).toContain(p.id);
+  // toucher la vignette ouvre la fiche
+  click(rows[0].querySelector('.plant-thumb'));
+  expect(document.querySelector('[data-role=plant-detail]')).not.toBeNull();
+});
+
+test('retirer une essence choisie ne perd pas les vignettes des autres', async () => {
+  const g = jardin();
+  const plantes = allPlants().filter((p) => p.category === 'perennial').slice(0, 3);
+  g.zones[0].plantings = plantes.map((p) => ({ plantId: p.id, count: 1 }));
+  mountPlants(el, { garden: g, onChange() {}, getPhoto: async () => null, IO: undefined });
+  click(el.querySelector('.chosen-row .btn-danger'));
+  const rows = el.querySelectorAll('.chosen-row');
+  expect(rows).toHaveLength(2);
+  expect(rows[0].querySelector('.plant-thumb')).not.toBeNull();
 });

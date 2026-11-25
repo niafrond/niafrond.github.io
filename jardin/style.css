@@ -74,8 +74,9 @@ input.qty { width: 64px; text-align: center; padding: 0 4px; }
 fieldset { border: 0; padding: 0; margin: 0; min-width: 0; } legend { font-weight: 700; padding: 0; margin-bottom: 6px; }
 .painter { min-height: 320px; }
 
-.steps { list-style: none; margin: 0; padding: 8px 12px 0; display: flex; justify-content: space-between; gap: 4px; }
-.steps li { flex: 1; display: flex; justify-content: center; }
+.steps { list-style: none; margin: 0; padding: 8px 12px 0; display: flex; justify-content: space-between; gap: 4px; overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+.steps::-webkit-scrollbar { display: none; }
+.steps li { flex: 1 0 44px; display: flex; justify-content: center; }
 .step { width: 100%; max-width: 52px; min-height: var(--tap); border-radius: 12px; border: 2px solid var(--border); background: var(--surface); color: var(--text); font-size: 1.1rem; cursor: pointer; padding: 0; }
 .step.done { border-color: var(--primary); } .step.current { background: var(--primary); border-color: var(--primary); }
 .step-title { padding: 8px 16px 0; margin: 0; font-size: 1.05rem; }
@@ -130,3 +131,67 @@ summary { cursor: pointer; min-height: var(--tap); display: flex; align-items: c
 .btn[hidden] { display: none; }
 .swatch { white-space: nowrap; }
 .plant-detail .swatches { align-self: flex-start; }
+
+/* Ambiances (pastilles, fenêtre « Quelle ambiance ? », en-tête de zone) */
+.amb-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.amb-chip {
+  display: inline-flex; align-items: center; gap: 6px; min-height: var(--tap, 44px); padding: 0 12px; border-radius: 99px;
+  border: 1px solid var(--jd-line, var(--border)); background: var(--jd-card, var(--surface)); color: var(--jd-fg, var(--text));
+  font: inherit; font-size: .9rem; cursor: pointer; text-align: left;
+}
+.amb-chip:focus-visible { outline: 3px solid var(--jd-accent, var(--primary)); outline-offset: 2px; }
+.amb-chip.on, .amb-chip[aria-checked="true"] { background: var(--jd-accent, var(--primary)); color: #fff; border-color: var(--jd-accent, var(--primary)); font-weight: 700; }
+:root[data-theme="dark"] .amb-chip.on { color: #08140c; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .amb-chip.on { color: #08140c; } }
+.amb-emoji { font-size: 1.15em; line-height: 1; }
+.amb-cards { flex-direction: column; flex-wrap: nowrap; }
+.amb-cards .amb-chip { border-radius: 12px; width: 100%; padding: 6px 12px; align-items: center; }
+.amb-txt { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.amb-txt small { font-size: .75rem; opacity: .85; font-weight: 400; line-height: 1.25; }
+.dialog.amb-dialog { max-width: 460px; max-height: 92vh; overflow: auto; display: flex; flex-direction: column; gap: 10px; }
+.amb-dialog h3, .amb-dialog p { margin: 0; }
+.amb-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 14px; }
+.amb-row { display: flex; flex-direction: column; gap: 6px; padding-bottom: 12px; border-bottom: 1px solid var(--border); }
+.amb-zname { font-size: 1rem; }
+.amb-same { padding: 8px; border: 1px dashed var(--border); border-radius: 12px; }
+.amb-same[hidden] { display: none; }
+.amb-actions { position: sticky; bottom: -16px; background: var(--surface); padding: 8px 0 2px; }
+.zone-head { display: flex; gap: 8px; align-items: center; justify-content: space-between; flex-wrap: wrap; }
+.zone-head-txt { display: flex; flex-direction: column; min-width: 0; }
+.amb-tag { font-size: .85rem; color: var(--muted); }
+.amb-pill { display: inline-block; margin-top: 4px; font-size: .75rem; font-weight: 700; padding: 2px 8px; border-radius: 99px; color: var(--ok); border: 1px solid var(--ok); }
+
+/* Niveau d'entretien (pastilles, indicateur d'effort, rappel) */
+.maint-block { display: flex; flex-direction: column; gap: 8px; }
+.maint-title { margin: 0; }
+.maint-block p { margin: 0; }
+.maint-zone { flex-basis: 100%; display: flex; flex-direction: column; gap: 4px; margin-top: 6px; }
+.maint-compact .amb-chip { min-height: 36px; padding: 0 10px; font-size: .82rem; }
+.maint-line { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin: 2px 0; }
+.effort { color: var(--muted); font-size: .8rem; }
+.effort.ko { color: var(--ko); }
+.maint-pill { display: inline-block; font-size: .72rem; font-weight: 700; padding: 2px 8px; border-radius: 99px; color: var(--ko); border: 1px solid var(--ko); }
+.plant-card.maint-ko { border-left: 3px solid var(--ko); }
+.maint-reminder { display: flex; flex-direction: column; gap: 6px; padding: 8px; border: 1px dashed var(--border); border-radius: 12px; }
+.maint-reminder p { margin: 0; }
+.maint-reminder .amb-chips[hidden] { display: none; }
+
+/* « Dans cette zone » : vignette photo (ou repli coloré) devant chaque essence choisie */
+.chosen-row .thumb-col { flex: 0 0 48px; width: 48px; }
+.chosen-row .plant-thumb { width: 48px; height: 48px; }
+.chosen-row .photo-credit { display: none; }
+
+/* Étape « Zones souhaitées » : choix du mode des massifs */
+.mode-cards { display: flex; flex-direction: column; gap: 10px; }
+.mode-card { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 72px; padding: 12px 14px; text-align: left; border-radius: var(--radius); border: 2px solid var(--border); background: var(--bg); color: var(--text); font: inherit; cursor: pointer; touch-action: manipulation; }
+.mode-card.on { border-color: var(--primary); background: color-mix(in srgb, var(--primary) 14%, var(--surface)); }
+.mode-card:focus-visible { outline: 3px solid var(--primary); outline-offset: 2px; }
+.mode-icon { font-size: 1.8rem; line-height: 1; flex: none; }
+.mode-txt { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.mode-txt b { font-size: 1rem; }
+.mode-txt small { color: var(--muted); font-size: .82rem; line-height: 1.3; }
+.mode-card.on .mode-txt small { color: var(--text); }
+/* Essences : massif calculé par l'app */
+.auto-badge { display: inline-block; font-size: .72rem; font-weight: 700; padding: 2px 8px; border-radius: 99px; color: var(--primary); border: 1px solid var(--primary); margin-left: 6px; vertical-align: middle; }
+.auto-info { margin: 6px 0 0; padding: 8px 10px; border-radius: 10px; background: var(--info-bg); font-size: .85rem; }
+.auto-info p { margin: 0 0 4px; }

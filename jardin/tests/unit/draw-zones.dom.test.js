@@ -214,7 +214,8 @@ describe('éditeur de zones : sélection et édition', () => {
     expect(t.q('[data-field=l]').value).toBe('300');
     t.q('[data-field=w]').value = '550'; t.q('[data-field=l]').value = '3,2 m';
     t.q('[data-field=w]').dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
-    expect(t.g.zones[0].shape.points).toEqual(RECT(2, 2, 7.5, 5.2));
+    // reconstruit autour du même centre (4 ; 3,5), angle conservé
+    expect(t.g.zones[0].shape.points).toEqual(RECT(1.25, 1.9, 6.75, 5.1));
     expect(t.q('[data-role=pop]').hidden).toBe(true);
     t.unmount();
   });

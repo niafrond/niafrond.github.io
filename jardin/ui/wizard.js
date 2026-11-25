@@ -1,4 +1,4 @@
-// Assistant à 8 étapes : barre d'étapes, navigation libre, chargement paresseux des étapes.
+// Assistant à 9 étapes : barre d'étapes, navigation libre, chargement paresseux des étapes.
 // Exporte aussi de petits utilitaires DOM partagés (h, toast, confirmDialog…).
 
 export const STEPS = [
@@ -6,8 +6,9 @@ export const STEPS = [
   { id: 'boundary', label: 'Terrain', icon: '📐' },
   { id: 'wished', label: 'Zones souhaitées', icon: '✅' },
   { id: 'sun', label: 'Soleil', icon: '☀️' },
-  { id: 'zones', label: 'Dessin des zones', icon: '🗺️' },
   { id: 'items', label: 'Aménagements', icon: '🪑' },
+  { id: 'zones', label: 'Dessin des zones', icon: '🗺️' },
+  { id: 'beds', label: 'Massifs', icon: '🌸' },
   { id: 'plants', label: 'Essences', icon: '🌿' },
   { id: 'render', label: 'Rendu', icon: '🖼️' },
 ];
@@ -87,6 +88,7 @@ const LOADERS = {
   sun: async () => (await import('./step-sun.js')).mountSun,
   zones: async () => (await import('./draw.js')).mountZoneEditor,
   items: async () => (await import('./step-items.js')).mountItems,
+  beds: async () => (await import('./step-beds.js')).mountBeds,
   plants: async () => (await import('./step-plants.js')).mountPlants,
   render: async () => (await import('./plan-step.js')).mountPlanStep,
 };
@@ -127,6 +129,9 @@ export function mountWizard(el, { garden, step, navigate, save, onValidate }) {
     next ? h('button', { class: 'btn btn-primary', type: 'button', id: 'btn-next', onclick: () => go(next.id) }, next.label + ' →') : h('span'));
 
   el.replaceChildren(header, steps, title, body, footer);
+  // 9 étapes : la barre défile horizontalement, l'étape courante est centrée
+  const curBtn = steps.querySelector('.step.current');
+  if (curBtn) { const a = curBtn.getBoundingClientRect(); const b = steps.getBoundingClientRect(); steps.scrollLeft = Math.max(0, steps.scrollLeft + (a.left - b.left) - (b.width - a.width) / 2); }
   if (garden.status === 'validated') {
     header.append(h('a', { class: 'btn btn-sm', href: `#/garden/${encodeURIComponent(garden.id)}/advice` }, 'Conseils'));
   }

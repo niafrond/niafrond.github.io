@@ -1,8 +1,10 @@
 // Briques communes aux rendus 2D (render.js) et 3D (render3d.js) : couleurs réelles des essences,
 // placement déterministe des plants, légende « Essences », cadre (cartouche, nord, échelle). Pur, sans DOM.
 import { bounds, polygonArea, centroid, pointInPolygon, shapePolygon } from './geometry.js';
-import { ZONE_TYPES, getZoneType, SUN_LABELS } from './model.js';
+import { ZONE_TYPES, getZoneType, SUN_LABELS, isAbovePool, POOL_ABOVE_LABEL } from './model.js';
 import { getPlant } from './catalog.js';
+import { habitOf } from './habits.js';
+import { applyPortLayout, wallSegments, FAMILY, polyAxis, hedgeSeg } from './gl-worker-core.js';
 
 export const FONT = 'Helvetica, Arial, sans-serif';
 export const CAT_COLORS = {
@@ -109,6 +111,15 @@ export function placePlants(garden, zone, plantsById, opts = {}) {
   const groups = (zone.plantings || []).map((pl) => ({ pl, plant: lookup(pl.plantId) })).filter((g) => g.plant)
     .map((g) => ({ ...g, n: Math.max(1, Math.round(g.pl.count || 1)) }));
   if (!groups.length) return [];
+  // haies taillées : assez de plants pour couvrir la longueur de la zone (rang continu)
+  for (const g of groups) {
+    if (habitOf(g.plant).id !== 'hedge-clipped') continue;
+    const pts0 = shape.kind === 'line' && shape.points ? shape.points : null;
+    let len = 0;
+    if (pts0) for (let i = 0; i < pts0.length - 1; i++) len += Math.hypot(pts0[i + 1].x - pts0[i].x, pts0[i + 1].y - pts0[i].y);
+    else len = polyAxis(poly).len;
+    g.n = Math.max(g.n, Math.min(60, Math.ceil(len / (hedgeSeg(g.plant) * 0.92))));
+  }
   const area = polygonArea(poly);
   const c = centroid(poly);
   const inner = pointInPolygon(c, poly) ? c : poly[0];
@@ -165,8 +176,17 @@ export function placePlants(garden, zone, plantsById, opts = {}) {
   const idx = new Array(pts.length).fill(0);
   spots.forEach((p, i) => {
     const gi = seq[i]; const plant = pts[gi].plant;
-    out.push({ plant, x: p.x, y: p.y, r: plantRadiusM(plant, age), rand: rand0(plant, idx[gi]++), zoneId: zid, group: gi });
+    out.push({ plant, x: p.x, y: p.y, r: plantRadiusM(plant, age), rand: rand0(plant, idx[gi]++), zoneId: zid, group: gi, rot: 0 });
   });
+  // ports : haies en rang le long du grand axe, bambous en touffes serrées, grimpantes contre le mur le plus proche
+  const mine = out.filter((q) => !q.fill);
+  const climbs = mine.some((q) => FAMILY[habitOf(q.plant).id] === 'climber');
+  applyPortLayout(mine, poly, { walls: climbs ? wallSegments(garden) : [], line: shape.kind === 'line' && shape.points && shape.points.length >= 2 ? shape.points : null });
+  for (const q of mine) {
+    const hid = habitOf(q.plant).id; q.habit = hid; q.family = FAMILY[hid] || 'dome';
+    if (q.family === 'mat' || q.family === 'creeping') q.r *= 1.35; // nappes qui se chevauchent
+    if (q.aux > 0 && q.family === 'hedge') q.seg = q.aux;
+  }
   return out;
 }
 
@@ -176,6 +196,7 @@ export function patternBody(typeId, stroke) {
   switch (typeId) {
     case 'pond': return `<path d="M0 3 Q2.5 0 5 3 T10 3 M0 8 Q2.5 5 5 8 T10 8" ${s}/>`;
     case 'pool': return `<path d="M0 0H10V10 M0 5H10 M5 0V10" ${s} stroke-opacity=".55"/>`;
+    case 'pool-above': return `<path d="M0 3 Q2.5 0 5 3 T10 3 M0 8 Q2.5 5 5 8 T10 8" ${s} stroke-opacity=".7"/>`;
     case 'terrace': return `<path d="M0 0H10V10H0Z M5 0V5 M0 5H10" ${s} stroke-opacity=".6"/>`;
     case 'path': return `<circle cx="2.5" cy="2.5" r="1" fill="${stroke}" opacity=".6"/><circle cx="7.5" cy="7.5" r="1" fill="${stroke}" opacity=".6"/><circle cx="7.5" cy="2.5" r=".6" fill="${stroke}" opacity=".6"/>`;
     case 'lawn': return `<path d="M2 8 L2 5 M3.2 8 L4 5.5 M7 4 L7 1 M8.2 4 L9 1.5" ${s}/>`;
@@ -224,6 +245,8 @@ export function essenceGroups(garden, lookup) {
   return out;
 }
 
+/** Port en petit pour la légende : « bambou, touffe ». */
+export const portShort = (plant) => habitOf(plant).label.slice(0, 34);
 const trunc = (s, n) => (s.length > n ? `${s.slice(0, n - 1)}…` : s);
 
 /** Pastille d'essence : feuillage + fleur (couleurs réelles), centrée en (11, -4). */
@@ -245,13 +268,22 @@ export function buildLegendItems(garden, lookup, layers, { P, compact = false, s
   const used = new Set(zones.map((z) => z.type));
   const obstacles = garden.obstacles || [];
   li(24, `<text font-size="13" font-weight="700" fill="#222" font-family="${FONT}">Légende</text>`);
+  const above = zones.some((z) => isAbovePool(z));
+  const inground = zones.some((z) => z.type === 'pool' && !isAbovePool(z));
   for (const t of ZONE_TYPES.filter((q) => used.has(q.id))) {
-    li(20, `<rect y="-11" width="22" height="14" fill="${t.color}" fill-opacity=".7" stroke="${darken(t.color, 0.35)}"/><rect y="-11" width="22" height="14" fill="url(#${P}-pat-${t.id})"/><text x="30" font-size="11" fill="#222" font-family="${FONT}">${esc(trunc(t.label, 24))}</text>`);
+    const variants = t.id !== 'pool' ? [{ pat: t.id, label: t.label }] : [
+      ...(inground || !above ? [{ pat: 'pool', label: t.label }] : []),
+      ...(above ? [{ pat: 'pool-above', label: POOL_ABOVE_LABEL, wall: true }] : []),
+    ];
+    for (const v of variants) {
+      const wall = v.wall ? `<rect y="-11" width="22" height="14" fill="none" stroke="#e6e1d6" stroke-width="3"/><rect y="-11" width="22" height="14" fill="none" stroke="#546e7a" stroke-width=".8"/>` : '';
+      li(20, `<rect y="-11" width="22" height="14" fill="${t.color}" fill-opacity=".7" stroke="${darken(t.color, 0.35)}"/><rect y="-11" width="22" height="14" fill="url(#${P}-pat-${v.pat})"/>${wall}<text x="30" font-size="11" fill="#222" font-family="${FONT}">${esc(trunc(v.label, 24))}</text>`);
+    }
   }
   const groups = essenceGroups(garden, lookup);
   if (groups.length) {
     li(22, `<text font-size="12" font-weight="700" fill="#222" font-family="${FONT}">Essences</text>`);
-    const row = (plant, count) => li(compact ? 19 : 20, `${swatch(plant)}<text x="30" font-size="11" fill="#222" font-family="${FONT}">${esc(trunc(plant.commonName, 22))}${count > 1 ? ` ×${count}` : ''}</text>`);
+    const row = (plant, count) => li(compact ? 24 : 28, `${swatch(plant)}<text x="30" font-size="11" fill="#222" font-family="${FONT}">${esc(trunc(plant.commonName, 22))}${count > 1 ? ` ×${count}` : ''}</text><text x="30" y="11" font-size="8.5" fill="#667" font-family="${FONT}" data-role="port">${esc(portShort(plant))}</text>`);
     if (compact) {
       const m = new Map();
       for (const g of groups) for (const it of g.items) { const e = m.get(it.plant.id) || { plant: it.plant, count: 0 }; e.count += it.count; m.set(it.plant.id, e); }
@@ -374,12 +406,20 @@ export function describePlan(garden, lookup = getPlant) {
   return lines.join(' ; ');
 }
 
+/** Types de zones utilisés, plus « pool-above » si une piscine hors sol est présente (motif d'eau dédié). */
+export function usedZoneTypes(zones) {
+  const used = new Set((zones || []).map((z) => z.type));
+  if ((zones || []).some((z) => isAbovePool(z))) used.add('pool-above');
+  return used;
+}
+
 /** Définitions communes (motifs par type de zone). */
 export function patternDefs(P, usedTypes, illus) {
   const defs = [];
   for (const t of ZONE_TYPES) {
     if (!usedTypes.has(t.id)) continue;
     defs.push(`<pattern id="${P}-pat-${t.id}" width="10" height="10" patternUnits="userSpaceOnUse">${patternBody(t.id, darken(t.color, 0.45))}</pattern>`);
+    if (t.id === 'pool' && usedTypes.has('pool-above')) defs.push(`<pattern id="${P}-pat-pool-above" width="10" height="10" patternUnits="userSpaceOnUse">${patternBody('pool-above', darken(t.color, 0.45))}</pattern>`);
     if (illus) defs.push(`<linearGradient id="${P}-g-${t.id}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${lighten(t.color, 0.35)}"/><stop offset="1" stop-color="${t.color}"/></linearGradient>`);
   }
   return defs;

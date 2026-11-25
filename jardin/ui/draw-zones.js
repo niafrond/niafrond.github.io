@@ -4,10 +4,18 @@ import {
   distance, shapePolygon, shapeArea, shapeBounds, bounds, overlapArea, polygonInside, pointInPolygon, centroid,
 } from '../geometry.js';
 import { attachNorthBadge } from './north-pop.js';
-import { ZONE_TYPES, getZoneType, createZone } from '../model.js';
+import { renderItemsSVG } from '../render-items.js';
+import { itemPolygon, itemRadius, itemHalfSize, getItemKind } from '../items.js';
+import { OBSTACLE_LABELS } from '../render-common.js';
+import { ZONE_TYPES, getZoneType, createZone, POOL_VARIANTS, poolVariant, setPoolVariant, bedModeOf } from '../model.js';
+import { FLOWER_ZONE_TYPES } from '../massifs.js';
+import {
+  rotatePoints, rotationOf, rotationCenter, rotateShapeBy, rotateShapeTo, rebuildRect, isRotatable, norm360,
+} from '../zone-rotate.js';
+import { ambianceChips, ambianceOf, ambianceEmoji, nameWithAmbiance, detectIn } from './ambiance-picker.js';
 import {
   injectStyles, h, createCanvas, gridPath, snap, clone, esc, fr, frLen, frArea, parseLength, toCm,
-  projectOnLine, snapToLines, rectPoints, isRectangle,
+  projectOnLine, snapToLines, rectPoints, isRectangle, parseNum,
 } from './draw-util.js';
 
 const NS = 'vector-effect="non-scaling-stroke"';
@@ -25,7 +33,7 @@ export function mountZoneEditor(el, { garden, onChange } = {}) {
   g.boundary = g.boundary || [];
   const st = {
     typeId: null, kind: null, mode: 'rect', drawing: null, ghost: null, snapMark: null, sel: null, gridIdx: 0, allTypes: false,
-    history: [], future: [], msg: '', lineWidth: 1, pop: false, cotes: [],
+    history: [], future: [], msg: '', lineWidth: 1, pop: false, cotes: [], naming: null, focusName: false, rotSnap: true, rotLive: null,
   };
   let destroyed = false;
   let north = null; // pastille du nord
@@ -86,6 +94,9 @@ export function mountZoneEditor(el, { garden, onChange } = {}) {
   const allVerts = () => {
     const v = [...g.boundary];
     g.zones.forEach((z) => { if (z.shape.points) v.push(...z.shape.points); });
+    // coins du mobilier et des obstacles posés avant les zones (points d'accroche)
+    for (const it of g.items || []) { try { if (itemRadius(it) == null) v.push(...itemPolygon(it)); } catch { /* */ } }
+    for (const o of g.obstacles || []) { if (o.points) v.push(...o.points); }
     return v;
   };
   const boundaryLines = () => {
@@ -148,6 +159,60 @@ export function mountZoneEditor(el, { garden, onChange } = {}) {
     }
     return hs;
   }
+  const NO_ROT_TIP = 'Un cercle n’a pas d’orientation';
+  const round3 = (n) => Math.round(n * 1000) / 1000;
+  const roundShape = (s) => { if (s.points) s.points = s.points.map((p) => ({ x: round3(p.x), y: round3(p.y) })); return s; };
+  /** Poignée de rotation : au-dessus de la forme (centre de l'emprise), reliée au centre de rotation. */
+  const rotHandle = (z) => {
+    if (!isRotatable(z.shape)) return null;
+    const c = rotationCenter(z.shape); const b = shapeBounds(z.shape);
+    return { c, p: { x: c.x, y: b.minY - cv.px(40) } };
+  };
+  // aimante l'angle absolu : multiples de 15° (si activé) et côtés du terrain (à ±3°)
+  function snapAngle(a) {
+    let out = norm360(a);
+    if (!st.rotSnap) return out;
+    let best = null;
+    for (const l of boundaryLines()) {
+      const e = (Math.atan2(l.b.y - l.a.y, l.b.x - l.a.x) * 180) / Math.PI;
+      for (let k = 0; k < 4; k++) {
+        const cand = norm360(e + k * 90);
+        const d = Math.abs(((out - cand + 540) % 360) - 180);
+        if (d <= 3 && (!best || d < best.d)) best = { d, a: cand };
+      }
+    }
+    if (best) return best.a;
+    out = norm360(Math.round(out / 15) * 15);
+    return out;
+  }
+  function rotateDrag(z, hd) {
+    const before = snap0();
+    const s0 = clone(z.shape); const base = rotationOf(s0);
+    const ang = (p) => (Math.atan2(p.y - hd.c.y, p.x - hd.c.x) * 180) / Math.PI;
+    const a0 = ang(hd.p);
+    let moved = false;
+    return {
+      move(w) {
+        moved = true;
+        const target = snapAngle(base + (ang(w) - a0));
+        z.shape = roundShape(rotateShapeTo(s0, target));
+        st.rotLive = target;
+        if (onChange) onChange(g);
+        draw(); refreshUI(true);
+      },
+      up(w, e, didMove) { st.rotLive = null; commitDrag(before, didMove && moved); },
+      cancel() { st.rotLive = null; g.zones = before; changed(); },
+    };
+  }
+  function rotateBy(z, d) { mutate(() => { z.shape = roundShape(rotateShapeBy(z.shape, d)); }); }
+  function rotateTo(z, deg) {
+    if (Math.abs(((norm360(deg) - rotationOf(z.shape) + 540) % 360) - 180) < 0.01) return; // déjà à cet angle
+    mutate(() => { z.shape = roundShape(rotateShapeTo(z.shape, deg)); });
+  }
+  function straighten(z) {
+    const a = rotationOf(z.shape);
+    rotateTo(z, norm360(Math.round(a / 90) * 90));
+  }
   const translateShape = (s0, dx, dy) => {
     const s = clone(s0);
     if (s.center) s.center = { x: s.center.x + dx, y: s.center.y + dy };
@@ -156,7 +221,7 @@ export function mountZoneEditor(el, { garden, onChange } = {}) {
   };
 
   // ---------- gestes ----------
-  function select(id) { st.sel = id; st.msg = ''; closePop(); draw(); refreshUI(); }
+  function select(id) { st.sel = id; st.naming = null; st.msg = ''; closePop(); draw(); refreshUI(); }
 
   function onDown(w) {
     if (st.typeId) {
@@ -167,6 +232,8 @@ export function mountZoneEditor(el, { garden, onChange } = {}) {
     }
     const z = zoneById(st.sel);
     if (z) {
+      const rh = rotHandle(z);
+      if (rh && distance(rh.p, w) <= cv.px(26)) return rotateDrag(z, rh);
       let best = null; let bd = Infinity;
       for (const hd of handlesOf(z)) {
         const d = distance(hd.p, w);
@@ -358,7 +425,7 @@ export function mountZoneEditor(el, { garden, onChange } = {}) {
       const same = g.zones.filter((q) => q.type === t.id).length;
       if (same) z.label = `${t.label} ${same + 1}`;
       g.zones.push(z);
-      st.sel = z.id;
+      st.sel = z.id; st.naming = z.id; st.focusName = true;
       st.typeId = null; st.kind = null; st.ghost = null; st.snapMark = null;
       st.msg = `Zone « ${z.label} » ajoutée (${frArea(shapeArea(shape))}). Choisissez un autre type pour enchaîner, ou ↶ pour annuler.`;
     });
@@ -382,20 +449,31 @@ export function mountZoneEditor(el, { garden, onChange } = {}) {
     const rows = fields.map((f) => {
       const inp = h('input', { class: 'jd-input jd-pop-input', type: 'text', inputmode: 'numeric', value: f.value ?? '', 'aria-label': f.label, enterkeyhint: 'done', 'data-field': f.key });
       inputs[f.key] = inp;
+      const angle = f.kind === 'angle';
       const step = (d) => () => {
+        if (angle) {
+          const v = parseNum(inp.value);
+          inp.value = String(Math.round(norm360((Number.isFinite(v) ? v : 0) + d)) % 360); inp.focus(); inp.select();
+          return;
+        }
         const v = parseLength(inp.value);
         inp.value = toCm(Math.max(0.01, (Number.isFinite(v) ? v : 0) + d)); inp.focus(); inp.select();
       };
       return h('div', { class: 'jd-pop-row' },
         h('label', {}, f.label),
-        h('button', { type: 'button', class: 'jd-btn jd-step', 'aria-label': 'Moins 10 centimètres', onclick: step(-0.1) }, '−10'),
+        h('button', { type: 'button', class: 'jd-btn jd-step', 'aria-label': angle ? 'Moins 15 degrés' : 'Moins 10 centimètres', onclick: step(angle ? -15 : -0.1) }, angle ? '−15' : '−10'),
         inp,
-        h('span', { class: 'jd-unit' }, 'cm'),
-        h('button', { type: 'button', class: 'jd-btn jd-step', 'aria-label': 'Plus 10 centimètres', onclick: step(0.1) }, '+10'));
+        h('span', { class: 'jd-unit' }, angle ? '°' : 'cm'),
+        h('button', { type: 'button', class: 'jd-btn jd-step', 'aria-label': angle ? 'Plus 15 degrés' : 'Plus 10 centimètres', onclick: step(angle ? 15 : 0.1) }, angle ? '+15' : '+10'));
     });
     const commit = () => {
       const out = {};
       for (const f of fields) {
+        if (f.kind === 'angle') {
+          const a = parseNum(inputs[f.key].value);
+          if (!Number.isFinite(a)) { inputs[f.key].classList.add('bad'); inputs[f.key].focus(); say('Saisissez un angle en degrés, par exemple 30 (0 à 359).'); return; }
+          out[f.key] = norm360(a); continue;
+        }
         const v = parseLength(inputs[f.key].value);
         if (!Number.isFinite(v)) { inputs[f.key].classList.add('bad'); inputs[f.key].focus(); say('Saisissez une longueur en cm, par exemple 350 (ou 3,5 m).'); return; }
         out[f.key] = v;
@@ -439,12 +517,9 @@ export function mountZoneEditor(el, { garden, onChange } = {}) {
     if (s.kind === 'circle') s.radius = round2(v.r);
     else if (s.kind === 'line') s.width = round2(v.w);
     else if (isRectangle(s.points)) {
-      const [p0, p1, , p3] = s.points;
-      const L1 = distance(p0, p1) || 1; const L2 = distance(p0, p3) || 1;
-      const u = { x: (p1.x - p0.x) / L1, y: (p1.y - p0.y) / L1 }; const t = { x: (p3.x - p0.x) / L2, y: (p3.y - p0.y) / L2 };
-      const r = (p) => ({ x: round2(p.x), y: round2(p.y) });
-      s.points = [r(p0), r({ x: p0.x + u.x * v.w, y: p0.y + u.y * v.w }),
-        r({ x: p0.x + u.x * v.w + t.x * v.l, y: p0.y + u.y * v.w + t.y * v.l }), r({ x: p0.x + t.x * v.l, y: p0.y + t.y * v.l })];
+      // reconstruit le rectangle autour du même centre, avec le même angle (ou celui saisi)
+      const deg = Number.isFinite(v.rot) ? v.rot : rotationOf(s);
+      s.points = rebuildRect(centroid(s.points), v.w, v.l, deg).map((p) => ({ x: round3(p.x), y: round3(p.y) }));
     } else {
       const b = shapeBounds(s);
       const kx = v.w / ((b.maxX - b.minX) || 1); const ky = v.l / ((b.maxY - b.minY) || 1);
@@ -456,11 +531,12 @@ export function mountZoneEditor(el, { garden, onChange } = {}) {
     const d = dimsOf(z);
     const fields = d.kind === 'circle' ? [{ key: 'r', label: 'Rayon', value: toCm(d.r) }]
       : d.kind === 'line' ? [{ key: 'w', label: 'Largeur', value: toCm(d.w) }]
-        : [{ key: 'w', label: 'Largeur', value: toCm(d.w) }, { key: 'l', label: 'Longueur', value: toCm(d.l) }];
+        : [{ key: 'w', label: 'Largeur', value: toCm(d.w) }, { key: 'l', label: 'Longueur', value: toCm(d.l) },
+          ...(d.kind === 'rect' ? [{ key: 'rot', label: 'Rotation', kind: 'angle', value: String(Math.round(rotationOf(z.shape)) % 360) }] : [])];
     const hint = d.kind === 'circle' ? 'Tapez le rayon en centimètres : 150 = 1,50 m.'
       : d.kind === 'line' ? `Longueur du tracé : ${frLen(d.len)}. Tapez la largeur en centimètres : 100 = 1 m.`
         : d.kind === 'poly' ? 'Forme libre : la forme est étirée à cette emprise. Centimètres : 350 = 3,50 m.'
-          : 'Tapez en centimètres : 350 = 3,50 m. Le coin en haut à gauche reste en place.';
+          : 'Tapez en centimètres : 350 = 3,50 m. Le centre reste en place, l’angle est conservé. Rotation en degrés (0–359).';
     openPop({
       title: `${z.label} · ${dimsText(z)}`, hint, fields, okLabel: 'Appliquer',
       onOk: (v) => { mutate(() => { applyDims(z, v); }); },
@@ -551,6 +627,23 @@ export function mountZoneEditor(el, { garden, onChange } = {}) {
     }
     return out;
   }
+  function placedSVG() {
+    let out = '';
+    try { out = renderItemsSVG(g, { scale: 1, px: cv.px(1), names: true, bg: '#fafaf5' }); } catch { out = ''; }
+    const fs = cv.px(11);
+    for (const it of g.items || []) { // nom court sous chaque élément
+      const k = getItemKind(it.kind); if (!k) continue;
+      const r = itemRadius(it); const hd = r != null ? r : Math.max(itemHalfSize(it).hw, itemHalfSize(it).hd);
+      out += `<text x="${it.x}" y="${it.y + hd + fs * 1.05}" font-size="${fs * 0.95}" text-anchor="middle" fill="#37474f" stroke="#fff" stroke-width="${fs * 0.2}" paint-order="stroke" data-item-name="${esc(it.id)}">${esc(it.label || k.short)}</text>`;
+    }
+    for (const o of g.obstacles || []) {
+      const name = OBSTACLE_LABELS[o.kind];
+      if (!name || o.kind === 'wall' || o.kind === 'fence') continue;
+      const c = o.center ? o.center : (o.points && o.points.length >= 3 ? centroid(o.points) : null);
+      if (c) out += `<text x="${c.x}" y="${c.y + fs / 3}" font-size="${fs}" text-anchor="middle" fill="#37474f" stroke="#fff" stroke-width="${fs * 0.22}" paint-order="stroke" data-obstacle-name="${esc(o.kind)}">${esc(name)}</text>`;
+    }
+    return out;
+  }
   function draw() {
     if (destroyed) return;
     if (north) north.update();
@@ -568,6 +661,8 @@ export function mountZoneEditor(el, { garden, onChange } = {}) {
       else if (o.points && o.points.length >= 3) s += `<polygon points="${poly(o.points)}" fill="#9e9e9e" fill-opacity=".35" stroke="#616161" ${NS}/>`;
       else if (o.points) s += `<polyline points="${poly(o.points)}" fill="none" stroke="#616161" stroke-width="3" ${NS}/>`;
     }
+    // aménagements déjà posés (lecture seule, sous les zones) : mobilier, murs / clôtures / haies, ouvertures, obstacles nommés
+    s += `<g data-role="placed-layer" pointer-events="none">${placedSVG()}</g>`;
     const order = [...g.zones].sort((a, b) => ((getZoneType(a.type) || {}).layer === 'canopy') - ((getZoneType(b.type) || {}).layer === 'canopy'));
     const fs = cv.px(12);
     const ov = overlapIds().ids;
@@ -582,7 +677,8 @@ export function mountZoneEditor(el, { garden, onChange } = {}) {
       const sw = out || selected ? 3.5 : ov.has(z.id) ? 2.5 : 1.5;
       s += `<polygon points="${poly(pl)}" fill="${t.color}" fill-opacity="${canopy ? 0.35 : 0.6}" stroke="${stroke}" stroke-width="${sw}"${canopy && !out ? ' stroke-dasharray="6 3"' : ''} stroke-linejoin="round" ${NS}${out ? ' data-out="1"' : ''}/>`;
       const c = centroid(pl);
-      s += label(c.x, c.y, `${out ? '⚠ ' : ''}${t.icon} ${esc(z.label)}`, fs, 'font-weight="700"');
+      const ae = ambianceEmoji(z.ambiance);
+      s += label(c.x, c.y, `${out ? '⚠ ' : ''}${t.icon} ${esc(z.label)}${ae ? ` ${ae}` : ''}`, fs, 'font-weight="700"');
       s += label(c.x, c.y + fs * 1.3, `${fr(shapeArea(z.shape), 1)} m²`, fs * 0.9);
       if (selected && !st.typeId && z.shape.kind !== 'circle') {
         const cs = cotesOf(z.shape.points, z.shape.kind === 'polygon');
@@ -598,6 +694,15 @@ export function mountZoneEditor(el, { garden, onChange } = {}) {
       for (const hd of handlesOf(sel)) {
         if (hd.kind === 'mid') s += `<circle cx="${hd.p.x}" cy="${hd.p.y}" r="${cv.px(8)}" fill="#fff" fill-opacity=".85" stroke="${PINK}" stroke-width="2" stroke-dasharray="3 2" data-handle="mid" ${NS}/><path d="M${hd.p.x - cv.px(4)} ${hd.p.y}H${hd.p.x + cv.px(4)}M${hd.p.x} ${hd.p.y - cv.px(4)}V${hd.p.y + cv.px(4)}" stroke="${PINK}" stroke-width="1.5" ${NS}/>`;
         else s += `<circle cx="${hd.p.x}" cy="${hd.p.y}" r="${cv.px(hd.kind === 'radius' ? 12 : 11)}" fill="${hd.kind === 'radius' ? '#ffb300' : '#fff'}" stroke="${PINK}" stroke-width="3" data-handle="${hd.kind}" ${NS}/>`;
+      }
+    }
+    if (sel && !st.typeId) {
+      const rh = rotHandle(sel);
+      if (rh) {
+        const u = cv.px(1); const ca = rotationOf(sel.shape);
+        s += `<line x1="${rh.c.x}" y1="${rh.c.y}" x2="${rh.p.x}" y2="${rh.p.y}" stroke="${PINK}" stroke-width="1.5" stroke-dasharray="4 3" ${NS}/><circle cx="${rh.p.x}" cy="${rh.p.y}" r="${u * 15}" fill="${PINK}" stroke="#fff" stroke-width="2" data-handle="rotate" ${NS}/><text x="${rh.p.x}" y="${rh.p.y + u * 6}" font-size="${u * 17}" text-anchor="middle" fill="#fff" pointer-events="none">⟳</text>`;
+        if (st.rotLive != null) s += label(rh.p.x, rh.p.y - u * 22, `${Math.round(st.rotLive)}°`, u * 15, 'font-weight="700" data-role="rot-live"');
+        else if (ca) s += label(rh.p.x + u * 30, rh.p.y + u * 5, `${Math.round(ca)}°`, u * 12, 'font-weight="600"');
       }
     }
     gMain.innerHTML = s;
@@ -647,6 +752,7 @@ export function mountZoneEditor(el, { garden, onChange } = {}) {
       const m = st.snapMark;
       s += `<circle cx="${m.p.x}" cy="${m.p.y}" r="${cv.px(6)}" fill="none" stroke="${m.kind === 'point' ? '#1e88e5' : m.kind === 'edge' ? '#8e24aa' : '#777'}" stroke-width="2" ${NS}/>`;
     }
+    if (st.rotLive != null && !st.typeId) live = `Rotation ${Math.round(st.rotLive)}°${st.rotSnap ? ' (pas de 15°)' : ''}`;
     gTop.innerHTML = s;
     liveEl.textContent = live;
     liveEl.hidden = !live;
@@ -654,8 +760,10 @@ export function mountZoneEditor(el, { garden, onChange } = {}) {
 
   // ---------- interface ----------
   function typeList() {
-    const wished = (g.wishedZoneTypes || []).map(getZoneType).filter(Boolean);
-    const rest = ZONE_TYPES.filter((t) => !wished.includes(t));
+    // mode auto : les types massif ne sont plus proposés (l'app les calcule à l'étape Massifs)
+    const hide = (t) => bedModeOf(g) === 'auto' && FLOWER_ZONE_TYPES.includes(t.id);
+    const wished = (g.wishedZoneTypes || []).map(getZoneType).filter((t) => t && !hide(t));
+    const rest = ZONE_TYPES.filter((t) => !wished.includes(t) && !hide(t));
     return { wished, rest };
   }
   function refreshChips() {
@@ -671,11 +779,15 @@ export function mountZoneEditor(el, { garden, onChange } = {}) {
     };
     wished.forEach((t) => chips.append(card(t, true)));
     if (st.allTypes || !wished.length) rest.forEach((t) => chips.append(card(t, false)));
+    if (bedModeOf(g) === 'auto') {
+      chips.append(h('a', { class: 'jd-chip jd-tcard jd-tnote', 'data-role': 'beds-note', href: `#/garden/${encodeURIComponent(g.id)}/beds` },
+        h('span', { class: 'jd-ticon', 'aria-hidden': 'true' }, '🌸'), h('span', { class: 'jd-tname' }, 'Les massifs fleuris sont calculés à l’étape Massifs'), h('span', { class: 'jd-tstat' }, 'Ouvrir →')));
+    }
     if (wished.length) chips.append(h('button', { type: 'button', class: 'jd-chip jd-tcard jd-tmore', 'data-act': 'toggle-all', onclick: () => { st.allTypes = !st.allTypes; refreshChips(); } }, h('span', { class: 'jd-ticon' }, st.allTypes ? '−' : '＋'), h('span', { class: 'jd-tname' }, st.allTypes ? 'Masquer les autres' : 'Autres types')));
   }
   function chooseType(id) {
     const t = getZoneType(id);
-    stopDrawing(); st.sel = null; st.msg = ''; closePop();
+    stopDrawing(); st.sel = null; st.naming = null; st.msg = ''; closePop();
     if (st.typeId === id) { st.typeId = null; st.kind = null; } else {
       st.typeId = id; st.kind = t.shapeKinds[0]; st.mode = 'rect'; st.lineWidth = t.defaultWidth || 1;
     }
@@ -690,7 +802,7 @@ export function mountZoneEditor(el, { garden, onChange } = {}) {
       if (st.mode === 'rect') return d && d.points.length ? 'Touchez (ou glissez jusqu’à) le coin opposé du rectangle.' : 'Touchez un premier coin, puis le coin opposé. Appui long : saisir largeur × longueur.';
       return d && d.points.length >= 3 ? 'Touchez le 1er point (✔ vert) pour fermer la forme, ou continuez à poser des angles.' : 'Touchez chaque angle ; touchez le 1er point pour fermer la forme. Appui long : saisir les mesures.';
     }
-    if (zoneById(st.sel)) return 'Glissez un rond pour déformer, un ＋ pour ajouter un sommet, la zone pour la déplacer. Appui long : dimensions en cm.';
+    if (zoneById(st.sel)) return 'Glissez un rond pour déformer, un ＋ pour ajouter un sommet, ⟳ pour pivoter, la zone pour la déplacer. Appui long : dimensions en cm.';
     return g.zones.length ? 'Touchez une zone pour la sélectionner, ou choisissez un type pour en ajouter. Appui long sur une zone : dimensions.' : 'Choisissez un type de zone puis dessinez-la sur le plan.';
   }
   const refreshMsg = () => { msgEl.textContent = st.msg || help(); };
@@ -735,7 +847,7 @@ export function mountZoneEditor(el, { garden, onChange } = {}) {
     chips.classList.toggle('compact', !!(sel && !st.typeId));
     const { n: ov } = overlapIds();
     const out = g.zones.filter(isOut).length;
-    const wished = (g.wishedZoneTypes || []).filter((id) => !g.zones.some((z) => z.type === id));
+    const wished = (g.wishedZoneTypes || []).filter((id) => !g.zones.some((z) => z.type === id) && !(bedModeOf(g) === 'auto' && FLOWER_ZONE_TYPES.includes(id)));
     info.innerHTML = `<span><b data-role="zone-count">${g.zones.length}</b> zone${g.zones.length > 1 ? 's' : ''}</span>`
       + (ov ? `<span class="jd-msg warn" style="padding:0">⚠ ${ov} chevauchement${ov > 1 ? 's' : ''}</span>` : '')
       + (out ? `<span class="jd-msg err" style="padding:0">⚠ ${out} hors du terrain</span>` : '')
@@ -750,6 +862,8 @@ export function mountZoneEditor(el, { garden, onChange } = {}) {
         if (a) a.textContent = frArea(shapeArea(sel.shape));
         const dm = panel.querySelector('[data-role=zone-dims]');
         if (dm) dm.textContent = dimsText(sel);
+        const ri = panel.querySelector('[data-role=zone-rot]');
+        if (ri && document.activeElement !== ri) ri.value = String(Math.round(rotationOf(sel.shape)) % 360);
         renderWarns(sel);
       } else renderPanel(sel);
     }
@@ -780,30 +894,117 @@ export function mountZoneEditor(el, { garden, onChange } = {}) {
   function renderPanel(z) {
     panel.innerHTML = '';
     const t = getZoneType(z.type);
-    const nameIn = h('input', { class: 'jd-input', type: 'text', value: z.label, 'aria-label': 'Nom de la zone', 'data-role': 'zone-name', maxlength: '60' });
-    nameIn.addEventListener('change', () => { mutate(() => { z.label = nameIn.value.trim() || t.label; }, true); });
-    const typeSel = h('select', { class: 'jd-select', 'aria-label': 'Type de zone', 'data-role': 'zone-type' }, ZONE_TYPES.map((tt) => h('option', { value: tt.id, selected: tt.id === z.type }, `${tt.icon} ${tt.label}`)));
-    typeSel.addEventListener('change', () => { mutate(() => { const old = getZoneType(z.type); if (z.label === old.label) z.label = getZoneType(typeSel.value).label; z.type = typeSel.value; }); });
+    const naming = st.naming === z.id;
+    panel.classList.toggle('naming', naming);
+    const nameIn = h('input', {
+      class: 'jd-input', type: 'text', value: z.label, 'aria-label': 'Nom de la zone', 'data-role': 'zone-name', maxlength: '60',
+      placeholder: 'ex. Massif bucolique devant la terrasse', enterkeyhint: 'done', autocomplete: 'off',
+    });
+    // détection d'un mot d'ambiance tapé dans le nom : proposée, jamais imposée
+    const detEl = h('div', { class: 'jd-detect', 'data-role': 'ambiance-detected', hidden: true, role: 'status', 'aria-live': 'polite' });
+    const commitName = () => { z.label = nameIn.value.trim() || t.label; };
+    const refreshDetect = () => {
+      const id = detectIn(nameIn.value);
+      const a = id && id !== z.ambiance ? ambianceOf(id) : null;
+      detEl.hidden = !a; detEl.textContent = '';
+      if (a) {
+        detEl.append(h('span', null, `Ambiance détectée : ${a.emoji} ${a.label}`),
+          btn('Appliquer', 'apply-ambiance', () => { mutate(() => { commitName(); z.ambiance = id; }); }, 'primary'));
+      }
+    };
+    nameIn.addEventListener('input', refreshDetect);
+    nameIn.addEventListener('change', () => { mutate(() => { commitName(); }, true); refreshDetect(); });
+    if (naming) nameIn.addEventListener('focus', () => { try { nameIn.select(); } catch { /* */ } });
+    const typeSel = h('select', { class: 'jd-select', 'aria-label': 'Type de zone', 'data-role': 'zone-type' }, ZONE_TYPES.filter((tt) => tt.id === z.type || !(bedModeOf(g) === 'auto' && FLOWER_ZONE_TYPES.includes(tt.id))).map((tt) => h('option', { value: tt.id, selected: tt.id === z.type }, `${tt.icon} ${tt.label}`)));
+    typeSel.addEventListener('change', () => { mutate(() => { const old = getZoneType(z.type); if (z.label === old.label) z.label = getZoneType(typeSel.value).label; z.type = typeSel.value; if (z.type === 'pool' && !z.variant) z.variant = 'inground'; }); });
     const nPl = (z.plantings || []).length;
-    panel.append(
-      h('div', { class: 'jd-zhead' }, h('span', { class: 'jd-zdot', style: { background: t.color } }, t.icon), nameIn,
+    const setAmbiance = (id) => { mutate(() => { z.ambiance = id || null; }); };
+    const ambField = h('div', { class: 'jd-field jd-amb', 'data-role': 'zone-ambiance-field' },
+      h('div', { class: 'jd-flabel', id: 'jd-amb-label' }, 'Ambiance'),
+      ambianceChips({ value: z.ambiance || null, none: 'Aucune', ariaLabel: 'Ambiance de la zone', dataRole: 'zone-ambiance', onPick: setAmbiance }));
+    const nameHead = naming ? h('div', { class: 'jd-naming-head', 'data-role': 'naming' },
+      h('label', { class: 'jd-flabel', for: 'jd-zone-name' }, 'Donnez-lui un nom'),
+      h('div', { class: 'jd-hint' }, 'Le nom s’affiche sur le plan : ajoutez l’ambiance voulue pour vous y retrouver.')) : null;
+    const nameSug = naming ? h('div', { class: 'jd-naming', 'data-role': 'naming-suggestions' },
+      h('div', { class: 'jd-suggest-label', id: 'jd-sug-label' }, 'Touchez une ambiance pour l’ajouter au nom'),
+      ambianceChips({
+        mode: 'action', ariaLabel: 'Suggestions d’ambiance pour le nom', dataRole: 'name-suggestions',
+        onPick: (id) => { mutate(() => { z.label = nameWithAmbiance(nameIn.value.trim() || z.label, id); z.ambiance = id; }); },
+      })) : null;
+    nameIn.id = 'jd-zone-name';
+    // piscine : enterrée ou hors sol
+    let poolField = null;
+    if (z.type === 'pool') {
+      const cur = poolVariant(z);
+      poolField = h('div', { class: 'jd-field jd-poolvar', 'data-role': 'pool-variant-field' },
+        h('div', { class: 'jd-flabel', id: 'jd-poolvar-label' }, 'Type de piscine'),
+        h('div', { class: 'jd-segs', role: 'radiogroup', 'aria-labelledby': 'jd-poolvar-label', 'data-role': 'pool-variant' },
+          POOL_VARIANTS.map((v) => h('button', {
+            type: 'button', class: 'jd-btn jd-seg', role: 'radio', 'aria-checked': String(cur === v.id),
+            'data-variant': v.id, onclick: () => { if (poolVariant(z) !== v.id) mutate(() => { setPoolVariant(z, v.id); }); },
+          }, v.label))),
+        h('div', { class: 'jd-hint', 'data-role': 'pool-variant-help' }, 'Une piscine hors sol dépasse du sol : prévoyez un dégagement d’au moins 1 m autour et un accès.'));
+    }
+    // rotation
+    const rotOk = isRotatable(z.shape);
+    const dis = rotOk ? {} : { disabled: true, title: NO_ROT_TIP, 'aria-disabled': 'true' };
+    const rotIn = h('input', {
+      class: 'jd-input jd-rot-input', type: 'text', inputmode: 'numeric', value: String(Math.round(rotationOf(z.shape)) % 360),
+      'aria-label': 'Rotation (°)', 'data-role': 'zone-rot', enterkeyhint: 'done', autocomplete: 'off', ...dis,
+    });
+    rotIn.addEventListener('change', () => {
+      const a = parseNum(rotIn.value);
+      if (!Number.isFinite(a)) { rotIn.value = String(Math.round(rotationOf(z.shape)) % 360); say('Saisissez un angle en degrés, par exemple 30 (0 à 359).'); return; }
+      rotateTo(z, norm360(a));
+    });
+    rotIn.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); rotIn.blur(); } });
+    const rotBtn = (label, act, fn, aria) => btn(label, act, fn, '', { 'aria-label': aria, ...dis });
+    const rotRow = h('div', { class: 'jd-field jd-rot', 'data-role': 'zone-rotation', role: 'group', 'aria-label': 'Rotation de la forme' },
+      h('div', { class: 'jd-rot-head' },
+        h('label', { class: 'jd-flabel', for: 'jd-zone-rot' }, 'Rotation (°)'), rotIn,
+        btn('🧲 15°', 'rot-snap', () => { st.rotSnap = !st.rotSnap; refreshUI(); }, '', { 'aria-pressed': String(st.rotSnap), title: 'Aimanter la poignée tous les 15°', 'aria-label': 'Aimantation tous les 15 degrés', ...dis })),
+      h('div', { class: 'jd-row jd-rot-acts' },
+        rotBtn('↺ −15°', 'rot-ccw', () => rotateBy(z, -15), 'Tourner de 15 degrés vers la gauche'),
+        rotBtn('↻ +15°', 'rot-cw', () => rotateBy(z, 15), 'Tourner de 15 degrés vers la droite'),
+        rotBtn('⟲ 90°', 'rot-90', () => rotateBy(z, 90), 'Tourner de 90 degrés'),
+        rotBtn('Remettre droit', 'rot-reset', () => straighten(z), 'Remettre droit : aligner le côté principal sur le plan')),
+      rotOk ? null : h('div', { class: 'jd-hint' }, NO_ROT_TIP + '.'));
+    rotIn.id = 'jd-zone-rot';
+    panel.append(...[
+      nameHead,
+      h('div', { class: 'jd-zhead' }, h('span', { class: 'jd-zdot', style: { background: t.color } }, t.icon),
+        naming ? h('div', { class: 'jd-zname' }, nameIn) : nameIn,
         btn('✕', 'deselect', () => select(null), '', { 'aria-label': 'Désélectionner' })),
+      nameSug, detEl, ambField,
       h('div', { class: 'jd-row' }, typeSel),
+      poolField,
       h('div', { class: 'jd-row jd-zfacts' },
         h('span', {}, 'Surface : ', h('b', { 'data-role': 'zone-area' }, frArea(shapeArea(z.shape)))),
         h('span', { 'data-role': 'zone-dims' }, dimsText(z)),
         h('span', { class: 'jd-muted', 'data-role': 'zone-plants' }, nPl ? `🌱 ${nPl} plante${nPl > 1 ? 's' : ''} choisie${nPl > 1 ? 's' : ''}` : 'Aucune plante choisie')),
+      rotRow,
       h('div', { class: 'jd-row jd-zacts', 'data-role': 'zone-actions' },
         btn('📏 Dimensions…', 'dims', () => openDimsPop(z)),
         btn('⧉ Dupliquer', 'duplicate', () => duplicate(z)),
-        btn('🗑 Supprimer', 'delete-zone', () => remove(z), 'danger')));
+        btn('🗑 Supprimer', 'delete-zone', () => remove(z), 'danger'))].filter(Boolean));
+    if (naming) nameIn.setAttribute('aria-describedby', 'jd-sug-label');
+    refreshDetect();
     renderWarns(z);
+    if (naming && st.focusName) {
+      st.focusName = false;
+      // pas de clavier intempestif sur mobile : focus automatique seulement avec un pointeur précis (souris)
+      let fine = false;
+      try { fine = !!(window.matchMedia && window.matchMedia('(pointer: fine)').matches); } catch { /* */ }
+      if (fine) setTimeout(() => { if (!destroyed) nameIn.focus({ preventScroll: true }); }, 0);
+      setTimeout(() => { if (!destroyed && panel.scrollIntoView) { try { panel.scrollIntoView({ block: 'nearest' }); } catch { /* */ } } }, 0);
+    }
   }
 
   function duplicate(z) {
     mutate(() => {
       const c = createZone(z.type, translateShape(z.shape, 0.5, 0.5));
       c.label = `${z.label} (copie)`; c.notes = z.notes || '';
+      if (z.ambiance) c.ambiance = z.ambiance;
       g.zones.push(c);
       st.sel = c.id;
       st.msg = `Copie « ${c.label} » posée en décalé : glissez-la à sa place.`;

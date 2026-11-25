@@ -3,6 +3,7 @@ import { h, toast } from './wizard.js';
 import { storage } from '../storage.js';
 import { encodeGarden, buildShareLink, buildAppLink, sizeInfo } from '../transfer.js';
 import { qrSvg } from '../qr.js';
+import { openSaveDialog, safeFilename } from './save-file.js';
 
 /** Adresse publique de l'application (modifiable avec setPublicUrl). */
 export let PUBLIC_URL = 'https://niafrond.github.io/jardin/';
@@ -56,6 +57,7 @@ export function mountShareScreen(el, { garden, onBack }) {
         h('p', { class: 'muted' }, 'Envoyez-le vous-même (messagerie, courriel…), puis ouvrez-le sur le téléphone.'),
         field, actions,
         h('p', { class: 'notice warn' }, '⚠️ Le lien contient votre jardin : ne le partagez qu’avec vous-même.'),
+        info.length > 6000 ? h('p', { class: 'notice', 'data-role': 'long-link' }, `Ce lien est long (${Math.round(info.length / 1024)} Ko) : certaines messageries le coupent. Copiez-le puis collez-le dans une note ou un courriel, ou utilisez le fichier (3).`) : null,
         isAndroid && !native ? h('a', { class: 'btn', 'data-act': 'open-app', href: `intent://import/${code}#Intent;scheme=jardin;package=io.github.niafrond.jardin;end` }, 'Ouvrir dans l’application') : null),
       h('section', { class: 'share-way', 'data-way': 'qr' },
         h('h3', null, '2. Le QR code'),
@@ -66,10 +68,7 @@ export function mountShareScreen(el, { garden, onBack }) {
         h('h3', null, '3. Le fichier'),
         h('p', { class: 'muted' }, 'Téléchargez le fichier, copiez-le sur le téléphone, puis utilisez « Importer (JSON) » sur l’accueil.'),
         h('button', { class: 'btn', type: 'button', 'data-act': 'download', onclick: async () => {
-          const url = URL.createObjectURL(new Blob([await storage.exportGarden(garden)], { type: 'application/json' }));
-          const a = h('a', { href: url, download: `jardin-${(garden.name || 'jardin').replace(/[^\w-]+/g, '_')}.json` });
-          document.body.append(a); a.click(); a.remove();
-          setTimeout(() => URL.revokeObjectURL(url), 2000);
+          openSaveDialog({ filename: safeFilename(garden.name), text: await storage.exportGarden(garden), title: 'Fichier du jardin' });
         } }, '💾 Télécharger le fichier')));
   })();
 

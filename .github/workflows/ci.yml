@@ -167,7 +167,8 @@ jobs:
 
       - name: Parcours e2e Jardin
         if: steps.filter.outputs.jardin == 'true'
-        run: npx playwright test --project=jardin --trace off
+        # un seul worker : les specs 3D (WebGL logiciel) se disputent sinon les 2 cœurs du runner
+        run: npx playwright test --project=jardin --trace off --workers=1
 
       - name: Upload Playwright results
         if: failure()

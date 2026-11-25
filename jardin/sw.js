@@ -1,14 +1,19 @@
 // Service worker : cache hors ligne des fichiers statiques (stale-while-revalidate).
-const CACHE = 'jardin-v4';
+const CACHE = 'jardin-v7';
 const FILES = [
   './', 'index.html', 'style.css', 'desktop.css', 'app.js', 'manifest.webmanifest', 'icon.svg',
-  'model.js', 'geometry.js', 'sun.js', 'storage.js', 'climate.js', 'catalog.js', 'recommend.js',
+  'model.js', 'geometry.js', 'zone-rotate.js', 'sun.js', 'storage.js', 'climate.js', 'catalog.js', 'recommend.js',
   'weather.js', 'geo.js', 'notify.js', 'watering.js', 'advice.js', 'render.js', 'transfer.js', 'qr.js', 'vendor/qrcode.js',
   'data/climate.js', 'data/plants/index.js', 'data/plants/woody.js', 'data/plants/herbaceous.js',
   'ui/home.js', 'ui/wizard.js', 'ui/step-context.js', 'ui/step-wished.js', 'ui/step-sun.js', 'ui/step-plants.js',
   'ui/draw.js', 'ui/draw.css', 'ui/draw-util.js', 'ui/plan-step.js', 'ui/advice-screen.js', 'ui/settings.js', 'ui/share-screen.js', 'ui/import-screen.js',
   'items.js', 'render-items.js', 'render3d.js', 'render-common.js', 'photos.js', 'pricing.js', 'ui/step-items.js', 'ui/draw-items.js', 'ui/draw-items.css', 'ui/pop.js', 'ui/draw-zones.js', 'ui/draw-contour.js', 'ui/gps-survey-ui.js', 'gps-survey.js', 'ui/draw-sun.js', 'ui/north-pop.js',
   'data/plants/extras-woody.js', 'data/plants/extras-herbaceous.js',
+  'ambiances.js', 'data/plants/ambiances-tags.js', 'ui/ambiance-picker.js',
+  'habits.js', 'data/plants/habits-tags.js',
+  'maintenance.js', 'ui/maintenance-picker.js',
+  'massifs.js', 'ui/step-beds.js', 'ui/beds-panel.js', 'ui/beds.css',
+  'existing.js', 'ui/existing-panel.js',
 ];
 
 self.addEventListener('install', (e) => {

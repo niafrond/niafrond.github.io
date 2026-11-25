@@ -1,14 +1,15 @@
 // Rendu vectoriel du plan : renderPlanSVG(garden, opts) → string SVG autonome (pur, sans DOM).
 // Les essences sont dessinées avec leurs vraies couleurs (feuillage + floraison selon la saison).
 import { bounds, centroid, pointInPolygon, shapePolygon, shapeBounds, signedArea, distance } from './geometry.js';
-import { getZoneType } from './model.js';
+import { getZoneType, isAbovePool } from './model.js';
 import { getPlant } from './catalog.js';
+import { culmColor } from './gl-worker-core.js';
 import { renderItemsSVG, itemsLegendEntries } from './render-items.js';
 import { gardenCost, formatEuro } from './pricing.js';
 import {
   FONT, OBSTACLE_LABELS, BARE_WOOD, BARE_HERB, SUN_COLORS, esc, f, frNum, darken, lighten, mixHex, rngOf,
   normMonth, monthLabel, plantState, placePlants, shadowDir, GradRegistry, buildLegendItems, makeFrame, northSVG, scaleBarSVG,
-  cartoucheSVG, describePlan as describeCommon, patternDefs, plantHeightM, lawnPatternDef, captionSVG,
+  cartoucheSVG, describePlan as describeCommon, patternDefs, usedZoneTypes, plantHeightM, lawnPatternDef, captionSVG,
 } from './render-common.js';
 
 export { placePlants } from './render-common.js';
@@ -24,6 +25,7 @@ export function plantKind(plant) {
 }
 
 const PI2 = Math.PI * 2;
+const fam0 = (pp) => pp.family || 'dome';
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 
 function lobes(cx, cy, rp, n, R, spread, size) {
@@ -91,11 +93,127 @@ function bareBranches(cx, cy, rp, R, illus) {
   return `${illus ? `<circle cx="${f(cx)}" cy="${f(cy)}" r="${f(rp * 0.96)}" fill="#fff" fill-opacity=".1" stroke="${BARE_WOOD}" stroke-opacity=".22" stroke-dasharray="2 3" stroke-width=".6"/>` : ''}<path d="${d}" fill="none" stroke="${BARE_WOOD}" stroke-width="${f(w)}" stroke-linecap="round" data-bare="1"/><circle cx="${f(cx)}" cy="${f(cy)}" r="${f(clamp(rp * 0.08, 1.2, 3))}" fill="#5d4a3a"/>`;
 }
 
-function leafPath(cx, cy, a, L, wd) {
+export function leafPath(cx, cy, a, L, wd) {
   const ex = cx + Math.cos(a) * L; const ey = cy + Math.sin(a) * L;
   const nx = -Math.sin(a) * wd; const ny = Math.cos(a) * wd;
   const mx = cx + Math.cos(a) * L * 0.5; const my = cy + Math.sin(a) * L * 0.5;
   return `M${f(cx)} ${f(cy)}Q${f(mx + nx)} ${f(my + ny)} ${f(ex)} ${f(ey)}Q${f(mx - nx)} ${f(my - ny)} ${f(cx)} ${f(cy)}Z`;
+}
+
+
+const TREEY = new Set(['round', 'fruit', 'spreading', 'umbrella', 'vase', 'weeping', 'upright', 'arching']);
+const lobedPath = (cx, cy, r, n, amp, ph = 0) => { let d = ''; for (let i = 0; i < 48; i++) { const a = (i / 48) * PI2; const rr = r * (1 + amp * Math.cos(n * a + ph)); d += `${i ? 'L' : 'M'}${f(cx + Math.cos(a) * rr)} ${f(cy + Math.sin(a) * rr)}`; } return `${d}Z`; };
+const starPath2 = (cx, cy, r, n, inner, ph = 0) => { let d = ''; for (let i = 0; i < n * 2; i++) { const a = (i / (n * 2)) * PI2 + ph; const rr = i % 2 ? r * inner : r; d += `${i ? 'L' : 'M'}${f(cx + Math.cos(a) * rr)} ${f(cy + Math.sin(a) * rr)}`; } return `${d}Z`; };
+
+/**
+ * Symbole 2D propre au port (vue de dessus) : couronne dentelée (feuillus), étoile (conifères), rayons (graminées),
+ * faisceau de cercles (bambou), rang taillé (haie), tiges le long du mur (grimpantes)… `null` = symbole générique de la catégorie.
+ */
+function portSymbol(pp, st, fam, cx, cy, rp, ctx) {
+  const R = rngOf(pp); const fo = st.foliage; const illus = ctx.illus;
+  const fl = st.flowering ? st.flower : null;
+  const dk = darken(fo, 0.35); const lt = lighten(fo, 0.3);
+  const fill = illus ? `url(#${ctx.grads.id(fo)})` : fo;
+  let s = '';
+  const ray = (a, L, w, col, curve = 0) => { const ex = cx + Math.cos(a) * L; const ey = cy + Math.sin(a) * L; return `M${f(cx)} ${f(cy)}Q${f(cx + Math.cos(a + curve) * L * 0.6)} ${f(cy + Math.sin(a + curve) * L * 0.6)} ${f(ex)} ${f(ey)}`; };
+  switch (fam) {
+    case 'round': case 'fruit': case 'spreading': case 'umbrella': case 'vase': case 'weeping': {
+      if (st.bare) return bareBranches(cx, cy, rp, R, illus);
+      s = `<path d="${lobedPath(cx, cy, rp, fam === 'spreading' ? 9 : 7, fam === 'umbrella' ? 0.04 : 0.1, R() * 6)}" fill="${fill}" stroke="${darken(fo, 0.45)}" stroke-width=".8"/>`;
+      for (const l of lobes(cx, cy, rp, 4, R, 0.5, 0.45)) s += `<circle cx="${f(l.x)}" cy="${f(l.y)}" r="${f(l.r)}" fill="${R() > 0.5 ? dk : lt}" fill-opacity=".25"/>`;
+      if (fam === 'umbrella') { let d = ''; for (let k = 0; k < 8; k++) d += ray((k / 8) * PI2, rp * 0.92, 1, dk); s += `<path d="${d}" fill="none" stroke="${dk}" stroke-width=".7" stroke-opacity=".6"/><circle cx="${f(cx)}" cy="${f(cy)}" r="${f(Math.max(1, rp * 0.08))}" fill="#5d4a3a"/>`; }
+      if (fam === 'weeping') { let d = ''; for (let k = 0; k < 16; k++) d += ray((k / 16) * PI2 + R() * 0.2, rp * (0.85 + 0.15 * R()), 1, dk, 0.35); s += `<path d="${d}" fill="none" stroke="${dk}" stroke-width="${f(clamp(rp * 0.04, 0.5, 1.2))}" stroke-opacity=".7" stroke-linecap="round"/>`; }
+      if (fam === 'vase') s += `<circle cx="${f(cx)}" cy="${f(cy)}" r="${f(rp * 0.42)}" fill="${lt}" fill-opacity=".3" stroke="${dk}" stroke-opacity=".4" stroke-width=".6"/>`;
+      if (fam === 'fruit' && (st.month == null || (st.month >= 7 && st.month <= 10))) { let d = ''; for (let k = 0; k < clamp(Math.round(rp / 2.5), 4, 12); k++) { const a = R() * PI2; const r2 = Math.sqrt(R()) * rp * 0.75; d += `<circle cx="${f(cx + Math.cos(a) * r2)}" cy="${f(cy + Math.sin(a) * r2)}" r="${f(clamp(rp * 0.06, 0.9, 2.4))}"/>`; } s += `<g data-fruit="1" fill="#d9482b" stroke="#7a1f10" stroke-width=".3">${d}</g>`; }
+      if (fl) s += flowerDots(cx, cy, rp, fl, R, clamp(Math.round(rp * 0.9), 6, 30), false);
+      return s;
+    }
+    case 'cone': case 'column': {
+      const n = fam === 'cone' ? 10 : 6; const col = darken(fo, 0.22);
+      s = `<path d="${starPath2(cx, cy, rp, n, fam === 'cone' ? 0.6 : 0.78, R() * 6)}" fill="${col}" stroke="${darken(fo, 0.55)}" stroke-width=".8" stroke-linejoin="round"/><path d="${starPath2(cx, cy, rp * 0.58, n, 0.55, R() * 6)}" fill="${fo}" fill-opacity=".85"/><circle cx="${f(cx)}" cy="${f(cy)}" r="${f(Math.max(1, rp * 0.1))}" fill="${darken(fo, 0.6)}"/>`;
+      return s;
+    }
+    case 'palm': {
+      let d = ''; for (let k = 0; k < 9; k++) d += leafPath(cx, cy, (k / 9) * PI2 + R() * 0.2, rp * (0.9 + 0.15 * R()), rp * 0.17);
+      return `<path d="${d}" fill="${fo}" stroke="${darken(fo, 0.45)}" stroke-width=".6"/><circle cx="${f(cx)}" cy="${f(cy)}" r="${f(Math.max(1.2, rp * 0.12))}" fill="#6d5846"/>`;
+    }
+    case 'upright': case 'arching': {
+      if (st.bare) return bareBranches(cx, cy, rp, R, illus);
+      const n = 9; let d = ''; let tips = '';
+      for (let k = 0; k < n; k++) { const a = (k / n) * PI2 + R() * 0.3; const L = rp * (fam === 'upright' ? 0.75 + 0.2 * R() : 0.85 + 0.15 * R()); d += ray(a, L, 1, fo, fam === 'arching' ? 0.5 : 0); tips += `<circle cx="${f(cx + Math.cos(a) * L)}" cy="${f(cy + Math.sin(a) * L)}" r="${f(rp * (fam === 'upright' ? 0.2 : 0.24))}"/>`; }
+      s = `<circle cx="${f(cx)}" cy="${f(cy)}" r="${f(rp * 0.45)}" fill="${fill}" stroke="${darken(fo, 0.4)}" stroke-width=".6"/><path d="${d}" fill="none" stroke="${dk}" stroke-width="${f(clamp(rp * 0.06, 0.6, 1.6))}" stroke-linecap="round"/><g fill="${fo}" fill-opacity=".85" stroke="${dk}" stroke-width=".4">${tips}</g>`;
+      if (fl) s += flowerDots(cx, cy, rp, fl, R, clamp(Math.round(rp), 6, 24), false);
+      return s;
+    }
+    case 'bamboo': {
+      const cc = ctx.culm || '#5f8a3a'; let culms = ''; let plumes = '';
+      const n = 8;
+      for (let k = 0; k < n; k++) {
+        const a = R() * PI2; const d = Math.sqrt(R()) * rp * 0.58; const x = cx + Math.cos(a) * d; const y = cy + Math.sin(a) * d;
+        culms += `<circle cx="${f(x)}" cy="${f(y)}" r="${f(Math.max(0.9, rp * 0.13))}"/>`;
+        for (let q = 0; q < 5; q++) { const b = a + q * 1.26 + R() * 0.4; plumes += `M${f(x)} ${f(y)}L${f(x + Math.cos(b) * rp * 0.36)} ${f(y + Math.sin(b) * rp * 0.36)}`; }
+      }
+      return `<circle cx="${f(cx)}" cy="${f(cy)}" r="${f(rp * 0.95)}" fill="${fo}" fill-opacity=".38" stroke="${dk}" stroke-opacity=".5" stroke-width=".6" stroke-dasharray="2 2"/><path d="${plumes}" fill="none" stroke="${fo}" stroke-width="${f(clamp(rp * 0.05, 0.6, 1.4))}" stroke-linecap="round"/><g fill="${cc}" stroke="${darken(cc, 0.5)}" stroke-width=".5" data-culms="${n}">${culms}</g>`;
+    }
+    case 'hedge': {
+      const seg = (pp.seg || pp.r * 1.6) * ctx.S * 1.12; const wd = Math.max(3, pp.r * 2 * ctx.S);
+      const ang = ((pp.rot || 0) * 180) / Math.PI;
+      let dots = ''; for (let k = 0; k < 5; k++) dots += `<circle cx="${f((R() - 0.5) * seg * 0.8)}" cy="${f((R() - 0.5) * wd * 0.6)}" r="${f(wd * 0.14)}" fill="${R() > 0.5 ? lt : dk}" fill-opacity=".35"/>`;
+      s = `<g transform="translate(${f(cx)} ${f(cy)}) rotate(${f(ang)})" data-row="1"><rect x="${f(-seg / 2)}" y="${f(-wd / 2)}" width="${f(seg)}" height="${f(wd)}" rx="${f(wd * 0.35)}" fill="${fill}" stroke="${darken(fo, 0.45)}" stroke-width=".7"/>${dots}</g>`;
+      if (fl) s += flowerDots(cx, cy, wd * 0.5, fl, R, 4, false);
+      return s;
+    }
+    case 'climber': {
+      const a = pp.rot || 0; const L = Math.max(8, pp.r * 2 * ctx.S * 1.3); const dx = Math.cos(a); const dy = Math.sin(a);
+      const x0 = cx - dx * L / 2; const y0 = cy - dy * L / 2; const x1 = cx + dx * L / 2; const y1 = cy + dy * L / 2;
+      let stems = ''; let leaves = '';
+      const n = 5;
+      for (let k = 0; k <= n; k++) { const t = k / n; const bx = x0 + (x1 - x0) * t; const by = y0 + (y1 - y0) * t; const nx = -dy * (st.bare ? 0.7 : 1) * Math.min(L * 0.32, 9); const ny = dx * Math.min(L * 0.32, 9); stems += `M${f(bx)} ${f(by)}Q${f(bx + nx * 0.4 + dx * 2 * (R() - 0.5))} ${f(by + ny * 0.4)} ${f(bx + nx)} ${f(by + ny)}`; if (!st.bare) leaves += `<circle cx="${f(bx + nx)}" cy="${f(by + ny)}" r="${f(clamp(L * 0.11, 1.4, 3.4))}"/><circle cx="${f(bx + nx * 0.5)}" cy="${f(by + ny * 0.5)}" r="${f(clamp(L * 0.09, 1.2, 3))}"/>`; }
+      const support = pp.wall ? `<line x1="${f(x0)}" y1="${f(y0)}" x2="${f(x1)}" y2="${f(y1)}" stroke="#6d4c41" stroke-width="2" stroke-dasharray="3 2"/>` : `<rect x="${f(cx - 4)}" y="${f(cy - 4)}" width="8" height="8" fill="none" stroke="#6d4c41" stroke-width=".8" stroke-dasharray="2 1.5" transform="rotate(${f((a * 180) / Math.PI)} ${f(cx)} ${f(cy)})"/>`;
+      s = `${support}<path d="${stems}" fill="none" stroke="${st.bare ? BARE_WOOD : darken(fo, 0.4)}" stroke-width="1" stroke-linecap="round"${st.bare ? ' data-bare="1"' : ''}/><g fill="${fo}" fill-opacity=".9" stroke="${dk}" stroke-width=".4">${leaves}</g>`;
+      if (fl) s += flowerDots(cx + dy * 3, cy - dx * 3, Math.max(rp, 5), fl, R, 5, false, 1.4);
+      return s;
+    }
+    case 'creeping': {
+      const col = st.bare ? mixHex(fo, BARE_HERB, 0.7) : fo; let d = ''; let t = '';
+      for (let k = 0; k < 6; k++) { const a = R() * PI2; d += ray(a, rp * (0.8 + 0.3 * R()), 1, col, 0.3); t += `<circle cx="${f(cx + Math.cos(a) * rp * 0.9)}" cy="${f(cy + Math.sin(a) * rp * 0.9)}" r="${f(rp * 0.22)}"/>`; }
+      s = `<circle cx="${f(cx)}" cy="${f(cy)}" r="${f(rp * 0.55)}" fill="${col}" fill-opacity=".9"/><path d="${d}" fill="none" stroke="${darken(col, 0.3)}" stroke-width=".8"/><g fill="${col}" fill-opacity=".9" stroke="${darken(col, 0.4)}" stroke-width=".4">${t}</g>`;
+      if (fl) s += flowerDots(cx, cy, rp, fl, R, clamp(Math.round(rp), 5, 20), false, 1.2);
+      return s;
+    }
+    case 'blades': case 'fine': case 'reed': {
+      const dormant = st.bare; const col = dormant ? BARE_HERB : fo; const n = fam === 'fine' ? 24 : 14; let d = '';
+      for (let k = 0; k < n; k++) d += ray((k / n) * PI2 + R() * 0.2, rp * (0.55 + 0.45 * R()), 1, col, fam === 'fine' ? 0.45 : 0.08);
+      s = `<path d="${d}" fill="none" stroke="${col}" stroke-width="${f(fam === 'fine' ? 0.7 : clamp(rp * 0.07, 0.9, 1.8))}" stroke-linecap="round"${dormant ? ' data-bare="1"' : ''}/><circle cx="${f(cx)}" cy="${f(cy)}" r="${f(Math.max(1, rp * 0.1))}" fill="${darken(col, 0.3)}"/>`;
+      if (fam === 'reed') s += `<g fill="#6d4c2f">${[0, 1, 2].map((k) => `<ellipse cx="${f(cx + Math.cos(k * 2.1) * rp * 0.3)}" cy="${f(cy + Math.sin(k * 2.1) * rp * 0.3)}" rx="${f(Math.max(0.8, rp * 0.07))}" ry="${f(Math.max(1.4, rp * 0.17))}"/>`).join('')}</g>`;
+      if (fl && fam !== 'reed') s += flowerDots(cx, cy, rp, fl, R, 4, false, 1);
+      return s;
+    }
+    case 'fern': {
+      const col = st.bare ? BARE_HERB : fo; let d = ''; let t = '';
+      for (let k = 0; k < 8; k++) { const a = (k / 8) * PI2 + R() * 0.2; const L = rp * (0.9 + 0.15 * R()); d += leafPath(cx, cy, a, L, rp * 0.13); for (let q = 1; q < 6; q++) { const px = cx + Math.cos(a) * L * q / 6; const py = cy + Math.sin(a) * L * q / 6; for (const sd of [-1, 1]) t += `M${f(px)} ${f(py)}L${f(px + Math.cos(a + sd * 1.2) * rp * 0.14)} ${f(py + Math.sin(a + sd * 1.2) * rp * 0.14)}`; } }
+      return `<path d="${d}" fill="${col}" fill-opacity=".85" stroke="${darken(col, 0.4)}" stroke-width=".5"${st.bare ? ' data-bare="1"' : ''}/><path d="${t}" stroke="${darken(col, 0.45)}" stroke-width=".5" fill="none"/>`;
+    }
+    case 'rosette': {
+      const col = st.bare ? BARE_HERB : fo; let s2 = '';
+      for (let k = 0; k < 9; k++) { const a = (k / 9) * PI2 * 1.1 + R() * 0.2; s2 += `<path d="${leafPath(cx, cy, a, rp * (0.8 + 0.2 * (k % 3 === 0)), rp * 0.34)}" fill="${k % 2 ? col : lighten(col, 0.15)}" fill-opacity=".93" stroke="${darken(col, 0.45)}" stroke-width=".6"/><path d="M${f(cx)} ${f(cy)}L${f(cx + Math.cos(a) * rp * 0.8)} ${f(cy + Math.sin(a) * rp * 0.8)}" stroke="${darken(col, 0.4)}" stroke-width=".4" opacity=".6"/>`; }
+      s2 += `<circle cx="${f(cx)}" cy="${f(cy)}" r="${f(rp * 0.12)}" fill="${lighten(col, 0.4)}"/>`;
+      if (fl) s2 += flowerDots(cx, cy, rp * 0.5, fl, R, 3, false, clamp(rp * 0.1, 1, 2.4));
+      return `<g${st.bare ? ' data-bare="1"' : ''}>${s2}</g>`;
+    }
+    case 'tipi': {
+      let d = ''; let t = '';
+      for (let k = 0; k < 3; k++) { const a = (k / 3) * PI2 + 0.5; const x = cx + Math.cos(a) * rp * 0.8; const y = cy + Math.sin(a) * rp * 0.8; d += `M${f(x)} ${f(y)}L${f(cx)} ${f(cy)}`; for (const u of [0.3, 0.6]) t += `<circle cx="${f(x + (cx - x) * u)}" cy="${f(y + (cy - y) * u)}" r="${f(rp * 0.2)}"/>`; }
+      return `<path d="${d}" stroke="#6d4c41" stroke-width="1" fill="none"/><g fill="${fo}" fill-opacity=".9" stroke="${dk}" stroke-width=".4"${st.bare ? ' opacity=".35"' : ''}>${t}</g><circle cx="${f(cx)}" cy="${f(cy)}" r="${f(rp * 0.12)}" fill="#6d4c41"/>`;
+    }
+    case 'herb': {
+      let d = ''; for (let k = 0; k < 14; k++) d += ray((k / 14) * PI2 + R() * 0.2, rp * (0.7 + 0.3 * R()), 1, fo, 0.2);
+      s = `<circle cx="${f(cx)}" cy="${f(cy)}" r="${f(rp * 0.78)}" fill="${fo}" fill-opacity=".85" stroke="${darken(fo, 0.4)}" stroke-width=".6"/><path d="${d}" stroke="${dk}" stroke-width=".6" fill="none" stroke-linecap="round"/>`;
+      if (fl) s += flowerDots(cx, cy, rp, fl, R, clamp(Math.round(rp), 5, 16), true, clamp(rp * 0.08, 0.9, 2));
+      return s;
+    }
+    default: return null;
+  }
 }
 
 /** Corps du symbole d'un plant (coordonnées absolues). */
@@ -223,7 +341,7 @@ export function renderPlanSVG(garden, opts = {}) {
   if (wb.width < 1) wb = { ...wb, maxX: wb.minX + 1, width: 1 };
   if (wb.height < 1) wb = { ...wb, maxY: wb.minY + 1, height: 1 };
 
-  const used = new Set(zones.map((z) => z.type));
+  const used = usedZoneTypes(zones);
   let entries = [];
   try { entries = itemsLegendEntries(garden); } catch { entries = []; }
   const itemsExtra = (li) => {
@@ -325,7 +443,10 @@ export function renderPlanSVG(garden, opts = {}) {
         }
       } else placed.push({ pp, z });
     }
-    out.push(`<g data-zone="${esc(z.id)}">${geom(`fill="${fill}" fill-opacity="${op}" stroke="${stroke}" stroke-width="1.4"${canopy ? ' stroke-dasharray="6 3"' : ''}${illus ? ` filter="url(#${P}-shadow)"` : ''}`)}${geom(`fill="url(#${P}-pat-${t.id})" fill-opacity="${illus ? 0.35 : 0.8}" stroke="none"`)}${extra}</g>`);
+    // piscine hors sol : paroi (double contour : liseré sombre, margelle claire, liseré fin) et motif d'eau
+    const above = isAbovePool(z);
+    const wall = above ? `<g data-pool-wall="1">${geom('fill="none" stroke="#455a64" stroke-width="7" stroke-linejoin="round"')}${geom('fill="none" stroke="#e6e1d6" stroke-width="4.6" stroke-linejoin="round"')}${geom('fill="none" stroke="#455a64" stroke-width="1" stroke-linejoin="round"')}</g>` : '';
+    out.push(`<g data-zone="${esc(z.id)}"${above ? ' data-pool="above"' : ''}>${geom(`fill="${fill}" fill-opacity="${op}" stroke="${stroke}" stroke-width="1.4"${canopy ? ' stroke-dasharray="6 3"' : ''}${illus ? ` filter="url(#${P}-shadow)"` : ''}`)}${geom(`fill="url(#${P}-pat-${above ? 'pool-above' : t.id})" fill-opacity="${illus ? 0.35 : 0.8}" stroke="none"`)}${wall}${extra}</g>`);
     labels.push({ z, t, c: centroid(poly) });
   }
   placed.sort((a, b) => (a.pp.plant.heightAdult || 0) - (b.pp.plant.heightAdult || 0));
@@ -339,11 +460,14 @@ export function renderPlanSVG(garden, opts = {}) {
     const kind = plantKind(plant);
     const rp = Math.max(2.2, pp.r * S);
     const cx = tx(pp.x); const cy = ty(pp.y);
-    if (illus && (kind === 'tree' || kind === 'shrub') && !st.bare) {
+    if (illus && (kind === 'tree' || kind === 'shrub') && !st.bare && !['bamboo', 'hedge', 'climber', 'creeping', 'mat'].includes(fam0(pp))) {
       const d = rp * 0.25 + Math.min(plantHeightM(plant, age), 12) * S * 0.07;
       shadows.push(`<ellipse cx="${f(cx + sv.x * d)}" cy="${f(cy + sv.y * d)}" rx="${f(rp * 1.02)}" ry="${f(rp * 0.92)}"/>`);
     }
-    bodies.push(`<g data-plant="${esc(plant.id)}" data-kind="${kind}"${st.bare ? ' data-bare="1"' : ''}${st.flowering ? ' data-flowering="1"' : ''}>${symbolBody(pp, st, kind, cx, cy, rp, ctx)}</g>`);
+    const fam = pp.family || 'dome';
+    const pctx = { ...ctx, S, culm: culmColor(plant) };
+    const port = rp >= 3.4 ? portSymbol(pp, st, fam, cx, cy, rp, pctx) : null;
+    bodies.push(`<g data-plant="${esc(plant.id)}" data-kind="${kind}" data-habit="${pp.habit || ''}" data-family="${fam}"${st.bare ? ' data-bare="1"' : ''}${st.flowering ? ' data-flowering="1"' : ''}>${port != null ? port : symbolBody(pp, st, kind, cx, cy, rp, pctx)}</g>`);
     const key = `${z.id}|${plant.id}`;
     if (layers.names && !nameAt.has(key)) {
       const cnt = (z.plantings || []).filter((q) => q.plantId === plant.id).reduce((s, q) => s + Math.max(1, Math.round(q.count || 1)), 0);

@@ -1,12 +1,16 @@
 // Éditeur d'aménagements : mobilier et équipements, murs / clôtures / haies, portes et accès.
-import { distance, bounds, polygonInside, centroid, shapePolygon } from '../geometry.js';
+import { distance, bounds, polygonInside, centroid, shapePolygon, pointInPolygon } from '../geometry.js';
 import { createItem, createOpening, ensureAmenagements, newId, getZoneType } from '../model.js';
 import {
   ITEM_KINDS, ITEM_CATEGORIES, OPENING_KINDS, OPENING_SWINGS, EDGE_KINDS, getItemKind, getOpeningKind, getEdgeKind,
   itemPolygon, itemContains, itemRadius, itemHalfSize, boundarySides, obstacleSides, edgeKindOf, edgeHeightOf,
-  openingGeometry, snapOpeningToSides, itemsTotalPrice,
+  openingGeometry, snapOpeningToSides, itemsTotalPrice, EDGE_MATERIALS, MATERIALS, materialOf,
 } from '../items.js';
-import { renderItemsSVG } from '../render-items.js';
+import { renderItemsSVG, fenceMarkup } from '../render-items.js';
+import {
+  createExisting, existingFootprint, existingSummary, getExistingKind, getFenceMaterial, setFenceMaterial, sizeForPlant, existingLabel, existingPlant,
+} from '../existing.js';
+import { renderExistingPalette, renderExistingDetail, materialChoice } from './existing-panel.js';
 import {
   injectStyles, h, createCanvas, gridPath, clone, esc, fr, projectOnLine, parseLength, toCm,
 } from './draw-util.js';
@@ -19,6 +23,7 @@ const TABS = [
   { id: 'furniture', label: '🪑 Mobilier' },
   { id: 'edges', label: '🧱 Murs & clôtures' },
   { id: 'access', label: '🚪 Portes & accès' },
+  { id: 'existing', label: '🌳 Existant' },
 ];
 const FREE_KINDS = { wall: { label: 'Mur', height: 2 }, fence: { label: 'Clôture', height: 1.2 } };
 const rad = (d) => (d * Math.PI) / 180;
@@ -53,13 +58,14 @@ export function mountItemEditor(el, { garden, onChange } = {}) {
   const st = {
     tab: 'furniture', cat: 'all', kind: null, openKind: 'gate', sel: null, gridIdx: 0, history: [], future: [],
     draft: null, msg: '', msgKind: '', ghost: null, dismissed: {},
+    exKind: null, exDraft: null, exQuery: '', exAge: 'adult', fenceMaterial: 'wood', exGhost: null,
   };
   let destroyed = false;
   let north = null; // pastille du nord
 
-  const snapshot = () => clone({ items: g.items, boundaryEdges: g.boundaryEdges, openings: g.openings, obstacles: g.obstacles });
+  const snapshot = () => clone({ items: g.items, boundaryEdges: g.boundaryEdges, openings: g.openings, obstacles: g.obstacles, existing: g.existing });
   const restore = (s) => {
-    g.items = clone(s.items); g.boundaryEdges = clone(s.boundaryEdges); g.openings = clone(s.openings); g.obstacles = clone(s.obstacles);
+    g.items = clone(s.items); g.boundaryEdges = clone(s.boundaryEdges); g.openings = clone(s.openings); g.obstacles = clone(s.obstacles); g.existing = clone(s.existing || []);
     if (!selExists()) st.sel = null;
   };
   const changed = () => { if (onChange) onChange(g); draw(); refreshUI(); };
@@ -75,12 +81,14 @@ export function mountItemEditor(el, { garden, onChange } = {}) {
   const selItem = () => (st.sel && st.sel.t === 'item' ? g.items.find((i) => i.id === st.sel.id) : null);
   const selOpening = () => (st.sel && st.sel.t === 'open' ? g.openings.find((o) => o.id === st.sel.id) : null);
   const selObstacle = () => (st.sel && st.sel.t === 'obst' ? g.obstacles.find((o) => o.id === st.sel.id) : null);
+  const selEx = () => (st.sel && st.sel.t === 'ex' ? g.existing.find((e) => e.id === st.sel.id) : null);
   const selEdge = () => (st.sel && st.sel.t === 'edge' ? st.sel.i : null);
   function selExists() {
     if (!st.sel) return true;
     if (st.sel.t === 'item') return !!selItem();
     if (st.sel.t === 'open') return !!selOpening();
     if (st.sel.t === 'obst') return !!selObstacle();
+    if (st.sel.t === 'ex') return !!selEx();
     if (st.sel.t === 'edge') return st.sel.i < boundarySides(g).length;
     return true;
   }
@@ -131,6 +139,7 @@ export function mountItemEditor(el, { garden, onChange } = {}) {
     const pts = [...g.boundary];
     g.obstacles.forEach((o) => { if (o.points) pts.push(...o.points); else if (o.center) pts.push(o.center); });
     g.items.forEach((i) => pts.push(...itemPolygon(i)));
+    g.existing.forEach((e) => pts.push(...existingFootprint(e)));
     if (pts.length >= 2) cv.fit(bounds(pts), 1.3);
     else cv.fit({ minX: 0, minY: 0, width: 12, height: 8 }, 1.15);
   }
@@ -260,6 +269,10 @@ export function mountItemEditor(el, { garden, onChange } = {}) {
       const op = hitOpening(w);
       if (op) return openingDrag(op);
     }
+    if (st.tab === 'existing' && !st.exDraft) {
+      const hit = hitExisting(w);
+      if (hit) return existingDrag(hit, w);
+    }
     return null;
   }
 
@@ -336,6 +349,7 @@ export function mountItemEditor(el, { garden, onChange } = {}) {
   }
   function sideEnds(ref) {
     if (ref.type === 'boundary') { const sd = boundarySides(g).find((x) => x.i === ref.side); return sd ? [sd.a, sd.b] : null; }
+    if (ref.type === 'existing') { const ex = g.existing.find((e) => e.id === ref.existingId); const sx = ex && obstacleSides(ex).find((x) => x.i === ref.side); return sx ? [sx.a, sx.b] : null; }
     const ob = g.obstacles.find((o) => o.id === ref.obstacleId);
     const sd = ob && obstacleSides(ob).find((x) => x.i === ref.side);
     return sd ? [sd.a, sd.b] : null;
@@ -349,10 +363,17 @@ export function mountItemEditor(el, { garden, onChange } = {}) {
       return;
     }
     if (st.tab === 'edges') { tapEdges(w); return; }
+    if (st.tab === 'existing') { tapExisting(w); return; }
     tapAccess(w);
   }
 
   function onHover(w) {
+    if (st.tab === 'existing' && st.exKind && !st.exDraft && !getExistingKind(st.exKind).linear) {
+      const p = snapGrid(w);
+      st.exGhost = createExisting(st.exKind, p);
+      draw();
+      return;
+    }
     if (st.tab === 'furniture' && st.kind) {
       const k = getItemKind(st.kind);
       const it = createItem(st.kind, 0, 0, 0);
@@ -369,6 +390,12 @@ export function mountItemEditor(el, { garden, onChange } = {}) {
       const hit = hitItem(w);
       if (hit) { st.sel = { t: 'item', id: hit.id }; draw(); refreshUI(); openItemPop(hit); return; }
       if (st.kind) { const it = placeItem(w); if (it) openItemPop(it); }
+      return;
+    }
+    if (st.tab === 'existing') {
+      const hit = hitExisting(w);
+      if (hit) { st.sel = { t: 'ex', id: hit.id }; st.exKind = null; draw(); refreshUI(); openExistingPop(hit); return; }
+      if (st.exKind && !st.exDraft && !getExistingKind(st.exKind).linear) { const e = placeExisting(w); if (e) openExistingPop(e); }
       return;
     }
     if (st.tab === 'edges') {
@@ -430,7 +457,14 @@ export function mountItemEditor(el, { garden, onChange } = {}) {
   }
   function deleteSel() {
     if (st.sel && st.sel.t === 'item') mutate(() => { g.items = g.items.filter((i) => i.id !== st.sel.id); st.sel = null; });
-    else if (st.sel && st.sel.t === 'open') mutate(() => { g.openings = g.openings.filter((o) => o.id !== st.sel.id); st.sel = null; });
+    else if (st.sel && st.sel.t === 'ex') {
+      mutate(() => {
+        const id = st.sel.id;
+        g.existing = g.existing.filter((e) => e.id !== id);
+        g.openings = g.openings.filter((o) => !(o.ref && o.ref.type === 'existing' && o.ref.existingId === id));
+        st.sel = null;
+      });
+    } else if (st.sel && st.sel.t === 'open') mutate(() => { g.openings = g.openings.filter((o) => o.id !== st.sel.id); st.sel = null; });
     else if (st.sel && st.sel.t === 'obst') {
       mutate(() => {
         const id = st.sel.id;
@@ -442,11 +476,17 @@ export function mountItemEditor(el, { garden, onChange } = {}) {
   }
 
   // ---------- murs, clôtures, haies ----------
-  function setEdge(i, kind, height) {
+  /** `material` : undefined = conserve celui du côté si le type ne change pas, null = aucun (matériau par défaut). */
+  function setEdge(i, kind, height, material) {
     const n = boundarySides(g).length;
     while (g.boundaryEdges.length < Math.max(n, i + 1)) g.boundaryEdges.push({ kind: 'open', height: 0 });
-    g.boundaryEdges[i] = kind === 'open' ? { kind: 'open', height: 0 } : { kind, height };
+    const prev = g.boundaryEdges[i];
+    const mat = material !== undefined ? material : (prev && prev.kind === kind ? prev.material : null);
+    const ok = mat && (EDGE_MATERIALS[kind] || []).includes(mat);
+    g.boundaryEdges[i] = kind === 'open' ? { kind: 'open', height: 0 } : (ok ? { kind, height, material: mat } : { kind, height });
   }
+  const edgeMaterial = (i) => materialOf(edgeKindOf(g, i), g.boundaryEdges[i] && g.boundaryEdges[i].material);
+  function setEdgeMaterial(i, mat) { const kind = edgeKindOf(g, i); if (kind === 'open') return; mutate(() => setEdge(i, kind, edgeHeightOf(g, i), mat)); say(`Côté ${i + 1} : ${MATERIALS[mat].label.toLowerCase()}.`); }
   function chooseEdgeKind(kind) {
     const i = selEdge();
     if (i == null) { say('Touchez d’abord un côté du terrain.', 'warn'); return; }
@@ -465,7 +505,8 @@ export function mountItemEditor(el, { garden, onChange } = {}) {
     const i = selEdge();
     if (i == null) return;
     const kind = edgeKindOf(g, i); const ht = edgeHeightOf(g, i);
-    mutate(() => { for (const s of boundarySides(g)) setEdge(s.i, kind, ht); });
+    const mat = (g.boundaryEdges[i] && g.boundaryEdges[i].material) || null;
+    mutate(() => { for (const s of boundarySides(g)) setEdge(s.i, kind, ht, mat); });
     say(kind === 'open' ? 'Tous les côtés sont ouverts.' : `Tous les côtés : ${getEdgeKind(kind).label.toLowerCase()} de ${cm(ht)} cm.`);
   }
   function tapEdges(w) {
@@ -566,14 +607,140 @@ export function mountItemEditor(el, { garden, onChange } = {}) {
     if (op) mutate(() => { op.swing = sw; });
   }
 
+  // ---------- plantes existantes ----------
+  const exKindDef = (e) => getExistingKind(e.kind) || getExistingKind('other');
+  function hitExisting(w) {
+    for (let i = g.existing.length - 1; i >= 0; i--) {
+      const e = g.existing[i];
+      const tol = Math.max(exKindDef(e).linear ? e.width / 2 : e.width / 2, cv.px(18));
+      if (Array.isArray(e.points) && e.points.length >= 2) {
+        for (let k = 0; k < e.points.length - 1; k++) {
+          const d = projectOnLine(w, e.points[k], e.points[k + 1]);
+          const t = Math.min(1, Math.max(0, d.t));
+          const q = { x: e.points[k].x + (e.points[k + 1].x - e.points[k].x) * t, y: e.points[k].y + (e.points[k + 1].y - e.points[k].y) * t };
+          if (distance(w, q) <= tol) return e;
+        }
+      } else if (distance(e, w) <= tol) return e;
+    }
+    return null;
+  }
+  function moveExisting(e, dx, dy, from) {
+    if (from.points) { e.points = from.points.map((q) => ({ x: q.x + dx, y: q.y + dy })); }
+    e.x = from.x + dx; e.y = from.y + dy;
+  }
+  function existingDrag(e, w) {
+    const before = snapshot();
+    const from = clone({ x: e.x, y: e.y, points: e.points });
+    let moved = false;
+    if (!(st.sel && st.sel.t === 'ex' && st.sel.id === e.id)) { st.sel = { t: 'ex', id: e.id }; st.exKind = null; refreshUI(); draw(); }
+    return {
+      move(w2) {
+        moved = true;
+        let dx = w2.x - w.x; let dy = w2.y - w.y;
+        const ref = from.points ? from.points[0] : from;
+        const p = snapGrid({ x: ref.x + dx, y: ref.y + dy });
+        dx = p.x - ref.x; dy = p.y - ref.y;
+        moveExisting(e, dx, dy, from);
+        draw();
+      },
+      up(_w, _e, mv) { if (mv && moved) { pushHistory(before); changed(); } else { draw(); refreshUI(); } },
+      cancel() { restore(before); changed(); },
+    };
+  }
+  function tapExisting(w) {
+    if (st.exDraft) { addExDraftPoint(w); return; }
+    const hit = hitExisting(w);
+    if (hit) { st.sel = { t: 'ex', id: hit.id }; st.exKind = null; draw(); refreshUI(); say(''); return; }
+    if (st.exKind) {
+      if (getExistingKind(st.exKind).linear) { st.exDraft = { kind: st.exKind, points: [] }; st.sel = null; addExDraftPoint(w); say(''); return; }
+      placeExisting(w); return;
+    }
+    if (st.sel) { st.sel = null; draw(); refreshUI(); }
+    say('Touchez un type (arbre, arbuste, haie…), puis le plan pour le poser.');
+  }
+  function placeExisting(w) {
+    const kd = getExistingKind(st.exKind);
+    if (!kd) return null;
+    const e = createExisting(kd.id, snapGrid(w));
+    if (kd.id === 'fence') setFenceMaterial(e, st.fenceMaterial);
+    mutate(() => { g.existing.push(e); st.sel = { t: 'ex', id: e.id }; st.exKind = null; st.exGhost = null; st.exQuery = ''; });
+    say(`« ${kd.label} » posé. Précisez la plante ci-dessous (ou « Je ne sais pas »), réglez sa taille actuelle, glissez pour le déplacer.`);
+    return e;
+  }
+  function addExDraftPoint(w) {
+    const pts = st.exDraft.points;
+    const isFence = st.exDraft.kind === 'fence';
+    if (isFence && pts.length >= 3 && distance(w, pts[0]) <= cv.px(24)) { pts.push({ x: pts[0].x, y: pts[0].y }); finishExDraft(); say('Boucle fermée.'); return; }
+    const p = nearVertex(w) || snapGrid(w);
+    const last = pts[pts.length - 1];
+    if (last && distance(last, p) < 0.02) return;
+    pts.push(p); draw(); refreshUI();
+  }
+  function finishExDraft() {
+    const d = st.exDraft;
+    if (!d || d.points.length < 2) { say('Posez au moins deux points.', 'warn'); return; }
+    const e = createExisting(d.kind, d.points);
+    if (d.kind === 'fence') setFenceMaterial(e, st.fenceMaterial);
+    mutate(() => { g.existing.push(e); st.exDraft = null; st.exKind = null; st.sel = { t: 'ex', id: e.id }; st.exQuery = ''; });
+    say(`${getExistingKind(d.kind).label} ajoutée. Glissez-la pour la déplacer, appui long pour saisir sa hauteur en cm.`);
+  }
+  const cancelExDraft = () => { st.exDraft = null; refreshUI(); draw(); };
+  function openExistingPop(e) {
+    const kd = exKindDef(e);
+    const fields = [{ key: 'h', label: 'Hauteur', value: cm(e.height), kind: 'length' }];
+    if (e.kind !== 'fence') fields.push({ key: 'w', label: e.kind === 'hedge' ? 'Largeur' : 'Largeur (houppier)', value: cm(e.width), kind: 'length' });
+    fields.push({ key: 'label', label: 'Nom', value: e.label || '', kind: 'text' });
+    pop.open({
+      title: `${kd.emoji} ${kd.label} : taille actuelle en cm`, hint: '« 800 » = 8 m ; « 1,5 m » accepté.', fields,
+      actions: [
+        { label: '⧉ Dupliquer', act: 'pop-dup', fn: () => { pop.close(); duplicateExisting(e); } },
+        { label: '🗑 Supprimer', act: 'pop-del', danger: true, fn: () => { pop.close(); deleteSel(); } },
+      ],
+      onOk: (v) => mutate(() => { e.height = v.h; if (v.w) e.width = v.w; e.label = v.label || kd.defaultLabel; }),
+    });
+  }
+  function duplicateExisting(e) {
+    const c = createExisting(e.kind, { x: e.x + 0.6, y: e.y + 0.6 });
+    Object.assign(c, clone(e), { id: c.id });
+    c.x = e.x + 0.6; c.y = e.y + 0.6;
+    if (c.points) c.points = c.points.map((q) => ({ x: q.x + 0.6, y: q.y + 0.6 }));
+    mutate(() => { g.existing.push(c); st.sel = { t: 'ex', id: c.id }; });
+  }
+  function choosePlant(e, plant) {
+    mutate(() => {
+      const wasDefault = !e.label || e.label === exKindDef(e).defaultLabel || (e.plantId && existingLabel(e) === (getPlantName(e.plantId)));
+      e.plantId = plant.id;
+      if (wasDefault) e.label = plant.commonName || plant.id;
+      const sz = sizeForPlant(plant, st.exAge, e.kind);
+      e.height = sz.height; e.width = sz.width;
+    });
+    say(`${plant.commonName} : taille ${cm(g.existing.find((x) => x.id === e.id).height)} cm de haut, réglable en cm.`);
+  }
+  const getPlantName = (id) => { const p = existingPlant({ plantId: id }); return p ? p.commonName : ''; };
+  function unknownPlant(e, text) {
+    mutate(() => { e.plantId = null; e.label = (text || '').trim() || exKindDef(e).defaultLabel; });
+  }
+  function setAge(e, plant, age) {
+    st.exAge = age;
+    mutate(() => { const sz = sizeForPlant(plant, age, e.kind); e.height = sz.height; e.width = sz.width; });
+  }
+  function setKeep(e, keep) { mutate(() => { e.keep = keep; }); say(keep ? 'À conserver.' : 'À retirer ou remplacer : l’élément ne compte plus dans l’ombre ni l’espace occupé.'); }
+  function setMaterial(e, id) { mutate(() => setFenceMaterial(e, id)); }
+  const exApi = () => ({
+    st, g, e: selEx(), btn, draw, refreshUI, mutate, say, finishDraft: finishExDraft, cancelDraft: cancelExDraft,
+    pickKind: (k) => { st.exKind = k; st.sel = null; st.exGhost = null; st.exDraft = null; st.dismissed.existing = true; say(''); draw(); refreshUI(); },
+    pickMaterial: (id) => { st.fenceMaterial = id; st.exKind = 'fence'; st.sel = null; st.dismissed.existing = true; say(''); draw(); refreshUI(); },
+    choosePlant, unknownPlant, setAge, setKeep, setMaterial, openPop: openExistingPop, duplicate: duplicateExisting, deleteSel,
+    isOutside: (e) => contourOk() && (e.points && e.points.length ? e.points : [{ x: e.x, y: e.y }]).some((p) => !pointInPolygon(p, g.boundary)),
+  });
+
   // ---------- dessin ----------
   const poly = (pts) => pts.map((p) => `${p.x},${p.y}`).join(' ');
   function obstacleSvg(o, selected) {
     const col = selected ? '#d81b60' : null;
     if (o.kind === 'tree' && o.center) return `<circle cx="${o.center.x}" cy="${o.center.y}" r="${o.radius || 1}" fill="#558b2f" fill-opacity=".2" stroke="#33691e" stroke-dasharray="6 4" stroke-width="1.5" ${NS}/>`;
     if (!o.points) return '';
-    if (o.kind === 'wall') return `<polyline points="${poly(o.points)}" fill="none" stroke="${col || '#424242'}" stroke-width="${Math.max(0.2, cv.px(4))}" stroke-linecap="square"/>`;
-    if (o.kind === 'fence') return `<polyline points="${poly(o.points)}" fill="none" stroke="${col || '#6d4c41'}" stroke-width="${cv.px(3)}" stroke-dasharray="${cv.px(8)} ${cv.px(4)}"/>`;
+    if (o.kind === 'wall' || o.kind === 'fence') return `<g data-obstacle-material="${materialOf(o.kind, o.material)}">${fenceMarkup(o.points, materialOf(o.kind, o.material), { u: cv.px(1), thick: o.kind === 'wall' ? 0.2 : 0.05, scale: 1, selected })}</g>`;
     const c = centroid(o.points);
     return `<polygon points="${poly(o.points)}" fill="#bdbdbd" fill-opacity=".5" stroke="#424242" stroke-width="2" ${NS}/><text x="${c.x}" y="${c.y}" font-size="${cv.px(11)}" text-anchor="middle" fill="#37474f">${o.kind === 'house' ? 'Maison' : 'Abri'}</text>`;
   }
@@ -614,7 +781,7 @@ export function mountItemEditor(el, { garden, onChange } = {}) {
     for (const o of g.obstacles) s += obstacleSvg(o, st.sel && st.sel.t === 'obst' && st.sel.id === o.id);
     s += renderItemsSVG(g, {
       scale: 1, px: u, bg: 'var(--jd-canvas,#fbfaf4)',
-      selected: { itemId: st.sel && st.sel.t === 'item' ? st.sel.id : null, openingId: st.sel && st.sel.t === 'open' ? st.sel.id : null, edge: selEdge() },
+      selected: { itemId: st.sel && st.sel.t === 'item' ? st.sel.id : null, openingId: st.sel && st.sel.t === 'open' ? st.sel.id : null, edge: selEdge(), existingId: st.sel && st.sel.t === 'ex' ? st.sel.id : null },
     });
     gMain.innerHTML = s;
 
@@ -643,6 +810,19 @@ export function mountItemEditor(el, { garden, onChange } = {}) {
       const gp0 = itemPolygon(st.ghost);
       top += `<polygon points="${poly(gp0)}" fill="#2e7d32" fill-opacity=".18" stroke="#2e7d32" stroke-dasharray="4 3" stroke-width="1.5" ${NS}/>`;
     }
+    const ex = selEx();
+    if (ex && st.tab === 'existing') {
+      top += `<polygon points="${poly(existingFootprint(ex))}" fill="none" stroke="#d81b60" stroke-width="2" stroke-dasharray="6 3" ${NS}/>`;
+      if (contourOk() && exApi().isOutside(ex)) top += `<text x="${ex.x}" y="${ex.y - u * 18}" font-size="${u * 12}" text-anchor="middle" fill="#b26a00">hors du terrain</text>`;
+    }
+    if (st.exGhost && st.tab === 'existing' && st.exKind) {
+      top += `<polygon points="${poly(existingFootprint(st.exGhost))}" fill="#2e7d32" fill-opacity=".18" stroke="#2e7d32" stroke-dasharray="4 3" stroke-width="1.5" ${NS}/>`;
+    }
+    if (st.exDraft) {
+      const pts = st.exDraft.points;
+      if (pts.length) top += `<polyline points="${poly(pts)}" fill="none" stroke="#d81b60" stroke-width="3" ${NS}/>`;
+      pts.forEach((p, i) => { top += (i === 0 && pts.length >= 3 && st.exDraft.kind === 'fence') ? `<circle cx="${p.x}" cy="${p.y}" r="${u * 12}" fill="#2e7d32" stroke="#fff" stroke-width="3" ${NS}/>` : `<circle cx="${p.x}" cy="${p.y}" r="${u * 6}" fill="#d81b60"/>`; });
+    }
     if (st.draft) {
       const pts = st.draft.points;
       if (pts.length) top += `<polyline points="${poly(pts)}" fill="none" stroke="#d81b60" stroke-width="3" ${NS}/>`;
@@ -655,7 +835,7 @@ export function mountItemEditor(el, { garden, onChange } = {}) {
   // ---------- interface ----------
   function setTab(id) {
     if (st.tab === id) return;
-    st.tab = id; st.sel = null; st.kind = null; st.draft = null; st.ghost = null;
+    st.tab = id; st.sel = null; st.kind = null; st.draft = null; st.ghost = null; st.exKind = null; st.exDraft = null; st.exGhost = null;
     pop.close(); st.msg = ''; draw(); refreshUI();
   }
 
@@ -672,6 +852,12 @@ export function mountItemEditor(el, { garden, onChange } = {}) {
       if (selEdge() != null) return 'Choisissez Ouvert, Mur, Clôture ou Haie, ajustez la hauteur en cm, ou appliquez à tous les côtés.';
       return hasContour() ? 'Touchez un côté du terrain (numéroté) pour en faire un mur, une clôture ou une haie.' : 'Pas de contour tracé : vous pouvez dessiner un mur ou une clôture libre.';
     }
+    if (st.tab === 'existing') {
+      if (st.exDraft) return `${getExistingKind(st.exDraft.kind).label} : touchez les points successifs (${st.exDraft.points.length} posé${st.exDraft.points.length > 1 ? 's' : ''}), puis « Terminer »${st.exDraft.kind === 'fence' ? ' (ou touchez le 1er point pour fermer la boucle)' : ''}.`;
+      if (st.exKind) return getExistingKind(st.exKind).linear ? `Touchez le plan pour tracer ${st.exKind === 'fence' ? 'la clôture' : 'la haie'} point par point.` : `Touchez le plan pour poser « ${getExistingKind(st.exKind).label} » (grille ${gridSize() ? fr(gridSize(), 1) + ' m' : 'off'}).`;
+      if (selEx()) return 'Glissez pour déplacer, appui long pour saisir la taille en cm, précisez la plante ci-dessous.';
+      return 'Déjà des plantes ou une clôture ? Touchez un type, puis le plan pour le placer.';
+    }
     if (selOpening()) return 'Glissez le passage le long du côté, appui long pour sa largeur en cm, ou changez son sens d’ouverture.';
     return `Choisissez un type de passage puis touchez un côté ${st.openKind === 'garage' || st.openKind === 'door' ? 'de maison ou d’abri' : 'du terrain, d’un mur ou d’une clôture'}.`;
   }
@@ -681,6 +867,7 @@ export function mountItemEditor(el, { garden, onChange } = {}) {
     if (st.tab === 'furniture' && !g.items.length && !st.kind && !d.furniture) return ['Aménagez votre jardin', 'Choisissez un banc, une table… dans la palette, puis touchez le plan pour le poser.'];
     if (st.tab === 'edges' && !hasContour() && !g.obstacles.length && !st.draft && !d.edges) return ['Pas encore de terrain', 'Tracez le contour à l’étape Terrain pour poser murs et clôtures sur ses côtés, ou dessinez un mur libre.'];
     if (st.tab === 'access' && !snapOpeningToSides(g, { x: 0, y: 0 }, { kind: st.openKind }) && !d.access) return ['Aucun côté disponible', 'Tracez le terrain (et la maison) à l’étape Terrain pour poser portails et portes.'];
+    if (st.tab === 'existing' && !g.existing.length && !st.exKind && !st.exDraft && !d.existing) return ['Qu’y a-t-il déjà ?', 'Arbres, arbustes, haies, clôtures… Choisissez un type puis touchez le plan pour le placer : ils comptent dans l’ombre et la place libre.'];
     return null;
   }
 
@@ -704,6 +891,8 @@ export function mountItemEditor(el, { garden, onChange } = {}) {
         h('span', { class: 'jdi-card-meta' }, `${k.shape === 'circle' ? 'Ø ' + cm(k.w) : cm(k.w) + '×' + cm(k.d)} cm · ${euro(k.priceEur)}`)));
       }
       panel.append(pal);
+    } else if (st.tab === 'existing') {
+      renderExistingPalette(panel, exApi());
     } else if (st.tab === 'edges') {
       const row = h('div', { class: 'jdi-palette', 'data-role': 'edge-tools' });
       if (st.draft) {
@@ -749,6 +938,8 @@ export function mountItemEditor(el, { garden, onChange } = {}) {
         btn('✎ Taille', 'edit', () => openItemPop(it)),
         btn('⧉', 'dup', () => duplicateItem(it), '', { 'aria-label': 'Dupliquer' }),
         btn('🗑', 'del', deleteSel, 'danger', { 'aria-label': 'Supprimer' }));
+    } else if (st.tab === 'existing') {
+      renderExistingDetail(detail, exApi());
     } else if (st.tab === 'edges') {
       const i = selEdge();
       const o = selObstacle();
@@ -764,12 +955,14 @@ export function mountItemEditor(el, { garden, onChange } = {}) {
           h('div', { class: 'jdi-detail-title', 'data-role': 'sel-banner' }, `Côté ${i + 1} · ${fr(L)} m`, h('small', null, kind === 'open' ? 'Ouvert' : `${getEdgeKind(kind).label} · hauteur en cm`)),
           kind === 'open' ? null : h('span', { class: 'jdi-seg' }, hIn, h('span', { class: 'jd-unit' }, 'cm')),
           h('div', { class: 'jdi-seg jdi-row2' }, EDGE_KINDS.map((k) => btn(k.label, `edge-${k.id}`, () => chooseEdgeKind(k.id), '', { 'data-edge-kind': k.id, 'aria-pressed': String(kind === k.id) })),
-            btn('Appliquer à tous', 'apply-all', applyAll, '', { title: 'Appliquer à tous les côtés', 'aria-label': 'Appliquer à tous les côtés' })));
+            btn('Appliquer à tous', 'apply-all', applyAll, '', { title: 'Appliquer à tous les côtés', 'aria-label': 'Appliquer à tous les côtés' })),
+          EDGE_MATERIALS[kind] ? materialChoice(edgeMaterial(i), (m) => setEdgeMaterial(i, m), EDGE_MATERIALS[kind], 'data-edge-material') : null);
       } else if (o) {
         const hIn = h('input', { class: 'jd-input', type: 'text', inputmode: 'numeric', 'aria-label': 'Hauteur en centimètres', 'data-field': 'free-height', value: cm(o.height || FREE_KINDS[o.kind].height) });
         hIn.addEventListener('change', () => { const v = parseLength(hIn.value); if (Number.isFinite(v)) mutate(() => { o.height = v; }); else refreshUI(); });
         show(h('div', { class: 'jdi-detail-title', 'data-role': 'sel-banner' }, `${FREE_KINDS[o.kind].label} libre`, h('small', null, 'hauteur en cm')),
-          hIn, btn('🗑', 'del', deleteSel, 'danger', { 'aria-label': 'Supprimer' }));
+          hIn, btn('🗑', 'del', deleteSel, 'danger', { 'aria-label': 'Supprimer' }),
+          materialChoice(materialOf(o.kind, o.material), (m) => mutate(() => { o.material = m; }), EDGE_MATERIALS[o.kind], 'data-free-material'));
       }
     } else {
       const op = selOpening();
@@ -794,9 +987,11 @@ export function mountItemEditor(el, { garden, onChange } = {}) {
     renderDetail();
     const n = g.items.length;
     const price = itemsTotalPrice(g);
+    const exs = existingSummary(g);
     info.innerHTML = `<span><b data-role="count">${n}</b> élément${n > 1 ? 's' : ''}${n ? ` · ≈ <b data-role="total">${esc(euro(price))}</b>` : ''}</span>`
       + `<span><b data-role="edge-count">${g.boundaryEdges.filter((e) => e && e.kind !== 'open').length}</b> côté(s) bâti(s)</span>`
-      + `<span><b data-role="opening-count">${g.openings.length}</b> passage${g.openings.length > 1 ? 's' : ''}</span>`;
+      + `<span><b data-role="opening-count">${g.openings.length}</b> passage${g.openings.length > 1 ? 's' : ''}</span>`
+      + (exs.total || st.tab === 'existing' ? `<span data-role="existing-count">${esc(exs.text)}</span>` : '');
     if (!st.msg) { msgEl.textContent = hintText(); msgEl.className = 'jd-msg'; } else paintMsg();
     const sp = startText();
     startEl.hidden = !sp;

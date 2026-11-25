@@ -64,7 +64,7 @@ test('zone rectangle en 2 touches, dimensions en cm par appui long, dupliquer, s
   await page.locator('[data-act=pop-ok]').click();
   await expect(page.locator('[data-role=zone-area]')).toContainText('15,00');
   let g = await lire(page, id);
-  expect(g.zones[0].shape.points[1].x).toBeCloseTo(7, 3);
+  expect(g.zones[0].shape.points[1].x).toBeCloseTo(6.5, 3); // centre conservé (4 ± 2,5)
 
   // dupliquer
   await page.locator('[data-act=duplicate]').click();
