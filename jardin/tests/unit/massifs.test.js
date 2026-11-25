@@ -55,7 +55,6 @@ describe('freeSpace', () => {
     h.zones.push(createZone('path', { kind: 'line', points: [{ x: 9, y: 2 }, { x: 9, y: 4 }], width: 1 }));
     h.zones.push(createZone('midplants', rect(0.2, 2, 1.5, 1.2)));
     h.obstacles.push({ id: 'a', kind: 'tree', center: { x: 4, y: 4.5 }, radius: 0.5, height: 5 });
-    h.openings = [{ ...createOpening('door', { type: 'obstacle', obstacleId: 'maison', side: 2 }, 0.9), id: 'op1' }];
     const f = freeSpace(h);
     expect(f.isFree(2, 7.5 - 0.6 - 0.3)).toBe(false);
     expect(f.isFree(2, 7.5 - 0.6 - 0.7)).toBe(true);
@@ -64,9 +63,20 @@ describe('freeSpace', () => {
     expect(f.isFree(1, 2.5)).toBe(false);
     expect(f.isFree(4, 4.5 + 0.7)).toBe(false);
     expect(f.freeArea).toBeLessThan(fs.freeArea);
-    // devant la porte (0,9 m), sur le côté bas de la maison
-    const door = (h.obstacles[0].points[2]);
-    expect(f.isFree(door.x - 1.08 * 0.9, 1.6 + 0.5)).toBe(false);
+  });
+
+  test('dégagement de 0,9 m devant une porte', () => {
+    const h = gardenA();
+    h.zones = [];
+    h.items = [];
+    const before = freeSpace(h);
+    // côté bas de la maison : (12;1,6) → (0;1,6), t = 0,5 → porte en (6 ; 1,6)
+    h.openings = [createOpening('door', { type: 'obstacle', obstacleId: 'maison', side: 2 }, 0.5)];
+    const f = freeSpace(h);
+    expect(before.isFree(6, 2.2)).toBe(true);
+    expect(f.isFree(6, 2.2)).toBe(false);
+    expect(f.isFree(6, 2.6)).toBe(true);
+    expect(f.isFree(8, 2.2)).toBe(true);
   });
 
   test('components : zones libres connexes triées, aire totale cohérente', () => {

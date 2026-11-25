@@ -408,12 +408,11 @@ function emitPlant(G, rec, plant, age0, density) {
       }
     } else if (fam === 'column') {
       if (hab === 'tree-columnar') push('trunk', 1, x, 0, z, rot, 0, r, trunkH * 1.2, r);
-      const n = 4; const b0 = hab === 'tree-columnar' ? trunkH * 0.5 : H * 0.04;
-      for (let k = 0; k < n; k++) {
-        const t = k / n; const sc = R * (0.95 - 0.35 * t * t) * (0.92 + rng() * 0.16);
-        blob(x + (rng() - 0.5) * R * 0.2, b0 + (H - b0) * (t + 0.14), z + (rng() - 0.5) * R * 0.2, sc, (H - b0) / n * 0.78, sc, tint() * 0.86);
+      const n = 6; const b0 = hab === 'tree-columnar' ? trunkH * 0.5 : H * 0.02;
+      for (let k = 0; k < n; k++) { // flamme étroite : cônes empilés très peu évasés
+        const t = k / n; const sc = R * (0.95 - 0.45 * t * t) * (0.94 + rng() * 0.1);
+        push('cone', tint() * 0.8, x + (rng() - 0.5) * R * 0.1, b0 + (H - b0) * t * 0.9, z + (rng() - 0.5) * R * 0.1, rng() * 6.28, 0, sc, (H - b0) * 0.32, sc);
       }
-      blob(x, H * 0.93, z, R * 0.5, H * 0.1, R * 0.5, tint() * 0.86);
     } else if (fam === 'palm') {
       const L = clamp(H * 0.32, 0.6, 2.8); const top = H - L * 0.42;
       push('trunk', 1, x, 0, z, rot, 0, clamp(0.03 * H, 0.05, 0.22), top, clamp(0.03 * H, 0.05, 0.22));
@@ -472,7 +471,7 @@ function emitPlant(G, rec, plant, age0, density) {
     case 'bamboo': {
       const n = clamp(Math.round((plant.stems || 30) * 0.4 * dens), 6, 34);
       const rC = clamp(0.011 + 0.0045 * H, 0.008, 0.04);
-      push('crown', tint() * 0.9, x, H * 0.1, z, rng() * 6.28, 0, R * 0.62, H * 0.13, R * 0.62);
+      push('crown', tint() * 1.05, x, H * 0.07, z, rng() * 6.28, 0, R * 0.7, H * 0.08, R * 0.7);
       const ps = clamp(0.26 + 0.045 * H, 0.22, 0.6);
       for (let k = 0; k < n; k++) {
         const phi = rng() * TAU; const d = Math.sqrt(rng()) * R * 0.5;
@@ -491,7 +490,7 @@ function emitPlant(G, rec, plant, age0, density) {
     }
     case 'hedge': {
       const seg = aux > 0 ? aux : hedgeSeg(plant); const Wd = Math.max(0.3, plant.widthAdult * wf);
-      push('hedgebox', tint(), x, 0, z, -rot, 0, seg, H, Wd);
+      push('hedgebox', tint(), x, 0, z, -rot, 0, seg * 1.7, H, Wd);
       for (let k = 0; k < 5; k++) br(x + (rng() - 0.5) * seg * 0.6, 0, z + (rng() - 0.5) * Wd * 0.4, rng() * TAU, 0.08 + rng() * 0.18, H * 0.9, 0.012 + 0.008 * H);
       for (let k = 0, n = nFlowers(8); k < n; k++) push('flower', 1, x + Math.cos(rot) * (rng() - 0.5) * seg, H * (0.55 + rng() * 0.45), z + Math.sin(rot) * (rng() - 0.5) * seg, 0, 0, fs, fs, fs);
       return;

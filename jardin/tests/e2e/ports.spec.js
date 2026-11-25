@@ -17,18 +17,26 @@ async function ouvrir(page, scope = 'tout') {
   await page.evaluate(async (sc) => {
     const { createGarden, createZone } = await import('./model.js');
     const g = createGarden('Ports');
-    const big = sc === 'tout';
-    g.boundary = big ? [{ x: 0, y: 0 }, { x: 18, y: 0 }, { x: 18, y: 13 }, { x: 0, y: 13 }] : [{ x: 0, y: 0 }, { x: 6, y: 0 }, { x: 6, y: 5 }, { x: 0, y: 5 }];
+    const big = sc === 'tout' || sc === 'arbres';
+    g.boundary = sc === 'arbres' ? [{ x: 0, y: 0 }, { x: 36, y: 0 }, { x: 36, y: 24 }, { x: 0, y: 24 }] : big ? [{ x: 0, y: 0 }, { x: 18, y: 0 }, { x: 18, y: 13 }, { x: 0, y: 13 }] : [{ x: 0, y: 0 }, { x: 6, y: 0 }, { x: 6, y: 5 }, { x: 0, y: 5 }];
     g.boundaryClosed = true;
     g.context.location = { lat: 45.76, lon: 4.84 };
     const z = (t, shape, pl = []) => { const zz = createZone(t, shape); pl.forEach(([id, c]) => zz.plantings.push({ plantId: id, count: c })); g.zones.push(zz); };
     const rect = (x0, y0, x1, y1) => ({ kind: 'polygon', points: [{ x: x0, y: y0 }, { x: x1, y: y0 }, { x: x1, y: y1 }, { x: x0, y: y1 }] });
-    if (big) {
+    if (sc === 'arbres') {
+      z('lawn', rect(0.5, 0.5, 35.5, 23.5));
+      z('trees', rect(2, 8, 6, 12), [['cypres-de-provence', 1]]);
+      z('trees', rect(8, 8, 14, 14), [['bouleau-verruqueux', 1]]);
+      z('trees', rect(16, 8, 24, 16), [['albizia', 1]]);
+      z('trees', rect(26, 8, 32, 14), [['cerisier-a-fleurs', 1]]);
+      z('trees', rect(2, 16, 10, 22), [['cedre-de-l-atlas-bleu', 1]]);
+      z('trees', rect(14, 17, 20, 22), [['pommier', 1]]);
+      z('hedge', { kind: 'line', points: [{ x: 22, y: 20 }, { x: 34, y: 20 }], width: 0.8 }, [['if-commun', 1]]);
+    } else if (big) {
       z('lawn', rect(0.5, 4, 17.5, 12.5));
       z('tallplants', rect(1, 5, 5.5, 9), [['bambou-fargesia', 3]]);
-      z('trees', rect(7, 5, 9, 7), [['cypres-de-provence', 1]]);
-      z('trees', rect(10, 5, 13, 8), [['bouleau-verruqueux', 1]]);
-      z('hedge', { kind: 'line', points: [{ x: 1, y: 12 }, { x: 12, y: 12 }], width: 0.8 }, [['charmille', 1]]);
+      z('trees', rect(15.5, 5, 17, 7), [['if-commun', 1]]);
+            z('hedge', { kind: 'line', points: [{ x: 1, y: 12 }, { x: 12, y: 12 }], width: 0.8 }, [['charmille', 1]]);
       z('midplants', rect(13, 9, 17, 11.5), [['h-miscanthus', 2], ['h-hosta', 4]]);
       z('midplants', rect(12.2, 1.4, 16.5, 3), [['clematite-viticella', 2]]);
       g.obstacles.push({ id: 'mur', kind: 'wall', points: [{ x: 12, y: 1 }, { x: 17.5, y: 1 }], height: 2.2 });
@@ -55,6 +63,7 @@ const stats = (page, url) => page.evaluate(async (u) => {
 
 const shot = async (page, name) => {
   if (!process.env.SHOTS_DIR) return;
+  await page.addStyleTag({ content: '[data-role=panel],[data-role=info],[data-role=help],[data-role=season-bar]{display:none!important}' });
   await page.locator('[data-role=canvas]').screenshot({ path: `${process.env.SHOTS_DIR}/${name}.png` });
 };
 const watch = (page) => {
@@ -87,6 +96,20 @@ test('ports : jardin complet, image non vide sous plusieurs angles, été puis a
   await api(page, 'setDoy', 15); await page.waitForTimeout(300);
   await api(page, 'snapshot'); await shot(page, 'hiver-ne');
   expect(await page.evaluate(() => window.__un.api.info().instances)).toBeGreaterThan(200);
+  expect(errors.filter((e) => !/GPU stall|ReadPixels/i.test(e))).toEqual([]);
+});
+
+test('ports : arbres (cyprès, pleureur, parasol, vase, conique, fruitier)', async ({ page }) => {
+  const errors = watch(page);
+  await ouvrir(page, 'arbres');
+  await api(page, 'setHour', 14); await api(page, 'setDoy', 172);
+  for (const v of ['ne', 'sw']) {
+    await api(page, 'setView', v); await page.waitForTimeout(1300);
+    const st = await stats(page, await api(page, 'snapshot'));
+    expect(st.colors).toBeGreaterThan(40);
+    await shot(page, `arbres-${v}`);
+  }
+  await api(page, 'setDoy', 15); await page.waitForTimeout(300); await api(page, 'snapshot'); await shot(page, 'arbres-hiver');
   expect(errors.filter((e) => !/GPU stall|ReadPixels/i.test(e))).toEqual([]);
 });
 

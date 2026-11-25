@@ -309,11 +309,13 @@ function existingTrees(garden) {
 function makeSunSampler(garden) {
   const sun = (garden && garden.sun) || {};
   let base = () => null;
+  let estimated = false;
   if (sun.mode === 'uniform' && sun.uniform) base = () => sun.uniform;
   else if (sun.mode === 'map' && Array.isArray(sun.regions) && sun.regions.length) {
     const regs = sun.regions;
     base = (p) => { for (let i = regs.length - 1; i >= 0; i--) if (pointInPolygon(p, regs[i].points)) return regs[i].level; return null; };
   } else if (garden && garden.context && garden.context.location && ((garden.boundary || []).length >= 3)) {
+    estimated = true; // sun.js tient déjà compte de l'ombre des existants
     let regs = [];
     try {
       const bb = bounds(garden.boundary);
@@ -321,7 +323,7 @@ function makeSunSampler(garden) {
     } catch (e) { regs = []; }
     base = (p) => { for (const r of regs) if (pointInPolygon(p, r.points)) return r.level; return null; };
   }
-  const trees = existingTrees(garden);
+  const trees = estimated ? [] : existingTrees(garden);
   const na = ((garden && garden.context && garden.context.northAngle) || 0) * Math.PI / 180;
   const north = { x: Math.sin(na), y: -Math.cos(na) };
   return (p) => {
@@ -865,7 +867,7 @@ function layerOf(p) {
 }
 const spacingOf = (p) => {
   const s = p.spacing > 0 ? p.spacing : p.widthAdult > 0 ? p.widthAdult : 0.5;
-  return Math.max(p.category === 'bulb' ? 0.08 : 0.2, s);
+  return Math.max(p.category === 'bulb' ? 0.12 : 0.2, s);
 };
 function priceOf(info, count, area) {
   const p = info.p;
@@ -955,6 +957,7 @@ function runDesign(infos, P) {
     const spread = Math.max(...ws) - Math.min(...ws);
     const water = spread === 0 ? 1 : spread === 1 ? 0.75 : 0;
     const sizeS = 1 - Math.abs(n - n0) / 5;
+    const palS = palette && PALETTES[palette] ? S.filter((i) => i.pal).length / n : 0.5;
     const fp = S.reduce((s, i, k) => s + counts[k] * spacingOf(i.p) ** 2, 0) / area;
     const dens = fp > 1.2 ? 1 - (fp - 1.2) * 2 : fp < 0.5 ? 0.5 + fp : 1;
     let cost = 0;
@@ -966,8 +969,8 @@ function runDesign(infos, P) {
     let genusPen = 0;
     for (const i of S) { genus[i.genus] = (genus[i.genus] || 0) + 1; if (genus[i.genus] > 2) genusPen += 0.4; }
     const under = S.reduce((s, i) => s + i.under, 0) / n;
-    let f = 1.0 * fit + 2.2 * bloom + 1.6 * layerS + 1.6 * color + 0.8 * foliage + (amb ? 1.4 * ambS : 0)
-      + 1.0 * maintS + pollW * poll + 1.0 * water + 0.4 * sizeS + 0.6 * costS + 1.0 * dens + under * 0.8 - genusPen;
+    let f = 1.0 * fit + 3.4 * bloom + 1.6 * layerS + 1.6 * color + 0.8 * foliage + (amb ? 1.4 * ambS : 0)
+      + 1.0 * maintS + pollW * poll + 1.0 * water + 0.4 * sizeS + (palette && PALETTES[palette] ? 2 * palS : 0) + 0.6 * costS + 1.0 * dens + under * 0.8 - genusPen;
     if (n < 5 && infos.length >= 5) f -= 2 * (5 - n);
     if (n > 10) f -= 3 * (n - 10);
     if (fams.length > 3) f -= 3;
@@ -975,7 +978,7 @@ function runDesign(infos, P) {
   };
 
   const rank = infos.map((_, k) => k).sort((a, b) => infos[b].fit - infos[a].fit);
-  // Glouton randomisé.
+  const search = (nIt) => {
   let S = [];
   const want = Math.min(infos.length, n0 + Math.floor(rng() * 2));
   while (S.length < want) {
@@ -987,14 +990,26 @@ function runDesign(infos, P) {
     S.push(bi);
   }
   let cur = evaluate(S); let best = S.slice(); let bestV = cur;
-  for (let it = 0; it < iters; it++) {
-    const T = 0.08 * (1 - it / iters);
+  for (let it = 0; it < nIt; it++) {
+    const T = 0.08 * (1 - it / nIt);
     const r = rng();
     let N = S.slice();
     const pick = () => infos[rank[Math.floor(rng() * rng() * rank.length)]];
+    let gapPick = null;
+    if (rng() < 0.4) {
+      const have = new Set();
+      for (const i of S) for (const m of i.bloom) have.add(m);
+      const miss = [];
+      for (let m = 3; m <= 10; m++) if (!have.has(m)) miss.push(m);
+      if (miss.length) {
+        const m = miss[Math.floor(rng() * miss.length)];
+        const cand = infos.filter((i) => i.bloom.includes(m) && !S.includes(i));
+        if (cand.length) gapPick = cand[Math.floor(rng() * cand.length)];
+      }
+    }
     if (r < 0.72 || N.length <= 1) {
       const k = Math.floor(rng() * N.length);
-      const c = rng() < 0.5 ? pick() : infos[Math.floor(rng() * infos.length)];
+      const c = gapPick || (rng() < 0.5 ? pick() : infos[Math.floor(rng() * infos.length)]);
       if (N.includes(c)) continue;
       N[k] = c;
     } else if (r < 0.84 && N.length < 10) {
@@ -1013,17 +1028,26 @@ function runDesign(infos, P) {
       if (v > bestV) { bestV = v; best = N.slice(); }
     }
   }
-  S = best;
+  return { S: best, v: bestV };
+  };
+  const r1s = search(Math.ceil(iters / 2));
+  const r2s = search(Math.ceil(iters / 2));
+  let S = (r2s.v > r1s.v ? r2s : r1s).S;
   // Réparation du budget : remplacer les essences les plus chères par des moins chères.
   if (Number.isFinite(budget)) {
     const costOf = (L) => { const c = allocate(L, area); return L.reduce((s, i, k) => s + priceOf(i, c[k], area), 0); };
-    for (let t = 0; t < 40 && costOf(S) > budget; t++) {
+    const order = infos.slice().sort((x, y) => priceOf(x, 1, area) - priceOf(y, 1, area));
+    for (let t = 0; t < 80 && costOf(S) > budget; t++) {
       const c = allocate(S, area);
       let wk = 0; let wv = -1;
       S.forEach((i, k) => { const v = priceOf(i, c[k], area); if (v > wv) { wv = v; wk = k; } });
-      const cheaper = infos.filter((i) => !S.includes(i) && i.layer === S[wk].layer && priceOf(i, 1, area) < priceOf(S[wk], 1, area));
-      if (!cheaper.length) { const alt = infos.filter((i) => !S.includes(i) && priceOf(i, 1, area) < priceOf(S[wk], 1, area)); if (!alt.length) break; S[wk] = alt[Math.floor(rng() * alt.length)]; continue; }
-      S[wk] = cheaper[Math.floor(rng() * cheaper.length)];
+      const cheaper = order.filter((i) => !S.includes(i) && priceOf(i, 1, area) < priceOf(S[wk], 1, area));
+      if (!cheaper.length) { if (S.length > 5) { S.splice(wk, 1); continue; } break; }
+      const sameLayer = cheaper.filter((i) => i.layer === S[wk].layer && i.bulb === S[wk].bulb);
+      const src = sameLayer.length && rng() < 0.7 ? sameLayer : cheaper;
+      const cand = src[Math.floor(rng() * Math.min(src.length, 6))];
+      const trial = S.slice(); trial[wk] = cand;
+      if (costOf(trial) < costOf(S)) S = trial;
     }
   }
   return S;
@@ -1138,7 +1162,9 @@ export function designBed(garden, bed, opts = {}) {
     if (palette && PALETTES[palette]) pool = relax(pool, PALETTES[palette].ok, 10);
     if (avoidIds && avoidIds.size) pool = relax(pool, (i) => !avoidIds.has(i.id), 8);
     if (nearTerrace) pool = pool.filter((i) => !i.p.toxic);
-    const infos = amb === ambiance ? pool : pool.map((i) => ({ ...i, amb: plantAmbianceScore(i.p, amb), avoid: plantAvoids(i.p).includes(amb) }));
+    const palOk = palette && PALETTES[palette] ? PALETTES[palette].ok : () => true;
+    const infos0 = amb === ambiance ? pool : pool.map((i) => ({ ...i, amb: plantAmbianceScore(i.p, amb), avoid: plantAvoids(i.p).includes(amb) }));
+    const infos = infos0.map((i) => ({ ...i, pal: palOk(i) }));
     if (!infos.length) return null;
     const rng = rngFrom(seed * 104729 + hashStr(String(bed.id || '')) + salt);
     const S = runDesign(infos, {
