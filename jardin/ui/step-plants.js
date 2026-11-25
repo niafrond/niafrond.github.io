@@ -7,6 +7,8 @@ import { shapeArea } from '../geometry.js';
 import { getPlantPhoto } from '../photos.js';
 import { openAmbiancePicker, ambianceOf, ambianceEmoji, zoneAmbiance } from './ambiance-picker.js';
 import { isTypical } from '../ambiances.js';
+import { plantEffort, fitsMaintenance, levelForZone, effortLabel } from '../maintenance.js';
+import { gardenMaintenancePicker, zoneMaintenancePicker, maintenanceReminder, effortIndicator, levelPhrase } from './maintenance-picker.js';
 import { gardenCost, formatEuro, formatPrice, UNIT_LABEL, summarizeGarden } from '../pricing.js';
 
 const STATUS = { ideal: 'Idéale', possible: 'Possible', discouraged: 'Déconseillée' };
@@ -243,7 +245,8 @@ export function mountPlants(el, { garden, onChange, getPhoto = getPlantPhoto, IO
         h('p', { class: 'small' }, [
           p.bloom && p.bloom.length ? `Floraison : ${formatBloom(p.bloom)}. ` : '',
           `Hauteur adulte : ${fmtNum(p.heightAdult)} m, largeur ${fmtNum(p.widthAdult)} m. `,
-          price ? `Prix indicatif : ${price}.` : 'Prix non renseigné.']),
+          price ? `Prix indicatif : ${price}. ` : 'Prix non renseigné. ',
+          `Entretien : ${effortLabel(plantEffort(p))}.`]),
         r ? h('div', null, h('h4', null, `Pourquoi ${STATUS[r.status] ? STATUS[r.status].toLowerCase() : 'cette note'} (${Math.round(r.score)}/100)`),
           h('ul', { class: 'reasons' }, (r.reasons || []).map((x) => h('li', { class: x.ok === true ? 'ok' : x.ok === false ? 'ko' : '' },
             (x.ok === true ? '✔ ' : x.ok === false ? '✖ ' : '• ') + x.text)))) : null,
@@ -259,6 +262,12 @@ export function mountPlants(el, { garden, onChange, getPhoto = getPlantPhoto, IO
     resetThumbs();
     let recs = [];
     try { recs = recommendForZone(garden, z, { includeDiscouraged: showDisc, filters: { ...filters } }) || []; } catch (e) { console.error(e); }
+    if (filters.lowMaintenance) {
+      // « Faible entretien » suit le niveau choisi : une seule essence légère pour « pas d'entretien ».
+      const lvl = levelForZone(garden, z);
+      const cap = lvl === 'none' ? 1 : lvl === 'low' ? 2 : 3;
+      recs = recs.filter((r) => plantEffort(r.plant) <= cap);
+    }
     if (query.trim()) {
       let ids = null;
       try { ids = new Set(searchPlants(query).map((p) => p.id)); } catch { /* */ }
@@ -272,7 +281,9 @@ export function mountPlants(el, { garden, onChange, getPhoto = getPlantPhoto, IO
       const nInput = h('input', { type: 'number', min: '1', max: '999', class: 'qty', value: String(qty(safeQty(p, z))), 'aria-label': `Quantité à ajouter de ${p.commonName}` });
       const price = priceLabel(p);
       const bloom = formatBloom(p.bloom);
-      listBox.append(h('li', { class: 'plant-card ' + r.status, 'data-plant': p.id },
+      const effort = plantEffort(p);
+      const fit = fitsMaintenance(p, levelForZone(garden, z));
+      listBox.append(h('li', { class: 'plant-card ' + r.status + (fit.ok ? '' : ' maint-ko'), 'data-plant': p.id },
         h('div', { class: 'plant-head' },
           makeThumb(p, r),
           h('div', { class: 'grow' }, h('strong', null, p.commonName), h('br'), h('em', { class: 'muted' }, p.latinName),
@@ -281,6 +292,8 @@ export function mountPlants(el, { garden, onChange, getPhoto = getPlantPhoto, IO
         h('p', { class: 'muted small' }, `${bloom ? 'Floraison : ' + bloom + ' · ' : ''}Hauteur adulte ${fmtNum(p.heightAdult)} m × ${fmtNum(p.widthAdult)} m`),
         h('p', { class: 'muted small' }, `${(p.sun || []).map((s) => SUNL[s]).join('/')} · ${WATER[p.water] || ''} · rustique à ${p.hardiness} °C`),
         h('p', { class: 'price small' + (price ? '' : ' muted'), 'data-role': 'price' }, price || 'Prix non renseigné'),
+        h('p', { class: 'small maint-line' }, effortIndicator(effort, { ok: fit.ok }),
+          fit.ok ? null : h('span', { class: 'maint-pill', 'data-role': 'maint-ko', title: fit.text }, 'demande de l’entretien')),
         h('details', null, h('summary', null, 'Pourquoi ?'),
           h('ul', { class: 'reasons' }, (r.reasons || []).map((x) => h('li', { class: x.ok === true ? 'ok' : x.ok === false ? 'ko' : '' },
             (x.ok === true ? '✔ ' : x.ok === false ? '✖ ' : '• ') + x.text)))),
@@ -324,7 +337,8 @@ export function mountPlants(el, { garden, onChange, getPhoto = getPlantPhoto, IO
       h('div', { class: 'zone-head-txt' },
         h('strong', { 'data-role': 'zone-head-name' }, z.label || 'Zone'),
         h('span', { class: 'amb-tag', 'data-role': 'zone-head-ambiance' }, amb ? `${amb.emoji} ambiance ${amb.label.toLowerCase()}` : 'Ambiance : peu importe')),
-      h('button', { class: 'btn btn-sm', type: 'button', 'data-act': 'change-ambiance', onclick: changeAmbiance }, 'Changer l’ambiance'));
+      h('button', { class: 'btn btn-sm', type: 'button', 'data-act': 'change-ambiance', onclick: changeAmbiance }, 'Changer l’ambiance'),
+      zoneMaintenancePicker(garden, z, { onChange: () => { limit = PAGE; refresh(); } }));
     let a = 0; try { a = shapeArea(z.shape); } catch { /* */ }
     const t = getZoneType(z.type);
     zoneInfo.textContent = `${t ? t.label : z.type} · ${a.toFixed(a < 10 ? 1 : 0).replace('.', ',')} m²`;
@@ -366,7 +380,16 @@ export function mountPlants(el, { garden, onChange, getPhoto = getPlantPhoto, IO
 
   function askAmbiances(zones) {
     return new Promise((resolve) => {
-      openAmbiancePicker(document.body, { zones, onConfirm: (m) => resolve(m), onCancel: () => resolve(null) });
+      const pk = openAmbiancePicker(document.body, { zones, onConfirm: (m) => resolve(m), onCancel: () => resolve(null) });
+      // Rappel du niveau d'entretien (modifiable) juste avant les boutons.
+      const single = zones.length === 1 ? zones[0] : null;
+      const rem = maintenanceReminder({
+        get: () => levelForZone(garden, single),
+        set: (id) => { if (single) single.maintenance = id; else garden.context.maintenance = id; change(); syncMaint(); drawZoneInfo(); },
+      });
+      const dlg = pk && pk.el && pk.el.querySelector('.amb-dialog');
+      const actions = dlg && dlg.querySelector('.amb-actions');
+      if (dlg) dlg.insertBefore(rem, actions || null);
     });
   }
   /** « 8 essences · ambiance bucolique · floraison de mars à octobre · ≈ 210 € » */
@@ -377,6 +400,11 @@ export function mountPlants(el, { garden, onChange, getPhoto = getPlantPhoto, IO
     if (ids.length === 1 && ids[0]) { const a = ambianceOf(ids[0]); if (a) amb = `ambiance ${a.label.toLowerCase()}`; }
     else if (ids.length > 1 && ids.some(Boolean)) amb = 'ambiances variées selon les zones';
     if (amb) parts.splice(1, 0, amb);
+    const lv = [...new Set(targets.map((z) => levelForZone(garden, z)))];
+    let mt = null;
+    if (lv.length === 1) mt = levelPhrase(lv[0]);
+    else if (lv.some((id) => id !== 'green')) mt = 'entretien variable selon les zones';
+    if (mt) parts.splice(amb ? 2 : 1, 0, mt);
     return parts.join(' · ');
   }
 
@@ -434,7 +462,11 @@ export function mountPlants(el, { garden, onChange, getPhoto = getPlantPhoto, IO
   }) }, ALL_LABEL);
   const budgetInput = h('input', { id: 'budget-max', type: 'number', inputmode: 'decimal', min: '0', step: '10', placeholder: 'Sans limite', oninput: () => drawBudget() });
 
+  const gardenMaint = gardenMaintenancePicker(garden, { onChange: () => { limit = PAGE; refresh(); drawZoneInfo(); } });
+  function syncMaint() { const c = gardenMaint.querySelector('.maint-chips'); if (c) c.setValue(levelForZone(garden, null)); }
+
   el.replaceChildren(
+    h('section', { class: 'card', 'data-role': 'maintenance-card' }, gardenMaint),
     h('section', { class: 'card surprise-all' },
       allBtn,
       h('div', { class: 'field' }, h('label', { for: 'budget-max' }, 'Budget max en € (facultatif)'), budgetInput),

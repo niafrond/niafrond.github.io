@@ -4,6 +4,7 @@ import { climateForDepartement, adjustTminForAltitude } from './climate.js';
 import { shapeArea, shapePolygon, bounds } from './geometry.js';
 import { zoneSunLevel } from './sun.js';
 import { plantCost } from './pricing.js';
+import { levelForZone, fitsMaintenance, plantEffort, getMaintenanceLevel } from './maintenance.js';
 import { getAmbiance, detectAmbiance, plantAmbianceScore, plantAvoids, isTypical } from './ambiances.js';
 
 const SUN_ORDER = { shade: 0, partial: 1, full: 2 };
@@ -22,7 +23,8 @@ const PLANT_NAME = (p) => p.commonName || p.id;
 
 /**
  * Score de compatibilité d'une essence dans un contexte.
- * ctx = {tminC, zoneType, sunLevel|null, areaM2, minDimension, soil|null, windy:boolean|null}
+ * ctx = {tminC, zoneType, sunLevel|null, areaM2, minDimension, soil|null, windy:boolean|null, ambiance?, maintenance?}
+ * (`maintenance` : 'green' | 'low' | 'none' | null, voir maintenance.js).
  * Résultat : {score, status, reasons, excluded} ; `excluded` = exclusion dure (rusticité insuffisante).
  */
 export function scorePlant(plant, ctx = {}) {
@@ -135,6 +137,15 @@ export function scorePlant(plant, ctx = {}) {
     rank = score;
   }
 
+  // Niveau d'entretien souhaité (facultatif : « green » ou absent = aucune restriction).
+  if ((ctx.maintenance === 'low' || ctx.maintenance === 'none') && !excluded) {
+    const fit = fitsMaintenance(plant, ctx.maintenance);
+    score += fit.bonus - fit.penalty;
+    if (fit.discouraged) forceDiscouraged = true;
+    add(fit.ok, 'entretien', fit.text);
+    rank = score;
+  }
+
   score = Math.max(0, Math.min(100, Math.round(score)));
   let status = score >= 75 ? 'ideal' : score >= 50 ? 'possible' : 'discouraged';
   if (excluded || forceDiscouraged) status = 'discouraged';
@@ -159,7 +170,7 @@ function minDimensionOf(shape) {
 }
 
 /** Contexte de scoring d'une zone dans un jardin. */
-export function contextForZone(garden, zone, { ambiance } = {}) {
+export function contextForZone(garden, zone, { ambiance, maintenance } = {}) {
   const c = garden?.context || {};
   const clim = climateForDepartement(c.departement);
   const tminC = clim ? adjustTminForAltitude(clim.tminC, c.altitude) : null;
@@ -180,6 +191,7 @@ export function contextForZone(garden, zone, { ambiance } = {}) {
     soil: c.soil || null,
     windy,
     ambiance: ambiance !== undefined ? ambiance : resolveAmbiance(zone),
+    maintenance: maintenance !== undefined ? maintenance : levelForZone(garden, zone),
   };
 }
 
@@ -190,8 +202,8 @@ export function resolveAmbiance(zone) {
 }
 
 /** Essences conseillées pour une zone, triées par score (les exclusions dures sont toujours retirées). */
-export function recommendForZone(garden, zone, { includeDiscouraged = false, filters, plants, ambiance } = {}) {
-  const ctx = contextForZone(garden, zone, { ambiance });
+export function recommendForZone(garden, zone, { includeDiscouraged = false, filters, plants, ambiance, maintenance } = {}) {
+  const ctx = contextForZone(garden, zone, { ambiance, maintenance });
   const list = filterPlants(plants || allPlants(), filters || {});
   return list
     .map((plant) => ({ plant, ...scorePlant(plant, ctx) }))
@@ -291,6 +303,15 @@ export function checkCoherence(garden, { plants } = {}) {
       out.push({ level: 'warn', zoneId: zone.id, text: `Zone « ${name} » : besoins en eau très différents (faible et élevé) dans la même zone, arrosage difficile à adapter` });
     }
 
+    // Zone prévue sans entretien : essences qui en demandent.
+    if (levelForZone(garden, zone) === 'none') {
+      for (const { plant } of items) {
+        if (plantEffort(plant) >= 2) {
+          out.push({ level: 'warn', zoneId: zone.id, text: `Zone « ${name} » : ${PLANT_NAME(plant)} demande un entretien régulier alors que cette zone est prévue sans entretien` });
+        }
+      }
+    }
+
     // Invasives.
     for (const { plant } of items) {
       if (plant.invasive) {
@@ -336,11 +357,13 @@ const heightLayer = (h) => (h < 0.5 ? 0 : h < 1.5 ? 1 : h < 4 ? 2 : 3);
  * `budget` (€, facultatif) : privilégie les essences peu coûteuses et réduit quantités/essences pour rester
  * sous le budget si possible (au moins une essence est toujours conservée).
  */
-export function suggestSelection(garden, zone, { seed = 1, plants, max, budget, ambiance } = {}) {
+export function suggestSelection(garden, zone, { seed = 1, plants, max, budget, ambiance, maintenance } = {}) {
   const rnd = mulberry32(hashSeed(seed));
   const strict = zone.type === 'vegetable' || zone.type === 'terrace';
   const amb = ambiance !== undefined ? (getAmbiance(ambiance) ? ambiance : null) : resolveAmbiance(zone);
-  let cands = recommendForZone(garden, zone, { plants, ambiance: amb }).filter((r) => !r.plant.invasive && !(strict && r.plant.toxic));
+  const level = maintenance !== undefined ? (getMaintenanceLevel(maintenance) ? maintenance : 'green') : levelForZone(garden, zone);
+  const maxEffort = level === 'none' ? 1 : level === 'low' ? 2 : 3;
+  let cands = recommendForZone(garden, zone, { plants, ambiance: amb, maintenance: level }).filter((r) => !r.plant.invasive && !(strict && r.plant.toxic));
   if (!cands.length) return [];
   const area = shapeArea(zone.shape);
   const target = Math.min(cands.length, max || (area < 4 ? 2 : area < 15 ? 3 : area < 60 ? 4 : 5));
@@ -363,14 +386,19 @@ export function suggestSelection(garden, zone, { seed = 1, plants, max, budget, 
   let shrubCount = 0;
   while (chosen.length < target && cands.length) {
     let best = null, bestV = -Infinity;
+    // Entretien : on épuise d'abord les essences au niveau voulu, puis on complète avec les moins exigeantes.
     let pool = cands;
+    if (maxEffort < 3) {
+      const easy = cands.filter((c) => plantEffort(c.plant) <= maxEffort);
+      if (easy.length) pool = easy;
+    }
     if (amb && minTypical - typicalCount >= target - chosen.length) {
-      const typ = cands.filter((c) => isTypical(c.plant, amb));
+      const typ = pool.filter((c) => isTypical(c.plant, amb));
       if (typ.length) pool = typ;
     }
     if (minShrub - shrubCount > 0 && minShrub - shrubCount >= target - chosen.length) {
       const sh = pool.filter((c) => isSmallShrub(c.plant));
-      const sh2 = sh.length ? sh : cands.filter((c) => isSmallShrub(c.plant));
+      const sh2 = sh.length ? sh : (maxEffort < 3 ? [] : cands.filter((c) => isSmallShrub(c.plant)));
       if (sh2.length) pool = sh2;
     }
     for (const c of pool) {
@@ -425,7 +453,7 @@ const NO_PLANT_ZONES = new Set(['pool', 'path']);
  * (`ambiances[zone.id]`, sinon `zone.ambiance`, sinon détectée dans le nom ; `null` explicite = aucune).
  * Retourne [{zoneId, selection}].
  */
-export function suggestForGarden(garden, { seed = 1, budget, ambiances = {}, plants } = {}) {
+export function suggestForGarden(garden, { seed = 1, budget, ambiances = {}, plants, maintenance } = {}) {
   const zones = (garden?.zones || []).filter((z) => !NO_PLANT_ZONES.has(z.type));
   const cap = typeof budget === 'number' && Number.isFinite(budget) && budget > 0 ? budget : null;
   return zones.map((zone, i) => {
@@ -434,6 +462,7 @@ export function suggestForGarden(garden, { seed = 1, budget, ambiances = {}, pla
       seed: `${seed}:${i}`,
       plants,
       ambiance,
+      ...(maintenance !== undefined ? { maintenance } : {}),
       ...(cap ? { budget: cap / zones.length } : {}),
     });
     return { zoneId: zone.id, selection };
