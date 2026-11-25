@@ -7,10 +7,10 @@ export const QUALITY_ORDER = ['low', 'medium', 'high', 'ultra'];
  * détail des houppiers (subdivisions de l'icosaèdre), passes et largeur du rendu photo.
  */
 export const QUALITIES = {
-  low: { id: 'low', label: 'Basse', shadow: 1024, msaa: false, maxPixelRatio: 1, density: 0.35, detail: 1, photoPasses: 16, photoWidth: 1920, softShadows: false },
-  medium: { id: 'medium', label: 'Moyenne', shadow: 2048, msaa: true, maxPixelRatio: 1.25, density: 0.65, detail: 1, photoPasses: 48, photoWidth: 2560, softShadows: true },
-  high: { id: 'high', label: 'Haute', shadow: 4096, msaa: true, maxPixelRatio: 1.5, density: 1, detail: 2, photoPasses: 128, photoWidth: 3200, softShadows: true },
-  ultra: { id: 'ultra', label: 'Ultra', shadow: 8192, msaa: true, maxPixelRatio: 2, density: 1.6, detail: 2, photoPasses: 256, photoWidth: 4096, softShadows: true },
+  low: { id: 'low', label: 'Basse', shadow: 1024, msaa: false, maxPixelRatio: 1, density: 0.35, detail: 1, photoPasses: 16, photoWidth: 1920, softShadows: false, particles: 0 },
+  medium: { id: 'medium', label: 'Moyenne', shadow: 2048, msaa: true, maxPixelRatio: 1.25, density: 0.65, detail: 1, photoPasses: 48, photoWidth: 2560, softShadows: true, particles: 300 },
+  high: { id: 'high', label: 'Haute', shadow: 4096, msaa: true, maxPixelRatio: 1.5, density: 1, detail: 2, photoPasses: 128, photoWidth: 3200, softShadows: true, particles: 800 },
+  ultra: { id: 'ultra', label: 'Ultra', shadow: 8192, msaa: true, maxPixelRatio: 2, density: 1.6, detail: 2, photoPasses: 256, photoWidth: 4096, softShadows: true, particles: 1600 },
 };
 
 /** Le nom du renderer désigne-t-il un rendu logiciel (pas de vrai GPU) ? */
@@ -50,6 +50,7 @@ export function resolveQuality(id, { maxTextureSize = 4096, dpr = 1, mobile = fa
     r.photoWidth = Math.min(r.photoWidth, 2048);
     r.photoPasses = Math.min(r.photoPasses, 48);
     r.msaa = !!(q.msaa && strongGpu);
+    r.particles = 0;
   }
   return r;
 }

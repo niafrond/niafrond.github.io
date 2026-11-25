@@ -116,6 +116,7 @@ export function buildBuilding(ctx, ob, openings = []) {
     rg.position.set(c.x + ux * cu + vx * cv, wallH, c.y + uy * cu + vy * cv);
     rg.rotation.y = -Math.atan2(alongU ? uy : vy, alongU ? ux : vx);
     const rm = new THREE.Mesh(ctx.track(slopes), ctx.mat('#ffffff', { roughness: 0.85, map: ctx.tex('roof', roofTexture), side: THREE.DoubleSide }));
+    rm.userData.snow = true;
     rg.add(rm);
     rg.add(new THREE.Mesh(ctx.track(gables), ctx.mat('#ece4d4', { roughness: 0.92, side: THREE.DoubleSide })));
     g.add(rg);
@@ -124,7 +125,7 @@ export function buildBuilding(ctx, ob, openings = []) {
     g.add(ch);
   } else {
     const slab = new THREE.Mesh(ctx.track(polyGeometry(THREE, pts, 0.14)), ctx.mat('#5b5b5b', { roughness: 0.8 }));
-    slab.position.y = wallH;
+    slab.position.y = wallH; slab.userData.snow = true;
     g.add(slab);
   }
   return shadowed(g);
