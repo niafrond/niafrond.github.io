@@ -1,7 +1,12 @@
 // Vue 3D PC : WebGL logiciel (SwiftShader) en CI ; rendu non vide, heure → image différente, rendu photo, aucune erreur.
 import { test, expect } from '@playwright/test';
 
+// Le projet Playwright `jardin` émule un Pixel 5 (agent Android) : on force ici un agent de bureau
+// pour que l'application choisisse l'interface PC ; le bloc « mobile » rétablit l'agent Android.
+const UA_PC = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
+const UA_ANDROID = 'Mozilla/5.0 (Linux; Android 13; Pixel 5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36';
 test.use({
+  userAgent: UA_PC,
   viewport: { width: 1280, height: 800 }, hasTouch: false, isMobile: false,
   launchOptions: { executablePath: process.env.PW_CHROMIUM_PATH || undefined, args: ['--no-sandbox', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] },
 });
@@ -81,7 +86,7 @@ test('vue 3D : canvas WebGL, image non vide, l’heure change l’image, rendu p
 
 // ── Mobile : émulation Pixel 5 (écran 393×727, tactile), WebGL logiciel ──
 test.describe('mobile', () => {
-  test.use({ viewport: { width: 393, height: 727 }, hasTouch: true, isMobile: true, deviceScaleFactor: 2.75 });
+  test.use({ userAgent: UA_ANDROID, viewport: { width: 393, height: 727 }, hasTouch: true, isMobile: true, deviceScaleFactor: 2.75 });
 
   test('vue 3D mobile : image non vide, panneau repliable, joystick, Fermer et Retour', async ({ page }) => {
     test.setTimeout(90_000);
