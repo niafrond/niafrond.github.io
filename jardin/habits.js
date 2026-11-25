@@ -158,12 +158,13 @@ const TRUNK_FRAC = { none: 0, short: 0.2, tall: 0.4, multi: 0.12 };
  * Paramètres numériques de modélisation d'une plante à un âge donné.
  * Hauteur/largeur (m), ratio effectif, hauteur de tronc, hauteur de couronne, nombre de tiges, densité, etc.
  */
-export function habitParams(plant, { age = 1 } = {}) {
+export function habitParams(plant, { age = 1, height: heightOverride = null, width: widthOverride = null } = {}) {
   const habit = habitOf(plant);
   const tag = tagOf(plant) || {};
   const f = ageFactors(age);
-  const heightAdult = num(plant && plant.heightAdult, 1);
-  const widthAdult = num(plant && plant.widthAdult, Math.max(0.05, heightAdult / habit.ratio));
+  // `height` / `width` (m) : hauteur et largeur adultes réglées à la main, à la place du catalogue
+  const heightAdult = num(heightOverride, num(plant && plant.heightAdult, 1));
+  const widthAdult = num(widthOverride, num(plant && plant.widthAdult, Math.max(0.05, heightAdult / habit.ratio)));
   const height = Math.max(0.001, heightAdult * f.h);
   const width = Math.max(0.001, widthAdult * f.w);
   const trunkHeight = habit.trunk === 'none' ? 0 : height * TRUNK_FRAC[habit.trunk];

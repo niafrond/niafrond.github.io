@@ -15,6 +15,8 @@ import {
   injectStyles, h, createCanvas, gridPath, clone, esc, fr, projectOnLine, parseLength, toCm,
 } from './draw-util.js';
 import { createPop } from './pop.js';
+import { heightField } from './height-field.js';
+import { itemHeight, defaultItemHeight, checkHeight, heightMessage, formatHeight } from '../heights.js';
 import { attachNorthBadge } from './north-pop.js';
 
 const NS = 'vector-effect="non-scaling-stroke"';
@@ -428,20 +430,31 @@ export function mountItemEditor(el, { garden, onChange } = {}) {
       ? [{ key: 'w', label: 'Diamètre', value: cm(it.radius * 2), kind: 'length' }]
       : [{ key: 'w', label: 'Largeur', value: cm(it.width), kind: 'length' }, { key: 'd', label: 'Profondeur', value: cm(it.depth), kind: 'length' }];
     if (!circle) fields.push({ key: 'rot', label: 'Rotation', value: String(Math.round(it.rotation || 0)), kind: 'angle' });
+    fields.push({ key: 'ht', label: 'Hauteur', value: cm(itemHeight(it)), kind: 'length' });
     fields.push({ key: 'label', label: 'Nom', value: it.label || '', kind: 'text' });
     pop.open({
       title: `${k ? k.emoji + ' ' + k.label : 'Élément'} : taille en cm`,
-      hint: '« 150 » = 1,50 m ; « 1,5 m » accepté.',
+      hint: `« 150 » = 1,50 m ; « 1,5 m » accepté. Hauteur par défaut : ${formatHeight(defaultItemHeight(it.kind))}.`,
       fields,
       actions: [
+        { label: '↺ Hauteur par défaut', act: 'pop-height-default', fn: () => { pop.close(); mutate(() => { delete it.height; }); say(`Hauteur par défaut : ${formatHeight(defaultItemHeight(it.kind))}.`); } },
         { label: '⧉ Dupliquer', act: 'pop-dup', fn: () => { pop.close(); duplicateItem(it); } },
         { label: '🗑 Supprimer', act: 'pop-del', danger: true, fn: () => { pop.close(); deleteSel(); } },
       ],
       onOk: (v) => mutate(() => {
         if (circle) { it.radius = v.w / 2; it.width = v.w; it.depth = v.w; } else { it.width = v.w; it.depth = v.d; it.rotation = v.rot; }
+        setItemHeight(it, v.ht);
         if (v.label) it.label = v.label; else delete it.label;
       }),
     });
+  }
+
+  /** Enregistre la hauteur d'un aménagement (bornée) ; la valeur par défaut supprime le réglage. */
+  function setItemHeight(it, m) {
+    const chk = checkHeight(it.kind, m);
+    if (!chk.ok) return;
+    if (Math.abs(chk.value - defaultItemHeight(it.kind)) < 0.005) delete it.height; else it.height = chk.value;
+    if (chk.clamped) say(chk.message, 'warn');
   }
 
   function duplicateItem(it) {
@@ -499,7 +512,10 @@ export function mountItemEditor(el, { garden, onChange } = {}) {
   function setEdgeHeight(i, m) {
     const kind = edgeKindOf(g, i);
     if (kind === 'open') return;
-    mutate(() => setEdge(i, kind, Math.max(0.1, m)));
+    const chk = checkHeight(kind, m);
+    if (!chk.ok) { say(heightMessage(kind), 'warn'); refreshUI(); return; }
+    mutate(() => setEdge(i, kind, chk.value));
+    if (chk.clamped) say(chk.message, 'warn');
   }
   function applyAll() {
     const i = selEdge();
@@ -529,14 +545,14 @@ export function mountItemEditor(el, { garden, onChange } = {}) {
       fields: [{ key: 'h', label: 'Hauteur', value: cm(edgeKindOf(g, i) === 'open' ? getEdgeKind(tmp.kind).height : edgeHeightOf(g, i)), kind: 'length' }],
       extra: seg,
       actions: [{ label: 'Ouvert', act: 'pop-open', fn: () => { pop.close(); mutate(() => setEdge(i, 'open', 0)); } }],
-      onOk: (v) => mutate(() => setEdge(i, tmp.kind, v.h)),
+      onOk: (v) => { const chk = checkHeight(tmp.kind, v.h); mutate(() => setEdge(i, tmp.kind, chk.value)); if (chk.clamped) say(chk.message, 'warn'); },
     });
   }
   function openFreePop(o) {
     pop.open({
       title: `${FREE_KINDS[o.kind].label} libre : hauteur`, fields: [{ key: 'h', label: 'Hauteur', value: cm(o.height || FREE_KINDS[o.kind].height), kind: 'length' }],
       actions: [{ label: '🗑 Supprimer', act: 'pop-del', danger: true, fn: () => { pop.close(); deleteSel(); } }],
-      onOk: (v) => mutate(() => { o.height = v.h; }),
+      onOk: (v) => { const chk = checkHeight(o.kind, v.h); mutate(() => { o.height = chk.value; }); if (chk.clamped) say(chk.message, 'warn'); },
     });
   }
   function startDraft(kind) {
@@ -696,7 +712,7 @@ export function mountItemEditor(el, { garden, onChange } = {}) {
         { label: '⧉ Dupliquer', act: 'pop-dup', fn: () => { pop.close(); duplicateExisting(e); } },
         { label: '🗑 Supprimer', act: 'pop-del', danger: true, fn: () => { pop.close(); deleteSel(); } },
       ],
-      onOk: (v) => mutate(() => { e.height = v.h; if (v.w) e.width = v.w; e.label = v.label || kd.defaultLabel; }),
+      onOk: (v) => { const chk = checkHeight(e.kind, v.h); mutate(() => { e.height = chk.value; if (v.w) e.width = v.w; e.label = v.label || kd.defaultLabel; }); if (chk.clamped) say(chk.message, 'warn'); },
     });
   }
   function duplicateExisting(e) {
@@ -937,7 +953,12 @@ export function mountItemEditor(el, { garden, onChange } = {}) {
         itemRadius(it) == null ? btn('↻', 'rot-cw', () => rotateSel(90), '', { 'aria-label': 'Tourner de 90° à droite' }) : null,
         btn('✎ Taille', 'edit', () => openItemPop(it)),
         btn('⧉', 'dup', () => duplicateItem(it), '', { 'aria-label': 'Dupliquer' }),
-        btn('🗑', 'del', deleteSel, 'danger', { 'aria-label': 'Supprimer' }));
+        btn('🗑', 'del', deleteSel, 'danger', { 'aria-label': 'Supprimer' }),
+        heightField({
+          label: 'Hauteur (cm)', value: itemHeight(it), def: defaultItemHeight(it.kind), kind: it.kind, custom: it.height != null && Math.abs(Number(it.height) - defaultItemHeight(it.kind)) >= 0.005,
+          field: 'item-height', defLabel: 'catalogue', onMessage: (m) => say(m, 'warn'),
+          onSet: (m) => mutate(() => { if (m == null || Math.abs(m - defaultItemHeight(it.kind)) < 0.005) delete it.height; else it.height = m; }),
+        }));
     } else if (st.tab === 'existing') {
       renderExistingDetail(detail, exApi());
     } else if (st.tab === 'edges') {
@@ -953,15 +974,16 @@ export function mountItemEditor(el, { garden, onChange } = {}) {
         hIn.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); hIn.blur(); } });
         show(
           h('div', { class: 'jdi-detail-title', 'data-role': 'sel-banner' }, `Côté ${i + 1} · ${fr(L)} m`, h('small', null, kind === 'open' ? 'Ouvert' : `${getEdgeKind(kind).label} · hauteur en cm`)),
-          kind === 'open' ? null : h('span', { class: 'jdi-seg' }, hIn, h('span', { class: 'jd-unit' }, 'cm')),
+          kind === 'open' ? null : h('span', { class: 'jdi-seg' }, hIn, h('span', { class: 'jd-unit' }, 'cm'),
+            btn('↺ Valeur par défaut', 'edge-height-reset', () => setEdgeHeight(i, getEdgeKind(kind).height), '', { 'aria-label': `Hauteur par défaut (${formatHeight(getEdgeKind(kind).height)})`, disabled: Math.abs(edgeHeightOf(g, i) - getEdgeKind(kind).height) < 0.005 })),
           h('div', { class: 'jdi-seg jdi-row2' }, EDGE_KINDS.map((k) => btn(k.label, `edge-${k.id}`, () => chooseEdgeKind(k.id), '', { 'data-edge-kind': k.id, 'aria-pressed': String(kind === k.id) })),
             btn('Appliquer à tous', 'apply-all', applyAll, '', { title: 'Appliquer à tous les côtés', 'aria-label': 'Appliquer à tous les côtés' })),
           EDGE_MATERIALS[kind] ? materialChoice(edgeMaterial(i), (m) => setEdgeMaterial(i, m), EDGE_MATERIALS[kind], 'data-edge-material') : null);
       } else if (o) {
         const hIn = h('input', { class: 'jd-input', type: 'text', inputmode: 'numeric', 'aria-label': 'Hauteur en centimètres', 'data-field': 'free-height', value: cm(o.height || FREE_KINDS[o.kind].height) });
-        hIn.addEventListener('change', () => { const v = parseLength(hIn.value); if (Number.isFinite(v)) mutate(() => { o.height = v; }); else refreshUI(); });
+        hIn.addEventListener('change', () => { const v = parseLength(hIn.value); if (!Number.isFinite(v)) { refreshUI(); return; } const chk = checkHeight(o.kind, v); mutate(() => { o.height = chk.value; }); if (chk.clamped) say(chk.message, 'warn'); });
         show(h('div', { class: 'jdi-detail-title', 'data-role': 'sel-banner' }, `${FREE_KINDS[o.kind].label} libre`, h('small', null, 'hauteur en cm')),
-          hIn, btn('🗑', 'del', deleteSel, 'danger', { 'aria-label': 'Supprimer' }),
+          hIn, btn('↺ Valeur par défaut', 'free-height-reset', () => mutate(() => { o.height = FREE_KINDS[o.kind].height; }), '', { 'aria-label': `Hauteur par défaut (${formatHeight(FREE_KINDS[o.kind].height)})`, disabled: Math.abs((o.height || 0) - FREE_KINDS[o.kind].height) < 0.005 }), btn('🗑', 'del', deleteSel, 'danger', { 'aria-label': 'Supprimer' }),
           materialChoice(materialOf(o.kind, o.material), (m) => mutate(() => { o.material = m; }), EDGE_MATERIALS[o.kind], 'data-free-material'));
       }
     } else {

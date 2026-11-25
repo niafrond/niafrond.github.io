@@ -3,6 +3,7 @@
 import { bounds, pointInPolygon, shapePolygon } from './geometry.js';
 import { edgeObstacles, itemObstacles } from './items.js';
 import { existingShadowObstacles } from './existing.js';
+import { zoneHeight, effectivePlant } from './heights.js';
 
 const rad = (d) => (d * Math.PI) / 180;
 const deg = (r) => (r * 180) / Math.PI;
@@ -128,8 +129,41 @@ export function sunHoursOnPoint(point, { lat, lon, northAngle = 0, obstacles = [
  * Obstacles d'ombre d'un jardin : obstacles dessinés, côtés de contour mur/clôture/haie (hauteurs par défaut
  * 2 / 1,2 / 1,8 m), éléments hauts (pergola, parasol, abri…) et plantes existantes conservées (arbres, haies…). Les passages (portails) ne sont pas décomptés.
  */
-export function shadowObstacles(garden) {
-  return [...((garden && garden.obstacles) || []), ...edgeObstacles(garden), ...itemObstacles(garden), ...existingShadowObstacles(garden)];
+export function shadowObstacles(garden, { plantLookup = null } = {}) {
+  return [...((garden && garden.obstacles) || []), ...edgeObstacles(garden), ...itemObstacles(garden), ...existingShadowObstacles(garden), ...zoneShadowObstacles(garden, { plantLookup })];
+}
+
+/**
+ * Obstacles d'ombre portés par les zones : paroi d'une piscine hors sol, terrasse surélevée (hauteurs réglables) et,
+ * si `plantLookup` est fourni, arbres isolés (houppier) et haies (rang) plantés dans une zone, à leur hauteur réglée
+ * (`planting.height`) ou, sinon, celle du catalogue.
+ */
+export function zoneShadowObstacles(garden, { plantLookup = null } = {}) {
+  const out = [];
+  for (const z of (garden && garden.zones) || []) {
+    if (!z || !z.shape) continue;
+    const zh = zoneHeight(z);
+    if (zh > 0) {
+      const poly = shapePolygon(z.shape, 24);
+      if (poly.length >= 3) out.push({ id: `zone_${z.id}`, kind: z.type === 'pool' ? 'pool' : 'terrace', zone: true, points: poly, height: zh });
+    }
+    if (typeof plantLookup !== 'function') continue;
+    for (const pl of z.plantings || []) {
+      const plant = effectivePlant(plantLookup(pl.plantId), pl);
+      if (!plant || !['tree', 'fruit', 'hedge'].includes(plant.category) || !(plant.heightAdult >= 1.5)) continue;
+      const n = Math.max(1, Math.round(pl.count ?? pl.quantity ?? 1));
+      const line = z.shape.kind === 'line' && z.shape.points && z.shape.points.length >= 2 ? z.shape.points : null;
+      if (line && plant.category === 'hedge') {
+        out.push({ id: `zone_${z.id}_${pl.plantId}`, kind: 'hedge', zone: true, thickness: Math.max(0.3, plant.widthAdult * 0.8), points: line.map((p) => ({ x: p.x, y: p.y })), height: plant.heightAdult });
+      } else if (n === 1 && plant.category !== 'hedge') {
+        const poly = shapePolygon(z.shape, 24);
+        if (poly.length < 3) continue;
+        const c = poly.reduce((a, p) => ({ x: a.x + p.x / poly.length, y: a.y + p.y / poly.length }), { x: 0, y: 0 });
+        out.push({ id: `zone_${z.id}_${pl.plantId}`, kind: 'tree', zone: true, center: c, radius: Math.max(0.2, (plant.widthAdult || 2) / 2), height: plant.heightAdult });
+      }
+    }
+  }
+  return out;
 }
 
 /**
@@ -137,13 +171,13 @@ export function shadowObstacles(garden) {
  * Date par défaut : solstice d'été (cas le plus favorable) de l'année courante.
  * @returns {{level:string, points:Point[]}[]}
  */
-export function estimateSunMap(garden, { date, step = 0.5 } = {}) {
+export function estimateSunMap(garden, { date, step = 0.5, plantLookup = null } = {}) {
   const loc = garden.context && garden.context.location;
   const contour = garden.boundary || [];
   if (!loc || contour.length < 3) return [];
   const d = date || new Date(Date.UTC(new Date().getUTCFullYear(), 5, 21, 12));
   const samples = echantillonsSoleil(loc.lat, loc.lon, garden.context.northAngle || 0, d);
-  const obstacles = shadowObstacles(garden);
+  const obstacles = shadowObstacles(garden, { plantLookup });
   const b = bounds(contour);
   const nx = Math.ceil(b.width / step);
   const ny = Math.ceil(b.height / step);

@@ -10,6 +10,7 @@ import { isTypical } from '../ambiances.js';
 import { plantEffort, fitsMaintenance, levelForZone, effortLabel } from '../maintenance.js';
 import { gardenMaintenancePicker, zoneMaintenancePicker, maintenanceReminder, effortIndicator, levelPhrase } from './maintenance-picker.js';
 import { designBed } from '../massifs.js';
+import { checkHeight, parseHeight, heightToCm, heightMessage, formatHeight, plantHeightKind, isDefaultHeight } from '../heights.js';
 import { gardenCost, formatEuro, formatPrice, UNIT_LABEL, summarizeGarden } from '../pricing.js';
 
 const STATUS = { ideal: 'Idéale', possible: 'Possible', discouraged: 'Déconseillée' };
@@ -146,6 +147,43 @@ export function mountPlants(el, { garden, onChange, getPhoto = getPlantPhoto, IO
   }
   const refresh = () => { change(); drawChosen(); drawList(); drawWarnings(); drawBudget(); };
 
+  /** Hauteur adulte réglable (cm) d'une essence choisie : champ, état catalogue / personnalisée, bouton « Valeur par défaut ». */
+  function heightControl(p, pl) {
+    const kind = plantHeightKind(p);
+    const def = Number(p.heightAdult) || 0.5;
+    const name = p.commonName || p.id;
+    const input = h('input', { type: 'text', inputmode: 'numeric', class: 'height-input', 'data-field': 'plant-height', 'aria-label': `Hauteur de ${name} en centimètres`,
+      placeholder: heightToCm(def), enterkeyhint: 'done', autocomplete: 'off' });
+    const state = h('span', { class: 'height-state muted small', 'data-role': 'height-state' });
+    const note = h('span', { class: 'height-note small', role: 'status', 'aria-live': 'polite' });
+    const reset = h('button', { class: 'btn btn-icon height-reset', type: 'button', 'data-act': 'height-reset', 'aria-label': `Valeur par défaut de la hauteur de ${name} (${formatHeight(def)})`, title: 'Valeur par défaut' }, '↺');
+    const paint = () => {
+      const custom = !isDefaultHeight(pl, def) && Number(pl.height) > 0;
+      input.value = custom ? heightToCm(pl.height) : '';
+      state.textContent = custom ? `personnalisée · catalogue ${formatHeight(def)}` : 'catalogue';
+      state.dataset.state = custom ? 'custom' : 'catalog';
+      reset.disabled = !custom;
+    };
+    const commit = () => {
+      const raw = input.value.trim();
+      if (raw === '') { delete pl.height; note.textContent = ''; paint(); afterHeight(); return; }
+      const m = parseHeight(raw);
+      const chk = m == null ? { ok: false, message: heightMessage(kind) } : checkHeight(kind, m);
+      if (!chk.ok) { note.textContent = chk.message; input.classList.add('bad'); paint(); return; }
+      input.classList.remove('bad');
+      if (Math.abs(chk.value - def) < 0.005) delete pl.height; else pl.height = chk.value;
+      note.textContent = chk.clamped ? chk.message : '';
+      paint(); afterHeight();
+    };
+    input.addEventListener('change', commit);
+    input.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); commit(); } });
+    reset.addEventListener('click', () => { delete pl.height; note.textContent = ''; paint(); afterHeight(); });
+    paint();
+    return h('div', { class: 'height-row', 'data-role': 'height-row' },
+      h('label', { class: 'height-label small' }, 'Hauteur'), input, h('span', { class: 'height-unit small' }, 'cm'), reset, state, note);
+  }
+  function afterHeight() { change(); drawWarnings(); }
+
   function drawChosen() {
     const z = zone();
     resetThumbs('chosen');
@@ -171,7 +209,8 @@ export function mountPlants(el, { garden, onChange, getPhoto = getPlantPhoto, IO
         h('button', { class: 'btn btn-icon', type: 'button', 'aria-label': 'Plus', onclick: step(1) }, '+'),
         h('button', { class: 'btn btn-icon btn-danger', type: 'button', 'aria-label': `Retirer ${p ? p.commonName : ''}`, onclick: () => {
           z.plantings = z.plantings.filter((x) => x !== pl); refresh();
-        } }, '🗑'));
+        } }, '🗑'),
+        p ? heightControl(p, pl) : null);
     });
     zoneTotalEl = h('span', { class: 'zone-total', 'data-role': 'zone-total' });
     chosenBox.replaceChildren(
@@ -255,6 +294,7 @@ export function mountPlants(el, { garden, onChange, getPhoto = getPlantPhoto, IO
         h('p', { class: 'small' }, [
           p.bloom && p.bloom.length ? `Floraison : ${formatBloom(p.bloom)}. ` : '',
           `Hauteur adulte : ${fmtNum(p.heightAdult)} m, largeur ${fmtNum(p.widthAdult)} m. `,
+          (() => { const pl = (zone().plantings || []).find((x) => x.plantId === p.id); return pl && Number(pl.height) > 0 && !isDefaultHeight(pl, p.heightAdult) ? `Hauteur : ${formatHeight(pl.height)} (personnalisée). ` : ''; })(),
           price ? `Prix indicatif : ${price}. ` : 'Prix non renseigné. ',
           `Entretien : ${effortLabel(plantEffort(p))}.`]),
         r ? h('div', null, h('h4', null, `Pourquoi ${STATUS[r.status] ? STATUS[r.status].toLowerCase() : 'cette note'} (${Math.round(r.score)}/100)`),

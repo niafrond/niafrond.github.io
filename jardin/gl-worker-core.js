@@ -2,6 +2,7 @@
 // Importé par le Web Worker `gl-worker.js` ET par le repli synchrone / les tests. Repère : x = plan x, z = plan y, y = haut.
 import { shapePolygon, polygonArea, centroid, bounds, pointInPolygon } from './geometry.js';
 import { habitOf, habitParams, TAGS_BY_PLANT } from './habits.js';
+import { effectivePlant } from './heights.js';
 
 const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
 
@@ -150,7 +151,7 @@ export function placePlants(garden, zone, plantsById, { age = 1, density = 1, wa
   const rng = mulberry32(hashStr(String(zone.id || 'z')));
   const groups = [];
   for (const pl of zone.plantings || []) {
-    const plant = get(pl.plantId);
+    const plant = effectivePlant(get(pl.plantId), pl);
     if (!plant) continue;
     const kind = kindOf(plant);
     const c = Math.max(1, Math.round(Number(pl.count ?? pl.quantity) || 1));

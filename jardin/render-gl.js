@@ -8,6 +8,7 @@ import {
   wallSegments, spotsAlong, hedgeSeg, familyOf, arcPt,
 } from './gl-worker-core.js';
 import { habitOf } from './habits.js';
+import { effectivePlant, zoneHeight, obstacleHeight } from './heights.js';
 import * as tx from './gl-textures.js';
 import {
   dayOfYear, seasonDoy, plantSeasonState, groundState, seasonWarmth, leafFall, mixHex, fruitAmount,
@@ -102,11 +103,11 @@ export function jobsForGarden(garden, plantsById, { age = 1, density = 1, existi
   const jobs = [];
   for (const z of (garden && garden.zones) || []) {
     const plants = {};
-    for (const pl of z.plantings || []) { const p = get(pl.plantId); if (p) plants[p.id] = slimPlant(p); }
+    for (const pl of z.plantings || []) { const p = effectivePlant(get(pl.plantId), pl); if (p) plants[p.id] = slimPlant(p); }
     if (!Object.keys(plants).length && z.type !== 'lawn') continue;
     const lawnPlant = Object.values(plants).find((p) => p.category === 'lawn');
     const climbs = Object.values(plants).some((p) => familyOf(p) === 'climber');
-    jobs.push({ zoneId: z.id, zone: { id: z.id, type: z.type, shape: z.shape, plantings: (z.plantings || []).map((p) => ({ plantId: p.plantId, count: p.count ?? p.quantity })) }, plants, age, density, lawnColor: lawnPlant && lawnPlant.foliageColor, walls: climbs ? wallSegments(garden) : [] });
+    jobs.push({ zoneId: z.id, zone: { id: z.id, type: z.type, shape: z.shape, plantings: (z.plantings || []).map((p) => ({ plantId: p.plantId, count: p.count ?? p.quantity, height: p.height, width: p.width })) }, plants, age, density, lawnColor: lawnPlant && lawnPlant.foliageColor, walls: climbs ? wallSegments(garden) : [] });
   }
   // plantes existantes déclarées : taille actuelle (jamais jeunes/adultes), estompées si `keep === false`
   const ex = existingEntries(garden, existing).filter((e) => e && !['fence', 'wall'].includes(e.kind) && (e.plant || e.habit || ['tree', 'shrub', 'hedge'].includes(e.kind)) && (Number.isFinite(e.x) || (e.points && e.points.length >= 2)));
@@ -261,13 +262,13 @@ export function buildScene(THREE, garden, opts = {}) {
     if (isAbovePool(z)) {
       // piscine hors sol : paroi en caisson / cylindre (selon la forme), épaisseur, margelle, eau à 1,05 m, échelle
       const poolPoly = z.shape.kind === 'circle' ? shapePolygon(z.shape, 64) : poly;
-      const H = ABOVE_POOL_H;
+      const H = zoneHeight(z) || ABOVE_POOL_H; const waterH = Math.max(0.05, H - (ABOVE_POOL_H - ABOVE_POOL_WATER_H));
       const wall = new THREE.Mesh(track(polyGeometry(THREE, offsetPoly(poolPoly, 0.07), H, [poolPoly])), ctx.mat('#ffffff', { map: ctx.tex('poolwall', tx.poolWallTexture, 1.5, 1.5), roughness: 0.6, metalness: 0.15 }));
       wall.castShadow = true; wall.receiveShadow = true; wall.name = `paroi-${z.id}`;
       const lip = new THREE.Mesh(track(polyGeometry(THREE, offsetPoly(poolPoly, 0.15), 0.05, [offsetPoly(poolPoly, 0.0)])), ctx.mat('#eceff1', { roughness: 0.5 }));
       lip.position.y = H; lip.castShadow = true; lip.name = `margelle-${z.id}`;
       const water = new THREE.Mesh(track(polyGeometry(THREE, poolPoly)), ctx.mat('#27b9d2', { roughness: 0.04, metalness: 0.25, envMapIntensity: 1.6 }));
-      water.position.y = ABOVE_POOL_WATER_H; water.receiveShadow = true; water.name = `eau-${z.id}`;
+      water.position.y = waterH; water.receiveShadow = true; water.name = `eau-${z.id}`;
       const floor = new THREE.Mesh(track(polyGeometry(THREE, poolPoly)), ctx.mat('#78909c', { roughness: 0.9 }));
       floor.position.y = 0.02; floor.name = `fond-${z.id}`;
       zonesGroup.add(wall, lip, water, floor); waterMeshes.push(water);
@@ -292,8 +293,9 @@ export function buildScene(THREE, garden, opts = {}) {
     }
     const zm = zoneMat(z);
     if (!zm) continue;
-    const mesh = new THREE.Mesh(track(polyGeometry(THREE, poly, zm.depth)), zm.mat);
-    mesh.position.y = zm.y; mesh.receiveShadow = true; mesh.castShadow = zm.depth > 0; mesh.name = `zone-${z.type}-${z.id}`;
+    const zdepth = z.type === 'terrace' ? Math.max(zm.depth, zoneHeight(z)) : zm.depth;
+    const mesh = new THREE.Mesh(track(polyGeometry(THREE, poly, zdepth)), zm.mat);
+    mesh.position.y = zm.y; mesh.receiveShadow = true; mesh.castShadow = zdepth > 0; mesh.name = `zone-${z.type}-${z.id}`;
     zonesGroup.add(mesh);
     if (z.type === 'lawn') lawnMats.push(zm.mat);
   }

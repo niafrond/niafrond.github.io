@@ -55,3 +55,4 @@
 .jdi-notes { width: auto !important; flex: 1 1 140px; text-align: left; min-height: 44px; }
 .jdi-detail .jd-btn { min-height: 44px; }
 .jdi-palette[data-role=existing-kinds] { align-items: flex-start; }
+.jdi-detail .jd-hfield { flex: 1 1 100%; }

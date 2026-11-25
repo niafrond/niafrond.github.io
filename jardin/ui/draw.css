@@ -275,3 +275,17 @@
 
 .jd-tcard.jd-tnote { border-style: dashed; text-decoration: none; color: inherit; }
 .jd-tcard.jd-tnote .jd-tname { white-space: normal; max-width: 150px; text-align: center; line-height: 1.2; }
+
+/* Champ « Hauteur (cm) » commun (height-field.js) */
+.jd-hfield { display: flex; flex-direction: column; gap: 4px; }
+.jd-hrow { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.jd-hinput { width: 84px; min-height: 44px; text-align: center; }
+.jd-hfield .jd-step { min-width: 48px; min-height: 44px; }
+.jd-hreset { min-height: 44px; }
+.jd-hreset:disabled { opacity: .45; }
+.jd-hstate { font-size: 12px; color: var(--jd-muted); }
+.jd-hstate[data-state="custom"] { color: var(--jd-accent); font-weight: 600; }
+.jd-hnote { font-size: 12px; color: var(--jd-warn, #b26a00); min-height: 0; }
+
+.jd-hfield .jd-flabel { flex: 1 1 100%; }
+.jd-hfield .jd-hinput { width: 84px; flex: 0 0 84px; }

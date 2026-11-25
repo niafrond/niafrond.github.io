@@ -13,6 +13,8 @@ import {
   rotatePoints, rotationOf, rotationCenter, rotateShapeBy, rotateShapeTo, rebuildRect, isRotatable, norm360,
 } from '../zone-rotate.js';
 import { ambianceChips, ambianceOf, ambianceEmoji, nameWithAmbiance, detectIn } from './ambiance-picker.js';
+import { heightField } from './height-field.js';
+import { zoneHeight, defaultZoneHeight, zoneHeightKind } from '../heights.js';
 import {
   injectStyles, h, createCanvas, gridPath, snap, clone, esc, fr, frLen, frArea, parseLength, toCm,
   projectOnLine, snapToLines, rectPoints, isRectangle, parseNum,
@@ -945,6 +947,16 @@ export function mountZoneEditor(el, { garden, onChange } = {}) {
           }, v.label))),
         h('div', { class: 'jd-hint', 'data-role': 'pool-variant-help' }, 'Une piscine hors sol dépasse du sol : prévoyez un dégagement d’au moins 1 m autour et un accès.'));
     }
+    // hauteur de la paroi d'une piscine hors sol / surélévation d'une terrasse (cm)
+    let heightFld = null;
+    if ((z.type === 'pool' && poolVariant(z) === 'above') || z.type === 'terrace') {
+      const def = defaultZoneHeight(z);
+      heightFld = heightField({
+        label: z.type === 'terrace' ? 'Surélévation (cm)' : 'Hauteur de la paroi (cm)', value: zoneHeight(z), def, kind: zoneHeightKind(z),
+        custom: z.height != null && Math.abs(Number(z.height) - def) >= 0.005, field: 'zone-height', defLabel: z.type === 'terrace' ? 'au sol' : 'standard', onMessage: (m) => say(m, 'warn'),
+        onSet: (m) => mutate(() => { if (m == null || Math.abs(m - def) < 0.005) delete z.height; else z.height = m; }),
+      });
+    }
     // rotation
     const rotOk = isRotatable(z.shape);
     const dis = rotOk ? {} : { disabled: true, title: NO_ROT_TIP, 'aria-disabled': 'true' };
@@ -977,7 +989,7 @@ export function mountZoneEditor(el, { garden, onChange } = {}) {
         btn('✕', 'deselect', () => select(null), '', { 'aria-label': 'Désélectionner' })),
       nameSug, detEl, ambField,
       h('div', { class: 'jd-row' }, typeSel),
-      poolField,
+      poolField, heightFld,
       h('div', { class: 'jd-row jd-zfacts' },
         h('span', {}, 'Surface : ', h('b', { 'data-role': 'zone-area' }, frArea(shapeArea(z.shape)))),
         h('span', { 'data-role': 'zone-dims' }, dimsText(z)),

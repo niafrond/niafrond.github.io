@@ -195,3 +195,13 @@ summary { cursor: pointer; min-height: var(--tap); display: flex; align-items: c
 .auto-badge { display: inline-block; font-size: .72rem; font-weight: 700; padding: 2px 8px; border-radius: 99px; color: var(--primary); border: 1px solid var(--primary); margin-left: 6px; vertical-align: middle; }
 .auto-info { margin: 6px 0 0; padding: 8px 10px; border-radius: 10px; background: var(--info-bg); font-size: .85rem; }
 .auto-info p { margin: 0 0 4px; }
+
+/* Hauteur réglable d'une essence choisie (« Dans cette zone ») */
+.chosen-row { flex-wrap: wrap; }
+.chosen-row .height-row { flex: 1 1 100%; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 4px; }
+.chosen-row .height-input { width: 84px; min-height: var(--tap, 44px); text-align: center; padding: 0 6px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg); color: inherit; font: inherit; }
+.chosen-row .height-input.bad { border-color: var(--ko, #b3261e); }
+.chosen-row .height-reset { min-width: var(--tap, 44px); min-height: var(--tap, 44px); }
+.chosen-row .height-reset:disabled { opacity: .4; }
+.chosen-row .height-state[data-state="custom"] { color: var(--ok, #2e7d32); font-weight: 600; }
+.chosen-row .height-note { flex-basis: 100%; color: var(--ko, #b3261e); }
