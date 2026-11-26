@@ -12,6 +12,26 @@ const r1 = (n) => Math.round(n * 10) / 10;
 const fmt = (n) => String(r1(n)).replace('.', ',');
 
 export const pondTag = (plant) => (plant && POND_TAGS[plant.id]) || null;
+
+/** Mare plus grande que cela : les grands arbres et ligneux à racines agressives redeviennent tolérables. */
+export const BIG_TREE_MIN_AREA = 30;
+const norm = (t) => String(t || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+const AGGRESSIVE_GENERA = /^(populus|alnus|robinia|ailanthus|ulmus|platanus|fraxinus)\b/;
+const WILLOW = (plant) => /^salix\b/.test(norm(plant.latinName)) || /\b(saules?|osiers?)\b/.test(norm(plant.commonName));
+/**
+ * Règle générale (par genre / nom, pour couvrir les essences ajoutées plus tard) :
+ * 'willow' (toujours interdit), 'aggressive' (racines agressives), 'bigtree' (grand arbre > 6 m) ou null.
+ */
+export function pondTreeRule(plant) {
+  if (!plant) return null;
+  if (WILLOW(plant)) return 'willow';
+  const lat = norm(plant.latinName);
+  if (AGGRESSIVE_GENERA.test(lat) || /^acer saccharinum\b/.test(lat) || /^betula pendula\b/.test(lat) || /^populus tremula\b/.test(lat)) return 'aggressive';
+  if (plant.category === 'tree' && Number(plant.heightAdult) > 6) return 'bigtree';
+  return null;
+}
+/** L'essence est-elle concernée par les règles de mare (étiquette ou règle générale) ? */
+export const pondConcerned = (plant) => !!(pondTag(plant) || pondTreeRule(plant));
 export const pondTaggedIds = () => Object.keys(POND_TAGS);
 
 /** Surface de la mare (m²). */
@@ -33,11 +53,23 @@ export function pondDepth(zone) {
 /** Adéquation à partir de valeurs numériques (surface m², profondeur cm). */
 export function pondFitFor(plant, area, depth) {
   const tag = pondTag(plant);
-  if (!tag) return { ok: true, level: 'ok', reasons: [] };
+  const rule = pondTreeRule(plant);
+  if (!tag && !rule) return { ok: true, level: 'ok', reasons: [] };
   const reasons = [];
   let level = 'ok';
   const worse = (l) => { if (l === 'forbid' || (l === 'avoid' && level === 'ok')) level = l; };
   const name = plant.commonName || plant.id;
+
+  if (rule === 'willow' || (tag && tag.forbid)) {
+    return { ok: false, level: 'forbid', reasons: ['Les saules ne conviennent pas aux mares : racines envahissantes, feuilles dans l’eau'] };
+  }
+  if (rule && area < BIG_TREE_MIN_AREA) {
+    worse(rule === 'aggressive' ? 'forbid' : 'avoid');
+    reasons.push(rule === 'aggressive'
+      ? `Racines agressives et grand développement : à éviter autour d’une mare de moins de ${BIG_TREE_MIN_AREA} m² (bâche, feuilles dans l’eau)`
+      : `Grand arbre (plus de 6 m) : trop imposant autour d’une mare de moins de ${BIG_TREE_MIN_AREA} m²`);
+  }
+  if (!tag) return { ok: level === 'ok', level, reasons };
 
   if (plant.invasive) {
     worse('forbid');

@@ -45,7 +45,7 @@ function injectCss() {
 
 function el(tag, attrs = {}, ...kids) {
   const n = document.createElement(tag);
-  for (const [k, v] of Object.entries(attrs)) {
+  for (const [k, v] of Object.entries(attrs || {})) {
     if (v == null || v === false) continue;
     if (k === 'class') n.className = v;
     else if (k.startsWith('on') && typeof v === 'function') n.addEventListener(k.slice(2), v);

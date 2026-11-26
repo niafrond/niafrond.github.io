@@ -11,7 +11,7 @@ import { plantEffort, fitsMaintenance, levelForZone, effortLabel } from '../main
 import { gardenMaintenancePicker, zoneMaintenancePicker, maintenanceReminder, effortIndicator, levelPhrase } from './maintenance-picker.js';
 import { designBed } from '../massifs.js';
 import { checkHeight, parseHeight, heightToCm, heightMessage, formatHeight, plantHeightKind, isDefaultHeight } from '../heights.js';
-import { pondArea, pondDepth, pondFit, pondTag, pondTaggedIds, estimatePondDepth } from '../ponds.js';
+import { pondArea, pondDepth, pondFit, pondTag, pondConcerned, pondTreeRule, estimatePondDepth } from '../ponds.js';
 import { gardenCost, formatEuro, formatPrice, UNIT_LABEL, summarizeGarden } from '../pricing.js';
 
 const STATUS = { ideal: 'Idéale', possible: 'Possible', discouraged: 'Déconseillée' };
@@ -324,7 +324,7 @@ export function mountPlants(el, { garden, onChange, getPhoto = getPlantPhoto, IO
       try { ids = new Set(searchPlants(query).map((p) => p.id)); } catch { /* */ }
       if (ids) recs = recs.filter((r) => ids.has(r.plant.id));
     }
-    if (z.type === 'pond') recs = recs.filter((r) => !pondTag(r.plant) || pondFit(r.plant, z).ok);
+    if (z.type === 'pond') recs = recs.filter((r) => !pondConcerned(r.plant) || pondFit(r.plant, z).ok);
     listBox.replaceChildren();
     if (!recs.length) listBox.append(h('li', { class: 'muted empty' }, 'Aucune essence ne correspond. Assouplissez les filtres ou affichez les déconseillées.'));
     recs.slice(0, limit).forEach((r) => {
@@ -398,7 +398,7 @@ export function mountPlants(el, { garden, onChange, getPhoto = getPlantPhoto, IO
     // essences de mare étiquetées : adaptées / écartées
     let all = [];
     try { all = recommendForZone(garden, z, { includeDiscouraged: true, includeForbidden: true }) || []; } catch { /* */ }
-    const tagged = all.filter((r) => pondTag(r.plant) && pondTaggedIds().includes(r.plant.id));
+    const tagged = all.filter((r) => pondTag(r.plant) || (pondTreeRule(r.plant) && (r.plant.zones || []).includes('pond')) || pondTreeRule(r.plant) === 'willow');
     const out = tagged.map((r) => ({ p: r.plant, fit: pondFit(r.plant, z) })).filter((x) => !x.fit.ok);
     const okN = tagged.length - out.length;
     pondSummary.textContent = `Mare de ${fmtArea(area)}, profondeur ${depth} cm : ${okN} essence${okN > 1 ? 's' : ''} adaptée${okN > 1 ? 's' : ''}, ${out.length} écartée${out.length > 1 ? 's' : ''}.`;
@@ -409,7 +409,7 @@ export function mountPlants(el, { garden, onChange, getPhoto = getPlantPhoto, IO
           h('strong', null, p.commonName), ' : ', fit.reasons.join(' ; ')))));
     } else pondExcluded.replaceChildren();
     // essences déjà choisies devenues inadaptées (mare redimensionnée, profondeur modifiée)
-    const bad = (z.plantings || []).map((pl) => ({ pl, p: getPlant(pl.plantId) })).filter((x) => x.p && pondTag(x.p) && !pondFit(x.p, z).ok);
+    const bad = (z.plantings || []).map((pl) => ({ pl, p: getPlant(pl.plantId) })).filter((x) => x.p && pondConcerned(x.p) && !pondFit(x.p, z).ok);
     if (bad.length) {
       pondAlert.hidden = false;
       pondAlert.replaceChildren(

@@ -3,6 +3,7 @@
 //  - minDepth / maxDepth : profondeur d'eau (cm) de plantation (la mare doit au moins atteindre minDepth) ;
 //  - role     : 'flottante' | 'oxygenante' | 'bordure' | 'berge' | 'marais' ;
 //  - spread   : 'faible' | 'moyen' | 'fort' (pouvoir colonisateur) ; `fort` déconseillé sous 20 m² ;
+//  - forbid   : true = jamais proposée dans une mare (quelle que soit sa taille) ;
 //  - note     : conseil lisible.
 export default {
   'h-nenuphar': { minArea: 6, minDepth: 60, maxDepth: 150, role: 'flottante', spread: 'moyen',
@@ -31,8 +32,8 @@ export default {
     note: 'Touffe dense et compacte en bordure humide (0 à 20 cm) ; convient aux petites mares.' },
   'h-hottonie': { minArea: 1, minDepth: 20, maxDepth: 60, role: 'oxygenante', spread: 'faible',
     note: 'Plante immergée oxygénante à fleurs en surface ; eau claire et peu profonde.' },
-  'saule-tortueux': { minArea: 20, role: 'berge', spread: 'moyen',
-    note: 'Arbre de 6 à 10 m aux racines avides d’eau : seulement au bord d’une grande mare, loin des bâches et des canalisations.' },
+  'saule-tortueux': { minArea: 1000, role: 'berge', spread: 'fort', forbid: true,
+    note: 'Les saules sont à proscrire près d’une mare : racines envahissantes qui abîment la bâche, feuilles dans l’eau, taille adulte excessive.' },
   'viorne-obier': { minArea: 3, role: 'berge', spread: 'moyen',
     note: 'Arbuste de berge de 3 m ; ses feuilles tombent dans l’eau : prévoir une épuisette à l’automne.' },
   'cornouiller-sanguin': { minArea: 3, role: 'berge', spread: 'moyen',

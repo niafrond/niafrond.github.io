@@ -8,7 +8,7 @@ import { edgeObstacles } from './items.js';
 import { existingShadowObstacles } from './existing.js';
 import { plantCost } from './pricing.js';
 import { levelForZone, fitsMaintenance, plantEffort, getMaintenanceLevel } from './maintenance.js';
-import { pondFitFor, pondTag, pondArea, pondDepth, pondFit, pondPlantQuantity } from './ponds.js';
+import { pondFitFor, pondConcerned, pondArea, pondDepth, pondFit, pondPlantQuantity } from './ponds.js';
 import { getAmbiance, detectAmbiance, plantAmbianceScore, plantAvoids, isTypical } from './ambiances.js';
 
 const SUN_ORDER = { shade: 0, partial: 1, full: 2 };
@@ -72,7 +72,7 @@ export function scorePlant(plant, ctx = {}) {
 
   // Mare : taille et profondeur de la mare (essences aquatiques et de berge étiquetées).
   let forbidden = false;
-  if (ctx.zoneType === 'pond' && typeof ctx.pondArea === 'number' && pondTag(plant)) {
+  if (ctx.zoneType === 'pond' && typeof ctx.pondArea === 'number' && pondConcerned(plant)) {
     const area = ctx.pondArea;
     const depth = typeof ctx.pondDepth === 'number' ? ctx.pondDepth : 60;
     const fit = pondFitFor(plant, area, depth);
@@ -239,7 +239,7 @@ export function suggestQuantity(plant, zone) {
   const spacing = plant.spacing > 0 ? plant.spacing : plant.widthAdult > 0 ? plant.widthAdult : 1;
   const shape = zone.shape;
   if (!shape) return 1;
-  if (zone.type === 'pond' && pondTag(plant)) return pondPlantQuantity(plant, zone);
+  if (zone.type === 'pond' && pondConcerned(plant)) return pondPlantQuantity(plant, zone);
   if (shape.kind === 'line') {
     return Math.max(1, Math.round(polyLength(shape.points || []) / spacing));
   }
