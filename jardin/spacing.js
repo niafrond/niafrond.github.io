@@ -449,7 +449,7 @@ export function packZone(zone, plantings, plantsById, opts = {}) {
  */
 export function fitQuantities(zone, plantings, plantsById, opts = {}) {
   let cur = (plantings || []).map((pl) => ({ ...pl }));
-  for (let it = 0; it < 8; it++) {
+  for (let it = 0; it < 40; it++) {
     const r = packZone({ ...zone, plantings: cur }, cur, plantsById, opts);
     if (!r.overflow.length) break;
     for (const o of r.overflow) {
@@ -534,7 +534,7 @@ export function allocateQuantities(zone, species, opts = {}) {
     for (const i of byLayer[k]) {
       const p = plants[i];
       const raw = part / byLayer[k].length / (spacingOf(p) ** 2);
-      let n = Math.round(raw);
+      let n = Math.min(300, Math.round(raw)); // au-delà, c'est une prairie : 300 plants par essence suffisent
       // borne haute analytique (pavage hexagonal parfait) : le calcul exact n'est utile que si la quantité s'en approche
       const upper = Math.floor(Math.max(0, usable) * 1.1547 / (spacingOf(p) ** 2) + perimeterOf(poly) / spacingOf(p)) + 1;
       const cap = n > 0.5 * upper || obstacles.length ? packingCapacity(poly, p, { obstacles }) : n;

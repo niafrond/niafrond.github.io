@@ -1,5 +1,5 @@
 // Service worker : cache hors ligne des fichiers statiques (stale-while-revalidate).
-const CACHE = 'jardin-v9';
+const CACHE = 'jardin-v10';
 const FILES = [
   './', 'index.html', 'style.css', 'desktop.css', 'app.js', 'manifest.webmanifest', 'icon.svg',
   'model.js', 'geometry.js', 'zone-rotate.js', 'sun.js', 'storage.js', 'climate.js', 'catalog.js', 'recommend.js',
@@ -14,6 +14,7 @@ const FILES = [
   'maintenance.js', 'ui/maintenance-picker.js',
   'massifs.js', 'ui/step-beds.js', 'ui/beds-panel.js', 'ui/beds.css',
   'ponds.js', 'data/plants/pond-tags.js', 'ui/preview-overlay.js',
+  'spacing.js', 'gl-worker-core.js',
   'existing.js', 'ui/existing-panel.js', 'heights.js', 'ui/height-field.js',
   'pdf-writer.js', 'pdf-layout.js', 'pdf-content.js', 'pdf-raster.js', 'shopping.js', 'ui/pdf-dialog.js', 'ui/save-file.js',
 ];

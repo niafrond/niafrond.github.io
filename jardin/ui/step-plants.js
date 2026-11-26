@@ -4,6 +4,7 @@ import { getZoneType } from '../model.js';
 import { getPlant, searchPlants } from '../catalog.js';
 import { recommendForZone, suggestQuantity, checkCoherence, suggestSelection } from '../recommend.js';
 import { shapeArea } from '../geometry.js';
+import { checkSpacing, zoneLayout, fitQuantities, formatSpacing } from '../spacing.js';
 import { getPlantPhoto } from '../photos.js';
 import { openAmbiancePicker, ambianceOf, ambianceEmoji, zoneAmbiance } from './ambiance-picker.js';
 import { isTypical } from '../ambiances.js';
@@ -148,6 +149,29 @@ export function mountPlants(el, { garden, onChange, getPhoto = getPlantPhoto, IO
   }
   const refresh = () => { change(); drawChosen(); drawList(); drawWarnings(); drawBudget(); };
 
+  // ---------- espacements de la zone : indicateur par ligne, avertissements, « Ajuster automatiquement » ----------
+  const spacingBox = h('div', { class: 'spacing-box', 'data-role': 'spacing-box', 'aria-live': 'polite' });
+  let densityEls = [];
+  function drawSpacing() {
+    const z = zone();
+    let lay = null; let list = [];
+    try { lay = zoneLayout(garden, z, getPlant); list = checkSpacing(garden, z, getPlant) || []; } catch { /* */ }
+    for (const d of densityEls) {
+      const p = getPlant(d.pl.plantId); const i = (z.plantings || []).indexOf(d.pl);
+      const mx = lay && lay.maxima && i >= 0 ? lay.maxima[i] : null;
+      const cnt = Math.round(Number(d.pl.count) || 1);
+      d.el.textContent = p ? `${formatSpacing(p)} entre plants${mx != null && p.category !== 'lawn' ? ` ; ${cnt} / ${mx} maximum` : ''}` : '';
+      d.el.classList.toggle('over', mx != null && cnt > mx);
+    }
+    const fixable = list.some((w) => w.kind === 'surdensite' || w.kind === 'arbres-proches' || w.kind === 'pied-arbre');
+    spacingBox.replaceChildren(...list.map((w) => h('p', { class: w.level === 'warn' ? 'notice warn' : 'notice info', 'data-role': 'spacing-warning', 'data-kind': w.kind },
+      (w.level === 'warn' ? '⚠️ ' : 'ℹ️ ') + w.text)),
+    fixable ? h('button', { class: 'btn btn-sm', type: 'button', 'data-act': 'spacing-fix', onclick: () => {
+      z.plantings = fitQuantities(z, z.plantings || [], getPlant, { garden });
+      refresh(); toast('Quantités ajustées : espacements respectés.');
+    } }, 'Ajuster automatiquement') : null);
+  }
+
   /** Hauteur adulte réglable (cm) d'une essence choisie : champ, état catalogue / personnalisée, bouton « Valeur par défaut ». */
   function heightControl(p, pl) {
     const kind = plantHeightKind(p);
@@ -183,21 +207,24 @@ export function mountPlants(el, { garden, onChange, getPhoto = getPlantPhoto, IO
     return h('div', { class: 'height-row', 'data-role': 'height-row' },
       h('label', { class: 'height-label small' }, 'Hauteur'), input, h('span', { class: 'height-unit small' }, 'cm'), reset, state, note);
   }
-  function afterHeight() { change(); drawWarnings(); }
+  function afterHeight() { change(); drawWarnings(); drawSpacing(); }
 
   function drawChosen() {
     const z = zone();
     resetThumbs('chosen');
     let recById = new Map();
     try { recById = new Map((recommendForZone(garden, z, { includeDiscouraged: true }) || []).map((x) => [x.plant.id, x])); } catch { /* fiche sans raisons */ }
+    densityEls = [];
     const rows = (z.plantings || []).map((pl) => {
       const p = getPlant(pl.plantId);
+      const densEl = h('span', { class: 'muted small density', 'data-role': 'density' });
+      densityEls.push({ pl, el: densEl });
       const lineEl = h('span', { class: 'muted small line-total' });
       const upd = () => {
         const gc = gardenCost({ zones: [{ ...z, plantings: [pl] }] }, getPlant);
         lineEl.textContent = gc.total ? `≈ ${formatEuro(gc.total, { digits: 0 })}` : (gc.unknownCount ? 'sans prix' : '');
       };
-      const afterQty = () => { change(); upd(); drawWarnings(); drawBudget(); };
+      const afterQty = () => { change(); upd(); drawWarnings(); drawBudget(); drawSpacing(); };
       const input = h('input', { type: 'number', min: '1', max: '999', value: String(pl.count || 1), 'aria-label': `Quantité de ${p ? p.commonName : pl.plantId}`, class: 'qty',
         onchange: (e) => { pl.count = Math.max(1, Math.round(Number(e.target.value) || 1)); e.target.value = pl.count; afterQty(); } });
       const step = (d) => () => { pl.count = Math.max(1, (Number(pl.count) || 1) + d); input.value = pl.count; afterQty(); };
@@ -211,12 +238,15 @@ export function mountPlants(el, { garden, onChange, getPhoto = getPlantPhoto, IO
         h('button', { class: 'btn btn-icon btn-danger', type: 'button', 'aria-label': `Retirer ${p ? p.commonName : ''}`, onclick: () => {
           z.plantings = z.plantings.filter((x) => x !== pl); refresh();
         } }, '🗑'),
+        densEl,
         p ? heightControl(p, pl) : null);
     });
     zoneTotalEl = h('span', { class: 'zone-total', 'data-role': 'zone-total' });
     chosenBox.replaceChildren(
       h('h3', null, `Dans cette zone (${rows.length})`, zoneTotalEl),
-      rows.length ? h('ul', { class: 'chosen-list' }, rows) : h('p', { class: 'muted' }, 'Aucune essence choisie pour l’instant.'));
+      rows.length ? h('ul', { class: 'chosen-list' }, rows) : h('p', { class: 'muted' }, 'Aucune essence choisie pour l’instant.'),
+      spacingBox);
+    drawSpacing();
   }
 
   // ---------- vignettes (photo paresseuse, repli coloré immédiat) ----------
@@ -588,7 +618,8 @@ export function mountPlants(el, { garden, onChange, getPhoto = getPlantPhoto, IO
     refresh();
     drawZoneInfo();
     const sm = summarizeGarden(garden, getPlant);
-    summaryEl.textContent = summaryText(sm, targets) + (max && sm.total > max ? ` (au-dessus du budget de ${formatEuro(max, { digits: 0 })})` : '');
+    const spacingOk = targets.every((z) => { try { return !checkSpacing(garden, z, getPlant).some((w) => w.kind === 'surdensite' || w.kind === 'arbres-proches' || w.kind === 'pied-arbre'); } catch { return true; } });
+    summaryEl.textContent = summaryText(sm, targets) + (spacingOk ? ' · espacements respectés' : '') + (max && sm.total > max ? ` (au-dessus du budget de ${formatEuro(max, { digits: 0 })})` : '');
     toast('Sélection proposée : retouchez-la à votre guise ou annulez-la.');
   }
 

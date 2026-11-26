@@ -210,3 +210,6 @@ summary { cursor: pointer; min-height: var(--tap); display: flex; align-items: c
 .pond-excluded { margin-top: 10px; }
 .pond-excluded summary { min-height: var(--tap, 44px); display: flex; align-items: center; cursor: pointer; font-weight: 600; }
 #btn-preview { margin-bottom: 12px; }
+.density.over { color: #b26a00; font-weight: 600; }
+.spacing-box:empty { display: none; }
+.chosen-row .density { flex: 1 1 100%; margin-top: 2px; }

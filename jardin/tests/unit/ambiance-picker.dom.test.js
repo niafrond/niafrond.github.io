@@ -141,7 +141,7 @@ describe('étape essences : ambiance de la zone', () => {
     click(dlg.querySelector('[data-act=amb-ok]')); await wait(5);
     expect(g.zones[0].ambiance).toBe('bucolique');
     expect(g.zones[0].plantings.length).toBeGreaterThan(0);
-    expect(el.querySelector('#proposal-summary').textContent).toMatch(/^\d+ essences? · ambiance bucolique · floraison de \S+ à \S+ · ≈ \d+ €$/);
+    expect(el.querySelector('#proposal-summary').textContent).toMatch(/^\d+ essences? · ambiance bucolique · floraison de \S+ à \S+ · ≈ \d+ € · espacements respectés$/);
     expect(el.querySelector('[data-role=zone-head-ambiance]').textContent).toContain('bucolique');
     expect(el.querySelector('#btn-surprise').textContent).toBe('🎲 Autre proposition');
     click(el.querySelector('#btn-surprise')); await wait(5); // même ambiance : pas de nouvelle fenêtre
