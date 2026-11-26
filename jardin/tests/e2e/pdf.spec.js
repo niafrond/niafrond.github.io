@@ -4,7 +4,8 @@ import fs from 'node:fs';
 import { execFileSync } from 'node:child_process';
 
 const URL = '/jardin/';
-const PNG = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAIAAABLbSncAAAAFklEQVR4nGNk+M/AQAJgGlUwEhQAAJ8gARAYF3ItAAAAAElFTkSuQmCC';
+// PNG 16×16 vert clair uni (généré dans la page : le PNG 8×8 de plantes.spec est presque noir)
+const PNG = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAIAAACQkWg2AAAAFklEQVR4nGOYdr2CJMQwqmFUw/DVAAD0iuUQmmAAigAAAABJRU5ErkJggg==';
 
 async function jardinRiche(page) {
   await page.goto(URL);
@@ -64,4 +65,23 @@ test('PDF du jardin : génération, téléchargement, relecture', async ({ page 
     expect(Number(/Pages:\s+(\d+)/.exec(info)[1])).toBeGreaterThan(15);
   } catch (e) { if (e.code !== 'ENOENT') throw e; }
   expect(errors).toEqual([]);
+});
+
+test('vignette de photo : jamais noire (fond blanc peint avant le JPEG)', async ({ page }) => {
+  await page.route('https://fr.wikipedia.org/api/rest_v1/page/summary/**', (route) => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ type: 'standard', thumbnail: { source: PNG }, content_urls: { desktop: { page: 'https://fr.wikipedia.org/wiki/Test' } } }) }));
+  await page.goto(URL);
+  await page.waitForFunction(() => window.__jardin);
+  const mean = await page.evaluate(async () => {
+    const { loadPhotoThumb } = await import('./pdf-raster.js');
+    const { allPlants } = await import('./catalog.js');
+    const ph = await loadPhotoThumb(allPlants()[3]);
+    if (!ph) return -1;
+    const bmp = await createImageBitmap(new Blob([ph.data], { type: 'image/jpeg' }));
+    const c = document.createElement('canvas'); c.width = bmp.width; c.height = bmp.height;
+    const x = c.getContext('2d'); x.drawImage(bmp, 0, 0);
+    const d = x.getImageData(0, 0, c.width, c.height).data; let s = 0;
+    for (let i = 0; i < d.length; i += 4) s += d[i] + d[i + 1] + d[i + 2];
+    return s / (d.length / 4) / 3;
+  });
+  expect(mean).toBeGreaterThan(40); // -1 = pas de photo (repli pastille), jamais une image noire
 });

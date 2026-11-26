@@ -10,6 +10,7 @@ import { plantCost } from './pricing.js';
 import { levelForZone, fitsMaintenance, plantEffort, getMaintenanceLevel } from './maintenance.js';
 import { pondFitFor, pondConcerned, pondArea, pondDepth, pondFit, pondPlantQuantity } from './ponds.js';
 import { getAmbiance, detectAmbiance, plantAmbianceScore, plantAvoids, isTypical } from './ambiances.js';
+import { allocateQuantities, packingCapacity, packZone, fitQuantities, checkSpacing, spacingOf, plantLayer } from './spacing.js';
 
 const SUN_ORDER = { shade: 0, partial: 1, full: 2 };
 const SUN_LABEL = { full: 'plein soleil', partial: 'mi-ombre', shade: 'ombre' };
@@ -234,17 +235,24 @@ export function recommendForZone(garden, zone, { includeDiscouraged = false, inc
     .sort((a, b) => (b.rank ?? b.score) - (a.rank ?? a.score) || PLANT_NAME(a.plant).localeCompare(PLANT_NAME(b.plant), 'fr'));
 }
 
-/** Quantité suggérée pour une zone. */
+/**
+ * Quantité suggérée pour une zone (proposition manuelle d'une essence seule) : surface / espacement², bornée par la
+ * capacité réelle de la zone (`packingCapacity`) ; arbre et gazon : 1 ; haie sur une ligne : un rang à l'espacement.
+ */
 export function suggestQuantity(plant, zone) {
   const spacing = plant.spacing > 0 ? plant.spacing : plant.widthAdult > 0 ? plant.widthAdult : 1;
   const shape = zone.shape;
   if (!shape) return 1;
   if (zone.type === 'pond' && pondConcerned(plant)) return pondPlantQuantity(plant, zone);
   if (shape.kind === 'line') {
-    return Math.max(1, Math.round(polyLength(shape.points || []) / spacing));
+    const L = polyLength(shape.points || []);
+    return Math.max(1, Math.min(Math.round(L / spacing), Math.floor((L - 0.1) / spacing + 1e-9) + 1));
   }
   if (plant.category === 'tree' || plant.category === 'lawn') return 1;
-  return Math.max(1, Math.floor(shapeArea(shape) / (spacing * spacing) + 1e-9));
+  const byArea = Math.max(1, Math.floor(shapeArea(shape) / (spacing * spacing) + 1e-9));
+  let cap = byArea;
+  try { cap = packingCapacity(shapePolygon(shape, 48), plant); } catch { /* */ }
+  return Math.max(1, Math.min(byArea, cap || 1));
 }
 
 // ---------- géométrie locale (distance entre formes) ----------
@@ -332,14 +340,13 @@ export function checkCoherence(garden, { plants } = {}) {
     const name = zone.label || zone.type;
     const area = shapeArea(zone.shape);
 
-    // Surdensité.
+    // Espacements : surdensité, arbres trop proches, pieds sous un arbre, bâtiments (voir spacing.js).
     if (area > 0) {
-      const need = items.reduce((s, { plant, count }) => {
-        const sp = plant.spacing > 0 ? plant.spacing : plant.widthAdult || 1;
-        return s + count * sp * sp;
-      }, 0);
-      if (need > area * 1.25) {
-        out.push({ level: 'warn', zoneId: zone.id, text: `Zone « ${name} » : surdensité, les plants occuperont ≈ ${Math.round(need)} m² adultes pour ${Math.round(area)} m² disponibles` });
+      let sp = [];
+      try { sp = checkSpacing(garden, zone, lookup) || []; } catch { sp = []; }
+      for (const w of sp) {
+        out.push({ level: w.level === 'info' ? 'info' : 'warn', zoneId: zone.id, plantId: w.plantId, kind: w.kind,
+          text: `Zone « ${name} » : ${w.kind === 'surdensite' ? 'surdensité, ' : ''}${w.text}` });
       }
     }
 
@@ -427,6 +434,38 @@ function mulberry32(a) {
 }
 const heightLayer = (h) => (h < 0.5 ? 0 : h < 1.5 ? 1 : h < 4 ? 2 : 3);
 
+
+/**
+ * Quantités d'une sélection qui partagent la surface de la zone et respectent les espacements : les arbres
+ * comptent pour leur couronne, les autres couches se répartissent le reste (spacing.js), puis un ajustement final
+ * par pose réelle retire ce qui ne tient pas. Les essences qui ne tiennent pas sont écartées (au moins une reste).
+ */
+function spacedQuantities(garden, zone, chosenPlants, plants) {
+  const lookup = (id) => (plants ? plants.find((p) => p.id === id) : getPlant(id)) || chosenPlants.find((p) => p.id === id) || null;
+  const n = chosenPlants.length;
+  const poly = shapePolygon(zone.shape, 48);
+  const counts = new Array(n).fill(0);
+  const general = [];
+  chosenPlants.forEach((plant, i) => {
+    if (zone.type === 'pond' && pondConcerned(plant)) {
+      const q = pondPlantQuantity(plant, zone);
+      let cap = q;
+      try { cap = Math.max(1, packingCapacity(poly, plant)); } catch { /* */ }
+      counts[i] = Math.min(Math.max(1, Math.round(q / n)), cap);
+    } else general.push(i);
+  });
+  if (general.length) {
+    let al = null;
+    try { al = allocateQuantities(zone, general.map((i) => chosenPlants[i])); } catch { al = null; }
+    general.forEach((i, k) => { counts[i] = al ? al[k].count : suggestQuantity(chosenPlants[i], zone); });
+  }
+  let sel = chosenPlants.map((plant, i) => ({ plantId: plant.id, count: counts[i] })).filter((it) => it.count > 0);
+  if (!sel.length) sel = [{ plantId: chosenPlants[0].id, count: 1 }];
+  try { sel = fitQuantities(zone, sel, lookup, { garden }); } catch { /* conserve la répartition */ }
+  if (!sel.length) sel = [{ plantId: chosenPlants[0].id, count: 1 }];
+  return sel;
+}
+
 /**
  * Sélection équilibrée déterministe : hauteurs étagées, floraison étalée.
  * Retourne [{plantId, count}].
@@ -497,12 +536,7 @@ export function suggestSelection(garden, zone, { seed = 1, plants, max, budget, 
     (best.plant.bloom || []).forEach((m) => months.add(m));
     cats.add(best.plant.category);
   }
-  const n = chosen.length;
-  const sel = chosen.map(({ plant }) => {
-    const q = suggestQuantity(plant, zone);
-    const single = plant.category === 'tree' || plant.category === 'lawn';
-    return { plantId: plant.id, count: single ? q : Math.max(1, Math.round(q / n)) };
-  });
+  const sel = spacedQuantities(garden, zone, chosen.map(({ plant }) => plant), plants);
   if (cap == null) return sel;
   // Respect du budget : on réduit d'abord les quantités de la ligne la plus chère, puis on retire des essences.
   const byId = new Map(chosen.map(({ plant }) => [plant.id, plant]));

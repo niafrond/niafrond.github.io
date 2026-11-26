@@ -354,7 +354,11 @@ export function renderPlanSVG(garden, opts = {}) {
   const cropZone = opts.crop && opts.crop.zoneId ? zones.find((z) => z.id === opts.crop.zoneId) : null;
   if (cropZone && cropZone.shape) {
     const cb = shapeBounds(cropZone.shape);
-    if (cb && Number.isFinite(cb.minX)) { const m = opts.crop.margin >= 0 ? opts.crop.margin : 1.2; all.length = 0; all.push({ x: cb.minX - m, y: cb.minY - m }, { x: cb.maxX + m, y: cb.maxY + m }); }
+    if (cb && Number.isFinite(cb.minX)) {
+      // marge : au moins 12 % de la plus grande dimension, et le rayon (plafonné) des plus gros plants pour ne rien couper
+      let rmax = 0;
+      try { for (const pp of placePlants(garden, cropZone, lookup, { age })) if (!pp.fill) rmax = Math.max(rmax, pp.r); } catch { /* */ }
+      const m = Math.max(opts.crop.margin >= 0 ? opts.crop.margin : 1.2, 0.12 * Math.max(cb.maxX - cb.minX, cb.maxY - cb.minY), Math.min(rmax, 2.5) + 0.3); all.length = 0; all.push({ x: cb.minX - m, y: cb.minY - m }, { x: cb.maxX + m, y: cb.maxY + m }); }
   }
   let wb = all.length ? bounds(all) : { minX: 0, minY: 0, maxX: 10, maxY: 8, width: 10, height: 8 };
   if (wb.width < 1) wb = { ...wb, maxX: wb.minX + 1, width: 1 };
@@ -543,8 +547,11 @@ export function renderPlanSVG(garden, opts = {}) {
     for (const { z, t, c } of labels) {
       const zn = numbering && numbering.zones && numbering.zones.get(z.id);
       const sub = typeof opts.zoneSub === 'function' ? opts.zoneSub(z) : '';
-      out.push(`<text x="${f(tx(c.x))}" y="${f(ty(c.y) + 4)}" font-size="12" font-weight="700" text-anchor="middle" fill="#14210f" stroke="#fff" stroke-width="3" paint-order="stroke" font-family="${FONT}" opacity=".92">${zn ? `Z${zn} · ` : ''}${esc(z.label || t.label)}</text>`);
-      if (sub) out.push(`<text x="${f(tx(c.x))}" y="${f(ty(c.y) + 17)}" font-size="10" text-anchor="middle" fill="#2a3a22" stroke="#fff" stroke-width="2.6" paint-order="stroke" font-family="${FONT}">${esc(sub)}</text>`);
+      // gros plan : l'étiquette de la zone cadrée est posée au-dessus de sa forme, hors des plants
+      const zb = cropZone && cropZone.id === z.id ? shapeBounds(z.shape) : null;
+      const lc = zb ? { x: c.x, y: zb.minY - 14 / S } : c;
+      out.push(`<text x="${f(tx(lc.x))}" y="${f(ty(lc.y) + 4)}" font-size="12" font-weight="700" text-anchor="middle" fill="#14210f" stroke="#fff" stroke-width="3" paint-order="stroke" font-family="${FONT}" opacity=".92">${zn ? `Z${zn} · ` : ''}${esc(z.label || t.label)}</text>`);
+      if (sub && !zb) out.push(`<text x="${f(tx(c.x))}" y="${f(ty(c.y) + 17)}" font-size="10" text-anchor="middle" fill="#2a3a22" stroke="#fff" stroke-width="2.6" paint-order="stroke" font-family="${FONT}">${esc(sub)}</text>`);
     }
   }
   if (on('existing')) out.push(ghostWrap('existing', obstacles.filter((o) => o.kind === 'tree').map((o) => obstacleEl(o)).join('')));
