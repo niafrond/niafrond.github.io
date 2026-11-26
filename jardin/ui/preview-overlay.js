@@ -9,7 +9,7 @@ const W = 1000, H = 760;
 const TABS = [['zones', '🗺️ Zones'], ['3d', '🧊 Vue 3D'], ['iso', '📐 Isométrique']];
 const ISO = VIEWS.filter((v) => v.id.startsWith('iso-'));
 const CSS = `
-.pv-overlay{position:fixed;inset:0;z-index:900;display:flex;flex-direction:column;background:var(--bg,#f4f7f2);color:var(--text,#1d2a21);font:16px/1.4 system-ui,sans-serif;padding:var(--sat,env(safe-area-inset-top,0px)) var(--sar,env(safe-area-inset-right,0px)) var(--sab,env(safe-area-inset-bottom,0px)) var(--sal,env(safe-area-inset-left,0px))}
+.pv-overlay{position:fixed;inset:0;max-height:100vh;max-height:100dvh;z-index:900;display:flex;flex-direction:column;background:var(--bg,#f4f7f2);color:var(--text,#1d2a21);font:16px/1.4 system-ui,sans-serif;padding:var(--sat,env(safe-area-inset-top,0px)) var(--sar,env(safe-area-inset-right,0px)) var(--sab,env(safe-area-inset-bottom,0px)) var(--sal,env(safe-area-inset-left,0px))}
 .pv-head{display:flex;align-items:center;gap:8px;padding:8px 12px;border-bottom:1px solid var(--border,#d3ddd5)}
 .pv-head h2{flex:1;margin:0;font-size:1.05rem;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .pv-btn{display:inline-flex;align-items:center;justify-content:center;min-height:44px;min-width:44px;padding:0 14px;border-radius:12px;border:1px solid var(--border,#d3ddd5);background:var(--surface,#fff);color:inherit;font:inherit;font-weight:600;cursor:pointer;touch-action:manipulation}

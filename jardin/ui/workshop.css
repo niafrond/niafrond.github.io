@@ -1,0 +1,180 @@
+/* Atelier plein écran (ui/workshop.js) : page non défilante, plan plein espace, feuille tirable, barre du bas fixe. */
+html.ws-lock, html.ws-lock body { height: 100%; overflow: hidden; padding: 0; overscroll-behavior: none; }
+
+/* ----- coque de l'assistant ----- */
+html .app.ws-on {
+  position: fixed; left: 0; right: 0; top: var(--ws-top, 0px); margin: 0 auto; max-width: 1500px; min-height: 0;
+  height: 100vh; padding: 0 var(--sar) var(--sab) var(--sal); overflow: hidden; background: var(--bg);
+  display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: auto auto auto minmax(0, 1fr) auto;
+  --ws-nav-h: 52px;
+}
+@supports (height: 100dvh) { html .app.ws-on { height: 100dvh; } }
+html .app.ws-on.ws-vv { height: var(--ws-h); }
+
+.app.ws-on .topbar { position: static; grid-row: 1; padding: calc(4px + var(--sat)) 8px 4px; gap: 6px; border-bottom: 0; }
+.app.ws-on .topbar .btn-icon { min-height: 40px; min-width: 40px; }
+.app.ws-on .topbar .btn-sm { min-height: 36px; }
+.app.ws-on .name-input { min-height: 36px; font-size: .95rem; }
+.app.ws-on .save-status { font-size: .7rem; max-width: 92px; overflow: hidden; text-overflow: ellipsis; }
+@media (max-width: 359px) { .app.ws-on .save-status { display: none; } }
+
+/* progression : une fine barre segmentée (zone de toucher de 24 px de haut) */
+.app.ws-on .steps { grid-row: 2; padding: 0 12px; gap: 4px; overflow: visible; justify-content: stretch; }
+.app.ws-on .steps li { flex: 1 1 0; min-width: 0; }
+.app.ws-on .step { position: relative; width: 100%; max-width: none; min-height: 24px; height: 24px; padding: 0; border: 0; border-radius: 0; background: transparent; font-size: 0; }
+.app.ws-on .step::after { content: ""; position: absolute; left: 0; right: 0; top: 10px; height: 5px; border-radius: 3px; background: var(--border); }
+.app.ws-on .step.done::after { background: var(--primary); opacity: .55; }
+.app.ws-on .step.current { background: transparent; }
+.app.ws-on .step.current::after { background: var(--primary); opacity: 1; top: 9px; height: 7px; }
+.app.ws-on .step:focus-visible { outline-offset: -2px; }
+
+.app.ws-on .step-title { grid-row: 3; padding: 0 8px 2px; font-size: 1rem; }
+.ws-title-btn { display: inline-flex; align-items: center; gap: 4px; min-height: 32px; padding: 0 8px; border: 0; border-radius: 8px; background: transparent; color: inherit; font: inherit; font-weight: 700; cursor: pointer; text-align: left; touch-action: manipulation; }
+.ws-title-btn::after { content: "▾"; opacity: .6; }
+.ws-title-btn:focus-visible { outline: 3px solid var(--primary); }
+
+.app.ws-on .step-body { grid-row: 4; position: relative; display: block; padding: 0; min-height: 0; overflow: hidden; }
+.app.ws-on .wizard-nav { position: static; grid-row: 5; z-index: auto; height: var(--ws-nav-h); padding: 4px 12px; align-items: center; gap: 8px; box-sizing: border-box; }
+.app.ws-on .wizard-nav .btn { flex: 1 1 0; min-width: 0; min-height: 44px; padding: 0 10px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; line-height: 42px; }
+.app.ws-on .wizard-nav > span { flex: 1 1 0; }
+.app.ws-on .wizard-nav.ws-custom .btn { display: inline-flex; line-height: normal; justify-content: center; }
+.app.ws-on .wizard-nav.ws-custom .btn[hidden] { display: none; }
+
+/* plein écran : en-tête et progression masqués */
+.app.ws-on.ws-full .topbar, .app.ws-on.ws-full .steps, .app.ws-on.ws-full .step-title { display: none; }
+.ws-exit-full { position: absolute; left: 8px; top: calc(8px + var(--sat)); z-index: 30; width: 40px; height: 40px; border-radius: 50%; border: 1px solid var(--border); background: var(--surface); color: var(--text); font-size: 18px; box-shadow: 0 2px 8px rgba(0,0,0,.25); cursor: pointer; }
+.app.ws-on.ws-full .ws-tools { padding-left: 56px; }
+/* clavier ouvert : on libère la place */
+.app.ws-on.ws-kb .steps, .app.ws-on.ws-kb .step-title, .app.ws-on.ws-kb .wizard-nav { display: none; }
+
+/* ----- éditeur adopté ----- */
+.app.ws-on .ws-editor { position: absolute; inset: 0; height: auto; min-height: 0; flex: none; background: var(--jd-bg, var(--bg)); overflow: hidden; }
+.app.ws-on .step-body > .jd-editor, .app.ws-on .step-body .items-host > .jd-editor { min-height: 0; }
+.app.ws-on .step-body > .sun-detail, .app.ws-on .step-body > .sun-detail > .painter { position: absolute; inset: 0; min-height: 0; display: block; padding: 0; }
+.app.ws-on .ws-canvas { position: absolute; left: 0; top: 0; right: 0; bottom: var(--ws-sheet-h, 0px); min-height: 0; height: auto; flex: none; border: 0; border-radius: 0; }
+.app.ws-on .ws-canvas > .jd-canvas-wrap { position: absolute; inset: 0; height: auto; min-height: 0; }
+.app.ws-on .ws-editor.jd-plan { min-height: 0; }
+
+/* rangée d'outils superposée en haut du plan */
+.ws-tools { position: absolute; left: 0; right: 0; top: 0; z-index: 4; display: flex; align-items: center; gap: 6px; padding: 4px 8px; overflow-x: auto; overflow-y: hidden; scrollbar-width: none; -webkit-overflow-scrolling: touch; background: color-mix(in srgb, var(--jd-card, var(--surface)) 90%, transparent); border-bottom: 1px solid var(--jd-line, var(--border)); backdrop-filter: blur(4px); }
+.ws-tools::-webkit-scrollbar { display: none; }
+.ws-tools > .jd-bar:not([hidden]), .ws-tools > .jd-chips:not([hidden]), .ws-tools .jdi-chips:not([hidden]), .ws-tools > .jd-bar > .jdi-chips:not([hidden]) { display: contents; }
+.ws-tools [hidden] { display: none !important; }
+.ws-tools .jd-btn, .ws-tools .jd-chip, .ws-tools .jdi-chip, .ws-tools .jd-tab { flex: 0 0 auto; min-height: 40px; }
+.ws-tools .jd-btn { min-width: 40px; padding: 0 10px; }
+.ws-tools .jdi-tabs { display: flex; flex: 0 0 auto; gap: 4px; border: 0; background: transparent; }
+.ws-tools .jdi-tabs .jd-tab { flex: 0 0 auto; padding: 0 10px; white-space: nowrap; font-size: 13px; border: 1px solid var(--jd-line); border-radius: 20px; border-bottom-width: 1px; background: var(--jd-card); }
+.ws-tools .jdi-tabs .jd-tab[aria-selected="true"] { background: var(--jd-accent); color: #fff; border-color: var(--jd-accent); }
+.ws-tools .jd-chip.jd-tcard { flex-direction: row; justify-content: center; gap: 6px; min-width: 0; max-width: none; min-height: 40px; padding: 0 10px; border-radius: 20px; }
+.ws-tools .jd-tcard .jd-ticon { font-size: 18px; }
+.ws-tools .jd-tcard .jd-tname { font-size: 13px; max-width: none; }
+.ws-tools .jd-tcard .jd-tstat { display: none; }
+.ws-tools .jd-tcard.jd-tnote { white-space: nowrap; }
+.ws-tools .jd-tcard.jd-tnote .jd-tname { max-width: none; white-space: nowrap; }
+.ws-tools input[type=range] { flex: 0 0 110px; height: 40px; }
+.ws-tools .jd-msg { white-space: nowrap; padding: 0 4px; flex: 0 0 auto; }
+
+/* boutons flottants à droite : zoom, recentrer, 3D ; pastille du nord au-dessus */
+.ws-editor .jd-north { margin: 0; }
+.ws-editor[data-ws-tools="1"] .jd-north { top: 56px; }
+.ws-fab { position: absolute; right: 8px; top: 108px; z-index: 3; display: flex; flex-direction: column; gap: 6px; }
+.ws-editor[data-ws-tools="0"] .ws-fab { top: 58px; }
+.ws-fab .jd-btn { min-width: 40px; width: 40px; min-height: 40px; height: 40px; padding: 0; border-radius: 50%; font-size: 17px; background: var(--jd-card, #fff); box-shadow: 0 1px 6px rgba(0,0,0,.25); opacity: .95; }
+.ws-fab .jd-btn.is-round3d { background: var(--jd-accent); color: #fff; border-color: var(--jd-accent); }
+.ws-editor[data-ws-tools="1"] .jd-pop { top: 56px; }
+.ws-editor .jd-live { top: 56px; }
+.ws-editor[data-ws-tools="0"] .jd-live { top: 8px; }
+
+/* ----- feuille tirable ----- */
+.ws-sheet { position: absolute; left: 0; right: 0; bottom: 0; z-index: 5; display: flex; flex-direction: column; overflow: hidden; background: var(--jd-card, var(--surface)); color: var(--jd-fg, var(--text)); border: 1px solid var(--jd-line, var(--border)); border-bottom: 0; border-radius: 16px 16px 0 0; box-shadow: 0 -4px 16px rgba(0,0,0,.18); transition: height .22s ease; }
+.ws-sheet.no-anim, .ws-sheet.dragging { transition: none; }
+.ws-grab { flex: 0 0 28px; display: flex; align-items: center; justify-content: center; width: 100%; padding: 0; border: 0; background: transparent; cursor: grab; touch-action: none; user-select: none; -webkit-user-select: none; }
+.ws-grab i { width: 40px; height: 5px; border-radius: 3px; background: color-mix(in srgb, var(--jd-fg, #333) 28%, transparent); }
+.ws-grab:focus-visible { outline: 3px solid var(--jd-accent, var(--primary)); outline-offset: -3px; border-radius: 12px; }
+.ws-sum { flex: 0 0 auto; display: flex; align-items: center; gap: 8px; min-height: 40px; max-height: 40px; padding: 0 10px 4px; overflow: hidden; }
+.ws-sheet:not([data-state="peek"]) .ws-sum { max-height: none; }
+.ws-sum .jd-info { flex: 1 1 auto; min-width: 0; flex-wrap: nowrap; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; gap: 2px 12px; padding: 0; border: 0; background: transparent; font-size: 13px; }
+.ws-sum .jd-info > span { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.ws-sum .jd-info > span:nth-child(n+3) { flex-shrink: 4; }
+.ws-sheet:not([data-state="peek"]) .ws-sum .jd-info { flex-wrap: wrap; white-space: normal; }
+.ws-sum .jd-legend, .ws-sum .bed-legend { flex: 1 1 auto; min-width: 0; margin: 0; padding: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; }
+.ws-sum .ws-primary { flex: 0 0 auto; min-height: 36px; white-space: nowrap; }
+.ws-inner { flex: 1 1 auto; min-height: 0; overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; padding: 2px 12px 12px; display: flex; flex-direction: column; gap: 6px; }
+.ws-inner > * { flex: 0 0 auto; }
+.ws-inner .jd-msg { padding: 2px 0; }
+.ws-inner .jd-sheet, .ws-inner .jd-panel, .ws-inner .jd-zsheet, .ws-inner .jdi-detail, .ws-inner .jdi-palette { max-height: none; overflow: visible; border: 0; box-shadow: none; background: transparent; padding: 4px 0; }
+.ws-inner .jdi-palette { flex-wrap: wrap; overflow-x: visible; }
+.ws-inner .jdi-detail { min-height: 0; }
+.ws-inner .jd-start, .ws-inner .jdi-start { position: static; transform: none; max-width: none; margin: 0; border: 0; box-shadow: none; background: transparent; padding: 4px 0; max-height: none; pointer-events: auto; }
+.ws-inner .jd-start[hidden], .ws-inner .jdi-start[hidden] { display: none; }
+.ws-inner .jd-zsheet.naming { max-height: none; border-top: 0; }
+.ws-inner .jd-legend { padding: 0; }
+.ws-inner .card { border-radius: 12px; }
+.ws-inner .amb-chips { flex-wrap: nowrap; overflow-x: auto; }
+
+.ws-tabs { flex: 1 1 auto; display: flex; gap: 6px; }
+.ws-tab { flex: 1 1 0; min-width: 0; min-height: 36px; padding: 0 8px; border-radius: 10px; border: 1px solid var(--jd-line, var(--border)); background: var(--jd-bg, var(--bg)); color: inherit; font: inherit; font-weight: 600; cursor: pointer; touch-action: manipulation; }
+.ws-tab[aria-selected="true"] { background: var(--jd-accent, var(--primary)); color: #fff; border-color: var(--jd-accent, var(--primary)); }
+:root[data-theme="dark"] .ws-tab[aria-selected="true"] { color: #08140c; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .ws-tab[aria-selected="true"] { color: #08140c; } }
+.ws-pane[hidden] { display: none; }
+.ws-pane { display: flex; flex-direction: column; gap: 6px; }
+.ws-pane .jd-bar, .ws-pane .jd-checks, .ws-pane .jd-details, .ws-pane .jd-actions { background: transparent; border: 0; padding: 4px 0; position: static; }
+.ws-pane .jd-actions { display: flex; flex-wrap: wrap; }
+.ws-pane .jd-actions .jd-btn { flex: 1 1 140px; }
+.ws-pane .jd-details > summary { padding: 0; }
+.ws-pane .jd-bar { flex-wrap: wrap; }
+
+/* ----- menu « ⋯ » et sélecteur d'étapes ----- */
+.ws-menu { position: absolute; right: 8px; top: calc(var(--sat) + 46px); z-index: 60; min-width: 230px; max-width: calc(100% - 16px); display: flex; flex-direction: column; padding: 6px; background: var(--surface); color: var(--text); border: 1px solid var(--border); border-radius: 12px; box-shadow: 0 8px 28px rgba(0,0,0,.3); }
+.ws-mstatus { padding: 6px 12px; font-size: .8rem; color: var(--muted); }
+.ws-mi { display: flex; align-items: center; min-height: 44px; padding: 0 12px; border: 0; border-radius: 8px; background: none; color: inherit; font: inherit; text-align: left; text-decoration: none; cursor: pointer; }
+.ws-mi:hover, .ws-mi:focus-visible { background: color-mix(in srgb, var(--primary) 14%, transparent); }
+.ws-overlay { position: fixed; inset: 0; z-index: 70; display: flex; align-items: flex-end; justify-content: center; background: rgba(0,0,0,.45); padding: var(--sat) var(--sar) 0 var(--sal); }
+.ws-pickbox { width: min(520px, 100%); max-height: 100%; overflow: auto; background: var(--surface); color: var(--text); border-radius: 16px 16px 0 0; padding: 0 12px calc(12px + var(--sab)); }
+.ws-pickhead { position: sticky; top: 0; z-index: 1; display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 12px 0 8px; background: var(--surface); }
+.ws-picklist { display: flex; flex-direction: column; gap: 6px; }
+.ws-pick { display: flex; align-items: center; gap: 10px; min-height: 48px; padding: 0 12px; border: 1px solid var(--border); border-radius: 12px; background: var(--bg); color: inherit; font: inherit; text-align: left; cursor: pointer; touch-action: manipulation; }
+.ws-pick.current { border-color: var(--primary); background: color-mix(in srgb, var(--primary) 16%, var(--surface)); font-weight: 700; }
+.ws-pick-n { flex: 0 0 1.4em; color: var(--muted); font-variant-numeric: tabular-nums; }
+.ws-pick-l { flex: 1 1 auto; min-width: 0; }
+.ws-pick-s { flex: 0 0 auto; font-size: .8rem; color: var(--muted); }
+
+/* ----- colonne à droite : écran large, paysage, écran court ----- */
+@media (min-width: 900px), (min-width: 560px) and (max-height: 560px), (orientation: landscape) and (max-height: 600px) {
+  html .app.ws-on { --ws-col: clamp(180px, 34vw, 300px); grid-template-columns: minmax(0, 1fr) var(--ws-col); grid-template-rows: auto auto minmax(0, 1fr) auto; }
+  .app.ws-on .topbar { grid-column: 1; grid-row: 1; }
+  .app.ws-on .steps { grid-column: 1; grid-row: 2; }
+  .app.ws-on .wizard-nav .btn { font-size: .9rem; padding: 0 6px; }
+  .app.ws-on .step-title { grid-column: 2; grid-row: 1 / 3; align-self: center; padding: calc(2px + var(--sat)) 8px 2px; font-size: .95rem; }
+  .app.ws-on .step-body { grid-column: 1 / 3; grid-row: 3 / 5; }
+  .app.ws-on .wizard-nav { grid-column: 2; grid-row: 4; z-index: 6; border-left: 1px solid var(--border); }
+  .app.ws-on .ws-canvas { right: var(--ws-col); bottom: 0; }
+  .app.ws-on .ws-tools { right: var(--ws-col); }
+  .ws-sheet { left: auto; top: 0; right: 0; bottom: var(--ws-nav-h); width: var(--ws-col); height: auto !important; border-radius: 0; border: 0; border-left: 1px solid var(--jd-line, var(--border)); box-shadow: none; transition: none; }
+  .ws-grab { display: none; }
+  .ws-sum { padding-top: 6px; max-height: none !important; flex-wrap: wrap; }
+  .ws-sum .jd-info { flex-wrap: wrap; white-space: normal; }
+  .ws-sum .jd-legend, .ws-sum .bed-legend { white-space: normal; }
+  .ws-sum .ws-primary { flex: 1 1 100%; }
+  .ws-menu { right: calc(var(--ws-col) + 8px); }
+  .app.ws-on.ws-full .step-title { display: none; }
+  .app.ws-on.ws-full { --ws-col: clamp(180px, 34vw, 300px); }
+  .app.ws-on.ws-kb .wizard-nav { display: none; }
+  .app.ws-on.ws-kb .ws-sheet { bottom: 0; }
+}
+@media (min-width: 900px) {
+  html .app.ws-on { --ws-col: clamp(300px, 26vw, 360px); }
+  .app.ws-on.ws-full { --ws-col: clamp(300px, 26vw, 360px); }
+  .app.ws-on .step-title { font-size: 1.05rem; }
+  .ws-grab { display: none; }
+  .ws-tools .jd-btn { min-height: 36px; }
+}
+.app.ws-on .topbar > a.btn-sm { display: none; }
+.ws-sum .btn.ws-primary { width: auto; display: inline-flex; font-size: .9rem; min-height: 38px; padding: 0 12px; }
+.ws-editor .jd-pop { max-height: calc(100% - 64px); overflow-y: auto; }
+/* relevé GPS guidé : reste plein cadre au-dessus de l'atelier */
+.app.ws-on .ws-editor.jd-survey-on { position: fixed; inset: 0; z-index: 1000; height: 100vh; }
+@supports (height: 100dvh) { .app.ws-on .ws-editor.jd-survey-on { height: 100dvh; } }
+.jd-survey-on .ws-tools, .jd-survey-on .ws-sheet, .jd-survey-on .ws-fab { display: none !important; }
+.app.ws-on .jd-survey-on .ws-canvas { position: relative; inset: auto; flex: 1 1 auto; min-height: 0; bottom: auto; right: auto; }

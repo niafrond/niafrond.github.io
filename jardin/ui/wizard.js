@@ -1,16 +1,19 @@
 // Assistant à 9 étapes : barre d'étapes, navigation libre, chargement paresseux des étapes.
 // Exporte aussi de petits utilitaires DOM partagés (h, toast, confirmDialog…).
+// Les étapes `workshop` (dessin, rendu) passent en « atelier plein écran » (ui/workshop.js) :
+// `workshop: true` dès l'entrée ; `workshop: 'auto'` quand l'étape l'active elle-même (Soleil en mode carte, Massifs).
+import { enterWorkshop } from './workshop.js';
 
 export const STEPS = [
   { id: 'context', label: 'Contexte', icon: '📍' },
-  { id: 'boundary', label: 'Terrain', icon: '📐' },
+  { id: 'boundary', label: 'Terrain', icon: '📐', workshop: true },
   { id: 'wished', label: 'Zones souhaitées', icon: '✅' },
-  { id: 'sun', label: 'Soleil', icon: '☀️' },
-  { id: 'items', label: 'Aménagements', icon: '🪑' },
-  { id: 'zones', label: 'Dessin des zones', icon: '🗺️' },
-  { id: 'beds', label: 'Massifs', icon: '🌸' },
+  { id: 'sun', label: 'Soleil', icon: '☀️', workshop: 'auto' },
+  { id: 'items', label: 'Aménagements', icon: '🪑', workshop: true },
+  { id: 'zones', label: 'Dessin des zones', icon: '🗺️', workshop: true },
+  { id: 'beds', label: 'Massifs', icon: '🌸', workshop: 'auto' },
   { id: 'plants', label: 'Essences', icon: '🌿' },
-  { id: 'render', label: 'Rendu', icon: '🖼️' },
+  { id: 'render', label: 'Rendu', icon: '🖼️', workshop: true },
 ];
 export const STEP_IDS = STEPS.map((s) => s.id);
 
@@ -125,8 +128,8 @@ export function mountWizard(el, { garden, step, navigate, save, onValidate }) {
   const prev = idx > 0 ? STEPS[idx - 1] : null;
   const next = idx < STEPS.length - 1 ? STEPS[idx + 1] : null;
   const footer = h('footer', { class: 'wizard-nav' },
-    prev ? h('button', { class: 'btn', type: 'button', id: 'btn-prev', onclick: () => go(prev.id) }, '← ' + prev.label) : h('span'),
-    next ? h('button', { class: 'btn btn-primary', type: 'button', id: 'btn-next', onclick: () => go(next.id) }, next.label + ' →') : h('span'));
+    prev ? h('button', { class: 'btn', type: 'button', id: 'btn-prev', title: prev.label, onclick: () => go(prev.id) }, '← ' + prev.label) : h('span'),
+    next ? h('button', { class: 'btn btn-primary', type: 'button', id: 'btn-next', title: next.label, onclick: () => go(next.id) }, next.label + ' →') : h('span'));
 
   el.replaceChildren(header, steps, title, body, footer);
   // 9 étapes : la barre défile horizontalement, l'étape courante est centrée
@@ -135,6 +138,11 @@ export function mountWizard(el, { garden, step, navigate, save, onValidate }) {
   if (garden.status === 'validated') {
     header.append(h('a', { class: 'btn btn-sm', href: `#/garden/${encodeURIComponent(garden.id)}/advice` }, 'Conseils'));
   }
+
+  const wsFlag = STEPS[idx].workshop;
+  const ws = enterWorkshop(el, {
+    header, stepsEl: steps, title, body, footer, steps: STEPS, current: idx, go, garden, startOn: wsFlag === true,
+  });
 
   (async () => {
     body.append(h('p', { class: 'muted' }, 'Chargement…'));
@@ -156,6 +164,7 @@ export function mountWizard(el, { garden, step, navigate, save, onValidate }) {
         onValidate: () => onValidate && onValidate(),
         onBack: () => go('plants'),
         navigate,
+        workshop: ws,
       });
     } catch (e) {
       console.error(e);
@@ -166,6 +175,7 @@ export function mountWizard(el, { garden, step, navigate, save, onValidate }) {
   return function unmount() {
     dead = true;
     try { if (typeof stepUnmount === 'function') stepUnmount(); } catch (e) { console.error(e); }
+    try { ws.leave(); } catch (e) { console.error(e); }
     el.replaceChildren();
   };
 }

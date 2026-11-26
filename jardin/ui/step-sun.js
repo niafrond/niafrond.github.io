@@ -15,7 +15,7 @@ const MODES = [
   ['estimated', 'Estimer automatiquement', 'Calcul approximatif selon la position, l’exposition et les obstacles saisis. À corriger à la main.'],
 ];
 
-export function mountSun(el, { garden, onChange }) {
+export function mountSun(el, { garden, onChange, workshop = null }) {
   if (!garden.sun) garden.sun = { mode: 'unknown', uniform: null, regions: [] };
   const sun = garden.sun;
   let view = sun.mode === 'map' ? 'map' : sun.mode === 'uniform' ? 'uniform' : 'unknown';
@@ -52,6 +52,8 @@ export function mountSun(el, { garden, onChange }) {
   function draw() {
     clearPainter();
     detail.replaceChildren();
+    // atelier plein écran seulement pour la carte détaillée (le reste de l'écran défile comme avant)
+    if (workshop) workshop.set(view === 'map' || view === 'estimated');
     if (view === 'unknown') {
       sun.mode = 'unknown'; sun.uniform = null;
     } else if (view === 'uniform') {
@@ -101,6 +103,7 @@ export function mountSun(el, { garden, onChange }) {
       LEVELS.map(([v, l]) => h('label', { class: 'check' },
         h('input', { type: 'radio', name: 'sunlevel', value: v, checked: sun.uniform === v, onchange: () => { sun.uniform = v; change(); } }), h('span', null, l)))));
   } else if (view === 'map') {
+    if (workshop) workshop.set(true);
     const host = h('div', { class: 'painter' });
     detail.append(host);
     showPainter(host);

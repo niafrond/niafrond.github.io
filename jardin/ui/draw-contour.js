@@ -6,6 +6,7 @@ import {
 import { newId } from '../model.js';
 import { getPosition } from '../geo.js';
 import { createSurveyUI } from './gps-survey-ui.js';
+import { adoptWorkshop } from './workshop.js';
 import { attachNorthBadge, setNorthAngle } from './north-pop.js';
 import {
   injectStyles, h, createCanvas, gridPath, snap, clone, esc, fr, frLen, frArea, parseNum, parseLength, toCm,
@@ -130,6 +131,13 @@ export function mountContourEditor(el, { garden, onChange } = {}) {
     onExit: () => { fitView(); refreshUI(); },
   });
   cv.svg.setAttribute('aria-label', 'Plan du terrain : touchez pour poser les sommets du contour');
+
+  // atelier plein écran : outils en rangée sur le plan, panneaux dans la feuille (rien si l'atelier n'est pas actif)
+  const wsx = adoptWorkshop(root, {
+    wrap, tools: [bar1, bar2], fab: [bZoomIn, bZoomOut, bFit], summary: info, primary: bClose,
+    sheet: [startEl, promptEl, msgEl, sheet], label: 'Terrain : aide, côtés et fermeture',
+    want: () => ({ key: [!promptEl.hidden, !sheet.hidden, !startEl.hidden, st.tool].join('|'), state: (!promptEl.hidden || !sheet.hidden || !startEl.hidden) ? 'half' : 'peek' }),
+  });
 
   const fitView = () => {
     const pts = [...g.boundary];
@@ -798,11 +806,12 @@ export function mountContourEditor(el, { garden, onChange } = {}) {
           btn('Annuler', 'close-cancel', () => { st.closePrompt = null; refreshUI(); })),
       );
     }
-    if (light) return;
+    if (light) { if (wsx) wsx.sync(); return; }
     // feuille
     sheet.hidden = !(st.sheet || st.tool === 'obstacle');
     if (!sheet.hidden) renderSheet();
     void sheetSig;
+    if (wsx) wsx.sync();
   }
 
   function numInput(value, onCommit, { step = '0.01', cls = '', label = '' } = {}) {
@@ -904,6 +913,7 @@ export function mountContourEditor(el, { garden, onChange } = {}) {
     if (survey) survey.destroy();
     if (north) north.destroy();
     if (timer) clearInterval(timer);
+    if (wsx) wsx.destroy();
     cv.destroy();
     el.innerHTML = '';
   };

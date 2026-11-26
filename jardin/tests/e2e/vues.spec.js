@@ -1,5 +1,6 @@
 // Étape Rendu : vues sous différents angles (dessus, isométriques, élévations) et saison.
 import { test, expect } from '@playwright/test';
+import { ouvrirOnglet } from './helpers.js';
 import fs from 'node:fs';
 
 const URL = '/jardin/';
@@ -94,6 +95,7 @@ test('vues sous différents angles et saison, sans erreur', async ({ page }) => 
 
   // « Toutes les vues » : téléchargement de la feuille de contact
   const dl = page.waitForEvent('download');
+  await ouvrirOnglet(page, 'export');
   await page.locator('[data-act=export-sheet]').click();
   expect((await dl).suggestedFilename()).toBe('vues-vues.svg');
 

@@ -50,9 +50,11 @@ test('zone rectangle en 2 touches, dimensions en cm par appui long, dupliquer, s
   p = await projeter(page);
   [x, y] = px(p, 10, 7); await page.mouse.click(x, y);
   await expect(page.locator('[data-role=zone-panel]')).toBeHidden();
+  await page.waitForTimeout(350); // la feuille se replie, le plan reprend sa taille
   p = await projeter(page);
   [x, y] = px(p, 4, 3.5); await page.mouse.click(x, y);
   await expect(page.locator('[data-role=zone-panel]')).toBeVisible();
+  await page.waitForTimeout(350);
 
   // appui long : dimensions en cm (le bandeau a redimensionné le plan : on reprojette)
   p = await projeter(page);

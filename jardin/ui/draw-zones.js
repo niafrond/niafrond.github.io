@@ -14,6 +14,7 @@ import {
 } from '../zone-rotate.js';
 import { ambianceChips, ambianceOf, ambianceEmoji, nameWithAmbiance, detectIn } from './ambiance-picker.js';
 import { heightField } from './height-field.js';
+import { adoptWorkshop } from './workshop.js';
 import { zoneHeight, defaultZoneHeight, zoneHeightKind } from '../heights.js';
 import {
   injectStyles, h, createCanvas, gridPath, snap, clone, esc, fr, frLen, frArea, parseLength, toCm,
@@ -70,10 +71,10 @@ export function mountZoneEditor(el, { garden, onChange } = {}) {
   const bRedo = btn('↷', 'redo', redo, '', { 'aria-label': 'Rétablir' });
   const bGrid = btn('', 'grid', () => { st.gridIdx = (st.gridIdx + 1) % GRIDS.length; refreshUI(true); }, '', { title: 'Pas de la grille' });
   const bSelect = btn('☝ Sélection', 'select-mode', () => { stopDrawing(); st.typeId = null; st.kind = null; closePop(); refreshUI(); draw(); });
-  barTop.append(bUndo, bRedo, bSelect, bGrid,
-    btn('－', 'zoom-out', () => cv.zoomCenter(1 / 1.4), '', { 'aria-label': 'Zoom arrière' }),
-    btn('＋', 'zoom-in', () => cv.zoomCenter(1.4), '', { 'aria-label': 'Zoom avant' }),
-    btn('⤢', 'fit', () => fitView(), '', { 'aria-label': 'Recentrer' }));
+  const bZoomOut = btn('－', 'zoom-out', () => cv.zoomCenter(1 / 1.4), '', { 'aria-label': 'Zoom arrière' });
+  const bZoomIn = btn('＋', 'zoom-in', () => cv.zoomCenter(1.4), '', { 'aria-label': 'Zoom avant' });
+  const bFit = btn('⤢', 'fit', () => fitView(), '', { 'aria-label': 'Recentrer' });
+  barTop.append(bUndo, bRedo, bSelect, bGrid, bZoomOut, bZoomIn, bFit);
 
   const gGrid = document.createElementNS('http://www.w3.org/2000/svg', 'g');
   const gMain = document.createElementNS('http://www.w3.org/2000/svg', 'g');
@@ -83,6 +84,12 @@ export function mountZoneEditor(el, { garden, onChange } = {}) {
   cv.svg.append(gGrid, gMain, gTop);
   north = attachNorthBadge(wrap, { garden: g, onChange: () => { if (onChange) onChange(g); } });
   cv.svg.setAttribute('aria-label', 'Plan des zones');
+  // atelier plein écran : palette et outils en rangée sur le plan, panneau de la zone dans la feuille
+  const wsx = adoptWorkshop(root, {
+    wrap, tools: [barTop, chips, kindBar], fab: [bZoomIn, bZoomOut, bFit], summary: info,
+    sheet: [startEl, msgEl, panel], label: 'Zones : aide et réglages de la zone',
+    want: () => ({ key: [!panel.hidden ? panel.dataset.zid || 'p' : '', !startEl.hidden].join('|'), state: (!panel.hidden || !startEl.hidden) ? 'half' : 'peek' }),
+  });
 
   const fitView = () => {
     const pts = [...g.boundary];
@@ -869,6 +876,7 @@ export function mountZoneEditor(el, { garden, onChange } = {}) {
         renderWarns(sel);
       } else renderPanel(sel);
     }
+    if (wsx) { panel.dataset.zid = sel && !st.typeId ? sel.id : ''; wsx.sync(); }
   }
 
   function refreshStart() {
@@ -1030,5 +1038,5 @@ export function mountZoneEditor(el, { garden, onChange } = {}) {
   requestAnimationFrame(() => { if (!destroyed) fitView(); });
   setTimeout(() => { if (!destroyed) fitView(); }, 60);
 
-  return function unmount() { destroyed = true; if (north) north.destroy(); cv.destroy(); el.innerHTML = ''; };
+  return function unmount() { destroyed = true; if (north) north.destroy(); if (wsx) wsx.destroy(); cv.destroy(); el.innerHTML = ''; };
 }
