@@ -1,3 +1,9 @@
+## [3.44.0](https://github.com/niafrond/niafrond.github.io/compare/v3.43.0...v3.44.0) (2026-11-25)
+
+### Features
+
+* **jardin:** régler la hauteur des plantes, arbres, piscine, clôtures, murs et structures ([#805](https://github.com/niafrond/niafrond.github.io/issues/805)) ([be29754](https://github.com/niafrond/niafrond.github.io/commit/be297541227af1aa339b1d06710e471a7b5a83da))
+
 ## [3.43.0](https://github.com/niafrond/niafrond.github.io/compare/v3.42.0...v3.43.0) (2026-11-25)
 
 ### Features
