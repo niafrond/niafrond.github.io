@@ -125,7 +125,7 @@ describe('designBed', () => {
         const p = getPlant(pl.plantId);
         footprint += pl.count * (p.spacing > 0 ? p.spacing : p.widthAdult) ** 2;
       }
-      expect(footprint / area).toBeGreaterThan(0.5);
+      expect(footprint / area).toBeGreaterThan(0.3); // marge au bord de 0,5 × espacement : un petit massif se garnit moins
       expect(footprint / area).toBeLessThan(1.3);
       expect(Math.abs(d.summary.density - footprint / area)).toBeLessThan(0.1);
     }

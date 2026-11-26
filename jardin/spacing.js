@@ -10,7 +10,7 @@ export const LAYERS = ['canopy', 'tall', 'mid', 'low', 'ground', 'aquatic'];
 const RANK = { canopy: 0, tall: 1, mid: 2, low: 3, ground: 4, aquatic: 5 };
 /** Parts de la surface de sous-étage par couche (adaptables via `opts.shares`). */
 export const DEFAULT_SHARES = { tall: 0.20, mid: 0.35, low: 0.30, ground: 0.15 };
-const CAP = 3; // plafond des rapports distance / distance minimale
+const CAP = 2; // plafond des rapports distance / distance minimale
 const ROW_HABIT = 'hedge-clipped';
 
 const num = (v, d) => (Number.isFinite(Number(v)) && Number(v) > 0 ? Number(v) : d);
@@ -151,14 +151,14 @@ export function packingCapacity(poly, plant, opts = {}) {
     for (const k of keep) if (Math.hypot(x - k.x, y - k.y) < k.r - 1e-9) return false;
     return true;
   };
-  const n = est > 3000 ? 1 : est > 1000 ? 2 : 4;
+  const n = est > 2500 ? 1 : est > 600 ? 2 : est > 120 ? 3 : 4;
   const cx = (b.minX + b.maxX) / 2; const cy = (b.minY + b.maxY) / 2;
   const R = Math.hypot(b.width, b.height) / 2 + d;
   let angles = [0];
-  if (est <= 3000) { const ax = polyAxis(poly).ang; if (Math.abs(Math.sin(ax)) > 0.02) angles = [0, ax]; }
+  if (est <= 600) { const ax = polyAxis(poly).ang; if (Math.abs(Math.sin(ax)) > 0.02) angles = [0, ax]; }
   let best = 0;
   for (const th of angles) {
-    for (const kind of est > 3000 ? ['hex'] : ['hex', 'square']) {
+    for (const kind of est > 2500 ? ['hex'] : ['hex', 'square']) {
       const ux = Math.cos(th) * d; const uy = Math.sin(th) * d;
       const vAng = th + (kind === 'hex' ? Math.PI / 3 : Math.PI / 2);
       const vx = Math.cos(vAng) * d; const vy = Math.sin(vAng) * d;
@@ -276,7 +276,7 @@ export function packZone(zone, plantings, plantsById, opts = {}) {
   // ----- candidats
   const A = polygonArea(poly);
   const minSp = Math.min(...groups.map((g) => g.sp));
-  let step = Math.max(Math.min(minSp / 4, 0.25), Math.sqrt(A / 3600), 0.04);
+  let step = Math.max(Math.min(minSp / 4, 0.25), Math.sqrt(A / 2200), 0.04);
   const b = bounds(poly);
   for (let attempt = 0; attempt < 4; attempt++) {
     X = []; Y = []; ED = [];
@@ -309,16 +309,30 @@ export function packZone(zone, plantings, plantsById, opts = {}) {
   C = X.length;
   nb = groups.map(() => new Float32Array(C).fill(CAP));
 
+  // candidats rangés en cases de 0,5 m : une pose ne met à jour que les voisins utiles
+  const CS = 0.5; const cells = new Map();
+  const cellKey = (ix, iy) => (ix + 64) * 16384 + (iy + 64);
+  for (let c = 0; c < C; c++) {
+    const k = cellKey(Math.floor((X[c] - b.minX) / CS), Math.floor((Y[c] - b.minY) / CS));
+    const l = cells.get(k); if (l) l.push(c); else cells.set(k, [c]);
+  }
   const commit = (g, x, y, extra = {}) => {
     placed.push({ x, y, g: g.idx, ...extra });
     if (!extra.forced) g.placed++;
     for (let h = 0; h < G; h++) {
       const m = M[h][g.idx]; const lim = CAP * m; const arr = nb[h];
-      for (let c = 0; c < C; c++) {
-        const dx = X[c] - x; if (dx > lim || dx < -lim) continue;
-        const dy = Y[c] - y; if (dy > lim || dy < -lim) continue;
-        const r = Math.sqrt(dx * dx + dy * dy) / m;
-        if (r < arr[c]) arr[c] = r;
+      const x0 = Math.floor((x - lim - b.minX) / CS); const x1 = Math.floor((x + lim - b.minX) / CS);
+      const y0 = Math.floor((y - lim - b.minY) / CS); const y1 = Math.floor((y + lim - b.minY) / CS);
+      for (let ix = x0; ix <= x1; ix++) {
+        for (let iy = y0; iy <= y1; iy++) {
+          const l = cells.get(cellKey(ix, iy));
+          if (!l) continue;
+          for (let q = 0; q < l.length; q++) {
+            const c = l[q]; const dx = X[c] - x; const dy = Y[c] - y;
+            const r = Math.sqrt(dx * dx + dy * dy) / m;
+            if (r < arr[c]) arr[c] = r;
+          }
+        }
       }
     }
   };
@@ -353,7 +367,11 @@ export function packZone(zone, plantings, plantsById, opts = {}) {
     const gs = rest.filter((g) => g.layer === layer);
     if (gs.length) order.push(...interleave(gs, rnd));
   }
+  // arbres (et plants isolés) : attirés vers le centre de la forme
+  const cen0 = centroid(poly); const diag = Math.max(0.5, Math.hypot(b.width, b.height));
+  const nTotal = groups.reduce((t, g) => t + g.n, 0);
   const pickFor = (g, relaxed) => {
+    const pull = g.layer === 'canopy' || nTotal <= 3 ? 0.15 : 0;
     const climbWall = hasWallCand && isClimber(g.plant);
     const anchor = isBamboo(g.plant) && g.placed ? placed.filter((q) => q.g === g.idx).reduce((s, q, _, a) => ({ x: s.x + q.x / a.length, y: s.y + q.y / a.length }), { x: 0, y: 0 }) : null;
     let best = -1; let bestV = -Infinity;
@@ -363,7 +381,8 @@ export function packZone(zone, plantings, plantsById, opts = {}) {
       let e;
       if (WALL[c]) { if (!climbWall) continue; e = CAP; } else if (climbWall) continue; else e = relaxed ? (ED[c] > 0.01 ? CAP : -1) : ED[c] / g.margin;
       if (e < 1 - 1e-9) continue;
-      const v = anchor ? -Math.hypot(X[c] - anchor.x, Y[c] - anchor.y) + rnd() * 0.02 : Math.min(arr[c], e, CAP) + rnd() * 0.03;
+      const v = anchor ? -Math.hypot(X[c] - anchor.x, Y[c] - anchor.y) + rnd() * 0.02
+        : Math.min(arr[c], e, CAP) + rnd() * 0.03 + (pull ? pull * (1 - Math.hypot(X[c] - cen0.x, Y[c] - cen0.y) / diag) : 0);
       if (v > bestV) { bestV = v; best = c; }
     }
     return best;
@@ -515,8 +534,10 @@ export function allocateQuantities(zone, species, opts = {}) {
     for (const i of byLayer[k]) {
       const p = plants[i];
       const raw = part / byLayer[k].length / (spacingOf(p) ** 2);
-      const cap = packingCapacity(poly, p, { obstacles });
       let n = Math.round(raw);
+      // borne haute analytique (pavage hexagonal parfait) : le calcul exact n'est utile que si la quantité s'en approche
+      const upper = Math.floor(Math.max(0, usable) * 1.1547 / (spacingOf(p) ** 2) + perimeterOf(poly) / spacingOf(p)) + 1;
+      const cap = n > 0.5 * upper || obstacles.length ? packingCapacity(poly, p, { obstacles }) : n;
       if (cap >= 1) n = Math.max(1, n);
       out[i].count = Math.max(0, Math.min(n, cap));
     }

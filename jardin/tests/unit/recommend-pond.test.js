@@ -83,7 +83,10 @@ describe('suggestSelection et quantités', () => {
     const z = createZone('midplants', rect(0, 0, 4, 3));
     g.zones = [z];
     const p = getPlant('h-astilbe');
-    expect(suggestQuantity(p, z)).toBe(Math.max(1, Math.floor(12 / (p.spacing * p.spacing) + 1e-9)));
+    // surface / espacement², bornée par la capacité réelle de la zone (marge au bord)
+    const brut = Math.max(1, Math.floor(12 / (p.spacing * p.spacing) + 1e-9));
+    expect(suggestQuantity(p, z)).toBeLessThanOrEqual(brut);
+    expect(suggestQuantity(p, z)).toBeGreaterThanOrEqual(Math.floor(brut * 0.85));
     expect(contextForZone(g, z).pondArea).toBeUndefined();
   });
 });

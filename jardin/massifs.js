@@ -11,6 +11,7 @@ import { scorePlant } from './recommend.js';
 import { getAmbiance, plantAmbianceScore, plantAvoids } from './ambiances.js';
 import { fitsMaintenance, plantEffort } from './maintenance.js';
 import { habitOf } from './habits.js';
+import { allocateQuantities, fitQuantities } from './spacing.js';
 
 // Empreintes des plantes existantes : import défensif (le module peut être absent).
 let existingFootprints = null;
@@ -900,6 +901,27 @@ function allocate(S, area) {
   return counts;
 }
 
+/**
+ * Quantités finales d'un massif : même esprit que `allocate` (parts par couche) mais calculées par `allocateQuantities`
+ * (surface utile, capacité du massif) puis ajustées par une pose réelle : aucune distance horticole n'est violée.
+ */
+function spacedCounts(S, counts, bed) {
+  try {
+    const zone = { id: bed.id, type: 'midplants', shape: bed.shape };
+    const key = new Map(S.map((i) => [i.p.id, i.bulb ? 'bulbes' : i.layer]));
+    const al = allocateQuantities(zone, S.map((i) => i.p), { layerOf: (p) => key.get(p.id), shares: LAYER_SHARE });
+    const pl = S.map((i, k) => ({ plantId: i.id, count: Math.max(1, al[k].count) }));
+    const bedArea = bed.areaM2 > 0 ? bed.areaM2 : polygonArea(bed.shape.kind === 'polygon' ? bed.shape.points : shapePolygon(bed.shape));
+    if (S.reduce((t, i, k) => t + pl[k].count * spacingOf(i.p) ** 2, 0) <= 0.45 * bedArea) return pl.map((x) => x.count); // très aéré : rien ne peut dépasser
+    const byId = new Map(S.map((i) => [i.id, i.p]));
+    const fit = fitQuantities(zone, pl, (id) => byId.get(id));
+    const fitted = new Map(fit.map((x) => [x.plantId, x.count]));
+    return S.map((i, k) => Math.max(1, fitted.get(i.id) ?? Math.min(counts[k], pl[k].count)));
+  } catch (e) {
+    return counts;
+  }
+}
+
 function normalizeGardenCtx(garden, opts) {
   const c = (garden && garden.context) || {};
   let tminC = null;
@@ -1170,7 +1192,7 @@ export function designBed(garden, bed, opts = {}) {
     const S = runDesign(infos, {
       area, rng, iters: clamp(opts.iterations || 220, 150, 300), budget: opts.budget, ambiance: amb, maintenance, palette,
     });
-    const counts = allocate(S, area);
+    const counts = spacedCounts(S, allocate(S, area), bed);
     const res = describe(S, counts, area, { ambiance: amb, understory });
     res.ids = new Set(S.map((i) => i.id));
     return res;
