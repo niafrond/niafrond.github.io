@@ -11,7 +11,7 @@ const save = (o) => { try { localStorage.setItem(KEY, JSON.stringify(o)); } catc
 
 /** Options du dialogue → options de `buildGardenPdf`. */
 export function toPdfOptions(o) {
-  return { format: o.format === 'a3' ? 'a3' : 'a4', levels: { 1: !!o.l1, 2: !!o.l2, 3: !!o.l3 }, zonePages: !!o.zonePages, advice: !!o.advice, shopping: !!o.shopping, photos: !!o.photos, iso: !!o.iso, layers: !!o.layers, month: o.month ? Number(o.month) : null };
+  return { simplified: !!o.simplified, format: o.format === 'a3' ? 'a3' : 'a4', levels: { 1: !!o.l1, 2: !!o.l2, 3: !!o.l3 }, zonePages: !!o.zonePages, advice: !!o.advice, shopping: !!o.shopping, photos: !!o.photos, iso: !!o.iso, layers: !!o.layers, month: o.month ? Number(o.month) : null };
 }
 
 /**
@@ -29,6 +29,10 @@ export function openPdfDialog({ garden, appVersion = '', deps = {}, onDone } = {
   const bar = h('progress', { max: '100', value: '0', 'data-role': 'pdf-progress', style: { width: '100%' } });
   const label = h('p', { role: 'status', 'aria-live': 'polite', class: 'muted small', 'data-role': 'pdf-status' }, '');
   const err = h('p', { class: 'notice', role: 'alert', hidden: true, 'data-role': 'pdf-error' });
+  const diagBox = h('pre', { hidden: true, 'data-role': 'pdf-diag', style: { whiteSpace: 'pre-wrap', fontSize: '11px', maxHeight: '160px', overflow: 'auto', background: 'var(--card, #f4f4f0)', padding: '6px', borderRadius: '6px' } });
+  const copyDiag = h('button', { class: 'btn', type: 'button', hidden: true, 'data-act': 'pdf-copy-diag', onclick: async () => { try { await navigator.clipboard.writeText(diagBox.textContent); copyDiag.textContent = 'Diagnostic copié'; } catch { const r = document.createRange(); r.selectNodeContents(diagBox); const sel = getSelection(); sel.removeAllRanges(); sel.addRange(r); copyDiag.textContent = 'Sélectionné : copiez-le'; } } }, 'Copier le diagnostic');
+  const retry = h('button', { class: 'btn', type: 'button', hidden: true, 'data-act': 'pdf-simple', onclick: () => run({ simplified: true }) }, 'Réessayer en mode simplifié');
+  let lastStep = '';
   const form = h('div', { style: { display: 'flex', flexDirection: 'column', gap: '6px' }, 'data-role': 'pdf-form' },
     h('label', {}, 'Format du plan ', format),
     h('fieldset', { style: { border: '1px solid var(--line, #ccc)', borderRadius: '8px' } }, h('legend', {}, 'Niveaux du plan (cumulatifs)'),
@@ -37,7 +41,7 @@ export function openPdfDialog({ garden, appVersion = '', deps = {}, onDone } = {
     chk('layers', 'Plan complet à calques PDF', 'Calques activables dans Acrobat, Foxit… (ignorés par beaucoup de lecteurs mobiles)'),
     chk('photos', 'Inclure les photos des essences', 'Photos Wikipédia déjà en cache ou téléchargées ; sinon pastilles de couleur'),
     chk('iso', 'Inclure les vues isométriques'),
-    h('label', {}, 'Floraison représentée ', month), err);
+    h('label', {}, 'Floraison représentée ', month), err, diagBox, h('div', { class: 'row' }, copyDiag, retry));
   const go = h('button', { class: 'btn btn-primary', type: 'button', 'data-act': 'pdf-go', onclick: () => run() }, 'Générer le PDF');
   const cancel = h('button', { class: 'btn', type: 'button', 'data-act': 'pdf-cancel', onclick: () => { if (ctrl) { ctrl.abort(); label.textContent = 'Annulation…'; } else close(); } }, 'Annuler');
   const progress = h('div', { hidden: true, 'data-role': 'pdf-run' }, bar, label);
@@ -50,8 +54,24 @@ export function openPdfDialog({ garden, appVersion = '', deps = {}, onDone } = {
   document.addEventListener('keydown', onKey);
   document.body.append(overlay);
 
-  async function run() {
+  /** Texte de diagnostic : étape, cause, taille du SVG, éléments, résolution, appareil, version. */
+  function diagnose(e, version) {
+    const d = (e && e.diag) || {};
+    const lines = [
+      `Erreur : ${(e && e.message) || e}`, `Étape : ${(e && e.step) || lastStep || 'inconnue'}`,
+      d.causes && d.causes.length ? `Cause(s) : ${d.causes.join(' | ')}` : null,
+      d.svgKb != null ? `SVG : ${d.svgKb} Ko, ${d.elements} éléments` : null, d.pxWidth ? `Résolution tentée : ${d.pxWidth}×${d.pxHeight} (échelles ${(d.scales || []).join(', ') || '1'})` : null,
+      e && e.firstCause && e.firstCause.diag ? `Premier essai (plan complet) : ${(e.firstCause.diag.causes || []).join(' | ')} ; SVG ${e.firstCause.diag.svgKb} Ko` : null,
+      `Options : ${JSON.stringify(toPdfOptions(st))}`, `Navigateur : ${navigator.userAgent}`, `Mémoire : ${navigator.deviceMemory || '?'} Go`, `Application : ${version || '?'}`,
+    ];
+    return lines.filter(Boolean).join('\n');
+  }
+
+  async function run(over = {}) {
+    if (over.simplified) { Object.assign(st, { photos: false, iso: false, layers: false }); }
+    const opts = toPdfOptions({ ...st, ...over });
     save(st);
+    diagBox.hidden = true; copyDiag.hidden = true; retry.hidden = true; copyDiag.textContent = 'Copier le diagnostic';
     err.hidden = true; form.hidden = true; progress.hidden = false; go.disabled = true; cancel.textContent = 'Annuler la génération';
     ctrl = new AbortController();
     try {
@@ -60,9 +80,9 @@ export function openPdfDialog({ garden, appVersion = '', deps = {}, onDone } = {
       const photo = deps.photo !== undefined ? deps.photo : (await import('../pdf-raster.js')).loadPhotoThumb;
       let version = appVersion;
       if (!version) { try { version = (await import('../../version.js')).getVersion(); } catch { /* hors dépôt (APK) */ } }
-      const res = await build(garden, toPdfOptions(st), {
+      const res = await build(garden, opts, {
         rasterize, photo, signal: ctrl.signal, appVersion: version,
-        onProgress: ({ label: l, step, total }) => { label.textContent = l; bar.value = Math.round((step / Math.max(1, total)) * 100); },
+        onProgress: ({ label: l, step, total }) => { lastStep = l; label.textContent = l; bar.value = Math.round((step / Math.max(1, total)) * 100); },
       });
       if (closed) return;
       const blob = new Blob([res.bytes], { type: 'application/pdf' });
@@ -73,7 +93,11 @@ export function openPdfDialog({ garden, appVersion = '', deps = {}, onDone } = {
       if (closed) return;
       ctrl = null; go.disabled = false; cancel.textContent = 'Fermer'; progress.hidden = true; form.hidden = false;
       if (e && e.name === 'AbortError') { err.hidden = false; err.textContent = 'Génération annulée.'; }
-      else { err.hidden = false; err.textContent = `Impossible de générer le PDF sur cet appareil (${(e && e.message) || 'erreur'}).`; console.error(e); }
+      else {
+        err.hidden = false; err.textContent = `Impossible de générer le PDF sur cet appareil (${(e && e.message) || 'erreur'}). Étape : ${(e && e.step) || lastStep || 'inconnue'}.`; console.error(e);
+        let version = appVersion; if (!version) { try { version = (await import('../../version.js')).getVersion(); } catch { /* */ } }
+        diagBox.textContent = diagnose(e, version); diagBox.hidden = false; copyDiag.hidden = false; retry.hidden = false;
+      }
     }
   }
   return { close, overlay, run };

@@ -7,9 +7,8 @@ import {
 import { getPlant } from './catalog.js';
 import { EXISTING_KINDS, getExistingKind, existingLabel, existingPlant, getFenceMaterial } from './existing.js';
 
-const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-const f = (n) => (Math.round(n * 100) / 100).toString();
-const fr = (n) => n.toFixed(2).replace('.', ',');
+import { esc, f } from './render-common.js';
+const fr = (n) => (Number.isFinite(Number(n)) ? Number(n).toFixed(2).replace('.', ',') : '0');
 
 
 /**

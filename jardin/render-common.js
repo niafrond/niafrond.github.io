@@ -29,9 +29,17 @@ export const BARE_HERB = '#b8a483';
 export const YOUNG_W = 0.4;
 export const YOUNG_H = 0.35;
 
-export const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-export const f = (n) => (Math.round(n * 100) / 100).toString();
-export const frNum = (n, d = 2) => n.toFixed(d).replace('.', ',');
+/** Caractères interdits en XML 1.0 (contrôles, U+FFFE/U+FFFF, surrogates isolés). */
+const BAD_XML = /[\u0000-\u0008\u000B\u000C\u000E-\u001F\uFFFE\uFFFF]|[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/g;
+export const xmlSafe = (s) => String(s ?? '').replace(BAD_XML, '');
+export const esc = (s) => xmlSafe(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+export const f = (n) => { const v = Math.round(n * 100) / 100; return Number.isFinite(v) ? v.toString() : '0'; };
+export const frNum = (n, d = 2) => (Number.isFinite(Number(n)) ? Number(n).toFixed(d).replace('.', ',') : '0');
+const BAD_TOKEN = /(^|[\s,(;:])(?:NaN|-?Infinity|undefined)(?=$|[\s,);])/g;
+/** Filet de sécurité : plus de NaN / Infinity / undefined dans les valeurs d'attributs, ni de caractère XML interdit. */
+export function cleanSvgNumbers(svg) {
+  return xmlSafe(svg).replace(/="([^"]*)"/g, (m, v) => (/NaN|Infinity|undefined/.test(v) ? `="${v.replace(BAD_TOKEN, '$10')}"` : m));
+}
 
 export function safeHex(c) {
   if (typeof c !== 'string') return null;
@@ -371,7 +379,7 @@ export function describePlan(garden, lookup = getPlant) {
     const t = getZoneType(z.type);
     const pl = (z.plantings || []).map((p) => {
       const plant = lookup && lookup(p.plantId);
-      return `${p.count || 1} × ${plant ? plant.commonName : p.plantId}`;
+      return `${p.count || 1} × ${(plant && plant.commonName) || p.plantId || 'essence inconnue'}`;
     });
     lines.push(`${z.label || (t && t.label) || z.type}${pl.length ? ` : ${pl.join(', ')}` : ''}`);
   }

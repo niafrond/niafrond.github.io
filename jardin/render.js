@@ -9,7 +9,7 @@ import { gardenCost, formatEuro } from './pricing.js';
 import {
   FONT, OBSTACLE_LABELS, BARE_WOOD, BARE_HERB, SUN_COLORS, esc, f, frNum, darken, lighten, mixHex, rngOf,
   normMonth, monthLabel, plantState, placePlants, shadowDir, GradRegistry, buildLegendItems, makeFrame, northSVG, scaleBarSVG,
-  cartoucheSVG, describePlan as describeCommon, patternDefs, usedZoneTypes, plantHeightM, lawnPatternDef, captionSVG,
+  cartoucheSVG, describePlan as describeCommon, cleanSvgNumbers, patternDefs, usedZoneTypes, plantHeightM, lawnPatternDef, captionSVG,
 } from './render-common.js';
 
 export { placePlants } from './render-common.js';
@@ -329,6 +329,7 @@ export function renderPlanSVG(garden, opts = {}) {
   const layers = { dims: true, legend: true, sun: false, names: true, budget: false, ...(opts.layers || {}) };
   const on = (k) => layers[k] !== false;
   const print = !!opts.print;
+  const simple = !!opts.simple; // PDF « simplifié » : aplats sans motifs ni filtres
   const numbering = opts.numbering || null;
   const ghost = new Set(Array.isArray(opts.ghost) ? opts.ghost : []);
   const ghostOp = opts.ghostOpacity > 0 ? opts.ghostOpacity : 0.35;
@@ -375,7 +376,8 @@ export function renderPlanSVG(garden, opts = {}) {
   const fr = makeFrame(W, H, layers, (compact) => buildLegendItems(garden, lookup, layers, { P, compact, sun: layers.sun, extra: itemsExtra }), print ? { margin: 12, cartH: 0 } : {});
   const { ax, ay, aw, ah, MARGIN, CART_H } = fr;
   const pad = print ? 14 : 26;
-  const S = Math.min((aw - pad * 2) / wb.width, (ah - pad * 2) / wb.height);
+  const S0 = Math.min((aw - pad * 2) / wb.width, (ah - pad * 2) / wb.height);
+  const S = Number.isFinite(S0) && S0 > 0 ? S0 : 1;
   const ox = ax + (aw - wb.width * S) / 2;
   const oy = ay + (ah - wb.height * S) / 2;
   const tx = (x) => ox + (x - wb.minX) * S;
@@ -394,8 +396,8 @@ export function renderPlanSVG(garden, opts = {}) {
     defs.push(`<linearGradient id="${P}-lot" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#cfe7a8"/><stop offset="1" stop-color="#a9cf7c"/></linearGradient>`);
   }
 
-  if (ghost.size) defs.push(`<filter id="${P}-ghost" x="0" y="0" width="${W}" height="${H}" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">${opts.ghostGray === false ? '' : '<feColorMatrix type="saturate" values="0"/>'}</filter>`);
-  const ghostWrap = (key, svg) => (svg && ghost.has(key) ? `<g data-ghost="${key}" opacity="${ghostOp}" filter="url(#${P}-ghost)">${svg}</g>` : svg);
+  if (ghost.size && !simple) defs.push(`<filter id="${P}-ghost" x="0" y="0" width="${W}" height="${H}" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">${opts.ghostGray === false ? '' : '<feColorMatrix type="saturate" values="0"/>'}</filter>`);
+  const ghostWrap = (key, svg) => (svg && ghost.has(key) ? `<g data-ghost="${key}" opacity="${ghostOp}"${simple ? '' : ` filter="url(#${P}-ghost)"`}>${svg}</g>` : svg);
   const focusGhost = (zid, svg) => (svg && cropZone && zid !== cropZone.id ? `<g data-out-of-focus="1" opacity=".3">${svg}</g>` : svg);
 
   const out = [];
@@ -461,7 +463,7 @@ export function renderPlanSVG(garden, opts = {}) {
     const op = canopy ? 0.45 : illus ? 0.95 : 0.6;
     const geom = (a) => (z.shape.kind === 'circle'
       ? `<circle cx="${f(tx(z.shape.center.x))}" cy="${f(ty(z.shape.center.y))}" r="${f(z.shape.radius * S)}" ${a}/>`
-      : `<polygon points="${pts(poly)}" stroke-linejoin="round" ${a}/>`);
+      : `<polygon points="${pts(poly)}"${/stroke-linejoin=/.test(a) ? '' : ' stroke-linejoin="round"'} ${a}/>`);
     let extra = '';
     const pl = on('plants') || numbering ? placePlants(garden, z, lookup, { age }) : [];
     for (const pp of pl) {
@@ -483,7 +485,7 @@ export function renderPlanSVG(garden, opts = {}) {
     // piscine hors sol : paroi (double contour : liseré sombre, margelle claire, liseré fin) et motif d'eau
     const above = isAbovePool(z);
     const wall = above ? `<g data-pool-wall="1">${geom('fill="none" stroke="#455a64" stroke-width="7" stroke-linejoin="round"')}${geom('fill="none" stroke="#e6e1d6" stroke-width="4.6" stroke-linejoin="round"')}${geom('fill="none" stroke="#455a64" stroke-width="1" stroke-linejoin="round"')}</g>` : '';
-    const zgeom = `${geom(`fill="${fill}" fill-opacity="${op}" stroke="${stroke}" stroke-width="1.4"${canopy ? ' stroke-dasharray="6 3"' : ''}${illus ? ` filter="url(#${P}-shadow)"` : ''}`)}${geom(`fill="url(#${P}-pat-${above ? 'pool-above' : t.id})" fill-opacity="${illus ? 0.35 : 0.8}" stroke="none"`)}${wall}`;
+    const zgeom = `${geom(`fill="${fill}" fill-opacity="${op}" stroke="${stroke}" stroke-width="1.4"${canopy ? ' stroke-dasharray="6 3"' : ''}${illus ? ` filter="url(#${P}-shadow)"` : ''}`)}${simple ? '' : geom(`fill="url(#${P}-pat-${above ? 'pool-above' : t.id})" fill-opacity="${illus ? 0.35 : 0.8}" stroke="none"`)}${wall}`;
     const gopen = `<g data-zone="${esc(z.id)}"${above ? ' data-pool="above"' : ''}>`;
     if (combined) out.push(`${gopen}${zgeom}${extra}</g>`);
     else {
@@ -616,6 +618,6 @@ export function renderPlanSVG(garden, opts = {}) {
 
   const gdefs = grads.defs();
   const descr = describeCommon(garden, lookup);
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-labelledby="${P}-t ${P}-d" font-family="${FONT}"><title id="${P}-t">Plan du jardin « ${esc(garden.name || 'Mon jardin')} »</title><desc id="${P}-d">${esc(descr || 'Plan sans zone.')}</desc><defs>${defs.join('')}${gdefs}${cropZone ? `<clipPath id="${P}-crop"><rect x="${ax}" y="${ay}" width="${f(aw)}" height="${f(ah)}"/></clipPath>` : ''}</defs>${head.join('')}${cropZone ? `<g clip-path="url(#${P}-crop)" data-crop="${esc(cropZone.id)}">${out.join('')}</g>` : out.join('')}${tail.join('')}</svg>`;
+  const svgOut = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-labelledby="${P}-t ${P}-d" font-family="${FONT}"><title id="${P}-t">Plan du jardin « ${esc(garden.name || 'Mon jardin')} »</title><desc id="${P}-d">${esc(descr || 'Plan sans zone.')}</desc><defs>${defs.join('')}${gdefs}${cropZone ? `<clipPath id="${P}-crop"><rect x="${ax}" y="${ay}" width="${f(aw)}" height="${f(ah)}"/></clipPath>` : ''}</defs>${head.join('')}${cropZone ? `<g clip-path="url(#${P}-crop)" data-crop="${esc(cropZone.id)}">${out.join('')}</g>` : out.join('')}${tail.join('')}</svg>`;
+  return cleanSvgNumbers(svgOut);
 }
-

@@ -23,7 +23,7 @@ import { getExistingKind, existingLabel, getFenceMaterial } from './existing.js'
 import { MONTHS, MONTHS_SHORT, OBSTACLE_LABELS, monthLabel } from './render-common.js';
 import { shoppingList, shoppingByPeriod, suppliesList, itemsToBuy, monthsText, SHOPPING_NOTE, LOSS_MARGIN, SUPPLY } from './shopping.js';
 
-export const PDF_DEFAULTS = { format: 'a4', levels: { 1: true, 2: true, 3: true }, zonePages: true, advice: true, shopping: true, photos: true, iso: false, layers: true, month: null };
+export const PDF_DEFAULTS = { simplified: false, format: 'a4', levels: { 1: true, 2: true, 3: true }, zonePages: true, advice: true, shopping: true, photos: true, iso: false, layers: true, month: null };
 
 const fr = (n, d = 1) => (Number.isFinite(n) ? n.toFixed(d).replace('.', ',') : '—');
 const frM = (n) => `${fr(n, 2)} m`;
@@ -140,7 +140,19 @@ export async function buildGardenPdf(garden, options = {}, env = {}) {
   const lookup = lookupFn(env.plantLookup);
   const now = env.now || new Date();
   const rast = env.rasterize;
-  const progress = (label, i = 0, n = 1) => { if (env.onProgress) env.onProgress({ label, step: i, total: n }); };
+  const degraded = []; // pages dont le plan a dû être simplifié (repli automatique)
+  let curStep = '';
+  const dpiMul = opt.simplified ? 0.55 : 1;
+  /** Rastérise un SVG ; si le chargement échoue, retente avec un plan simplifié (sans plantations, sans motifs ni filtres). */
+  const safeRast = async (build, o, label) => {
+    const tryOne = (simple) => rast(build(simple), { ...o, pxWidth: Math.round(o.pxWidth * dpiMul), pxHeight: Math.round(o.pxHeight * dpiMul) });
+    try { return { img: await tryOne(opt.simplified), simplified: !!opt.simplified }; } catch (e) {
+      if (e && e.name === 'AbortError') throw e;
+      if (opt.simplified) { e.step = label; throw e; }
+      try { const img = await tryOne(true); degraded.push(label); return { img, simplified: true }; } catch (e2) { e2.step = label; e2.firstCause = e; throw e2; }
+    }
+  };
+  const progress = (label, i = 0, n = 1) => { curStep = label; if (env.onProgress) env.onProgress({ label, step: i, total: n }); };
   const check = async () => { if (env.signal && env.signal.aborted) throw new PdfAbort(); await tick(); };
   const month = opt.month ? Number(opt.month) : null;
   const facts = gardenFacts(garden, lookup, now);
@@ -193,11 +205,12 @@ export async function buildGardenPdf(garden, options = {}, env = {}) {
 
   // --- pages de plan (paysage) ---
   const planBox = () => { const keyW = opt.format === 'a3' ? 250 : 180; const bx = 22; const by = 46; return { bx, by, bw: planSize.w - 44 - keyW - 12, bh: planSize.h - by - 34, keyX: planSize.w - 22 - keyW, keyW }; };
-  const rasterPlan = async (svgOpts, box, type = 'jpeg', dpi = 200) => {
+  const rasterPlan = async (svgOpts, box, type = 'jpeg', dpi = 200, label = 'plan') => {
     const Wl = Math.round(box.bw / 0.72); const Hl = Math.round(box.bh / 0.72);
-    const svg = renderPlanSVG(garden, { view: 'plan', age: 'adult', month, idPrefix: 'pdf', ...svgOpts, print: true, width: Wl, height: Hl, plantLookup: env.plantLookup, layers: { legend: false, cartouche: false, ...(svgOpts.layers || {}) } });
-    const img = await rast(svg, { width: Wl, height: Hl, pxWidth: Math.round((box.bw / 72) * dpi), pxHeight: Math.round((box.bh / 72) * dpi), type, quality: 0.88 });
-    return { svg, img };
+    const build = (simple) => renderPlanSVG(garden, { view: 'plan', age: 'adult', month, idPrefix: 'pdf', ...svgOpts, print: true, simple, width: Wl, height: Hl, plantLookup: env.plantLookup,
+      layers: { legend: false, cartouche: false, ...(svgOpts.layers || {}), ...(simple ? { plants: false, names: false } : {}) }, ...(simple ? { ghost: svgOpts.ghost } : {}) });
+    const r = await safeRast(build, { width: Wl, height: Hl, pxWidth: Math.round((box.bw / 72) * dpi), pxHeight: Math.round((box.bh / 72) * dpi), type, quality: 0.88 }, label);
+    return { img: r.img, simplified: r.simplified };
   };
   const planHeader = (page, title, sub) => {
     page.text(title, 22, 26, { size: 15, font: 'bold', color: COLORS.dark });
@@ -218,8 +231,9 @@ export async function buildGardenPdf(garden, options = {}, env = {}) {
     prog(`Plan niveau ${level}/3…`);
     const page = doc.addPage(planSize); const box = planBox();
     planHeader(page, title, sub);
-    const { img } = await rasterPlan(svgOpts, box);
+    const { img, simplified } = await rasterPlan(svgOpts, box, 'jpeg', 200, `plan niveau ${level}/3 : chargement de l’image`);
     const id = doc.addImage(img);
+    if (simplified && !opt.simplified) page.text('Plan simplifié (sans plantations ni motifs)', planSize.w - 22, 39, { size: 8, font: 'italic', color: COLORS.warn, align: 'right' });
     page.image(id, box.bx, box.by, box.bw, box.bh);
     page.rect(box.bx, box.by, box.bw, box.bh, { stroke: COLORS.line, lineWidth: 0.6 });
     keyColumn(page, box, keyTitle, rowsFn);
@@ -337,11 +351,11 @@ export async function buildGardenPdf(garden, options = {}, env = {}) {
     for (const [name, on] of defs) {
       if (name === 'Légende') continue;
       const lid = doc.addLayer(name);
-      const { img } = await rasterPlan({ bg: 'none', layers: { ...none, ...on, names: name === 'Mobilier' || name === 'Terrain et existant' }, numbering: name === 'Plantations' ? { species: sp.map } : null }, box, 'rgba', 130);
+      const { img } = await rasterPlan({ bg: 'none', layers: { ...none, ...on, names: name === 'Mobilier' || name === 'Terrain et existant' }, numbering: name === 'Plantations' ? { species: sp.map } : null }, box, 'rgba', 130, `plan à calques : ${name}`);
       page.image(doc.addImage(img), box.bx, box.by, box.bw, box.bh, { layer: lid });
       await check();
     }
-    const { img: fimg } = await rasterPlan({ bg: 'none', layers: { ...none, frame: true } }, box, 'rgba', 130);
+    const { img: fimg } = await rasterPlan({ bg: 'none', layers: { ...none, frame: true } }, box, 'rgba', 130, 'plan à calques : légende');
     const legL = doc.addLayer('Légende');
     page.image(doc.addImage(fimg), box.bx, box.by, box.bw, box.bh, { layer: legL });
     page.layer(legL, () => keyColumn(page, box, 'Légende des essences', (pg, x, y, w, yMax) => {
@@ -380,8 +394,8 @@ export async function buildGardenPdf(garden, options = {}, env = {}) {
       const box = { bw: f.width, bh: 292 };
       const nPlants = (z.plantings || []).reduce((s, q) => s + Math.max(1, Math.round(q.count || 1)), 0);
       const Wl = Math.round(box.bw / 0.72); const Hl = Math.round(box.bh / 0.72);
-      const svg = renderPlanSVG(garden, { view: 'plan', age: 'adult', month, idPrefix: 'pdf', ghost: ['existing', 'items'], crop: { zoneId: z.id, margin: 1.2 }, print: true, width: Wl, height: Hl, plantLookup: env.plantLookup, layers: { legend: false, cartouche: false, dims: false, names: false }, numbering: { species: sp.map, zones: zoneNums, every: nPlants <= 80 } });
-      const img = await rast(svg, { width: Wl, height: Hl, pxWidth: Math.round((box.bw / 72) * 200), pxHeight: Math.round((box.bh / 72) * 200), type: 'jpeg', quality: 0.88 });
+      const build = (simple) => renderPlanSVG(garden, { view: 'plan', age: 'adult', month, idPrefix: 'pdf', ghost: ['existing', 'items'], crop: { zoneId: z.id, margin: 1.2 }, print: true, simple, width: Wl, height: Hl, plantLookup: env.plantLookup, layers: { legend: false, cartouche: false, dims: false, names: false, ...(simple ? { plants: false } : {}) }, numbering: { species: sp.map, zones: zoneNums, every: nPlants <= 80 } });
+      const { img } = await safeRast(build, { width: Wl, height: Hl, pxWidth: Math.round((box.bw / 72) * 200), pxHeight: Math.round((box.bh / 72) * 200), type: 'jpeg', quality: 0.88 }, `fiche de zone ${zi + 1}/${zones.length} : chargement de l’image`);
       f.ensure(box.bh + 6);
       f.page.image(doc.addImage(img), f.x0, f.y, box.bw, box.bh);
       f.page.rect(f.x0, f.y, box.bw, box.bh, { stroke: COLORS.line, lineWidth: 0.6 });
@@ -652,7 +666,7 @@ export async function buildGardenPdf(garden, options = {}, env = {}) {
     f.h1('Vues isométriques');
     const svg = renderContactSheet(garden, { month, age: 'adult', plantLookup: env.plantLookup });
     const bw = Math.min(f.width, (f.bottom - f.y - 4) * (2000 / 2960)); const bh = bw * (2960 / 2000);
-    const img = await rast(svg, { width: 2000, height: 2960, pxWidth: Math.round((bw / 72) * 160), pxHeight: Math.round((bh / 72) * 160), type: 'jpeg', quality: 0.85 });
+    const img = await rast(svg, { width: 2000, height: 2960, pxWidth: Math.round((bw / 72) * 160 * dpiMul), pxHeight: Math.round((bh / 72) * 160 * dpiMul), type: 'jpeg', quality: 0.85 });
     f.page.image(doc.addImage(img), f.x0 + (f.width - bw) / 2, f.y, bw, bh);
     await check();
   }
@@ -671,6 +685,7 @@ export async function buildGardenPdf(garden, options = {}, env = {}) {
       'Zone de rusticité et températures minimales : valeurs moyennes du département, corrigées de l’altitude quand elle est renseignée.',
       'Avant d’abattre un arbre ou de planter près d’une limite de propriété, renseignez-vous sur la réglementation locale.',
     ], { size: 9 });
+    if (degraded.length || opt.simplified) f.bullets([opt.simplified ? 'Document généré en mode simplifié : plans sans plantations ni motifs, résolution réduite.' : `Plan simplifié (sans plantations ni motifs) sur : ${degraded.join(' ; ')}. L’appareil n’a pas pu afficher le plan complet.`], { size: 9 });
     f.h2('Crédits photos');
     if (credits.length) { f.p('Photos : Wikipédia (miniatures, licences libres de leurs auteurs). Pages d’origine :', { size: 8.5 }); f.p(credits.map((c) => `${nom(c.plant)}${c.page ? ` (${c.page.replace(/^https?:\/\//, '')})` : ''}`).join(' ; '), { size: 7.5, color: COLORS.muted }); }
     else f.p('Aucune photo n’est incluse dans ce document : les essences sont représentées par des pastilles de couleur.', { size: 8.5, color: COLORS.muted });
@@ -691,7 +706,7 @@ export async function buildGardenPdf(garden, options = {}, env = {}) {
   await check();
   const bytes = await doc.save();
   const baseName = String(facts.name).normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^\w-]+/g, '_').replace(/^_+|_+$/g, '') || 'jardin';
-  return { bytes, pages: n, filename: `jardin-${baseName}-plan.pdf`, facts, sections: toc.map((t) => ({ title: t.title, page: doc.pages.indexOf(t.page) + 1 })) };
+  return { degraded, bytes, pages: n, filename: `jardin-${baseName}-plan.pdf`, facts, sections: toc.map((t) => ({ title: t.title, page: doc.pages.indexOf(t.page) + 1 })) };
 }
 
 function shapeAreaSafe(z) { try { return shapeArea(z.shape) || 0; } catch { return 0; } }
