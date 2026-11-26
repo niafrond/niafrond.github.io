@@ -8,6 +8,7 @@ import { edgeObstacles } from './items.js';
 import { existingShadowObstacles } from './existing.js';
 import { plantCost } from './pricing.js';
 import { levelForZone, fitsMaintenance, plantEffort, getMaintenanceLevel } from './maintenance.js';
+import { pondFitFor, pondTag, pondArea, pondDepth, pondFit, pondPlantQuantity } from './ponds.js';
 import { getAmbiance, detectAmbiance, plantAmbianceScore, plantAvoids, isTypical } from './ambiances.js';
 
 const SUN_ORDER = { shade: 0, partial: 1, full: 2 };
@@ -66,6 +67,23 @@ export function scorePlant(plant, ctx = {}) {
       score -= 35;
       forceDiscouraged = true;
       add(false, 'zone', `Peu adaptée à ${ZONE_LABEL[ctx.zoneType] || 'ce type de zone'}`);
+    }
+  }
+
+  // Mare : taille et profondeur de la mare (essences aquatiques et de berge étiquetées).
+  let forbidden = false;
+  if (ctx.zoneType === 'pond' && typeof ctx.pondArea === 'number' && pondTag(plant)) {
+    const area = ctx.pondArea;
+    const depth = typeof ctx.pondDepth === 'number' ? ctx.pondDepth : 60;
+    const fit = pondFitFor(plant, area, depth);
+    const areaTxt = `${String(Math.round(area * 10) / 10).replace('.', ',')} m²`;
+    if (fit.level === 'ok') {
+      add(true, 'mare', `Adaptée à une mare de ${areaTxt} (profondeur ${depth} cm)`);
+    } else {
+      forceDiscouraged = true;
+      score -= fit.level === 'forbid' ? 80 : 40;
+      if (fit.level === 'forbid') forbidden = true;
+      add(false, 'mare', `Ne convient pas à une mare de ${areaTxt} : ${fit.reasons.join(' ; ')}`);
     }
   }
 
@@ -153,6 +171,7 @@ export function scorePlant(plant, ctx = {}) {
   let status = score >= 75 ? 'ideal' : score >= 50 ? 'possible' : 'discouraged';
   if (excluded || forceDiscouraged) status = 'discouraged';
   const res = { score, status, reasons, excluded };
+  if (forbidden) res.forbidden = true;
   if (rank !== null) res.rank = rank; // score non plafonné, pour départager les essences à 100
   return res;
 }
@@ -195,6 +214,7 @@ export function contextForZone(garden, zone, { ambiance, maintenance } = {}) {
     windy,
     ambiance: ambiance !== undefined ? ambiance : resolveAmbiance(zone),
     maintenance: maintenance !== undefined ? maintenance : levelForZone(garden, zone),
+    ...(zone.type === 'pond' ? { pondArea: pondArea(zone), pondDepth: pondDepth(zone) } : {}),
   };
 }
 
@@ -205,12 +225,12 @@ export function resolveAmbiance(zone) {
 }
 
 /** Essences conseillées pour une zone, triées par score (les exclusions dures sont toujours retirées). */
-export function recommendForZone(garden, zone, { includeDiscouraged = false, filters, plants, ambiance, maintenance } = {}) {
+export function recommendForZone(garden, zone, { includeDiscouraged = false, includeForbidden = false, filters, plants, ambiance, maintenance } = {}) {
   const ctx = contextForZone(garden, zone, { ambiance, maintenance });
   const list = filterPlants(plants || allPlants(), filters || {});
   return list
     .map((plant) => ({ plant, ...scorePlant(plant, ctx) }))
-    .filter((r) => !r.excluded && (includeDiscouraged || r.status !== 'discouraged'))
+    .filter((r) => !r.excluded && (includeForbidden || !r.forbidden) && (includeDiscouraged || r.status !== 'discouraged'))
     .sort((a, b) => (b.rank ?? b.score) - (a.rank ?? a.score) || PLANT_NAME(a.plant).localeCompare(PLANT_NAME(b.plant), 'fr'));
 }
 
@@ -219,6 +239,7 @@ export function suggestQuantity(plant, zone) {
   const spacing = plant.spacing > 0 ? plant.spacing : plant.widthAdult > 0 ? plant.widthAdult : 1;
   const shape = zone.shape;
   if (!shape) return 1;
+  if (zone.type === 'pond' && pondTag(plant)) return pondPlantQuantity(plant, zone);
   if (shape.kind === 'line') {
     return Math.max(1, Math.round(polyLength(shape.points || []) / spacing));
   }
@@ -355,6 +376,15 @@ export function checkCoherence(garden, { plants } = {}) {
         if (plantEffort(plant) >= 2) {
           out.push({ level: 'warn', zoneId: zone.id, text: `Zone « ${name} » : ${PLANT_NAME(plant)} demande un entretien régulier alors que cette zone est prévue sans entretien` });
         }
+      }
+    }
+
+    // Mare redimensionnée : essences devenues inadaptées.
+    if (zone.type === 'pond') {
+      for (const { plant } of items) {
+        if (plant.invasive) continue;
+        const fit = pondFit(plant, zone);
+        if (!fit.ok) out.push({ level: 'warn', zoneId: zone.id, text: `Mare « ${name} » : ${PLANT_NAME(plant)} ne convient plus (${fit.reasons.join(' ; ')})` });
       }
     }
 

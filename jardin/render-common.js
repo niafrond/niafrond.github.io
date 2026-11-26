@@ -323,8 +323,10 @@ function truncateItems(items, maxH) {
  * Cadre commun : zone de dessin + légende (à droite en paysage, en colonnes sous le plan en portrait).
  * `buildItems(compact)` → éléments de légende. Retourne {ax, ay, aw, ah, MARGIN, CART_H, legendSVG}.
  */
-export function makeFrame(W, H, layers, buildItems) {
-  const MARGIN = 34; const CART_H = 58; const COL_W = 200;
+export function makeFrame(W, H, layers, buildItems, frameOpts = {}) {
+  const MARGIN = frameOpts.margin != null ? frameOpts.margin : 34;
+  const CART_H = frameOpts.cartH != null ? frameOpts.cartH : 58;
+  const COL_W = 200;
   const bottom = !!layers.legend && H > W * 1.05;
   let items = layers.legend ? buildItems(false) : [];
   let LEG_H = 0; let LEG_W = 0; let legCols = [];
