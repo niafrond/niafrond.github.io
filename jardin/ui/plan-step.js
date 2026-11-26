@@ -5,12 +5,13 @@ import { renderViewSVG, renderContactSheet, VIEWS } from '../render3d.js';
 import { monthLabel, MONTHS_SHORT } from '../render-common.js';
 import { validateGarden } from '../model.js';
 import { injectStyles, h, createPanZoom, saveBlob, esc } from './draw-util.js';
+import { adoptWorkshop } from './workshop.js';
 
 const VIEW_W = 1000;
 const VIEWS_MAX_BYTES = 1.5e6; // taille totale maximale du plan + vues enregistrées dans le jardin
 const ISO_VIEWS = ['iso-ne', 'iso-se', 'iso-sw', 'iso-nw'];
 
-export function mountPlanStep(el, { garden, onValidate, onBack, onChange } = {}) {
+export function mountPlanStep(el, { garden, onValidate, onBack, onChange, workshop = null } = {}) {
   injectStyles();
   const g = garden;
   const st = {
@@ -44,6 +45,9 @@ export function mountPlanStep(el, { garden, onValidate, onBack, onChange } = {})
 
   const btn = (label, act, onclick, cls = '', extra = {}) => h('button', { type: 'button', class: `jd-btn ${cls}`, 'data-act': act, onclick, ...extra }, label);
   const pz = createPanZoom(view, content);
+  let wsx = null; // atelier plein écran (voir ui/workshop.js)
+  let wsRo = null;
+  let userMoved = false; // le plan a été déplacé ou zoomé à la main : on ne le recadre plus tout seul
 
   const seasonText = () => (st.month ? MONTHS_SHORT[st.month - 1] : monthLabel(null));
   const svgString = (opts = {}) => {
@@ -54,13 +58,21 @@ export function mountPlanStep(el, { garden, onValidate, onBack, onChange } = {})
     const r = view.getBoundingClientRect();
     if (r.width > 50 && r.height > 50) VIEW_H = Math.round(Math.min(1500, Math.max(640, (VIEW_W * r.height) / r.width)));
   };
+  // en atelier : le plan se cadre sous la rangée des vues (≈ 56 px), centré dans l'espace restant
+  const fitPlan = () => {
+    if (!wsx) { pz.fit(VIEW_W, VIEW_H); return; }
+    const r = view.getBoundingClientRect();
+    const W = r.width || 390; const H = r.height || 500; const top = 56;
+    const k = Math.max(0.05, Math.min(W / VIEW_W, (H - top) / VIEW_H) * 0.97);
+    pz.state.k = k; pz.state.x = (W - VIEW_W * k) / 2; pz.state.y = top + (H - top - VIEW_H * k) / 2; pz.apply();
+  };
   const render = (refit = false) => {
     if (destroyed) return;
     sizeToView();
     content.innerHTML = svgString();
     const svg = content.querySelector('svg');
     if (svg) { svg.style.display = 'block'; }
-    if (refit) pz.fit(VIEW_W, VIEW_H);
+    if (refit) fitPlan();
   };
 
   const say = (m, k = '') => { st.msg = m; st.msgKind = k; msgEl.textContent = m; msgEl.className = `jd-msg ${k}`; };
@@ -82,11 +94,10 @@ export function mountPlanStep(el, { garden, onValidate, onBack, onChange } = {})
     }
   }
 
-  zoom.append(
-    btn('＋', 'zoom-in', () => pz.zoomBy(1.4), '', { 'aria-label': 'Zoom avant' }),
-    btn('－', 'zoom-out', () => pz.zoomBy(1 / 1.4), '', { 'aria-label': 'Zoom arrière' }),
-    btn('⤢', 'zoom-fit', () => pz.fit(VIEW_W, VIEW_H), '', { 'aria-label': 'Ajuster à l\'écran' }),
-  );
+  const zIn = btn('＋', 'zoom-in', () => pz.zoomBy(1.4), '', { 'aria-label': 'Zoom avant' });
+  const zOut = btn('－', 'zoom-out', () => pz.zoomBy(1 / 1.4), '', { 'aria-label': 'Zoom arrière' });
+  const zFit = btn('⤢', 'zoom-fit', () => { userMoved = false; fitPlan(); }, '', { 'aria-label': 'Ajuster à l\'écran' });
+  zoom.append(zIn, zOut, zFit);
 
   const baseName = () => (g.name || 'jardin').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '').toLowerCase() || 'jardin';
 
@@ -130,12 +141,14 @@ export function mountPlanStep(el, { garden, onValidate, onBack, onChange } = {})
       issues.hidden = false;
       issues.append(h('h3', {}, 'Le plan ne peut pas être validé'), h('ul', { class: 'jd-warns', style: { color: 'var(--jd-err)' } }, v.errors.map((e) => h('li', {}, e))), h('div', { class: 'jd-msg' }, 'Corrigez ces points avec « Modifier », puis revalidez.'));
       say('Validation impossible.', 'err');
+      if (wsx) wsx.sync();
       return false;
     }
     if (v.warnings.length) {
       issues.hidden = false;
       issues.append(h('h3', {}, 'Points d\'attention'), h('ul', { class: 'jd-warns' }, v.warnings.map((w) => h('li', {}, w))));
     } else issues.hidden = true;
+    if (wsx) wsx.sync();
     g.status = 'validated';
     const layers = { dims: true, legend: true, sun: false, names: true };
     const plan = { ...(g.plan || {}), svg: renderPlanSVG(g, { view: 'plan', age: 'adult', month: st.month, layers, width: VIEW_W, height: VIEW_H }), validatedAt: new Date().toISOString() };
@@ -155,33 +168,78 @@ export function mountPlanStep(el, { garden, onValidate, onBack, onChange } = {})
     return true;
   }
 
+  const goAdvice = () => { location.hash = `#/garden/${encodeURIComponent(g.id)}/advice`; };
   function buildActions() {
     actions.innerHTML = '';
-    actions.append(
-      btn('← Modifier', 'back', () => { if (onBack) onBack(); }),
-      btn('⬇ SVG', 'export-svg', exportSVG),
-      btn('🖼 PNG', 'export-png', exportPNG),
-      btn('🧭 Toutes les vues', 'export-sheet', exportSheet),
-      btn('📄 PDF du jardin', 'export-pdf', () => import('./pdf-dialog.js').then((m) => m.openPdfDialog({ garden: g }))),
-      btn(g.status === 'validated' ? '✅ Revalider le plan' : '✅ Valider le plan', 'validate', validate, 'primary'),
-    );
+    const bPdf = btn('📄 PDF du jardin', 'export-pdf', () => import('./pdf-dialog.js').then((m) => m.openPdfDialog({ garden: g })), wsx ? 'primary' : '');
+    const bSvg = btn('⬇ SVG', 'export-svg', exportSVG);
+    const bPng = btn('🖼 PNG', 'export-png', exportPNG);
+    const bSheet = btn('🧭 Toutes les vues', 'export-sheet', exportSheet);
+    const validated = g.status === 'validated';
+    if (wsx) {
+      // Rendu en atelier : exports dans l'onglet « Exporter », « ← Modifier » et « Valider » dans la barre du bas
+      actions.append(bPdf, bSvg, bPng, bSheet);
+      const fb = (label, act, fn, cls = '') => h('button', { type: 'button', class: `btn ${cls}`.trim(), 'data-act': act, onclick: fn }, label);
+      if (validated) actions.append(btn('✅ Revalider le plan', 'validate', validate));
+      wsx.setFooter([
+        fb('← Modifier', 'back', () => { if (onBack) onBack(); }),
+        validated ? fb('Conseils →', 'to-advice', goAdvice, 'btn-primary') : fb('✅ Valider le plan', 'validate', validate, 'btn-primary'),
+      ]);
+    } else {
+      actions.append(
+        btn('← Modifier', 'back', () => { if (onBack) onBack(); }),
+        bSvg, bPng, bSheet, bPdf,
+        btn(validated ? '✅ Revalider le plan' : '✅ Valider le plan', 'validate', validate, 'primary'),
+      );
+    }
     // Vue 3D temps réel (WebGL2) : PC et mobile quand l'appareil le permet (qualité adaptée).
     import('./view3d.js').then((m) => {
       const { mountView3D } = m;
       const capable = m.isView3DCapable || m.isDesktop3DCapable;
       if (destroyed || !capable()) return;
-      const b3 = btn('🧊 Vue 3D', 'view3d', () => {
+      const open3d = () => {
         const overlay = h('div', { class: 'jd-view3d-overlay', style: { position: 'fixed', inset: '0', zIndex: '1000', background: '#0b1410' } });
         document.body.append(overlay);
         let un = null;
         const close = () => { try { if (un) un(); } catch { /* déjà démonté */ } overlay.remove(); };
         un = mountView3D(overlay, { garden: g, onClose: close });
-      });
-      actions.insertBefore(b3, actions.lastChild);
+      };
+      if (wsx && wsx.fab) {
+        const old = wsx.fab.querySelector('[data-act=view3d]'); if (old) old.remove();
+        wsx.fab.append(btn('🧊', 'view3d', open3d, 'is-round3d', { 'aria-label': 'Vue 3D', title: 'Vue 3D' }));
+      } else {
+        const b3 = btn('🧊 Vue 3D', 'view3d', open3d);
+        actions.insertBefore(b3, actions.lastChild);
+      }
     }).catch(() => { /* module absent : pas de vue 3D */ });
   }
 
   seasonOut.textContent = seasonText();
+  wsx = adoptWorkshop(root, {
+    wrap: view, canvas: view, tools: [vueBar], fab: [zIn, zOut, zFit],
+    tabs: [{ id: 'view', label: 'Affichage', nodes: [bar, seasonBar, details] }, { id: 'export', label: 'Exporter', nodes: [actions] }],
+    sheetTop: [issues, msgEl], label: 'Rendu : affichage et exports',
+    want: () => ({ key: `render|${!issues.hidden}`, state: 'half' }),
+  });
+  if (wsx) {
+    if (!issues.hidden) wsx.sheet.selectTab('export');
+    // le plan reste cadré et centré quand la feuille monte ou descend (sauf s'il a été déplacé à la main)
+    view.addEventListener('pointerdown', () => { userMoved = true; });
+    view.addEventListener('wheel', () => { userMoved = true; }, { passive: true });
+    if (typeof ResizeObserver !== 'undefined') {
+      let lw = 0; let lh = 0;
+      wsRo = new ResizeObserver(() => {
+        const r = view.getBoundingClientRect();
+        if (r.width < 50 || r.height < 50 || destroyed) return;
+        if (lw && lh && (r.width !== lw || r.height !== lh)) {
+          if (!userMoved) render(true);
+          else { pz.state.x += (r.width - lw) / 2; pz.state.y += (r.height - lh) / 2; pz.apply(); }
+        }
+        lw = r.width; lh = r.height;
+      });
+      wsRo.observe(view);
+    }
+  }
   buildBar(); buildActions(); render();
   if (g.status === 'validated' && g.plan && g.plan.validatedAt) say(`Plan validé le ${new Date(g.plan.validatedAt).toLocaleDateString('fr-FR')}.`);
   const onResize = () => { if (!destroyed) render(true); };
@@ -190,5 +248,5 @@ export function mountPlanStep(el, { garden, onValidate, onBack, onChange } = {})
   requestAnimationFrame(refit);
   setTimeout(refit, 80);
   void esc;
-  return function unmount() { destroyed = true; window.removeEventListener('resize', onResize); pz.destroy(); el.innerHTML = ''; };
+  return function unmount() { destroyed = true; window.removeEventListener('resize', onResize); if (wsRo) wsRo.disconnect(); if (wsx) wsx.destroy(); pz.destroy(); el.innerHTML = ''; };
 }

@@ -6,6 +6,7 @@ import {
   injectStyles, h, createCanvas, gridPath, clone, fr,
 } from './draw-util.js';
 import { attachNorthBadge } from './north-pop.js';
+import { adoptWorkshop } from './workshop.js';
 
 const NS = 'vector-effect="non-scaling-stroke"';
 const COLORS = { full: '#ffc107', partial: '#ff8f00', shade: '#5c6bc0' };
@@ -54,6 +55,17 @@ export function mountSunPainter(el, { garden, onChange } = {}) {
   north = attachNorthBadge(wrap, { garden: g, onChange: () => { if (onChange) onChange(g); } });
   cv.svg.setAttribute('aria-label', 'Carte d\'ensoleillement');
   const fitView = () => { if (g.boundary && g.boundary.length >= 3) cv.fit(bounds(g.boundary), 1.25); else { cv.view.cx = 5; cv.view.cy = 4; cv.view.mpp = 0.04; cv.apply(); } };
+  const zOut = btn('－', 'zoom-out', () => cv.zoomCenter(1 / 1.4), '', { 'aria-label': 'Zoom arrière' });
+  const zIn = btn('＋', 'zoom-in', () => cv.zoomCenter(1.4), '', { 'aria-label': 'Zoom avant' });
+  const zFit = btn('⤢', 'fit', fitView, '', { 'aria-label': 'Recentrer' });
+  // atelier plein écran (mode « carte détaillée ») : pinceau et niveaux en rangée sur le plan, choix du mode dans la feuille
+  const stepBody = el.closest ? el.closest('.step-body') : null;
+  const modeCard = stepBody ? stepBody.querySelector(':scope > section.card') : null;
+  const sunNotice = el.parentNode && el.parentNode.querySelector ? el.parentNode.querySelector(':scope > .notice') : null;
+  const wsx = adoptWorkshop(root, {
+    wrap, tools: [tools], fab: [zIn, zOut, zFit], summary: legend, sheet: [modeCard, sunNotice, modes, msgEl], label: 'Soleil : mode et aide',
+    want: () => ({ key: 'sun', state: 'peek' }),
+  });
 
   const inside = (p) => !(g.boundary && g.boundary.length >= 3) || pointInPolygon(p, g.boundary);
 
@@ -164,11 +176,7 @@ export function mountSunPainter(el, { garden, onChange } = {}) {
     } else {
       tools.append(h('span', { class: 'jd-msg' }, 'Aucune essence ne sera exclue sur ce critère, mais un avertissement s\'affichera.'));
     }
-    tools.append(
-      btn('－', 'zoom-out', () => cv.zoomCenter(1 / 1.4), '', { 'aria-label': 'Zoom arrière' }),
-      btn('＋', 'zoom-in', () => cv.zoomCenter(1.4), '', { 'aria-label': 'Zoom avant' }),
-      btn('⤢', 'fit', fitView, '', { 'aria-label': 'Recentrer' }),
-    );
+    if (!wsx) tools.append(zOut, zIn, zFit);
     legend.innerHTML = '';
     const area = {};
     for (const rg of g.sun.regions) area[rg.level] = (area[rg.level] || 0) + polygonArea(rg.points);
@@ -180,5 +188,5 @@ export function mountSunPainter(el, { garden, onChange } = {}) {
   requestAnimationFrame(() => { if (!destroyed) fitView(); });
   setTimeout(() => { if (!destroyed) fitView(); }, 60);
   void inside;
-  return function unmount() { destroyed = true; if (north) north.destroy(); cv.destroy(); el.innerHTML = ''; };
+  return function unmount() { destroyed = true; if (north) north.destroy(); if (wsx) wsx.destroy(); cv.destroy(); el.innerHTML = ''; };
 }

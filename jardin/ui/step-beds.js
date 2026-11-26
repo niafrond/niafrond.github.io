@@ -14,6 +14,7 @@ import { openAmbiancePicker, ambianceOf } from './ambiance-picker.js';
 import { formatEuro } from '../pricing.js';
 import { OBSTACLE_LABELS } from '../render-common.js';
 import { bedColor, bedCard, settingsPanel, createThumbLoader, bloomMonthsOf, monthsText } from './beds-panel.js';
+import { adoptWorkshop } from './workshop.js';
 
 const MIN_AREA = 2;
 const PROGRESS_AFTER_MS = 300;
@@ -63,7 +64,7 @@ function bedFromZone(z) {
 }
 
 export function mountBeds(el, {
-  garden, onChange, navigate, getPhoto = getPlantPhoto, IO, plants,
+  garden, onChange, navigate, getPhoto = getPlantPhoto, IO, plants, workshop = null,
 } = {}) {
   injectStyles(); injectBedStyles();
   const change = () => { if (onChange) onChange(garden); };
@@ -132,6 +133,7 @@ export function mountBeds(el, {
 
   // ------------------------------------------------------------ mode auto
   function renderAuto() {
+    let wsx = null; // atelier plein écran (plan plein espace, réglages et massifs dans la feuille)
     const root = h('div', { class: 'beds-auto', 'data-role': 'beds-auto' });
     const head = h('section', { class: 'card beds-intro' },
       h('h2', null, '🌸 Massifs calculés par l’app'),
@@ -284,6 +286,7 @@ export function mountBeds(el, {
       bValidate.textContent = applied ? '✔ Revalider ces massifs' : '✔ Valider ces massifs';
       drawPlan();
       if (cards) renderCards();
+      if (wsx) wsx.sync();
     }
     function renderCards() {
       if (thumbs) thumbs.destroy();
@@ -438,7 +441,12 @@ export function mountBeds(el, {
 
     root.append(head, plan, legend, panel.el, actions, results);
     el.replaceChildren(root);
-    cleanup.push(() => { cv.destroy(); if (north) north.destroy(); });
+    wsx = adoptWorkshop(root, {
+      wrap, canvas: plan, fab: [...zoomBox.children], summary: legend, primary: bCompute, sheet: [panel.el, actions, results, head],
+      label: 'Massifs : réglages et propositions',
+      want: () => ({ key: `beds|${beds.length ? 1 : 0}`, state: beds.length ? 'half' : 'peek' }),
+    });
+    cleanup.push(() => { if (wsx) wsx.destroy(); cv.destroy(); if (north) north.destroy(); });
     lastFree = freeNow();
     refresh();
     if (hasContour() && lastFree && lastFree.freeArea < MIN_AREA && !beds.length) setMsg(NO_SPACE, 'warn');
@@ -450,6 +458,7 @@ export function mountBeds(el, {
   function mode() {
     cleanup.forEach((f) => { try { f(); } catch { /* */ } }); cleanup = [];
     if (thumbs) { thumbs.destroy(); thumbs = null; }
+    if (workshop) workshop.set(bedModeOf(garden) === 'auto');
     if (bedModeOf(garden) === 'auto') renderAuto(); else renderManual();
   }
   void shapeBounds; void bloomMonthsOf; void monthsText;

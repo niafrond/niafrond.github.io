@@ -289,3 +289,14 @@
 
 .jd-hfield .jd-flabel { flex: 1 1 100%; }
 .jd-hfield .jd-hinput { width: 84px; flex: 0 0 84px; }
+
+/* Relevé GPS : écran très court (paysage) → commandes plus compactes */
+@media (max-height: 480px) {
+  .jd-sbig { min-height: 52px; font-size: 18px; }
+  .jd-sinstr { font-size: 15px; margin-top: 2px; }
+  .jd-shead { padding-bottom: 4px; }
+  .jd-sfoot { padding-bottom: max(6px, env(safe-area-inset-bottom)); }
+  .jd-sfoot .jd-srow { margin-top: 4px; }
+  .jd-sguide { padding: 8px 12px; top: 6px; }
+  .jd-ssteps { font-size: 15px; line-height: 1.25; }
+}

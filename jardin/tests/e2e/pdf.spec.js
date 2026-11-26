@@ -1,5 +1,6 @@
 // Export PDF complet : jardin riche → « PDF du jardin » → téléchargement → relecture du fichier.
 import { test, expect } from '@playwright/test';
+import { ouvrirOnglet } from './helpers.js';
 import fs from 'node:fs';
 import { execFileSync } from 'node:child_process';
 
@@ -45,7 +46,8 @@ test('PDF du jardin : génération, téléchargement, relecture', async ({ page 
   await page.route('https://fr.wikipedia.org/api/rest_v1/page/summary/**', (route) => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ type: 'standard', thumbnail: { source: PNG }, content_urls: { desktop: { page: 'https://fr.wikipedia.org/wiki/Test' } } }) }));
   const id = await jardinRiche(page);
   await page.goto(`${URL}#/garden/${id}/render`);
-  await page.waitForSelector('[data-act=export-pdf]');
+  await page.waitForSelector('[data-role=plan-step]');
+  await ouvrirOnglet(page, 'export');
   await page.locator('[data-act=export-pdf]').click();
   await expect(page.locator('[data-role=pdf-dialog]')).toBeVisible();
   await page.locator('[data-act=pdf-go]').click();
@@ -121,7 +123,8 @@ async function jardinLourd(page) {
 }
 async function lancer(page, id, { simple = false } = {}) {
   await page.goto(`${URL}#/garden/${id}/render`);
-  await page.waitForSelector('[data-act=export-pdf]');
+  await page.waitForSelector('[data-role=plan-step]');
+  await ouvrirOnglet(page, 'export');
   await page.locator('[data-act=export-pdf]').click();
   await page.locator('[data-act=pdf-go]').click();
   if (simple) return;

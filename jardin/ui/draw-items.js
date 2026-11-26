@@ -18,6 +18,7 @@ import { createPop } from './pop.js';
 import { heightField } from './height-field.js';
 import { itemHeight, defaultItemHeight, checkHeight, heightMessage, formatHeight } from '../heights.js';
 import { attachNorthBadge } from './north-pop.js';
+import { adoptWorkshop } from './workshop.js';
 
 const NS = 'vector-effect="non-scaling-stroke"';
 const GRIDS = [0.1, 0.5, 0];
@@ -133,6 +134,17 @@ export function mountItemEditor(el, { garden, onChange } = {}) {
   const cv = createCanvas(wrap, { onView: () => draw(), handlers: { down: onDown, tap: onTap, hover: onHover, long: onLong } });
   wrap.append(startEl);
   cv.svg.append(gGrid, gMain, gTop);
+  // atelier plein écran : onglets et outils en rangée sur le plan, palette et sélection dans la feuille
+  const wsx = adoptWorkshop(root, {
+    wrap, tools: [tabs, bar], fab: [bZoomIn, bZoomOut, bFit], summary: info,
+    sheet: [startEl, detail, msgEl, panel], label: 'Aménagements : palette et réglages',
+    want: () => {
+      const sel = detail.childElementCount > 0;
+      const placing = (st.tab === 'furniture' && !!st.kind) || (st.tab === 'existing' && !!st.exKind) || (st.tab === 'edges' && !!st.draft);
+      const key = [st.tab, st.sel ? `${st.sel.t}:${st.sel.id ?? st.sel.i}` : '', !startEl.hidden, placing].join('|');
+      return { key, state: sel || !startEl.hidden ? 'half' : placing ? 'peek' : 'half' };
+    },
+  });
   north = attachNorthBadge(wrap, { garden: g, onChange: () => { if (onChange) onChange(g); } });
   cv.svg.setAttribute('aria-label', 'Plan du terrain : aménagements');
   const pop = createPop(wrap, { onClose: () => draw(), onWarn: (m) => say(m, 'warn') });
@@ -1018,6 +1030,7 @@ export function mountItemEditor(el, { garden, onChange } = {}) {
     const sp = startText();
     startEl.hidden = !sp;
     if (sp) startEl.replaceChildren(h('b', null, sp[0]), sp[1]);
+    if (wsx) wsx.sync();
   }
 
   // ---------- démarrage ----------
@@ -1030,6 +1043,7 @@ export function mountItemEditor(el, { garden, onChange } = {}) {
     destroyed = true;
     try { pop.close(); } catch { /* déjà fermé */ }
     if (north) north.destroy();
+    if (wsx) wsx.destroy();
     try { cv.destroy(); } catch { /* ok */ }
     root.remove();
   };

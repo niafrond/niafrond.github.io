@@ -169,13 +169,19 @@ export function createCanvas(wrap, { onView, handlers = {} } = {}) {
     apply();
   };
   const panPx = (dx, dy) => { view.cx -= dx * view.mpp; view.cy -= dy * view.mpp; apply(); };
+  // atelier plein écran : la rangée d'outils (≈ 56 px) recouvre le haut du plan, on cadre dans l'espace libre
+  const topInset = () => {
+    const ed = wrap.closest ? wrap.closest('.ws-editor') : null;
+    return ed && ed.dataset.wsTools === '1' && wrap.closest('.ws-on') ? 56 : 0;
+  };
   const fit = (b, margin = 1.15) => {
     measure();
     const w = Math.max(b.width || 0, 2);
     const hh = Math.max(b.height || 0, 2);
+    const inset = Math.min(topInset(), rect.height / 3);
+    view.mpp = clampMpp(Math.max(w / rect.width, hh / Math.max(1, rect.height - inset)) * margin);
     view.cx = b.minX + (b.width || 0) / 2;
-    view.cy = b.minY + (b.height || 0) / 2;
-    view.mpp = clampMpp(Math.max(w / rect.width, hh / rect.height) * margin);
+    view.cy = b.minY + (b.height || 0) / 2 - (inset / 2) * view.mpp;
     apply();
   };
   const zoomCenter = (factor) => { measure(); zoomAt(rect.left + rect.width / 2, rect.top + rect.height / 2, factor); };
@@ -274,12 +280,31 @@ export function createCanvas(wrap, { onView, handlers = {} } = {}) {
   svg.addEventListener('wheel', onWheel, { passive: false });
   svg.addEventListener('contextmenu', (e) => e.preventDefault());
   let ro = null;
-  if (typeof ResizeObserver !== 'undefined') { ro = new ResizeObserver(() => apply()); ro.observe(wrap); }
+  let detach = null;
+  if (typeof ResizeObserver !== 'undefined') {
+    // Atelier plein écran : quand la feuille monte ou descend, le plan ne glisse pas sous le doigt
+    // (le coin haut-gauche reste ancré ; la feuille recouvre ou découvre le bas).
+    let prev = null;
+    const onResize = () => {
+      const r = svg.getBoundingClientRect();
+      if (prev && r.width > 0 && r.height > 0 && wrap.closest && wrap.closest('.ws-on')) {
+        view.cx += ((r.width - prev.w) / 2) * view.mpp;
+        view.cy += ((r.height - prev.h) / 2) * view.mpp;
+      }
+      if (r.width > 0 && r.height > 0) prev = { w: r.width, h: r.height };
+      apply();
+    };
+    ro = new ResizeObserver(onResize);
+    // la feuille de l'atelier prévient tout de suite (sans attendre le prochain cadre) : plan et viewBox restent cohérents
+    window.addEventListener('ws-layout', onResize);
+    detach = () => window.removeEventListener('ws-layout', onResize);
+    ro.observe(wrap);
+  }
 
   return {
     svg, view, apply, fit, zoomCenter, toWorld, panPx, zoomAt,
     px: (n) => n * view.mpp, // pixels → mètres
-    destroy() { if (ro) ro.disconnect(); svg.remove(); },
+    destroy() { if (ro) ro.disconnect(); if (detach) detach(); svg.remove(); },
   };
 }
 
