@@ -99,9 +99,19 @@ export function openPreview(garden, { zoneId = null, tab = 'zones', onClose, onS
     const pz = createPanZoom(view, content);
     const zbtn = (label, aria, fn) => el('button', { type: 'button', class: 'pv-btn', 'aria-label': aria, onclick: fn }, label);
     view.append(el('div', { class: 'pv-zoom' },
-      zbtn('＋', 'Zoom avant', () => pz.zoomBy(1.4)), zbtn('－', 'Zoom arrière', () => pz.zoomBy(1 / 1.4)), zbtn('⤢', 'Ajuster à l’écran', () => pz.fit(W, H))));
+      zbtn('＋', 'Zoom avant', () => pz.zoomBy(1.4)), zbtn('－', 'Zoom arrière', () => pz.zoomBy(1 / 1.4)), zbtn('⤢', 'Ajuster à l’écran', () => pz.fit(W, v.vh))));
     host.append(view);
-    const v = { content, view, pz, set(svg) { content.innerHTML = svg; pz.fit(W, H); } };
+    const v = {
+      content, view, pz, vh: H,
+      // `fn(hauteur)` rend le SVG à la hauteur qui épouse le cadre visible (pas de grandes marges vides)
+      set(fn) {
+        const r = view.getBoundingClientRect();
+        if (r.width > 50 && r.height > 50) v.vh = Math.round(Math.min(1500, Math.max(640, (W * r.height) / r.width)));
+        content.style.height = `${v.vh}px`;
+        content.innerHTML = fn(v.vh);
+        pz.fit(W, v.vh);
+      },
+    };
     viewers.push(v);
     return v;
   }
@@ -131,7 +141,7 @@ export function openPreview(garden, { zoneId = null, tab = 'zones', onClose, onS
     legendBox.replaceChildren(el('strong', null, 'Essences'), ...(blocks.length ? blocks : [el('p', { class: 'pv-info' }, 'Aucune essence choisie pour l’instant.')]));
   }
   function renderZones() {
-    zonesView.set(renderPlanSVG(garden, { view: 'illustrated', width: W, height: H, idPrefix: 'pvp', layers: { legend: false, dims: false } }));
+    zonesView.set((vh) => renderPlanSVG(garden, { view: 'illustrated', width: W, height: vh, idPrefix: 'pvp', layers: { legend: false, dims: false } }));
     paintSelection(); paintLegend();
   }
   function selectZone(id, notify = true) {
@@ -175,7 +185,7 @@ export function openPreview(garden, { zoneId = null, tab = 'zones', onClose, onS
     host3d.hidden = true; fallbackBox.hidden = false;
     fallbackBox.replaceChildren(el('p', { class: 'pv-msg', role: 'status', 'data-role': 'preview-3d-unavailable' }, 'Vue 3D indisponible sur cet appareil. Voici la vue isométrique à la place.'));
     fallbackView = viewer(fallbackBox);
-    fallbackView.set(renderViewSVG(garden, { view: 'iso-ne', width: W, height: H, idPrefix: 'pv3' }));
+    fallbackView.set((vh) => renderViewSVG(garden, { view: 'iso-ne', width: W, height: vh, idPrefix: 'pv3', layers: { legend: false, cartouche: false } }));
   }
   function stop3d() {
     if (!un3d) return;
@@ -191,7 +201,7 @@ export function openPreview(garden, { zoneId = null, tab = 'zones', onClose, onS
   function renderIso() {
     isoBar.replaceChildren(...ISO.map((v) => el('button', { type: 'button', class: 'pv-btn', 'data-view': v.id, 'aria-pressed': String(v.id === isoView),
       onclick: () => { isoView = v.id; renderIso(); } }, v.label)));
-    isoView_.set(renderViewSVG(garden, { view: isoView, width: W, height: H, idPrefix: 'pvi' }));
+    isoView_.set((vh) => renderViewSVG(garden, { view: isoView, width: W, height: vh, idPrefix: 'pvi', layers: { legend: false, cartouche: false } }));
   }
 
   // ---------- onglets ----------
@@ -207,10 +217,10 @@ export function openPreview(garden, { zoneId = null, tab = 'zones', onClose, onS
     if (id === 'zones') renderZones();
     else if (id === 'iso') renderIso();
     else if (id === '3d') {
-      if (fallbackView) { fallbackView.set(renderViewSVG(garden, { view: 'iso-ne', width: W, height: H, idPrefix: 'pv3' })); }
+      if (fallbackView) { fallbackView.set((vh) => renderViewSVG(garden, { view: 'iso-ne', width: W, height: vh, idPrefix: 'pv3', layers: { legend: false, cartouche: false } })); }
       start3d();
     }
-    if (id !== '3d') requestAnimationFrame(() => { if (!disposed) viewers.forEach((v) => { if (v.view.offsetParent) v.pz.fit(W, H); }); });
+    if (id !== '3d') requestAnimationFrame(() => { if (!disposed) viewers.forEach((v) => { if (v.view.offsetParent) v.pz.fit(W, v.vh); }); });
   }
 
   // ---------- fermeture : bouton, Échap, retour Android ----------

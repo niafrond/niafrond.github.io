@@ -360,7 +360,7 @@ export function mountPlants(el, { garden, onChange, getPhoto = getPlantPhoto, IO
             } }, 'Ajouter')])));
     });
     drawPond();
-    moreBox.replaceChildren(recs.length > limit ? h('button', { class: 'btn btn-block', type: 'button', onclick: () => { limit += PAGE; drawList(); } }, `Afficher plus (${recs.length - limit} restantes)`) : null);
+    moreBox.replaceChildren(...[recs.length > limit ? h('button', { class: 'btn btn-block', type: 'button', onclick: () => { limit += PAGE; drawList(); } }, `Afficher plus (${recs.length - limit} restantes)`) : null].filter(Boolean));
   }
 
   // ---------- mare : profondeur, résumé, essences écartées, bandeau après redimensionnement ----------
@@ -471,7 +471,7 @@ export function mountPlants(el, { garden, onChange, getPhoto = getPlantPhoto, IO
     const z = zone();
     Array.from(zoneSel.options).forEach((o) => { const q = garden.zones.find((x) => x.id === o.value); if (q) o.textContent = optLabel(q); });
     const amb = ambianceOf(zoneAmbiance(z));
-    zoneHead.replaceChildren(
+    zoneHead.replaceChildren(...[
       h('div', { class: 'zone-head-txt' },
         h('strong', { 'data-role': 'zone-head-name' }, z.label || 'Zone', z.auto ? h('span', { class: 'auto-badge', 'data-role': 'auto-badge', title: 'Massif calculé par l’app' }, '✨ auto') : null),
         h('span', { class: 'amb-tag', 'data-role': 'zone-head-ambiance' }, amb ? `${amb.emoji} ambiance ${amb.label.toLowerCase()}` : 'Ambiance : peu importe')),
@@ -480,7 +480,7 @@ export function mountPlants(el, { garden, onChange, getPhoto = getPlantPhoto, IO
       zoneMaintenancePicker(garden, z, { onChange: () => { limit = PAGE; refresh(); } }),
       z.auto && z.autoInfo && z.autoInfo.why ? h('div', { class: 'auto-info', 'data-role': 'auto-info' },
         h('p', null, z.autoInfo.why),
-        h('button', { class: 'btn btn-sm', type: 'button', 'data-act': 'recalc-bed', onclick: recalcBed }, '🎲 Recalculer ce massif')) : null);
+        h('button', { class: 'btn btn-sm', type: 'button', 'data-act': 'recalc-bed', onclick: recalcBed }, '🎲 Recalculer ce massif')) : null].filter(Boolean));
     let a = 0; try { a = shapeArea(z.shape); } catch { /* */ }
     const t = getZoneType(z.type);
     zoneInfo.textContent = `${t ? t.label : z.type} · ${a.toFixed(a < 10 ? 1 : 0).replace('.', ',')} m²`;

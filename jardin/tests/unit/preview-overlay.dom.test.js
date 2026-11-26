@@ -34,7 +34,7 @@ test('onglets, zone en cours et légende des essences', () => {
   root.querySelector('[data-tab=iso]').click();
   expect(root.querySelector('[data-panel=iso]').hidden).toBe(false);
   expect(root.querySelector('[data-panel=iso] svg')).toBeTruthy();
-  expect(root.querySelectorAll('[data-view]')).toHaveLength(4);
+  expect(root.querySelectorAll('button[data-view]')).toHaveLength(4);
   pv.close();
 });
 

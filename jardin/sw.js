@@ -13,6 +13,7 @@ const FILES = [
   'habits.js', 'data/plants/habits-tags.js',
   'maintenance.js', 'ui/maintenance-picker.js',
   'massifs.js', 'ui/step-beds.js', 'ui/beds-panel.js', 'ui/beds.css',
+  'ponds.js', 'data/plants/pond-tags.js', 'ui/preview-overlay.js',
   'existing.js', 'ui/existing-panel.js', 'heights.js', 'ui/height-field.js',
 ];
 
