@@ -162,6 +162,7 @@ export function mountPlanStep(el, { garden, onValidate, onBack, onChange } = {})
       btn('⬇ SVG', 'export-svg', exportSVG),
       btn('🖼 PNG', 'export-png', exportPNG),
       btn('🧭 Toutes les vues', 'export-sheet', exportSheet),
+      btn('📄 PDF du jardin', 'export-pdf', () => import('./pdf-dialog.js').then((m) => m.openPdfDialog({ garden: g }))),
       btn(g.status === 'validated' ? '✅ Revalider le plan' : '✅ Valider le plan', 'validate', validate, 'primary'),
     );
     // Vue 3D temps réel (WebGL2) : PC et mobile quand l'appareil le permet (qualité adaptée).
