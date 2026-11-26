@@ -1,3 +1,9 @@
+## [3.45.0](https://github.com/niafrond/niafrond.github.io/compare/v3.44.0...v3.45.0) (2026-11-26)
+
+### Features
+
+* **jardin:** export PDF multi-niveaux, mares adaptées, aperçu plan et 3D et espacements entre plantes ([#806](https://github.com/niafrond/niafrond.github.io/issues/806)) ([d155f99](https://github.com/niafrond/niafrond.github.io/commit/d155f991ce893564f28281d29d10b6fc78b47547))
+
 ## [3.44.0](https://github.com/niafrond/niafrond.github.io/compare/v3.43.0...v3.44.0) (2026-11-25)
 
 ### Features
