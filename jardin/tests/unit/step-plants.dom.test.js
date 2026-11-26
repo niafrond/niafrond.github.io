@@ -116,7 +116,7 @@ test('Surprends-moi pour tout le jardin : remplit les zones vides, change à cha
   await validerAmbiance();
   expect(g.zones[0].plantings.length).toBeGreaterThan(0);
   expect(g.zones[1].plantings).toEqual([{ plantId: 'h-gazon-rustique', count: 1 }]);
-  expect(el.querySelector('#proposal-summary').textContent).toMatch(/^\d+ essences? · floraison de \S+ à \S+ · ≈ \d+ €$/);
+  expect(el.querySelector('#proposal-summary').textContent).toMatch(/^\d+ essences? · floraison de \S+ à \S+ · ≈ \d+ € · espacements respectés$/);
   expect(el.querySelector('#btn-undo').hidden).toBe(false);
   expect(el.querySelector('#btn-surprise-all').textContent).toBe('🎲 Autre proposition');
   const seen = new Set([JSON.stringify(g.zones[0].plantings)]);

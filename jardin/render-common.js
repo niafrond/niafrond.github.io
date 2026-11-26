@@ -6,6 +6,7 @@ import { getPlant } from './catalog.js';
 import { habitOf } from './habits.js';
 import { effectivePlant } from './heights.js';
 import { applyPortLayout, wallSegments, FAMILY, polyAxis, hedgeSeg } from './gl-worker-core.js';
+import { packZone, spacingOf } from './spacing.js';
 
 export const FONT = 'Helvetica, Arial, sans-serif';
 export const CAT_COLORS = {
@@ -28,9 +29,17 @@ export const BARE_HERB = '#b8a483';
 export const YOUNG_W = 0.4;
 export const YOUNG_H = 0.35;
 
-export const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-export const f = (n) => (Math.round(n * 100) / 100).toString();
-export const frNum = (n, d = 2) => n.toFixed(d).replace('.', ',');
+/** Caractères interdits en XML 1.0 (contrôles, U+FFFE/U+FFFF, surrogates isolés). */
+const BAD_XML = /[\u0000-\u0008\u000B\u000C\u000E-\u001F\uFFFE\uFFFF]|[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/g;
+export const xmlSafe = (s) => String(s ?? '').replace(BAD_XML, '');
+export const esc = (s) => xmlSafe(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+export const f = (n) => { const v = Math.round(n * 100) / 100; return Number.isFinite(v) ? v.toString() : '0'; };
+export const frNum = (n, d = 2) => (Number.isFinite(Number(n)) ? Number(n).toFixed(d).replace('.', ',') : '0');
+const BAD_TOKEN = /(^|[\s,(;:])(?:NaN|-?Infinity|undefined)(?=$|[\s,);])/g;
+/** Filet de sécurité : plus de NaN / Infinity / undefined dans les valeurs d'attributs, ni de caractère XML interdit. */
+export function cleanSvgNumbers(svg) {
+  return xmlSafe(svg).replace(/="([^"]*)"/g, (m, v) => (/NaN|Infinity|undefined/.test(v) ? `="${v.replace(BAD_TOKEN, '$10')}"` : m));
+}
 
 export function safeHex(c) {
   if (typeof c !== 'string') return null;
@@ -112,14 +121,16 @@ export function placePlants(garden, zone, plantsById, opts = {}) {
   const groups = (zone.plantings || []).map((pl) => ({ pl, plant: effectivePlant(lookup(pl.plantId), pl) })).filter((g) => g.plant)
     .map((g) => ({ ...g, n: Math.max(1, Math.round(g.pl.count || 1)) }));
   if (!groups.length) return [];
-  // haies taillées : assez de plants pour couvrir la longueur de la zone (rang continu)
-  for (const g of groups) {
-    if (habitOf(g.plant).id !== 'hedge-clipped') continue;
+  // haies taillées : assez de plants pour couvrir la longueur de la zone (un rang continu à l'espacement)
+  const hedges = groups.filter((g) => habitOf(g.plant).id === 'hedge-clipped');
+  if (hedges.length) {
     const pts0 = shape.kind === 'line' && shape.points ? shape.points : null;
     let len = 0;
     if (pts0) for (let i = 0; i < pts0.length - 1; i++) len += Math.hypot(pts0[i + 1].x - pts0[i].x, pts0[i + 1].y - pts0[i].y);
     else len = polyAxis(poly).len;
-    g.n = Math.max(g.n, Math.min(60, Math.ceil(len / (hedgeSeg(g.plant) * 0.92))));
+    const avg = hedges.reduce((s, g) => s + spacingOf(g.plant), 0) / hedges.length;
+    const cover = Math.max(1, Math.floor((len - (pts0 ? 0.1 : 0.6)) / avg + 1e-9) + 1);
+    for (const g of hedges) g.n = Math.max(g.n, Math.min(60, Math.floor(cover / hedges.length)));
   }
   const area = polygonArea(poly);
   const c = centroid(poly);
@@ -133,56 +144,22 @@ export function placePlants(garden, zone, plantsById, opts = {}) {
   if (!pts.length) return out;
   const total = pts.reduce((s, g) => s + g.n, 0);
   const nDraw = Math.min(total, max);
-  const rows = pts.every((g) => g.plant.category === 'vegetable');
-  const spacing = pts.reduce((s, g) => s + (g.plant.spacing > 0 ? g.plant.spacing : (g.plant.widthAdult || 0.5)), 0) / pts.length * (age === 'young' ? 0.8 : 1);
-  const b = bounds(poly);
-  const jit = rng(hash32(`${zid}|jitter`));
-  const make = (d) => {
-    const cand = [];
-    if (rows) {
-      for (let y = b.minY + d / 2; y <= b.maxY; y += d) for (let x = b.minX + d / 2; x <= b.maxX; x += d) if (pointInPolygon({ x, y }, poly)) cand.push({ x, y });
-      return cand;
-    }
-    let row = 0;
-    for (let y = b.minY + d / 2; y <= b.maxY; y += d * 0.866, row++) {
-      for (let x = b.minX + d / 2 + (row % 2 ? d / 2 : 0); x <= b.maxX; x += d) {
-        const jx = x + (jit() - 0.5) * d * 0.22; const jy = y + (jit() - 0.5) * d * 0.22;
-        cand.push(pointInPolygon({ x: jx, y: jy }, poly) ? { x: jx, y: jy } : pointInPolygon({ x, y }, poly) ? { x, y } : null);
-      }
-    }
-    return cand.filter(Boolean);
-  };
-  let spots = [];
-  if (nDraw === 1) spots = [inner];
-  else {
-    let d = Math.max(Math.sqrt(area / nDraw) * 1.15, spacing);
-    let cand = [];
-    for (let it = 0; it < 24 && d > 0.04; it++) { cand = make(d); if (cand.length >= nDraw) break; d *= 0.88; }
-    if (!cand.length) cand = [inner];
-    const m = Math.min(nDraw, cand.length);
-    for (let i = 0; i < m; i++) spots.push(cand[Math.min(cand.length - 1, Math.floor(((i + 0.5) * cand.length) / m))]);
-  }
-  // séquence d'essences (proportionnelle si plafonnée), mélangée de façon déterministe
-  const left = pts.map((g) => Math.max(1, Math.round((g.n * nDraw) / total)));
-  const seq = [];
-  let guard = 0;
-  while (seq.length < spots.length && left.some((n) => n > 0) && guard++ < 100000) {
-    pts.forEach((g, gi) => { if (left[gi] > 0 && seq.length < spots.length) { seq.push(gi); left[gi]--; } });
-  }
-  while (seq.length < spots.length) seq.push(seq.length % pts.length);
-  if (pts.length > 1) {
-    const sh = rng(hash32(`${zid}|mix`));
-    for (let i = seq.length - 1; i > 0; i--) { const j = Math.floor(sh() * (i + 1)); [seq[i], seq[j]] = [seq[j], seq[i]]; }
-  }
+  // positions : disque de Poisson pondéré (spacing.js), distances horticoles respectées ; mêmes positions en 2D, isométrique et 3D
+  const counts = pts.map((g) => (nDraw === total ? g.n : Math.max(1, Math.round((g.n * nDraw) / total))));
+  const plantings = pts.map((g, i) => ({ plantId: g.pl.plantId, count: counts[i], ...(g.pl.height ? { height: g.pl.height } : {}), ...(g.pl.width ? { width: g.pl.width } : {}) }));
+  const packed = packZone({ id: zone.id, type: zone.type, shape }, plantings, lookup, { garden, force: true });
   const idx = new Array(pts.length).fill(0);
-  spots.forEach((p, i) => {
-    const gi = seq[i]; const plant = pts[gi].plant;
-    out.push({ plant, x: p.x, y: p.y, r: plantRadiusM(plant, age), rand: rand0(plant, idx[gi]++), zoneId: zid, group: gi, rot: 0 });
-  });
+  for (const q of packed.positions) {
+    const gi = q.gi; const plant = pts[gi].plant;
+    out.push({ plant, x: q.x, y: q.y, r: plantRadiusM(plant, age), rand: rand0(plant, idx[gi]++), zoneId: zid, group: gi, rot: 0 });
+  }
   // ports : haies en rang le long du grand axe, bambous en touffes serrées, grimpantes contre le mur le plus proche
+  // (les positions restent celles du placement, qui respecte déjà les distances ; seuls l'orientation et les marques de port s'ajoutent)
   const mine = out.filter((q) => !q.fill);
+  const pos0 = mine.map((q) => [q.x, q.y]);
   const climbs = mine.some((q) => FAMILY[habitOf(q.plant).id] === 'climber');
   applyPortLayout(mine, poly, { walls: climbs ? wallSegments(garden) : [], line: shape.kind === 'line' && shape.points && shape.points.length >= 2 ? shape.points : null });
+  mine.forEach((q, i) => { if (FAMILY[habitOf(q.plant).id] !== 'climber') { q.x = pos0[i][0]; q.y = pos0[i][1]; } });
   for (const q of mine) {
     const hid = habitOf(q.plant).id; q.habit = hid; q.family = FAMILY[hid] || 'dome';
     if (q.family === 'mat' || q.family === 'creeping') q.r *= 1.35; // nappes qui se chevauchent
@@ -323,8 +300,10 @@ function truncateItems(items, maxH) {
  * Cadre commun : zone de dessin + légende (à droite en paysage, en colonnes sous le plan en portrait).
  * `buildItems(compact)` → éléments de légende. Retourne {ax, ay, aw, ah, MARGIN, CART_H, legendSVG}.
  */
-export function makeFrame(W, H, layers, buildItems) {
-  const MARGIN = 34; const CART_H = 58; const COL_W = 200;
+export function makeFrame(W, H, layers, buildItems, frameOpts = {}) {
+  const MARGIN = frameOpts.margin != null ? frameOpts.margin : 34;
+  const CART_H = frameOpts.cartH != null ? frameOpts.cartH : 58;
+  const COL_W = 200;
   const bottom = !!layers.legend && H > W * 1.05;
   let items = layers.legend ? buildItems(false) : [];
   let LEG_H = 0; let LEG_W = 0; let legCols = [];
@@ -400,7 +379,7 @@ export function describePlan(garden, lookup = getPlant) {
     const t = getZoneType(z.type);
     const pl = (z.plantings || []).map((p) => {
       const plant = lookup && lookup(p.plantId);
-      return `${p.count || 1} × ${plant ? plant.commonName : p.plantId}`;
+      return `${p.count || 1} × ${(plant && plant.commonName) || p.plantId || 'essence inconnue'}`;
     });
     lines.push(`${z.label || (t && t.label) || z.type}${pl.length ? ` : ${pl.join(', ')}` : ''}`);
   }

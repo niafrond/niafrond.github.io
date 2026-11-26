@@ -162,7 +162,8 @@ export function mountAdvice(el, { garden, onChange } = {}) {
     if (destroyed) return;
     compute();
     root.innerHTML = '';
-    root.append(h('h2', { style: { margin: '4px 0' } }, `Conseils — ${g.name || 'Mon jardin'}`));
+    root.append(h('div', { style: { display: 'flex', gap: '8px', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap' } }, h('h2', { style: { margin: '4px 0' } }, `Conseils — ${g.name || 'Mon jardin'}`),
+      h('button', { type: 'button', class: 'jd-btn', 'data-act': 'export-pdf', onclick: () => import('./pdf-dialog.js').then((m) => m.openPdfDialog({ garden: g })) }, '📄 PDF du jardin')));
     root.append(h('p', { class: 'jd-note' }, advice.general.disclaimer));
     root.append(calendarCard());
     const tabs = h('div', { class: 'jd-tabs', role: 'tablist' }, TABS.map(([id, label]) => h('button', { type: 'button', class: 'jd-tab', role: 'tab', 'data-tab': id, 'aria-selected': String(st.tab === id), onclick: () => { st.tab = id; render(); } }, label)));

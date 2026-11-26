@@ -4,12 +4,12 @@ import { bounds, centroid, pointInPolygon, shapePolygon, shapeBounds, signedArea
 import { getZoneType, isAbovePool } from './model.js';
 import { getPlant } from './catalog.js';
 import { culmColor } from './gl-worker-core.js';
-import { renderItemsSVG, itemsLegendEntries } from './render-items.js';
+import { renderItemsSVG, itemsLegendEntries, elementAnchors } from './render-items.js';
 import { gardenCost, formatEuro } from './pricing.js';
 import {
   FONT, OBSTACLE_LABELS, BARE_WOOD, BARE_HERB, SUN_COLORS, esc, f, frNum, darken, lighten, mixHex, rngOf,
   normMonth, monthLabel, plantState, placePlants, shadowDir, GradRegistry, buildLegendItems, makeFrame, northSVG, scaleBarSVG,
-  cartoucheSVG, describePlan as describeCommon, patternDefs, usedZoneTypes, plantHeightM, lawnPatternDef, captionSVG,
+  cartoucheSVG, describePlan as describeCommon, cleanSvgNumbers, patternDefs, usedZoneTypes, plantHeightM, lawnPatternDef, captionSVG,
 } from './render-common.js';
 
 export { placePlants } from './render-common.js';
@@ -312,12 +312,27 @@ function symbolBody(pp, st, kind, cx, cy, rp, ctx) {
  * @param {{view?:'plan'|'illustrated', age?:'adult'|'young', month?:number|null, layers?:{dims?:boolean,legend?:boolean,sun?:boolean,names?:boolean,budget?:boolean},
  *          width?:number, height?:number, idPrefix?:string, plantLookup?:Function}} opts
  *   `month` : 1–12 ou null = pleine floraison (toutes les couleurs de fleurs visibles).
+ *
+ * Options d'impression (PDF), toutes rétro-compatibles (absentes = rendu historique inchangé) :
+ *   `layers` accepte aussi `terrain, items (mobilier), existing (bâti, murs, clôtures, portes, plantes existantes), zones, plants,
+ *   zoneNames, numbers, frame (nord + échelle), cartouche` (tous vrais par défaut) ;
+ *   `ghost: ['terrain'|'existing'|'items'|'zones'|'plants']` : couches dessinées adoucies (opacité ≈ 0,35, niveaux de gris) ;
+ *   `numbering: {items: Map(clé → n), species: Map(plantId → n), zones: Map(zoneId → n), every?: boolean}` : pastilles numérotées
+ *   (clés d'éléments : voir `elementAnchors`) ; `crop: {zoneId, margin}` : vue rapprochée d'une zone (les autres zones adoucies) ;
+ *   `print: true` : pas d'emoji, fond blanc, marges serrées, pas de cartouche ; `bg: 'none'` : fond transparent (calques) ;
+ *   `zoneSub: (zone) => string` : seconde ligne sous le nom de zone ; `ghostOpacity`, `ghostGray`.
  */
 export function renderPlanSVG(garden, opts = {}) {
   const view = opts.view === 'illustrated' ? 'illustrated' : 'plan';
   const age = opts.age === 'young' ? 'young' : 'adult';
   const month = normMonth(opts.month);
   const layers = { dims: true, legend: true, sun: false, names: true, budget: false, ...(opts.layers || {}) };
+  const on = (k) => layers[k] !== false;
+  const print = !!opts.print;
+  const simple = !!opts.simple; // PDF « simplifié » : aplats sans motifs ni filtres
+  const numbering = opts.numbering || null;
+  const ghost = new Set(Array.isArray(opts.ghost) ? opts.ghost : []);
+  const ghostOp = opts.ghostOpacity > 0 ? opts.ghostOpacity : 0.35;
   const W = Math.max(320, Math.round(opts.width || 1000));
   const H = Math.max(240, Math.round(opts.height || 760));
   const P = opts.idPrefix || 'jp';
@@ -337,6 +352,15 @@ export function renderPlanSVG(garden, opts = {}) {
     if (o.points) all.push(...o.points);
     else if (o.center) { const r = o.radius || 1; all.push({ x: o.center.x - r, y: o.center.y - r }, { x: o.center.x + r, y: o.center.y + r }); }
   }
+  const cropZone = opts.crop && opts.crop.zoneId ? zones.find((z) => z.id === opts.crop.zoneId) : null;
+  if (cropZone && cropZone.shape) {
+    const cb = shapeBounds(cropZone.shape);
+    if (cb && Number.isFinite(cb.minX)) {
+      // marge : au moins 12 % de la plus grande dimension, et le rayon (plafonné) des plus gros plants pour ne rien couper
+      let rmax = 0;
+      try { for (const pp of placePlants(garden, cropZone, lookup, { age })) if (!pp.fill) rmax = Math.max(rmax, pp.r); } catch { /* */ }
+      const m = Math.max(opts.crop.margin >= 0 ? opts.crop.margin : 1.2, 0.12 * Math.max(cb.maxX - cb.minX, cb.maxY - cb.minY), Math.min(rmax, 2.5) + 0.3); all.length = 0; all.push({ x: cb.minX - m, y: cb.minY - m }, { x: cb.maxX + m, y: cb.maxY + m }); }
+  }
   let wb = all.length ? bounds(all) : { minX: 0, minY: 0, maxX: 10, maxY: 8, width: 10, height: 8 };
   if (wb.width < 1) wb = { ...wb, maxX: wb.minX + 1, width: 1 };
   if (wb.height < 1) wb = { ...wb, maxY: wb.minY + 1, height: 1 };
@@ -349,10 +373,11 @@ export function renderPlanSVG(garden, opts = {}) {
     li(22, `<text font-size="12" font-weight="700" fill="#222" font-family="${FONT}">Aménagements</text>`);
     for (const e of entries) li(19, `<rect y="-11" width="22" height="14" rx="3" fill="${e.color || '#9e9e9e'}" fill-opacity=".8" stroke="#37474f"/><text x="30" font-size="11" fill="#222" font-family="${FONT}">${esc(e.label)}${e.count > 1 ? ` ×${e.count}` : ''}</text>`);
   };
-  const fr = makeFrame(W, H, layers, (compact) => buildLegendItems(garden, lookup, layers, { P, compact, sun: layers.sun, extra: itemsExtra }));
+  const fr = makeFrame(W, H, layers, (compact) => buildLegendItems(garden, lookup, layers, { P, compact, sun: layers.sun, extra: itemsExtra }), print ? { margin: 12, cartH: 0 } : {});
   const { ax, ay, aw, ah, MARGIN, CART_H } = fr;
-  const pad = 26;
-  const S = Math.min((aw - pad * 2) / wb.width, (ah - pad * 2) / wb.height);
+  const pad = print ? 14 : 26;
+  const S0 = Math.min((aw - pad * 2) / wb.width, (ah - pad * 2) / wb.height);
+  const S = Number.isFinite(S0) && S0 > 0 ? S0 : 1;
   const ox = ax + (aw - wb.width * S) / 2;
   const oy = ay + (ah - wb.height * S) / 2;
   const tx = (x) => ox + (x - wb.minX) * S;
@@ -371,27 +396,35 @@ export function renderPlanSVG(garden, opts = {}) {
     defs.push(`<linearGradient id="${P}-lot" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#cfe7a8"/><stop offset="1" stop-color="#a9cf7c"/></linearGradient>`);
   }
 
+  if (ghost.size && !simple) defs.push(`<filter id="${P}-ghost" x="0" y="0" width="${W}" height="${H}" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">${opts.ghostGray === false ? '' : '<feColorMatrix type="saturate" values="0"/>'}</filter>`);
+  const ghostWrap = (key, svg) => (svg && ghost.has(key) ? `<g data-ghost="${key}" opacity="${ghostOp}"${simple ? '' : ` filter="url(#${P}-ghost)"`}>${svg}</g>` : svg);
+  const focusGhost = (zid, svg) => (svg && cropZone && zid !== cropZone.id ? `<g data-out-of-focus="1" opacity=".3">${svg}</g>` : svg);
+
   const out = [];
-  out.push(`<rect width="${W}" height="${H}" fill="${illus ? `url(#${P}-bg)` : '#ffffff'}"/>`);
-  out.push(`<rect x="${ax}" y="${ay}" width="${f(aw)}" height="${f(ah)}" fill="none" stroke="#c8c8c8" stroke-width="0.6"/>`);
+  const head = [];
+  const tail = [];
+  if (opts.bg !== 'none') head.push(`<rect width="${W}" height="${H}" fill="${illus && !print ? `url(#${P}-bg)` : '#ffffff'}"/>`);
+  if (layers.frame !== false) head.push(`<rect x="${ax}" y="${ay}" width="${f(aw)}" height="${f(ah)}" fill="none" stroke="#c8c8c8" stroke-width="0.6"/>`);
 
   // Terrain
-  if (boundary.length >= 2) {
+  const terrainOut = [];
+  if (on('terrain') && boundary.length >= 2) {
     const closed = garden.boundaryClosed !== false && boundary.length >= 3;
-    if (closed) out.push(`<polygon points="${pts(boundary)}" fill="${illus ? `url(#${P}-lot)` : '#fafaf5'}" stroke="#2b2b2b" stroke-width="${illus ? 2.2 : 2}" stroke-linejoin="round"${illus ? ` filter="url(#${P}-shadow)"` : ''}/>`);
-    else out.push(`<polyline points="${pts(boundary)}" fill="none" stroke="#2b2b2b" stroke-width="2" stroke-dasharray="6 4"/>`);
+    if (closed) terrainOut.push(`<polygon points="${pts(boundary)}" fill="${illus ? `url(#${P}-lot)` : '#fafaf5'}" stroke="#2b2b2b" stroke-width="${illus ? 2.2 : 2}" stroke-linejoin="round"${illus ? ` filter="url(#${P}-shadow)"` : ''}/>`);
+    else terrainOut.push(`<polyline points="${pts(boundary)}" fill="none" stroke="#2b2b2b" stroke-width="2" stroke-dasharray="6 4"/>`);
   }
 
   // Ensoleillement
   const sun = garden.sun || {};
-  if (layers.sun && sun.mode === 'uniform' && sun.uniform && boundary.length >= 3) {
-    out.push(`<polygon points="${pts(boundary)}" fill="${SUN_COLORS[sun.uniform]}" fill-opacity=".30" stroke="none"/>`);
-  } else if (layers.sun && sun.mode === 'map') {
+  if (on('terrain') && layers.sun && sun.mode === 'uniform' && sun.uniform && boundary.length >= 3) {
+    terrainOut.push(`<polygon points="${pts(boundary)}" fill="${SUN_COLORS[sun.uniform]}" fill-opacity=".30" stroke="none"/>`);
+  } else if (on('terrain') && layers.sun && sun.mode === 'map') {
     for (const r of sun.regions || []) {
       if (!r.points || r.points.length < 3) continue;
-      out.push(`<polygon points="${pts(r.points)}" fill="${SUN_COLORS[r.level] || '#999'}" fill-opacity=".34" stroke="${SUN_COLORS[r.level] || '#999'}" stroke-opacity=".5" stroke-width="0.8"/>`);
+      terrainOut.push(`<polygon points="${pts(r.points)}" fill="${SUN_COLORS[r.level] || '#999'}" fill-opacity=".34" stroke="${SUN_COLORS[r.level] || '#999'}" stroke-opacity=".5" stroke-width="0.8"/>`);
     }
   }
+  out.push(ghostWrap('terrain', terrainOut.join('')));
 
   // Obstacles (sous les zones pour maison/mur, au-dessus pour arbre existant)
   const obstacleEl = (o) => {
@@ -409,12 +442,16 @@ export function renderPlanSVG(garden, opts = {}) {
       + (!illus ? `<polygon points="${pts(o.points)}" fill="url(#${P}-pat-house)" opacity=".45"/>` : '');
     return `<g>${body}<text x="${f(tx(c.x))}" y="${f(ty(c.y) + 4)}" font-size="11" text-anchor="middle" fill="#37474f" font-family="${FONT}">${esc(label)}${hTxt}</text></g>`;
   };
-  obstacles.filter((o) => o.kind !== 'tree').forEach((o) => out.push(obstacleEl(o)));
+  if (on('existing')) out.push(ghostWrap('existing', obstacles.filter((o) => o.kind !== 'tree').map((o) => obstacleEl(o)).join('')));
 
   // Zones : sol puis canopée ; les plants sont collectés puis dessinés du plus bas au plus haut
   const sorted = [...zones].sort((a, b) => ((getZoneType(a.type) || {}).layer === 'canopy') - ((getZoneType(b.type) || {}).layer === 'canopy'));
   const labels = [];
   const placed = [];
+  const fillNums = [];
+  const zoneOut = [];
+  const fillOut = [];
+  const combined = on('zones') && on('plants') && !ghost.has('zones') && !ghost.has('plants') && !cropZone;
   for (const z of sorted) {
     const t = getZoneType(z.type);
     if (!t || !z.shape) continue;
@@ -426,11 +463,13 @@ export function renderPlanSVG(garden, opts = {}) {
     const op = canopy ? 0.45 : illus ? 0.95 : 0.6;
     const geom = (a) => (z.shape.kind === 'circle'
       ? `<circle cx="${f(tx(z.shape.center.x))}" cy="${f(ty(z.shape.center.y))}" r="${f(z.shape.radius * S)}" ${a}/>`
-      : `<polygon points="${pts(poly)}" stroke-linejoin="round" ${a}/>`);
+      : `<polygon points="${pts(poly)}"${/stroke-linejoin=/.test(a) ? '' : ' stroke-linejoin="round"'} ${a}/>`);
     let extra = '';
-    const pl = placePlants(garden, z, lookup, { age });
+    const pl = on('plants') || numbering ? placePlants(garden, z, lookup, { age }) : [];
     for (const pp of pl) {
       if (pp.fill) {
+        if (numbering) fillNums.push({ pp, z, c: centroid(poly) });
+        if (!on('plants')) continue;
         const st = plantState(pp.plant, month);
         const id = `${P}-lawn-${st.foliage.slice(1)}`;
         if (!lawnPats.has(id)) lawnPats.set(id, st.foliage);
@@ -446,15 +485,31 @@ export function renderPlanSVG(garden, opts = {}) {
     // piscine hors sol : paroi (double contour : liseré sombre, margelle claire, liseré fin) et motif d'eau
     const above = isAbovePool(z);
     const wall = above ? `<g data-pool-wall="1">${geom('fill="none" stroke="#455a64" stroke-width="7" stroke-linejoin="round"')}${geom('fill="none" stroke="#e6e1d6" stroke-width="4.6" stroke-linejoin="round"')}${geom('fill="none" stroke="#455a64" stroke-width="1" stroke-linejoin="round"')}</g>` : '';
-    out.push(`<g data-zone="${esc(z.id)}"${above ? ' data-pool="above"' : ''}>${geom(`fill="${fill}" fill-opacity="${op}" stroke="${stroke}" stroke-width="1.4"${canopy ? ' stroke-dasharray="6 3"' : ''}${illus ? ` filter="url(#${P}-shadow)"` : ''}`)}${geom(`fill="url(#${P}-pat-${above ? 'pool-above' : t.id})" fill-opacity="${illus ? 0.35 : 0.8}" stroke="none"`)}${wall}${extra}</g>`);
+    const zgeom = `${geom(`fill="${fill}" fill-opacity="${op}" stroke="${stroke}" stroke-width="1.4"${canopy ? ' stroke-dasharray="6 3"' : ''}${illus ? ` filter="url(#${P}-shadow)"` : ''}`)}${simple ? '' : geom(`fill="url(#${P}-pat-${above ? 'pool-above' : t.id})" fill-opacity="${illus ? 0.35 : 0.8}" stroke="none"`)}${wall}`;
+    const gopen = `<g data-zone="${esc(z.id)}"${above ? ' data-pool="above"' : ''}>`;
+    if (combined) out.push(`${gopen}${zgeom}${extra}</g>`);
+    else {
+      if (on('zones')) zoneOut.push(focusGhost(z.id, `${gopen}${zgeom}</g>`));
+      if (extra && on('plants')) fillOut.push(focusGhost(z.id, `<g data-zone-fill="${esc(z.id)}">${extra}</g>`));
+    }
     labels.push({ z, t, c: centroid(poly) });
   }
   placed.sort((a, b) => (a.pp.plant.heightAdult || 0) - (b.pp.plant.heightAdult || 0));
+  if (!combined) out.push(ghostWrap('zones', zoneOut.join('')));
   const ctx = { illus, P, grads, sv };
   const shadows = [];
   const bodies = [];
   const nameAt = new Map();
+  const badgeAt = new Map(); // `${zoneId}|${plantId}` → {x, y, rp} (premier plant de l'essence dans la zone)
+  const everyBadge = [];
   for (const { pp, z } of placed) {
+    if (numbering) {
+      const key0 = `${z.id}|${pp.plant.id}`;
+      const rp0 = Math.max(2.2, pp.r * S);
+      if (!badgeAt.has(key0)) badgeAt.set(key0, { x: tx(pp.x), y: ty(pp.y), rp: rp0, plant: pp.plant });
+      everyBadge.push({ x: tx(pp.x), y: ty(pp.y), rp: rp0, plant: pp.plant });
+    }
+    if (!on('plants')) continue;
     const plant = pp.plant;
     const st = plantState(plant, month);
     const kind = plantKind(plant);
@@ -467,22 +522,62 @@ export function renderPlanSVG(garden, opts = {}) {
     const fam = pp.family || 'dome';
     const pctx = { ...ctx, S, culm: culmColor(plant) };
     const port = rp >= 3.4 ? portSymbol(pp, st, fam, cx, cy, rp, pctx) : null;
-    bodies.push(`<g data-plant="${esc(plant.id)}" data-kind="${kind}" data-habit="${pp.habit || ''}" data-family="${fam}"${st.bare ? ' data-bare="1"' : ''}${st.flowering ? ' data-flowering="1"' : ''}>${port != null ? port : symbolBody(pp, st, kind, cx, cy, rp, pctx)}</g>`);
+    bodies.push(focusGhost(z.id, `<g data-plant="${esc(plant.id)}" data-kind="${kind}" data-habit="${pp.habit || ''}" data-family="${fam}"${st.bare ? ' data-bare="1"' : ''}${st.flowering ? ' data-flowering="1"' : ''}>${port != null ? port : symbolBody(pp, st, kind, cx, cy, rp, pctx)}</g>`));
     const key = `${z.id}|${plant.id}`;
     if (layers.names && !nameAt.has(key)) {
       const cnt = (z.plantings || []).filter((q) => q.plantId === plant.id).reduce((s, q) => s + Math.max(1, Math.round(q.count || 1)), 0);
-      nameAt.set(key, `<text x="${f(cx)}" y="${f(cy + rp + 11)}" font-size="10" text-anchor="middle" fill="#1b2a1b" stroke="#fff" stroke-width="2.6" paint-order="stroke" font-family="${FONT}">${esc(plant.commonName)}${cnt > 1 ? ` ×${cnt}` : ''}</text>`);
+      nameAt.set(key, focusGhost(z.id, `<text x="${f(cx)}" y="${f(cy + rp + 11)}" font-size="10" text-anchor="middle" fill="#1b2a1b" stroke="#fff" stroke-width="2.6" paint-order="stroke" font-family="${FONT}">${esc(plant.commonName)}${cnt > 1 ? ` ×${cnt}` : ''}</text>`));
     }
   }
-  try { out.push(renderItemsSVG(garden, { scale: S, tx, ty, names: layers.names, bg: illus ? '#dfe9c8' : '#ffffff', px: 1 })); } catch { /* aménagements facultatifs */ }
-  if (shadows.length) out.push(`<g filter="url(#${P}-blur)" fill="#000" fill-opacity=".24" data-role="shadows">${shadows.join('')}</g>`);
-  out.push(...bodies);
-  out.push(...nameAt.values());
-  for (const { z, t, c } of labels) {
-    out.push(`<text x="${f(tx(c.x))}" y="${f(ty(c.y) + 4)}" font-size="12" font-weight="700" text-anchor="middle" fill="#14210f" stroke="#fff" stroke-width="3" paint-order="stroke" font-family="${FONT}" opacity=".92">${esc(z.label || t.label)}</text>`);
+  // remplissages (pelouse) : au-dessus des zones, sous le mobilier
+  if (!combined && fillOut.length) out.push(ghostWrap('plants', fillOut.join('')));
+  // aménagements : contour (murs, clôtures, haies), plantes existantes, mobilier, ouvertures
+  try {
+    const io = { scale: S, tx, ty, names: layers.names, bg: illus ? '#dfe9c8' : '#ffffff', px: 1, emoji: !print };
+    if (on('items') && on('existing') && !ghost.has('items') && !ghost.has('existing')) out.push(renderItemsSVG(garden, io));
+    else {
+      if (on('existing')) out.push(ghostWrap('existing', renderItemsSVG(garden, { ...io, only: ['edges', 'existing', 'openings'] })));
+      if (on('items')) out.push(ghostWrap('items', renderItemsSVG(garden, { ...io, only: ['items'] })));
+    }
+  } catch { /* aménagements facultatifs */ }
+  const plantsOut = [];
+  if (shadows.length) plantsOut.push(`<g filter="url(#${P}-blur)" fill="#000" fill-opacity=".24" data-role="shadows">${shadows.join('')}</g>`);
+  plantsOut.push(...bodies);
+  plantsOut.push(...nameAt.values());
+  if (ghost.has('plants')) out.push(ghostWrap('plants', plantsOut.join(''))); else out.push(...plantsOut);
+  if (on('zoneNames')) {
+    for (const { z, t, c } of labels) {
+      const zn = numbering && numbering.zones && numbering.zones.get(z.id);
+      const sub = typeof opts.zoneSub === 'function' ? opts.zoneSub(z) : '';
+      // gros plan : l'étiquette de la zone cadrée est posée au-dessus de sa forme, hors des plants
+      const zb = cropZone && cropZone.id === z.id ? shapeBounds(z.shape) : null;
+      const lc = zb ? { x: c.x, y: zb.minY - 14 / S } : c;
+      out.push(`<text x="${f(tx(lc.x))}" y="${f(ty(lc.y) + 4)}" font-size="12" font-weight="700" text-anchor="middle" fill="#14210f" stroke="#fff" stroke-width="3" paint-order="stroke" font-family="${FONT}" opacity=".92">${zn ? `Z${zn} · ` : ''}${esc(z.label || t.label)}</text>`);
+      if (sub && !zb) out.push(`<text x="${f(tx(c.x))}" y="${f(ty(c.y) + 17)}" font-size="10" text-anchor="middle" fill="#2a3a22" stroke="#fff" stroke-width="2.6" paint-order="stroke" font-family="${FONT}">${esc(sub)}</text>`);
+    }
   }
-  obstacles.filter((o) => o.kind === 'tree').forEach((o) => out.push(obstacleEl(o)));
+  if (on('existing')) out.push(ghostWrap('existing', obstacles.filter((o) => o.kind === 'tree').map((o) => obstacleEl(o)).join('')));
   for (const [id, col] of lawnPats) defs.push(lawnPatternDef(id, col));
+
+  // Pastilles numérotées : éléments (noirs), essences (blanches), zones à étiquette (« Z1 »)
+  if (numbering && on('numbers')) {
+    const badge = (x, y, label, kind) => {
+      const txt = String(label); const w = Math.max(15, 7 + txt.length * 6.6);
+      const fillC = kind === 'el' ? '#111' : '#fff'; const txtC = kind === 'el' ? '#fff' : '#111';
+      return `<g data-num="${esc(txt)}" data-num-kind="${kind}"><rect x="${f(x - w / 2)}" y="${f(y - 7.5)}" width="${f(w)}" height="15" rx="7.5" fill="${fillC}" stroke="${kind === 'el' ? '#fff' : '#111'}" stroke-width="1.1"/><text x="${f(x)}" y="${f(y + 3.7)}" font-size="10.5" font-weight="700" text-anchor="middle" fill="${txtC}" font-family="${FONT}">${esc(txt)}</text></g>`;
+    };
+    const nums = [];
+    if (numbering.items && numbering.items.size) {
+      const anch = elementAnchors(garden);
+      for (const [key, n] of numbering.items) { const a = anch.get(key); if (a) nums.push(badge(tx(a.x), ty(a.y), n, 'el')); }
+    }
+    if (numbering.species && numbering.species.size) {
+      const list = numbering.every ? everyBadge.map((b) => ({ ...b, off: 0 })) : [...badgeAt.values()].map((b) => ({ ...b, off: Math.min(b.rp * 0.6, 7) }));
+      for (const b of list) { const n = numbering.species.get(b.plant.id); if (n != null) nums.push(badge(b.x + b.off, b.y - b.off, n, 'sp')); }
+      for (const fl of fillNums) { const n = numbering.species.get(fl.pp.plant.id); if (n != null) nums.push(badge(tx(fl.c.x), ty(fl.c.y) + (on('zoneNames') ? 30 : 0), n, 'sp')); }
+    }
+    out.push(`<g data-role="numbers">${nums.join('')}</g>`);
+  }
 
   // Cotes
   if (layers.dims && boundary.length >= 2) {
@@ -508,19 +603,21 @@ export function renderPlanSVG(garden, opts = {}) {
     }
   }
 
-  out.push(northSVG(ax + aw - 34, ay + 40, northAngle));
-  out.push(scaleBarSVG(ax + 14, ay + ah - 16, S));
-  out.push(fr.legendSVG);
+  if (layers.frame !== false) {
+    tail.push(northSVG(ax + aw - 34, ay + 40, northAngle));
+    tail.push(scaleBarSVG(ax + 14, ay + ah - 16, S));
+  }
+  tail.push(fr.legendSVG);
 
   let budgetTxt = '';
   if (layers.budget) {
     try { const bc = gardenCost(garden, lookup); budgetTxt = `Budget estimé ≈ ${formatEuro(bc.total, { digits: 0 })}${bc.unknownCount ? ` (${bc.unknownCount} sans prix)` : ''}`; } catch { /* */ }
   }
-  if (layers.cartouche === false) out.push(captionSVG(opts.caption || 'Vue du dessus', { W, H, MARGIN, CART_H }));
-  else out.push(cartoucheSVG(garden, { W, H, MARGIN, CART_H, budgetTxt, line2: `Vue ${illus ? 'illustrée' : 'plan'} · ${age === 'young' ? 'jeunes plants' : 'à maturité'} · ${monthLabel(month)}` }));
+  if (layers.cartouche === false) { if (!print) tail.push(captionSVG(opts.caption || 'Vue du dessus', { W, H, MARGIN, CART_H })); }
+  else tail.push(cartoucheSVG(garden, { W, H, MARGIN, CART_H, budgetTxt, line2: `Vue ${illus ? 'illustrée' : 'plan'} · ${age === 'young' ? 'jeunes plants' : 'à maturité'} · ${monthLabel(month)}` }));
 
   const gdefs = grads.defs();
   const descr = describeCommon(garden, lookup);
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-labelledby="${P}-t ${P}-d" font-family="${FONT}"><title id="${P}-t">Plan du jardin « ${esc(garden.name || 'Mon jardin')} »</title><desc id="${P}-d">${esc(descr || 'Plan sans zone.')}</desc><defs>${defs.join('')}${gdefs}</defs>${out.join('')}</svg>`;
+  const svgOut = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-labelledby="${P}-t ${P}-d" font-family="${FONT}"><title id="${P}-t">Plan du jardin « ${esc(garden.name || 'Mon jardin')} »</title><desc id="${P}-d">${esc(descr || 'Plan sans zone.')}</desc><defs>${defs.join('')}${gdefs}${cropZone ? `<clipPath id="${P}-crop"><rect x="${ax}" y="${ay}" width="${f(aw)}" height="${f(ah)}"/></clipPath>` : ''}</defs>${head.join('')}${cropZone ? `<g clip-path="url(#${P}-crop)" data-crop="${esc(cropZone.id)}">${out.join('')}</g>` : out.join('')}${tail.join('')}</svg>`;
+  return cleanSvgNumbers(svgOut);
 }
-

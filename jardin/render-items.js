@@ -7,9 +7,8 @@ import {
 import { getPlant } from './catalog.js';
 import { EXISTING_KINDS, getExistingKind, existingLabel, existingPlant, getFenceMaterial } from './existing.js';
 
-const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-const f = (n) => (Math.round(n * 100) / 100).toString();
-const fr = (n) => n.toFixed(2).replace('.', ',');
+import { esc, f } from './render-common.js';
+const fr = (n) => (Number.isFinite(Number(n)) ? Number(n).toFixed(2).replace('.', ',') : '0');
 
 
 /**
@@ -63,6 +62,7 @@ function nearestWall(garden, p, max = 1.5) {
 /** Rendu d'un élément existant ; `low` = tout sauf les arbres (dessinés au-dessus du mobilier). */
 function existingSVG(garden, e, ctx) {
   const { tx, ty, scale, u, names, bg, sel, lookup } = ctx;
+  const emoji = ctx.emoji !== false;
   const k = getExistingKind(e.kind) || getExistingKind('other');
   const plant = existingPlant(e, lookup);
   const col = plant && HEX.test(plant.foliageColor || '') ? plant.foliageColor : k.color;
@@ -135,7 +135,7 @@ function existingSVG(garden, e, ctx) {
   if (!keep) {
     const br = 7 * u;
     badge = `<g data-role="remove-badge"><circle cx="${f(badgeAt.x)}" cy="${f(badgeAt.y)}" r="${f(br)}" fill="#fff" stroke="#c62828" stroke-width="${f(1.6 * u)}"/>`
-      + `<text x="${f(badgeAt.x)}" y="${f(badgeAt.y + 4 * u)}" font-size="${f(10 * u)}" text-anchor="middle">🪓</text>`
+      + (emoji ? `<text x="${f(badgeAt.x)}" y="${f(badgeAt.y + 4 * u)}" font-size="${f(10 * u)}" text-anchor="middle">🪓</text>` : '')
       + `<line x1="${f(badgeAt.x - br * 0.75)}" y1="${f(badgeAt.y + br * 0.75)}" x2="${f(badgeAt.x + br * 0.75)}" y2="${f(badgeAt.y - br * 0.75)}" stroke="#c62828" stroke-width="${f(1.8 * u)}" stroke-linecap="round"/></g>`;
   }
   let txt = '';
@@ -161,16 +161,19 @@ export function renderItemsSVG(garden, opts = {}) {
   const ty = opts.ty || ((y) => y * scale);
   const u = opts.px > 0 ? opts.px : 1;
   const names = opts.names !== false;
+  const emoji = opts.emoji !== false; // false (PDF) : aucun emoji dans le SVG
+  const only = Array.isArray(opts.only) ? new Set(opts.only) : null; // 'edges' | 'existing' | 'items' | 'openings'
+  const want = (k) => !only || only.has(k);
   const bg = opts.bg || '#ffffff';
   const sel = opts.selected || {};
   const P = (p) => `${f(tx(p.x))},${f(ty(p.y))}`;
   const out = [];
-  const ectx = { tx, ty, scale, u, names, bg, sel, lookup: opts.plantLookup || getPlant };
+  const ectx = { tx, ty, scale, u, names, bg, sel, lookup: opts.plantLookup || getPlant, emoji };
   const existants = Array.isArray(garden.existing) ? garden.existing.filter((e) => e && getExistingKind(e.kind)) : [];
   const isHigh = (e) => e.kind === 'tree';
 
   // --- côtés du contour : mur / clôture / haie ---
-  for (const s of boundarySides(garden)) {
+  for (const s of want('edges') ? boundarySides(garden) : []) {
     const kind = edgeKindOf(garden, s.i);
     if (kind === 'open') continue;
     const k = getEdgeKind(kind);
@@ -186,10 +189,10 @@ export function renderItemsSVG(garden, opts = {}) {
   }
 
   // --- plantes existantes basses (sous le mobilier) ---
-  for (const e of existants.filter((x) => !isHigh(x))) out.push(existingSVG(garden, e, ectx));
+  if (want('existing')) for (const e of existants.filter((x) => !isHigh(x))) out.push(existingSVG(garden, e, ectx));
 
   // --- éléments posés ---
-  for (const it of garden.items || []) {
+  for (const it of want('items') ? garden.items || [] : []) {
     const k = getItemKind(it.kind);
     if (!k) continue;
     const poly = itemPolygon(it);
@@ -206,19 +209,19 @@ export function renderItemsSVG(garden, opts = {}) {
     const label = it.label || k.short;
     if (names && minDim >= 24 * u) {
       const fs = Math.min(11 * u, minDim / 3.2);
-      txt = `<text x="${f(tx(it.x))}" y="${f(ty(it.y) + fs * 0.35)}" font-size="${f(fs * 1.5)}" text-anchor="middle">${esc(k.emoji)}</text>`
-        + (Math.max(hw, hd) * 2 * scale >= 40 * u ? `<text x="${f(tx(it.x))}" y="${f(ty(it.y) + fs * 1.9)}" font-size="${f(fs)}" text-anchor="middle" fill="#263238">${esc(label)}</text>` : '');
-    } else if (names) {
+      txt = (emoji ? `<text x="${f(tx(it.x))}" y="${f(ty(it.y) + fs * 0.35)}" font-size="${f(fs * 1.5)}" text-anchor="middle">${esc(k.emoji)}</text>` : '')
+        + (Math.max(hw, hd) * 2 * scale >= 40 * u ? `<text x="${f(tx(it.x))}" y="${f(ty(it.y) + (emoji ? fs * 1.9 : fs * 0.35))}" font-size="${f(fs)}" text-anchor="middle" fill="#263238">${esc(label)}</text>` : '');
+    } else if (names && emoji) {
       txt = `<text x="${f(tx(it.x))}" y="${f(ty(it.y) + 4 * u)}" font-size="${f(12 * u)}" text-anchor="middle">${esc(k.emoji)}</text>`;
     }
     out.push(`<g data-item="${esc(it.id)}" data-kind="${esc(it.kind)}">${body}${txt}</g>`);
   }
 
   // --- arbres existants (houppier au-dessus du mobilier) ---
-  for (const e of existants.filter(isHigh)) out.push(existingSVG(garden, e, ectx));
+  if (want('existing')) for (const e of existants.filter(isHigh)) out.push(existingSVG(garden, e, ectx));
 
   // --- ouvertures : brèche, montants, battant ou rail ---
-  for (const op of garden.openings || []) {
+  for (const op of want('openings') ? garden.openings || [] : []) {
     const k = getOpeningKind(op.kind);
     const g = k && openingGeometry(garden, op);
     if (!g) continue;
@@ -310,4 +313,31 @@ export function itemsLegendEntries(garden) {
     } else if (cx.has(k.id)) entries.push({ id: `existing-${k.id}`, type: 'existing', label: k.defaultLabel, emoji: k.emoji, color: k.color, count: cx.get(k.id) });
   }
   return entries;
+}
+
+/**
+ * Ancres (monde, en m) des éléments numérotés d'un plan imprimé : clés `item:<id>`, `existing:<id>`, `opening:<id>`,
+ * `obstacle:<id>`, `edge:<i>`. → Map(clé → {x, y}). Sert aux pastilles numérotées de `renderPlanSVG` (`opts.numbering.items`).
+ */
+export function elementAnchors(garden) {
+  const m = new Map();
+  for (const it of garden.items || []) if (getItemKind(it.kind)) m.set(`item:${it.id}`, { x: it.x, y: it.y });
+  for (const e of garden.existing || []) {
+    if (!e || !getExistingKind(e.kind)) continue;
+    if (Array.isArray(e.points) && e.points.length >= 2) {
+      const mid = e.points[Math.floor((e.points.length - 1) / 2)]; const nx = e.points[Math.floor((e.points.length - 1) / 2) + 1] || mid;
+      m.set(`existing:${e.id}`, { x: (mid.x + nx.x) / 2, y: (mid.y + nx.y) / 2 });
+    } else m.set(`existing:${e.id}`, { x: e.x, y: e.y });
+  }
+  for (const op of garden.openings || []) { const g = getOpeningKind(op.kind) && openingGeometry(garden, op); if (g) m.set(`opening:${op.id}`, { x: g.center.x, y: g.center.y }); }
+  for (const o of garden.obstacles || []) {
+    if (o.kind === 'tree' && o.center) m.set(`obstacle:${o.id}`, { x: o.center.x, y: o.center.y });
+    else if (o.points && o.points.length >= 2) {
+      const n = o.points.length;
+      if (o.kind === 'house' || o.kind === 'shed') m.set(`obstacle:${o.id}`, { x: o.points.reduce((s, p) => s + p.x, 0) / n, y: o.points.reduce((s, p) => s + p.y, 0) / n });
+      else { const a = o.points[Math.floor((n - 1) / 2)]; const b = o.points[Math.floor((n - 1) / 2) + 1] || a; m.set(`obstacle:${o.id}`, { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 }); }
+    }
+  }
+  for (const s of boundarySides(garden)) if (edgeKindOf(garden, s.i) !== 'open') m.set(`edge:${s.i}`, { x: (s.a.x + s.b.x) / 2, y: (s.a.y + s.b.y) / 2 });
+  return m;
 }

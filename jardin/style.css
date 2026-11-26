@@ -205,3 +205,11 @@ summary { cursor: pointer; min-height: var(--tap); display: flex; align-items: c
 .chosen-row .height-reset:disabled { opacity: .4; }
 .chosen-row .height-state[data-state="custom"] { color: var(--ok, #2e7d32); font-weight: 600; }
 .chosen-row .height-note { flex-basis: 100%; color: var(--ko, #b3261e); }
+.pond-box { border-top: 1px solid var(--border); padding-top: 8px; margin-top: 8px; }
+.pond-summary { margin: 6px 0; font-weight: 600; }
+.pond-excluded { margin-top: 10px; }
+.pond-excluded summary { min-height: var(--tap, 44px); display: flex; align-items: center; cursor: pointer; font-weight: 600; }
+#btn-preview { margin-bottom: 12px; }
+.density.over { color: #b26a00; font-weight: 600; }
+.spacing-box:empty { display: none; }
+.chosen-row .density { flex: 1 1 100%; margin-top: 2px; }

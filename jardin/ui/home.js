@@ -142,6 +142,7 @@ export function mountHome(el, { storage, navigate, createGarden }) {
           g.status === 'validated' ? h('a', { class: 'btn btn-sm', href: gardenHash(g.id, 'render') }, 'Modifier') : null,
           h('button', { class: 'btn btn-sm', type: 'button', onclick: async () => { await storage.duplicateGarden(g.id); toast('Jardin dupliqué.'); refresh(); } }, 'Dupliquer'),
           h('a', { class: 'btn btn-sm', href: `#/garden/${encodeURIComponent(g.id)}/share` }, 'Envoyer vers le téléphone'),
+          g.boundary && g.boundary.length >= 3 ? h('button', { class: 'btn btn-sm', type: 'button', 'data-act': 'pdf', onclick: () => import('./pdf-dialog.js').then((m) => m.openPdfDialog({ garden: g })) }, '📄 PDF du jardin') : null,
           h('button', { class: 'btn btn-sm', type: 'button', onclick: async () => download(safeFilename(g.name), await storage.exportGarden(g)) }, 'Exporter'),
           h('button', { class: 'btn btn-sm btn-danger', type: 'button', onclick: async () => {
             if (await confirmDialog(`Supprimer « ${g.name} » ? Cette action est définitive.`, { ok: 'Supprimer', danger: true })) {

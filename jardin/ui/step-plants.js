@@ -4,6 +4,7 @@ import { getZoneType } from '../model.js';
 import { getPlant, searchPlants } from '../catalog.js';
 import { recommendForZone, suggestQuantity, checkCoherence, suggestSelection } from '../recommend.js';
 import { shapeArea } from '../geometry.js';
+import { checkSpacing, zoneLayout, fitQuantities, formatSpacing } from '../spacing.js';
 import { getPlantPhoto } from '../photos.js';
 import { openAmbiancePicker, ambianceOf, ambianceEmoji, zoneAmbiance } from './ambiance-picker.js';
 import { isTypical } from '../ambiances.js';
@@ -11,6 +12,7 @@ import { plantEffort, fitsMaintenance, levelForZone, effortLabel } from '../main
 import { gardenMaintenancePicker, zoneMaintenancePicker, maintenanceReminder, effortIndicator, levelPhrase } from './maintenance-picker.js';
 import { designBed } from '../massifs.js';
 import { checkHeight, parseHeight, heightToCm, heightMessage, formatHeight, plantHeightKind, isDefaultHeight } from '../heights.js';
+import { pondArea, pondDepth, pondFit, pondTag, pondConcerned, pondTreeRule, estimatePondDepth } from '../ponds.js';
 import { gardenCost, formatEuro, formatPrice, UNIT_LABEL, summarizeGarden } from '../pricing.js';
 
 const STATUS = { ideal: 'Idéale', possible: 'Possible', discouraged: 'Déconseillée' };
@@ -147,6 +149,29 @@ export function mountPlants(el, { garden, onChange, getPhoto = getPlantPhoto, IO
   }
   const refresh = () => { change(); drawChosen(); drawList(); drawWarnings(); drawBudget(); };
 
+  // ---------- espacements de la zone : indicateur par ligne, avertissements, « Ajuster automatiquement » ----------
+  const spacingBox = h('div', { class: 'spacing-box', 'data-role': 'spacing-box', 'aria-live': 'polite' });
+  let densityEls = [];
+  function drawSpacing() {
+    const z = zone();
+    let lay = null; let list = [];
+    try { lay = zoneLayout(garden, z, getPlant); list = checkSpacing(garden, z, getPlant) || []; } catch { /* */ }
+    for (const d of densityEls) {
+      const p = getPlant(d.pl.plantId); const i = (z.plantings || []).indexOf(d.pl);
+      const mx = lay && lay.maxima && i >= 0 ? lay.maxima[i] : null;
+      const cnt = Math.round(Number(d.pl.count) || 1);
+      d.el.textContent = p ? `${formatSpacing(p)} entre plants${mx != null && p.category !== 'lawn' ? ` ; ${cnt} / ${mx} maximum` : ''}` : '';
+      d.el.classList.toggle('over', mx != null && cnt > mx);
+    }
+    const fixable = list.some((w) => w.kind === 'surdensite' || w.kind === 'arbres-proches' || w.kind === 'pied-arbre');
+    spacingBox.replaceChildren(...list.map((w) => h('p', { class: w.level === 'warn' ? 'notice warn' : 'notice info', 'data-role': 'spacing-warning', 'data-kind': w.kind },
+      (w.level === 'warn' ? '⚠️ ' : 'ℹ️ ') + w.text)),
+    fixable ? h('button', { class: 'btn btn-sm', type: 'button', 'data-act': 'spacing-fix', onclick: () => {
+      z.plantings = fitQuantities(z, z.plantings || [], getPlant, { garden });
+      refresh(); toast('Quantités ajustées : espacements respectés.');
+    } }, 'Ajuster automatiquement') : null);
+  }
+
   /** Hauteur adulte réglable (cm) d'une essence choisie : champ, état catalogue / personnalisée, bouton « Valeur par défaut ». */
   function heightControl(p, pl) {
     const kind = plantHeightKind(p);
@@ -182,21 +207,24 @@ export function mountPlants(el, { garden, onChange, getPhoto = getPlantPhoto, IO
     return h('div', { class: 'height-row', 'data-role': 'height-row' },
       h('label', { class: 'height-label small' }, 'Hauteur'), input, h('span', { class: 'height-unit small' }, 'cm'), reset, state, note);
   }
-  function afterHeight() { change(); drawWarnings(); }
+  function afterHeight() { change(); drawWarnings(); drawSpacing(); }
 
   function drawChosen() {
     const z = zone();
     resetThumbs('chosen');
     let recById = new Map();
     try { recById = new Map((recommendForZone(garden, z, { includeDiscouraged: true }) || []).map((x) => [x.plant.id, x])); } catch { /* fiche sans raisons */ }
+    densityEls = [];
     const rows = (z.plantings || []).map((pl) => {
       const p = getPlant(pl.plantId);
+      const densEl = h('span', { class: 'muted small density', 'data-role': 'density' });
+      densityEls.push({ pl, el: densEl });
       const lineEl = h('span', { class: 'muted small line-total' });
       const upd = () => {
         const gc = gardenCost({ zones: [{ ...z, plantings: [pl] }] }, getPlant);
         lineEl.textContent = gc.total ? `≈ ${formatEuro(gc.total, { digits: 0 })}` : (gc.unknownCount ? 'sans prix' : '');
       };
-      const afterQty = () => { change(); upd(); drawWarnings(); drawBudget(); };
+      const afterQty = () => { change(); upd(); drawWarnings(); drawBudget(); drawSpacing(); };
       const input = h('input', { type: 'number', min: '1', max: '999', value: String(pl.count || 1), 'aria-label': `Quantité de ${p ? p.commonName : pl.plantId}`, class: 'qty',
         onchange: (e) => { pl.count = Math.max(1, Math.round(Number(e.target.value) || 1)); e.target.value = pl.count; afterQty(); } });
       const step = (d) => () => { pl.count = Math.max(1, (Number(pl.count) || 1) + d); input.value = pl.count; afterQty(); };
@@ -210,12 +238,15 @@ export function mountPlants(el, { garden, onChange, getPhoto = getPlantPhoto, IO
         h('button', { class: 'btn btn-icon btn-danger', type: 'button', 'aria-label': `Retirer ${p ? p.commonName : ''}`, onclick: () => {
           z.plantings = z.plantings.filter((x) => x !== pl); refresh();
         } }, '🗑'),
+        densEl,
         p ? heightControl(p, pl) : null);
     });
     zoneTotalEl = h('span', { class: 'zone-total', 'data-role': 'zone-total' });
     chosenBox.replaceChildren(
       h('h3', null, `Dans cette zone (${rows.length})`, zoneTotalEl),
-      rows.length ? h('ul', { class: 'chosen-list' }, rows) : h('p', { class: 'muted' }, 'Aucune essence choisie pour l’instant.'));
+      rows.length ? h('ul', { class: 'chosen-list' }, rows) : h('p', { class: 'muted' }, 'Aucune essence choisie pour l’instant.'),
+      spacingBox);
+    drawSpacing();
   }
 
   // ---------- vignettes (photo paresseuse, repli coloré immédiat) ----------
@@ -323,6 +354,7 @@ export function mountPlants(el, { garden, onChange, getPhoto = getPlantPhoto, IO
       try { ids = new Set(searchPlants(query).map((p) => p.id)); } catch { /* */ }
       if (ids) recs = recs.filter((r) => ids.has(r.plant.id));
     }
+    if (z.type === 'pond') recs = recs.filter((r) => !pondConcerned(r.plant) || pondFit(r.plant, z).ok);
     listBox.replaceChildren();
     if (!recs.length) listBox.append(h('li', { class: 'muted empty' }, 'Aucune essence ne correspond. Assouplissez les filtres ou affichez les déconseillées.'));
     recs.slice(0, limit).forEach((r) => {
@@ -357,7 +389,67 @@ export function mountPlants(el, { garden, onChange, getPhoto = getPlantPhoto, IO
               refresh();
             } }, 'Ajouter')])));
     });
-    moreBox.replaceChildren(recs.length > limit ? h('button', { class: 'btn btn-block', type: 'button', onclick: () => { limit += PAGE; drawList(); } }, `Afficher plus (${recs.length - limit} restantes)`) : null);
+    drawPond();
+    moreBox.replaceChildren(...[recs.length > limit ? h('button', { class: 'btn btn-block', type: 'button', onclick: () => { limit += PAGE; drawList(); } }, `Afficher plus (${recs.length - limit} restantes)`) : null].filter(Boolean));
+  }
+
+  // ---------- mare : profondeur, résumé, essences écartées, bandeau après redimensionnement ----------
+  const fmtArea = (a) => `${a.toFixed(a < 10 ? 1 : 0).replace('.', ',')} m²`;
+  const depthInput = h('input', { id: 'pond-depth', type: 'number', inputmode: 'numeric', min: '10', max: '500', step: '5', 'data-field': 'pond-depth', 'aria-describedby': 'pond-depth-hint' });
+  const depthHint = h('span', { id: 'pond-depth-hint', class: 'muted small', 'data-role': 'pond-depth-hint' });
+  const pondSummary = h('p', { class: 'pond-summary', 'data-role': 'pond-summary', 'aria-live': 'polite' });
+  const pondAlert = h('div', { class: 'notice warn', role: 'alert', 'data-role': 'pond-alert', hidden: true });
+  const pondExcluded = h('details', { class: 'pond-excluded', 'data-role': 'pond-excluded', hidden: true });
+  const pondBox = h('div', { class: 'pond-box', 'data-role': 'pond-box', hidden: true },
+    h('div', { class: 'field' }, h('label', { for: 'pond-depth' }, 'Profondeur de la mare (cm)'), depthInput, depthHint), pondSummary, pondAlert);
+  let pondZoneId = null;
+  const commitDepth = () => {
+    const z = zone();
+    if (z.type !== 'pond') return;
+    const raw = String(depthInput.value).trim().replace(',', '.');
+    const n = Math.round(Number(raw));
+    if (raw === '' ) delete z.depth;
+    else if (Number.isFinite(n) && n >= 10 && n <= 500) z.depth = n;
+    else { depthHint.textContent = 'Profondeur entre 10 et 500 cm.'; return; }
+    limit = PAGE; refresh();
+  };
+  depthInput.addEventListener('change', commitDepth);
+  depthInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); commitDepth(); } });
+  function drawPond() {
+    const z = zone();
+    const isPond = z.type === 'pond';
+    pondBox.hidden = !isPond;
+    pondExcluded.hidden = true;
+    if (!isPond) { pondAlert.hidden = true; pondZoneId = null; return; }
+    const area = pondArea(z), depth = pondDepth(z);
+    if (pondZoneId !== z.id || document.activeElement !== depthInput) depthInput.value = String(depth);
+    pondZoneId = z.id;
+    depthHint.textContent = z.depth > 0 ? `Valeur saisie (estimation d’après la surface : ${estimatePondDepth(area)} cm).` : 'Valeur estimée d’après la surface : modifiez-la si vous la connaissez.';
+    // essences de mare étiquetées : adaptées / écartées
+    let all = [];
+    try { all = recommendForZone(garden, z, { includeDiscouraged: true, includeForbidden: true }) || []; } catch { /* */ }
+    const tagged = all.filter((r) => pondTag(r.plant) || (pondTreeRule(r.plant) && (r.plant.zones || []).includes('pond')) || pondTreeRule(r.plant) === 'willow');
+    const out = tagged.map((r) => ({ p: r.plant, fit: pondFit(r.plant, z) })).filter((x) => !x.fit.ok);
+    const okN = tagged.length - out.length;
+    pondSummary.textContent = `Mare de ${fmtArea(area)}, profondeur ${depth} cm : ${okN} essence${okN > 1 ? 's' : ''} adaptée${okN > 1 ? 's' : ''}, ${out.length} écartée${out.length > 1 ? 's' : ''}.`;
+    if (out.length) {
+      pondExcluded.hidden = false;
+      pondExcluded.replaceChildren(h('summary', null, `Écartées pour cette mare (${out.length})`),
+        h('ul', { class: 'reasons' }, out.map(({ p, fit }) => h('li', { class: 'ko', 'data-plant': p.id, 'data-level': fit.level },
+          h('strong', null, p.commonName), ' : ', fit.reasons.join(' ; ')))));
+    } else pondExcluded.replaceChildren();
+    // essences déjà choisies devenues inadaptées (mare redimensionnée, profondeur modifiée)
+    const bad = (z.plantings || []).map((pl) => ({ pl, p: getPlant(pl.plantId) })).filter((x) => x.p && pondConcerned(x.p) && !pondFit(x.p, z).ok);
+    if (bad.length) {
+      pondAlert.hidden = false;
+      pondAlert.replaceChildren(
+        h('p', null, `⚠️ La mare a changé (${fmtArea(area)}, ${depth} cm) : ${bad.map((x) => x.p.commonName).join(', ')} ne ${bad.length > 1 ? 'conviennent' : 'convient'} plus.`),
+        h('button', { class: 'btn btn-sm', type: 'button', 'data-act': 'pond-remove-bad', onclick: () => {
+          const ids = new Set(bad.map((x) => x.pl));
+          z.plantings = (z.plantings || []).filter((x) => !ids.has(x));
+          refresh();
+        } }, 'Retirer ces essences'));
+    } else { pondAlert.hidden = true; pondAlert.replaceChildren(); }
   }
   function typical(p, z) {
     const a = zoneAmbiance(z);
@@ -386,7 +478,14 @@ export function mountPlants(el, { garden, onChange, getPhoto = getPlantPhoto, IO
       toast('Massif recalculé : nouvelle combinaison de plantes.');
     } catch (e) { toast('Recalcul impossible : ' + (e && e.message ? e.message : 'erreur')); }
   }
-  const zoneSel = h('select', { id: 'zone-sel', onchange: (e) => { zoneId = e.target.value; limit = PAGE; drawZoneInfo(); drawChosen(); drawList(); drawBudget(); } },
+  const pickZone = (id) => { zoneId = id; limit = PAGE; drawZoneInfo(); drawChosen(); drawList(); drawWarnings(); drawBudget(); };
+  function openPlanPreview(tab = 'zones') {
+    import('./preview-overlay.js').then((m) => {
+      const ov = m.openPreview(garden, { zoneId: zone().id, tab, onSelectZone: (id) => { if (garden.zones.some((q) => q.id === id)) { zoneSel.value = id; pickZone(id); } } });
+      void ov;
+    }).catch((e) => toast('Aperçu indisponible : ' + (e && e.message ? e.message : 'erreur')));
+  }
+  const zoneSel = h('select', { id: 'zone-sel', onchange: (e) => pickZone(e.target.value) },
     garden.zones.map((z) => h('option', { value: z.id, selected: z.id === zoneId }, optLabel(z))));
   const zoneInfo = h('p', { class: 'muted' });
   const zoneHead = h('div', { class: 'zone-head', 'data-role': 'zone-head' });
@@ -402,15 +501,16 @@ export function mountPlants(el, { garden, onChange, getPhoto = getPlantPhoto, IO
     const z = zone();
     Array.from(zoneSel.options).forEach((o) => { const q = garden.zones.find((x) => x.id === o.value); if (q) o.textContent = optLabel(q); });
     const amb = ambianceOf(zoneAmbiance(z));
-    zoneHead.replaceChildren(
+    zoneHead.replaceChildren(...[
       h('div', { class: 'zone-head-txt' },
         h('strong', { 'data-role': 'zone-head-name' }, z.label || 'Zone', z.auto ? h('span', { class: 'auto-badge', 'data-role': 'auto-badge', title: 'Massif calculé par l’app' }, '✨ auto') : null),
         h('span', { class: 'amb-tag', 'data-role': 'zone-head-ambiance' }, amb ? `${amb.emoji} ambiance ${amb.label.toLowerCase()}` : 'Ambiance : peu importe')),
       h('button', { class: 'btn btn-sm', type: 'button', 'data-act': 'change-ambiance', onclick: changeAmbiance }, 'Changer l’ambiance'),
+      h('button', { class: 'btn btn-sm', type: 'button', 'data-act': 'preview-zone', onclick: () => openPlanPreview('zones') }, '🗺️ Voir cette zone sur le plan'),
       zoneMaintenancePicker(garden, z, { onChange: () => { limit = PAGE; refresh(); } }),
       z.auto && z.autoInfo && z.autoInfo.why ? h('div', { class: 'auto-info', 'data-role': 'auto-info' },
         h('p', null, z.autoInfo.why),
-        h('button', { class: 'btn btn-sm', type: 'button', 'data-act': 'recalc-bed', onclick: recalcBed }, '🎲 Recalculer ce massif')) : null);
+        h('button', { class: 'btn btn-sm', type: 'button', 'data-act': 'recalc-bed', onclick: recalcBed }, '🎲 Recalculer ce massif')) : null].filter(Boolean));
     let a = 0; try { a = shapeArea(z.shape); } catch { /* */ }
     const t = getZoneType(z.type);
     zoneInfo.textContent = `${t ? t.label : z.type} · ${a.toFixed(a < 10 ? 1 : 0).replace('.', ',')} m²`;
@@ -518,7 +618,8 @@ export function mountPlants(el, { garden, onChange, getPhoto = getPlantPhoto, IO
     refresh();
     drawZoneInfo();
     const sm = summarizeGarden(garden, getPlant);
-    summaryEl.textContent = summaryText(sm, targets) + (max && sm.total > max ? ` (au-dessus du budget de ${formatEuro(max, { digits: 0 })})` : '');
+    const spacingOk = targets.every((z) => { try { return !checkSpacing(garden, z, getPlant).some((w) => w.kind === 'surdensite' || w.kind === 'arbres-proches' || w.kind === 'pied-arbre'); } catch { return true; } });
+    summaryEl.textContent = summaryText(sm, targets) + (spacingOk ? ' · espacements respectés' : '') + (max && sm.total > max ? ` (au-dessus du budget de ${formatEuro(max, { digits: 0 })})` : '');
     toast('Sélection proposée : retouchez-la à votre guise ou annulez-la.');
   }
 
@@ -537,6 +638,7 @@ export function mountPlants(el, { garden, onChange, getPhoto = getPlantPhoto, IO
   function syncMaint() { const c = gardenMaint.querySelector('.maint-chips'); if (c) c.setValue(levelForZone(garden, null)); }
 
   el.replaceChildren(
+    h('button', { class: 'btn btn-block btn-xl', type: 'button', id: 'btn-preview', 'data-act': 'preview', onclick: () => openPlanPreview('zones') }, '🗺️ Revoir le plan et la 3D'),
     h('section', { class: 'card', 'data-role': 'maintenance-card' }, gardenMaint),
     h('section', { class: 'card surprise-all' },
       allBtn,
@@ -544,12 +646,12 @@ export function mountPlants(el, { garden, onChange, getPhoto = getPlantPhoto, IO
       summaryEl, undoBtn),
     warnBox,
     h('section', { class: 'card' },
-      h('div', { class: 'field' }, h('label', { for: 'zone-sel' }, 'Zone'), zoneSel), zoneHead, zoneInfo, chosenBox, surprise),
+      h('div', { class: 'field' }, h('label', { for: 'zone-sel' }, 'Zone'), zoneSel), zoneHead, zoneInfo, pondBox, chosenBox, surprise),
     h('section', { class: 'card' },
       h('h3', null, 'Essences conseillées'),
       h('div', { class: 'field' }, h('label', { for: 'plant-search' }, 'Rechercher (nom commun ou latin)'),
         h('input', { id: 'plant-search', type: 'search', oninput: (e) => { query = e.target.value; limit = PAGE; drawList(); } })),
-      filterBox, listBox, moreBox),
+      filterBox, listBox, moreBox, pondExcluded),
     h('div', { class: 'budget-spacer', 'aria-hidden': 'true' }),
     budgetBar);
   drawZoneInfo(); drawChosen(); drawList(); drawWarnings(); drawBudget();
