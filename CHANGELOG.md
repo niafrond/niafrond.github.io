@@ -1,3 +1,9 @@
+## [3.46.0](https://github.com/niafrond/niafrond.github.io/compare/v3.45.0...v3.46.0) (2026-11-26)
+
+### Features
+
+* **jardin:** atelier plein écran pour les écrans de dessin et Rendu ([#807](https://github.com/niafrond/niafrond.github.io/issues/807)) ([743a73d](https://github.com/niafrond/niafrond.github.io/commit/743a73d27716b840066402e06fdb3dec7d1ddc64))
+
 ## [3.45.0](https://github.com/niafrond/niafrond.github.io/compare/v3.44.0...v3.45.0) (2026-11-26)
 
 ### Features
