@@ -1,3 +1,9 @@
+## [3.49.0](https://github.com/niafrond/niafrond.github.io/compare/v3.48.0...v3.49.0) (2026-11-27)
+
+### Features
+
+* **jardin:** PDF en arrière-plan avec notification, photo dans la fiche 3D ([#810](https://github.com/niafrond/niafrond.github.io/issues/810)) ([57c27cf](https://github.com/niafrond/niafrond.github.io/commit/57c27cf7520f62c4d3f4c390cda61018f52e9ef3))
+
 ## [3.48.0](https://github.com/niafrond/niafrond.github.io/compare/v3.47.0...v3.48.0) (2026-11-27)
 
 ### Features
