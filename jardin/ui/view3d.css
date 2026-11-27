@@ -121,6 +121,10 @@
 .v3d--mobile .v3d-label { min-height: 24px; }
 
 .v3d-card { position: absolute; left: 12px; bottom: 56px; z-index: 4; width: min(300px, calc(100vw - 24px)); padding: 10px 14px 12px; border-radius: 14px; background: #141d17f2; border: 1px solid #ffffff2e; box-shadow: 0 8px 30px #0008; color: #e8f0ea; font-size: 13px; }
+.v3d-card-photo { position: relative; margin: -10px -14px 8px; height: 130px; border-radius: 14px 14px 0 0; overflow: hidden; background: #0d1410; }
+.v3d-card-photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.v3d-card-credit { position: absolute; right: 6px; bottom: 4px; font-size: 10px; color: #fff; background: #0009; padding: 1px 6px; border-radius: 8px; }
+.v3d-card-close { background: #0008 !important; }
 .v3d-card-name { display: block; font-size: 15px; padding-right: 30px; }
 .v3d-card-latin { display: block; color: #9fd2b0; font-size: 12.5px; margin-bottom: 4px; }
 .v3d-card-rows { display: grid; grid-template-columns: auto 1fr; gap: 3px 10px; margin: 6px 0 0; }

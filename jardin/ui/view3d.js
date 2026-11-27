@@ -205,6 +205,7 @@ export function mountView3D(el, { garden, onClose } = {}) {
   };
   const labelsUI = createLabelsUI({
     root, mobile, project: projectAnchor,
+    cameraPos: () => (camera ? { x: camera.position.x, y: camera.position.y, z: camera.position.z } : null),
     viewport: () => ({ width: stage.clientWidth || window.innerWidth || 1280, height: stage.clientHeight || window.innerHeight || 800 }),
     safeRects,
     onHighlight: (ids) => { if (api3) api3.setHighlight(ids); refreshLegendPressed(); markDirty(); },

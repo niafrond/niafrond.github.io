@@ -1,7 +1,8 @@
 // Calque d'étiquettes HTML de la vue 3D : pastilles projetées depuis les ancres 3D, désencombrées en espace écran,
 // sélection d'une essence (mise en évidence + fiche). Indépendant de three.js : la projection est fournie par l'appelant.
 import { h, svgEl } from './draw-util.js';
-import { applyGrowth, declutter, ficheRows, renderIdsOfEssence, estimateWidth, LABEL } from '../gl-labels.js';
+import { getPlantPhoto } from '../photos.js';
+import { applyGrowth, declutter, occludedKeys, ficheRows, renderIdsOfEssence, estimateWidth, LABEL } from '../gl-labels.js';
 
 /** Mesure de texte réelle (canvas) si disponible, sinon estimation. */
 function makeMeasure() {
@@ -24,7 +25,7 @@ function makeMeasure() {
  *   viewport:()=>{width:number,height:number}, safeRects?:()=>{x:number,y:number,w:number,h:number}[],
  *   onHighlight?:(ids:Set<string>|null)=>void, onFocus?:(group:object)=>void}} cfg
  */
-export function createLabelsUI({ root, mobile = false, project, viewport, safeRects = () => [], onHighlight = () => {}, onFocus = () => {} }) {
+export function createLabelsUI({ root, mobile = false, project, viewport, safeRects = () => [], onHighlight = () => {}, onFocus = () => {}, cameraPos = () => null, getPhoto = getPlantPhoto }) {
   const layer = h('div', { class: 'v3d-labels', 'data-role': 'labels' });
   const leads = svgEl('svg', { class: 'v3d-leads', 'aria-hidden': 'true' });
   layer.append(leads);
@@ -48,8 +49,22 @@ export function createLabelsUI({ root, mobile = false, project, viewport, safeRe
     if (!g) { card.hidden = true; card.textContent = ''; return; }
     card.hidden = false; card.textContent = '';
     const close = h('button', { type: 'button', class: 'v3d-card-close', 'aria-label': 'Fermer la fiche', 'data-act': 'card-close', onclick: () => clear() }, '✕');
+    const plant = g.catalog || g.plant || null;
+    const photoBox = h('div', { class: 'v3d-card-photo', 'data-role': 'card-photo', hidden: true });
+    const credit = h('span', { class: 'v3d-card-credit' });
+    if (plant && plant.id) {
+      const key = st.selected;
+      Promise.resolve().then(() => getPhoto(plant)).then((ph) => {
+        if (!ph || !ph.url || st.selected !== key || !photoBox.isConnected) return;
+        const img = h('img', { src: ph.medium || ph.url, alt: `Photo de ${g.name}`, decoding: 'async' });
+        img.addEventListener('error', () => { if (img.src !== ph.url) img.src = ph.url; else photoBox.hidden = true; });
+        img.addEventListener('load', () => { photoBox.hidden = false; credit.textContent = ph.credit || 'Photo : Wikipédia'; });
+        photoBox.replaceChildren(img, credit);
+      }).catch(() => {});
+    }
     card.append(
       close,
+      photoBox,
       h('strong', { class: 'v3d-card-name', 'data-role': 'card-name' }, g.name),
       g.latin ? h('em', { class: 'v3d-card-latin' }, g.latin) : null,
       h('dl', { class: 'v3d-card-rows' }, ficheRows(g).map((r) => [h('dt', null, r.label), h('dd', null, r.value)])),
@@ -132,7 +147,8 @@ export function createLabelsUI({ root, mobile = false, project, viewport, safeRe
     if (!st.names || !st.groups.length) { if (els.size) clearDom(); return []; }
     const vp = viewport();
     const proj = new Map();
-    for (const g of st.groups) { const p = project(g.anchor); if (p) proj.set(g.key, p); }
+    const hidden = occludedKeys(st.groups, cameraPos(), { keep: st.selected });
+    for (const g of st.groups) { const p = project(g.anchor); if (p) proj.set(g.key, hidden.has(g.key) ? { ...p, visible: false } : p); }
     // le groupe sélectionné garde toujours son étiquette (priorité maximale)
     const gs = st.selected ? st.groups.map((g) => (g.key === st.selected ? { ...g, priority: 1e12 } : g)) : st.groups;
     const safe = (safeRects() || []).filter((r) => r && r.w > 0 && r.h > 0);

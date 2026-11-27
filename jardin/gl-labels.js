@@ -331,3 +331,43 @@ export function declutter(groups, projected, o = {}) {
   }
   return out;
 }
+
+/** Part du rayon réel du houppier / de la touffe prise en compte pour masquer (les bords clairsemés ne cachent pas). */
+export const OCCLUDE_RADIUS_RATIO = 0.8;
+
+/**
+ * Clés des groupes dont l'ancre est cachée, depuis la caméra, par un autre groupe de plantes (arbre, haie, massif) :
+ * chaque groupe est approché par un cylindre vertical (centre = ancre en x/z, rayon × 0,8, de 0 à sa hauteur) ;
+ * l'ancre est cachée si le segment caméra → ancre traverse un tel cylindre avant d'arriver.
+ * @param {object[]} groups  groupes de `buildLabelGroups` (hauteurs appliquées)
+ * @param {{x:number,y:number,z:number}} cam  position de la caméra (y = hauteur)
+ * @param {{keep?:string|null}} [o]  `keep` : clé jamais masquée (groupe sélectionné)
+ * @returns {Set<string>}
+ */
+export function occludedKeys(groups, cam, o = {}) {
+  const out = new Set();
+  if (!cam || ![cam.x, cam.y, cam.z].every(Number.isFinite)) return out;
+  const gs = (groups || []).filter((g) => g && g.anchor && Number.isFinite(g.radius) && Number.isFinite(g.heightM));
+  for (const a of gs) {
+    if (o.keep && a.key === o.keep) continue;
+    const dx = a.anchor.x - cam.x; const dz = a.anchor.z - cam.z; const dy = a.anchor.y - cam.y;
+    const A = dx * dx + dz * dz;
+    for (const b of gs) {
+      if (b === a) continue;
+      const r = Math.max(0.05, b.radius * OCCLUDE_RADIUS_RATIO);
+      const fx = cam.x - b.anchor.x; const fz = cam.z - b.anchor.z;
+      let t0; let t1;
+      if (A < 1e-9) { if (fx * fx + fz * fz > r * r) continue; t0 = 0; t1 = 1; } else {
+        const B = 2 * (fx * dx + fz * dz); const C = fx * fx + fz * fz - r * r;
+        const disc = B * B - 4 * A * C;
+        if (disc <= 0) continue;
+        const s = Math.sqrt(disc); t0 = (-B - s) / (2 * A); t1 = (-B + s) / (2 * A);
+      }
+      t0 = Math.max(0, t0); t1 = Math.min(0.98, t1); // devant l'ancre uniquement
+      if (t0 >= t1) continue;
+      const y0 = cam.y + dy * t0; const y1 = cam.y + dy * t1;
+      if (Math.min(y0, y1) < b.heightM) { out.add(a.key); break; }
+    }
+  }
+  return out;
+}
