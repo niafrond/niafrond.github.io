@@ -1,3 +1,9 @@
+## [3.48.0](https://github.com/niafrond/niafrond.github.io/compare/v3.47.0...v3.48.0) (2026-11-27)
+
+### Features
+
+* **jardin:** toucher une plante en 3D ouvre sa fiche avec photo et téléchargement ([#809](https://github.com/niafrond/niafrond.github.io/issues/809)) ([2bfd93b](https://github.com/niafrond/niafrond.github.io/commit/2bfd93bee3ff5517534159f2f14443b5de68e781))
+
 ## [3.47.0](https://github.com/niafrond/niafrond.github.io/compare/v3.46.0...v3.47.0) (2026-11-27)
 
 ### Features
