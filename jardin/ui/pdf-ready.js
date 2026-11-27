@@ -9,11 +9,11 @@ export function setPdfCancel(fn) { jobs.cancel = fn; }
 
 export function mountPdfReady({ deps = {} } = {}) {
   const bar = h('div', { class: 'pdf-ready', 'data-role': 'pdf-ready', role: 'status', 'aria-live': 'polite', hidden: true,
-    style: { position: 'fixed', left: '8px', right: '8px', bottom: 'calc(8px + env(safe-area-inset-bottom, 0px))', zIndex: 60, display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap',
+    style: { position: 'fixed', left: '8px', right: '8px', bottom: 'calc(8px + env(safe-area-inset-bottom, 0px))', zIndex: 60, display: 'none', gap: '8px', alignItems: 'center', flexWrap: 'wrap',
       padding: '10px 12px', borderRadius: '12px', background: 'var(--card, #fff)', color: 'var(--fg, #1d2a1f)', border: '1px solid var(--line, #ccc)', boxShadow: '0 6px 24px #0004' } });
   document.body.append(bar);
-  const set = (...kids) => { bar.hidden = false; bar.replaceChildren(...kids.filter(Boolean)); };
-  const hide = () => { bar.hidden = true; bar.replaceChildren(); };
+  const set = (...kids) => { bar.hidden = false; bar.style.display = 'flex'; bar.replaceChildren(...kids.filter(Boolean)); };
+  const hide = () => { bar.hidden = true; bar.style.display = 'none'; bar.replaceChildren(); };
   const text = (t) => h('span', { style: { flex: '1 1 160px' }, 'data-role': 'pdf-ready-text' }, t);
 
   async function showReady() {

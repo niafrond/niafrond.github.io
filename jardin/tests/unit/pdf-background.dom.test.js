@@ -30,6 +30,10 @@ test('en arrière-plan : la fenêtre se ferme, le PDF est gardé, une notificati
   banner.destroy();
 });
 
+test('bandeau masqué au repos : aucun encombrement', () => {
+  const b = mountPdfReady(); expect(getComputedStyle(b.el).display).toBe('none'); b.destroy();
+});
+
 test('annuler depuis le bandeau interrompt la génération détachée', async () => {
   let aborted = false;
   const build = (g, o, env) => new Promise((res, rej) => env.signal.addEventListener('abort', () => { aborted = true; rej(Object.assign(new Error('x'), { name: 'AbortError' })); }));
