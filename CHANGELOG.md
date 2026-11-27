@@ -1,3 +1,9 @@
+## [3.47.0](https://github.com/niafrond/niafrond.github.io/compare/v3.46.0...v3.47.0) (2026-11-27)
+
+### Features
+
+* **jardin:** noms des plantes en 3D, photo dans la fiche, occultation par les plantes ([#808](https://github.com/niafrond/niafrond.github.io/issues/808)) ([41f91e1](https://github.com/niafrond/niafrond.github.io/commit/41f91e13b0b0c0b42c5b6ae66c007222774e32fb))
+
 ## [3.46.0](https://github.com/niafrond/niafrond.github.io/compare/v3.45.0...v3.46.0) (2026-11-26)
 
 ### Features
