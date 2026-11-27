@@ -172,7 +172,8 @@ export function mountView3D(el, { garden, onClose } = {}) {
   const panel = h('aside', { class: 'v3d-panel', 'data-role': 'panel' }, panelBody);
   const toggle = h('button', { type: 'button', class: 'v3d-btn v3d-toggle', 'data-act': 'toggle-panel', 'aria-expanded': 'true', 'aria-label': 'Réglages' }, '⚙ Réglages');
   const closeBtn = h('button', { type: 'button', class: 'v3d-btn v3d-close', 'data-act': 'close', 'aria-label': 'Fermer la vue 3D (Échap)' }, '✕ Fermer');
-  const top = h('header', { class: 'v3d-top' }, h('strong', { class: 'v3d-title' }, `🧊 ${g.name || 'Mon jardin'} — vue 3D`), h('span', { class: 'v3d-spacer' }), toggle, closeBtn);
+  const dlBtn = h('button', { type: 'button', class: 'v3d-btn v3d-dl', 'data-act': 'photo-top', 'aria-label': 'Télécharger le rendu photo haute qualité' }, '⬇ Photo HD');
+  const top = h('header', { class: 'v3d-top' }, h('strong', { class: 'v3d-title' }, `🧊 ${g.name || 'Mon jardin'} — vue 3D`), h('span', { class: 'v3d-spacer' }), dlBtn, toggle, closeBtn);
   const help = h('div', { class: 'v3d-help', 'data-role': 'help' }, 'Clic gauche : tourner · clic droit : déplacer · molette : zoom · « À hauteur d’yeux » : ZQSD/WASD + souris · Échap : fermer');
   const hud = h('div', { class: 'v3d-hud' }, mobile ? null : info, h('div', { class: 'v3d-fps' }, fpsEl));
   if (mobile) panelBody.append(h('section', null, h('h3', null, 'Informations'), info));
@@ -310,7 +311,7 @@ export function mountView3D(el, { garden, onClose } = {}) {
     controls.addEventListener('change', markDirty);
     controls.addEventListener('start', () => { gesture = true; if (mobile) labelsUI.setMoving(true); });
     controls.addEventListener('end', () => { gesture = false; labelsDirty = true; });
-    attachLook();
+    attachLook(); attachPick();
   }
   function computeQuality() {
     return resolveQuality(S.qualityResolved, { maxTextureSize: renderer.capabilities.maxTextureSize, dpr: window.devicePixelRatio || 1, mobile, strongGpu: isStrongMobileGpu(S.gpu) });
@@ -434,6 +435,36 @@ export function mountView3D(el, { garden, onClose } = {}) {
     }
     refreshLabels(); markDirty();
   }
+  // ── toucher / cliquer une plante : fiche détail + mise en évidence de son essence ──
+  let rayc = null; let ndc = null;
+  function pickAt(clientX, clientY) {
+    if (!api3 || !camera || !THREE || !labelsUI) return null;
+    const r = canvas.getBoundingClientRect();
+    if (!r.width || !r.height) return null;
+    if (!rayc) { rayc = new THREE.Raycaster(); ndc = new THREE.Vector2(); }
+    ndc.set(((clientX - r.left) / r.width) * 2 - 1, -((clientY - r.top) / r.height) * 2 + 1);
+    camera.updateMatrixWorld();
+    rayc.setFromCamera(ndc, camera);
+    const hits = rayc.intersectObjects(api3.plantsGroup.children, false);
+    const hit = hits.find((x) => x.object && x.object.userData && x.object.userData.plantId && x.object.visible !== false);
+    if (!hit) return null;
+    const gs = labelsUI.groups().filter((g) => g.essence === hit.object.userData.plantId);
+    if (!gs.length) return null;
+    let best = gs[0]; let bd = Infinity;
+    for (const g of gs) { const d = (g.anchor.x - hit.point.x) ** 2 + (g.anchor.z - hit.point.z) ** 2; if (d < bd) { bd = d; best = g; } }
+    return best.key;
+  }
+  function attachPick() {
+    let down = null;
+    canvas.addEventListener('pointerdown', (e) => { down = { x: e.clientX, y: e.clientY, t: performance.now(), id: e.pointerId }; });
+    canvas.addEventListener('pointercancel', () => { down = null; });
+    canvas.addEventListener('pointerup', (e) => {
+      const d = down; down = null;
+      if (!d || d.id !== e.pointerId || Math.hypot(e.clientX - d.x, e.clientY - d.y) > 8 || performance.now() - d.t > 450) return;
+      const key = pickAt(e.clientX, e.clientY);
+      if (key) { if (labelsUI.selected() !== key) labelsUI.select(key); } else labelsUI.clear();
+    });
+  }
   function attachLook() {
     const down = (e) => { if (S.mode !== 'eye') return; fp.look = { x: e.clientX, y: e.clientY }; try { canvas.setPointerCapture(e.pointerId); } catch (err) { /* ignoré */ } };
     const move = (e) => {
@@ -549,6 +580,7 @@ export function mountView3D(el, { garden, onClose } = {}) {
       prog.hidden = true; S.photoBusy = false; busy = false; resize(); markDirty();
     }
   }
+  dlBtn.addEventListener('click', () => { photo().catch((e) => showError(`Rendu photo impossible : ${e.message || e}`)); });
   photoBtn.addEventListener('click', () => { photo().catch((e) => showError(`Rendu photo impossible : ${e.message || e}`)); });
   prog.querySelector('[data-act=photo-cancel]').addEventListener('click', () => { cancelPhoto = true; });
 
@@ -625,7 +657,7 @@ export function mountView3D(el, { garden, onClose } = {}) {
   // ── API de test / pilotage ──
   const api = {
     snapshot() { api3.update({}); renderer.render(api3.scene, camera); return canvas.toDataURL('image/png'); },
-    setHour, setDate, setDoy, playYear, setAge, setQuality, setView, photo,
+    setHour, setDate, setDoy, playYear, setAge, setQuality, setView, photo, pickAt,
     info: () => ({ gpu: S.gpu, software: S.software, quality: S.qualityResolved, fps: S.fps, generation: api3 && api3.generation, canvas, webgl2: true, instances: api3 && api3.stats.instances, state: { ...S }, labels: labelsUI.visible().length }),
     labels: labelsUI, setNames,
     get camera() { return camera; },

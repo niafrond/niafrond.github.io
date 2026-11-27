@@ -15,13 +15,21 @@ test('la photo apparaît dans la fiche', async () => {
   ui.select('a'); await tick();
   const img = root.querySelector('.v3d-card-photo img'); expect(img).not.toBeNull();
   img.dispatchEvent(new Event('load'));
-  expect(root.querySelector('.v3d-card-photo').hidden).toBe(false);
+  expect(root.querySelector('.v3d-card-photo').classList.contains('is-placeholder')).toBe(false);
   expect(root.querySelector('.v3d-card-credit').textContent).toContain('Wikipédia');
 });
 
-test('sans photo, la fiche reste sans cadre photo', async () => {
+test('sans photo, la fiche garde un cadre de remplacement aux couleurs de la plante', async () => {
   const { root, ui } = mk(async () => null);
   ui.select('a'); await tick();
-  expect(root.querySelector('.v3d-card-photo').hidden).toBe(true);
+  expect(root.querySelector('.v3d-card-photo').classList.contains('is-placeholder')).toBe(true);
+  expect(root.querySelector('.v3d-card-photo img')).toBeNull();
   expect(root.querySelector('[data-role=card-name]').textContent).toBe('Lavande vraie');
+});
+
+test('la fiche propose un bouton de téléchargement de la photo', async () => {
+  const { root, ui } = mk(async () => ({ url: 'http://x/a.jpg', credit: 'Photo : Wikipédia' }));
+  ui.select('a'); await tick();
+  const btn = root.querySelector('.v3d-card-photo [data-act=card-download]');
+  expect(btn).not.toBeNull(); expect(btn.textContent).toContain('Photo');
 });

@@ -225,3 +225,20 @@ test.describe('mobile', () => {
     }
   });
 });
+
+test('noms 3D : cliquer une plante dans la scène ouvre sa fiche (photo ou cadre) et met son essence en évidence', async ({ page }) => {
+  await ouvrir(page);
+  await settle(page, 1);
+  const pt = await page.evaluate(() => {
+    const c = document.querySelector('canvas'); const r = c.getBoundingClientRect();
+    for (let y = 0.3; y < 0.95; y += 0.04) for (let x = 0.1; x < 0.9; x += 0.04) {
+      const px = r.left + r.width * x; const py = r.top + r.height * y;
+      const k = window.__un.api.pickAt(px, py); if (k) return { x: px, y: py, k };
+    }
+    return null;
+  });
+  expect(pt, 'une plante doit être touchable dans la scène').not.toBeNull();
+  await page.mouse.click(pt.x, pt.y);
+  await expect(page.locator('[data-role=label-card]')).toBeVisible();
+  await expect(page.locator('[data-role=card-photo]')).toBeVisible();
+});

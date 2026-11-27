@@ -1,6 +1,6 @@
 // Calque d'étiquettes HTML de la vue 3D : pastilles projetées depuis les ancres 3D, désencombrées en espace écran,
 // sélection d'une essence (mise en évidence + fiche). Indépendant de three.js : la projection est fournie par l'appelant.
-import { h, svgEl } from './draw-util.js';
+import { h, svgEl, saveBlob } from './draw-util.js';
 import { getPlantPhoto } from '../photos.js';
 import { applyGrowth, declutter, occludedKeys, ficheRows, renderIdsOfEssence, estimateWidth, LABEL } from '../gl-labels.js';
 
@@ -50,16 +50,26 @@ export function createLabelsUI({ root, mobile = false, project, viewport, safeRe
     card.hidden = false; card.textContent = '';
     const close = h('button', { type: 'button', class: 'v3d-card-close', 'aria-label': 'Fermer la fiche', 'data-act': 'card-close', onclick: () => clear() }, '✕');
     const plant = g.catalog || g.plant || null;
-    const photoBox = h('div', { class: 'v3d-card-photo', 'data-role': 'card-photo', hidden: true });
+    const c = g.colors || {};
+    const photoBox = h('div', { class: 'v3d-card-photo is-placeholder', 'data-role': 'card-photo', style: `background:linear-gradient(135deg, ${c.foliage || '#3f7a4a'}, ${c.flower || c.foliage || '#6aa56f'})` },
+      h('span', { class: 'v3d-card-ph' }, g.source === 'existant' ? '🌳' : '🌿'));
     const credit = h('span', { class: 'v3d-card-credit' });
     if (plant && plant.id) {
       const key = st.selected;
       Promise.resolve().then(() => getPhoto(plant)).then((ph) => {
         if (!ph || !ph.url || st.selected !== key || !photoBox.isConnected) return;
         const img = h('img', { src: ph.medium || ph.url, alt: `Photo de ${g.name}`, decoding: 'async' });
-        img.addEventListener('error', () => { if (img.src !== ph.url) img.src = ph.url; else photoBox.hidden = true; });
-        img.addEventListener('load', () => { photoBox.hidden = false; credit.textContent = ph.credit || 'Photo : Wikipédia'; });
-        photoBox.replaceChildren(img, credit);
+        img.addEventListener('error', () => { if (img.src !== ph.url) img.src = ph.url; else img.remove(); });
+        img.addEventListener('load', () => { photoBox.classList.remove('is-placeholder'); photoBox.querySelector('.v3d-card-ph')?.remove(); credit.textContent = ph.credit || 'Photo : Wikipédia'; });
+        const dl = h('button', { type: 'button', class: 'v3d-card-dl', 'data-act': 'card-download', onclick: async (e) => {
+          e.stopPropagation();
+          try {
+            const r = await fetch(ph.large || ph.url); if (!r.ok) throw new Error('http');
+            const b = await r.blob();
+            await saveBlob(b, `${String(g.name).toLowerCase().normalize('NFD').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'plante'}.${/png/.test(b.type) ? 'png' : 'jpg'}`);
+          } catch (err) { window.open(ph.page || ph.url, '_blank', 'noopener'); }
+        } }, '⬇ Photo');
+        photoBox.append(img, credit, dl);
       }).catch(() => {});
     }
     card.append(
