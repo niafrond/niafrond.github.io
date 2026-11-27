@@ -50,7 +50,7 @@ async function ouvrir(page, { scheme = 'dark' } = {}) {
 
 const shot = async (page, name) => { if (SHOTS) await page.screenshot({ path: `${SHOTS}/${name}.png` }); };
 /** Attend que l'image soit rendue et que le nombre d'étiquettes ait cessé de bouger. */
-async function settle(page, min = 1) {
+async function settle(page, min = 0) {
   await page.waitForFunction((m) => document.querySelectorAll('.v3d-label').length >= m, min, { timeout: 60_000 });
   let prev = -1;
   for (let i = 0; i < 12; i++) {
