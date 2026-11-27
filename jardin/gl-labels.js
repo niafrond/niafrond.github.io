@@ -210,6 +210,7 @@ export function buildLabelGroups(garden, { plantsById, age = 1, month = null, ex
       bloom: (plant && Array.isArray(plant.bloom)) ? plant.bloom.slice() : [],
       priceEur: plant && typeof plant.priceEur === 'number' && Number.isFinite(plant.priceEur) ? plant.priceEur : null,
       priceUnit: (plant && plant.priceUnit) || 'plant',
+      photo: { id: String(first.plantId || first.essence), commonName: first.name, latinName: first.latin, wiki: (plant && plant.wiki) || undefined },
       individual: !!first.individual, tree: !!first.tree, ghost: members.every((m) => m.ghost),
       hAdult, fixedH: members.every((m) => m.fixedH), seasonKind: seasonKindOf(plant, first.habit),
     });

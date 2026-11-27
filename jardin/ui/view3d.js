@@ -172,8 +172,7 @@ export function mountView3D(el, { garden, onClose } = {}) {
   const panel = h('aside', { class: 'v3d-panel', 'data-role': 'panel' }, panelBody);
   const toggle = h('button', { type: 'button', class: 'v3d-btn v3d-toggle', 'data-act': 'toggle-panel', 'aria-expanded': 'true', 'aria-label': 'Réglages' }, '⚙ Réglages');
   const closeBtn = h('button', { type: 'button', class: 'v3d-btn v3d-close', 'data-act': 'close', 'aria-label': 'Fermer la vue 3D (Échap)' }, '✕ Fermer');
-  const dlBtn = h('button', { type: 'button', class: 'v3d-btn v3d-dl', 'data-act': 'photo-top', 'aria-label': 'Télécharger le rendu photo haute qualité' }, '⬇ Photo HD');
-  const top = h('header', { class: 'v3d-top' }, h('strong', { class: 'v3d-title' }, `🧊 ${g.name || 'Mon jardin'} — vue 3D`), h('span', { class: 'v3d-spacer' }), dlBtn, toggle, closeBtn);
+  const top = h('header', { class: 'v3d-top' }, h('strong', { class: 'v3d-title' }, `🧊 ${g.name || 'Mon jardin'} — vue 3D`), h('span', { class: 'v3d-spacer' }), toggle, closeBtn);
   const help = h('div', { class: 'v3d-help', 'data-role': 'help' }, 'Clic gauche : tourner · clic droit : déplacer · molette : zoom · « À hauteur d’yeux » : ZQSD/WASD + souris · Échap : fermer');
   const hud = h('div', { class: 'v3d-hud' }, mobile ? null : info, h('div', { class: 'v3d-fps' }, fpsEl));
   if (mobile) panelBody.append(h('section', null, h('h3', null, 'Informations'), info));
@@ -580,7 +579,6 @@ export function mountView3D(el, { garden, onClose } = {}) {
       prog.hidden = true; S.photoBusy = false; busy = false; resize(); markDirty();
     }
   }
-  dlBtn.addEventListener('click', () => { photo().catch((e) => showError(`Rendu photo impossible : ${e.message || e}`)); });
   photoBtn.addEventListener('click', () => { photo().catch((e) => showError(`Rendu photo impossible : ${e.message || e}`)); });
   prog.querySelector('[data-act=photo-cancel]').addEventListener('click', () => { cancelPhoto = true; });
 

@@ -227,6 +227,9 @@ test.describe('mobile', () => {
 });
 
 test('noms 3D : cliquer une plante dans la scène ouvre sa fiche (photo ou cadre) et met son essence en évidence', async ({ page }) => {
+  const PNG = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==', 'base64');
+  await page.route('**/fr.wikipedia.org/api/rest_v1/page/summary/**', (r) => r.fulfill({ contentType: 'application/json', headers: { 'access-control-allow-origin': '*' }, body: JSON.stringify({ thumbnail: { source: 'https://upload.wikimedia.org/x/320px-a.png' }, content_urls: { desktop: { page: 'https://fr.wikipedia.org/wiki/A' } } }) }));
+  await page.route('**/upload.wikimedia.org/**', (r) => r.fulfill({ contentType: 'image/png', headers: { 'access-control-allow-origin': '*' }, body: PNG }));
   await ouvrir(page);
   await settle(page, 1);
   const pt = await page.evaluate(() => {
@@ -241,4 +244,6 @@ test('noms 3D : cliquer une plante dans la scène ouvre sa fiche (photo ou cadre
   await page.mouse.click(pt.x, pt.y);
   await expect(page.locator('[data-role=label-card]')).toBeVisible();
   await expect(page.locator('[data-role=card-photo]')).toBeVisible();
+  await expect(page.locator('[data-role=card-photo] img')).toHaveCount(1); // la photo du catalogue est bien demandée et affichée
+  await expect(page.locator('[data-act=card-download]')).toBeVisible();
 });

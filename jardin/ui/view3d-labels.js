@@ -49,7 +49,7 @@ export function createLabelsUI({ root, mobile = false, project, viewport, safeRe
     if (!g) { card.hidden = true; card.textContent = ''; return; }
     card.hidden = false; card.textContent = '';
     const close = h('button', { type: 'button', class: 'v3d-card-close', 'aria-label': 'Fermer la fiche', 'data-act': 'card-close', onclick: () => clear() }, '✕');
-    const plant = g.catalog || g.plant || null;
+    const plant = g.photo || g.catalog || g.plant || null;
     const c = g.colors || {};
     const photoBox = h('div', { class: 'v3d-card-photo is-placeholder', 'data-role': 'card-photo', style: `background:linear-gradient(135deg, ${c.foliage || '#3f7a4a'}, ${c.flower || c.foliage || '#6aa56f'})` },
       h('span', { class: 'v3d-card-ph' }, g.source === 'existant' ? '🌳' : '🌿'));
