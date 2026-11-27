@@ -69,6 +69,24 @@ test('PDF du jardin : génération, téléchargement, relecture', async ({ page 
   expect(errors).toEqual([]);
 });
 
+test('PDF en arrière-plan : on quitte la fenêtre, le bandeau annonce « prêt », on télécharge', async ({ page }) => {
+  test.setTimeout(120_000);
+  await page.route('https://fr.wikipedia.org/api/rest_v1/page/summary/**', (route) => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ type: 'standard', thumbnail: { source: PNG }, content_urls: { desktop: { page: 'https://fr.wikipedia.org/wiki/Test' } } }) }));
+  const id = await jardinRiche(page);
+  await page.goto(`${URL}#/garden/${id}/render`);
+  await page.waitForSelector('[data-role=plan-step]');
+  await ouvrirOnglet(page, 'export');
+  await page.locator('[data-act=export-pdf]').click();
+  await page.locator('[data-act=pdf-go]').click();
+  await page.locator('[data-act=pdf-background]').click();
+  await expect(page.locator('[data-role=pdf-dialog]')).toBeHidden();
+  await expect(page.locator('[data-role=pdf-ready]')).toContainText('Le PDF est prêt', { timeout: 100_000 });
+  await page.locator('[data-act=pdf-ready-open]').click();
+  const [download] = await Promise.all([page.waitForEvent('download'), page.locator('[data-act=save-link]').click()]);
+  expect(download.suggestedFilename()).toBe('jardin-Jardin_de_Lea-plan.pdf');
+  expect(fs.readFileSync(await download.path()).subarray(0, 5).toString('latin1')).toBe('%PDF-');
+});
+
 test('vignette de photo : jamais noire (fond blanc peint avant le JPEG)', async ({ page }) => {
   await page.route('https://fr.wikipedia.org/api/rest_v1/page/summary/**', (route) => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ type: 'standard', thumbnail: { source: PNG }, content_urls: { desktop: { page: 'https://fr.wikipedia.org/wiki/Test' } } }) }));
   await page.goto(URL);

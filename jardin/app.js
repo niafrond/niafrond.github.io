@@ -152,6 +152,7 @@ function listenDeepLinks() {
 
 export function start() {
   listenDeepLinks();
+  import('./ui/pdf-ready.js').then((m) => m.mountPdfReady()).catch(() => {});
   window.addEventListener('hashchange', () => { flush().then(route); });
   window.addEventListener('pagehide', flush);
   document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') flush(); });
