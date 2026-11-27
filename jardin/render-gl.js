@@ -419,7 +419,7 @@ export function buildScene(THREE, garden, opts = {}) {
     im.castShadow = (['trunk', 'branch', 'crown', 'cone', 'hedgebox', 'curtain'].includes(gr.part) || (smallShadows && (gr.part === 'mound' || gr.part === 'culm'))) && !(slims[gr.plantId] && slims[gr.plantId].ghost);
     im.receiveShadow = !['flower', 'spike', 'fruit'].includes(gr.part);
     im.name = `${gr.plantId}:${gr.part}`;
-    im.userData = { plantId: gr.plantId, part: gr.part, key: `${gr.plantId}|${gr.part}` };
+    im.userData = { plantId: gr.plantId, part: gr.part, key: `${gr.plantId}|${gr.part}`, tint0: col.slice() };
     plantsGroup.add(im); meshes.push(im);
   }
   const instanceCount = meshes.reduce((s, m) => s + m.count, 0);
@@ -639,6 +639,21 @@ export function buildScene(THREE, garden, opts = {}) {
       if (seasonDirty) applySeason();
       applySun();
       return state;
+    },
+    /**
+     * Met en évidence des essences : les instances dont l'id n'est pas dans `ids` (Set, tableau ou fonction) sont atténuées
+     * (teinte d'instance × `dim`) ; `null` rétablit tout. Le gazon n'est jamais atténué.
+     */
+    setHighlight(ids, dim = 0.42) {
+      const has = ids == null ? null : typeof ids === 'function' ? ids : (id) => (ids instanceof Set ? ids.has(id) : ids.includes(id));
+      api.highlight = ids == null ? null : true;
+      for (const im of meshes) {
+        const pid = im.userData.plantId; const base = im.userData.tint0; const arr = im.instanceColor && im.instanceColor.array;
+        if (!base || !arr) continue;
+        const f = has && pid !== '_lawn' && !has(pid) ? dim : 1;
+        for (let i = 0; i < base.length; i++) arr[i] = base[i] * f;
+        im.instanceColor.needsUpdate = true;
+      }
     },
     /** Anime les feuilles qui tombent (dt en s) ; renvoie true si des particules bougent. */
     tick(dt) { return fxTick(dt); },
