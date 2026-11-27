@@ -7,6 +7,8 @@ import { createPool, poolSize } from '../gl-pool.js';
 import { QUALITIES, QUALITY_ORDER, autoQuality, resolveQuality, isSoftwareRenderer, isStrongMobileGpu, lowerQuality } from '../gl-quality.js';
 import { renderPhoto } from '../gl-photo.js';
 import { seasonLabel, seasonName, SEASON_DOY } from '../gl-season.js';
+import { buildLabelGroups } from '../gl-labels.js';
+import { createLabelsUI } from './view3d-labels.js';
 
 const MOIS = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'];
 const FORCE_KEY = 'jardin-force-3d';
@@ -105,7 +107,7 @@ export function mountView3D(el, { garden, onClose } = {}) {
   let envTex = null; let envElev = -99; let pmrem = null;
   const viewGroupItems = {};
   const S = {
-    hour: 15, date: new Date(), age: 1, quality: 'auto', qualityResolved: 'medium', shadows: true, grid: false,
+    hour: 15, date: new Date(), age: 1, names: true, latin: false, quality: 'auto', qualityResolved: 'medium', shadows: true, grid: false,
     gpu: '', software: false, fps: 0, view: 'ne', mode: 'orbit', playing: false, growing: false, photoBusy: false, doyF: 0, lapse: false, speed: 1, leaves: true,
   };
   S.doyF = dayOfYear(S.date);
@@ -135,6 +137,8 @@ export function mountView3D(el, { garden, onClose } = {}) {
   const qualSel = h('select', { 'data-role': 'quality', 'aria-label': 'Qualité' }, h('option', { value: 'auto' }, 'Auto'), ...QUALITY_ORDER.map((id) => h('option', { value: id }, QUALITIES[id].label)));
   const shadowCb = h('input', { type: 'checkbox', checked: true, 'data-role': 'shadows' });
   const gridCb = h('input', { type: 'checkbox', 'data-role': 'grid' });
+  const namesCb = h('input', { type: 'checkbox', checked: true, 'data-role': 'names' });
+  const latinCb = h('input', { type: 'checkbox', 'data-role': 'latin' });
   const legend = h('ul', { class: 'v3d-legend', 'data-role': 'legend' });
   const playBtn = h('button', { type: 'button', class: 'v3d-btn', 'data-act': 'play-day', 'aria-pressed': 'false' }, '▶ Journée accélérée');
   const growBtn = h('button', { type: 'button', class: 'v3d-btn', 'data-act': 'grow' }, '🌱 Pousse');
@@ -160,7 +164,9 @@ export function mountView3D(el, { garden, onClose } = {}) {
     h('section', null, h('h3', null, 'Affichage'),
       h('label', { class: 'v3d-row' }, 'Qualité', qualSel),
       h('label', { class: 'v3d-check' }, shadowCb, ' Ombres portées'),
-      h('label', { class: 'v3d-check' }, gridCb, ' Grille de 1 m')),
+      h('label', { class: 'v3d-check' }, gridCb, ' Grille de 1 m'),
+      h('label', { class: 'v3d-check', title: 'Touche N' }, namesCb, ' Noms des plantes'),
+      h('label', { class: 'v3d-check v3d-sub' }, latinCb, ' + noms latins')),
     h('section', null, h('h3', null, 'Photo'), photoBtn, photoInfo),
     h('section', null, h('h3', null, 'Essences'), legend));
   const panel = h('aside', { class: 'v3d-panel', 'data-role': 'panel' }, panelBody);
@@ -175,6 +181,36 @@ export function mountView3D(el, { garden, onClose } = {}) {
   const joy = h('div', { class: 'v3d-joy', hidden: true, 'data-role': 'joystick', 'aria-label': 'Joystick de déplacement' }, joyKnob);
   root.append(top, panel, strip, hud, help, prog, notice, joy);
 
+  // ── noms des plantes : un calque d'étiquettes (une pastille par groupe) projeté depuis les ancres 3D ──
+  let tmpV = null; let rendered = false; let labelsDirty = true; let gesture = false;
+  const projectAnchor = (a) => {
+    if (!camera || !THREE || !rendered) return null;
+    const w = stage.clientWidth; const hh = stage.clientHeight;
+    if (!w || !hh) return null;
+    if (!tmpV) tmpV = new THREE.Vector3();
+    tmpV.set(a.x, a.y, a.z).applyMatrix4(camera.matrixWorldInverse);
+    const behind = tmpV.z >= -camera.near;
+    tmpV.applyMatrix4(camera.projectionMatrix);
+    return { x: ((tmpV.x + 1) / 2) * w, y: ((1 - tmpV.y) / 2) * hh, behind };
+  };
+  const safeRects = () => {
+    const rr = root.getBoundingClientRect();
+    const out = [];
+    for (const el of [top, panel.classList.contains('is-collapsed') ? null : panel, strip, hud, help, joy, notice, labelsUI && labelsUI.cardEl]) {
+      if (!el || el.hidden) continue;
+      const r = el.getBoundingClientRect();
+      if (r.width > 0 && r.height > 0) out.push({ x: r.left - rr.left, y: r.top - rr.top, w: r.width, h: r.height });
+    }
+    return out;
+  };
+  const labelsUI = createLabelsUI({
+    root, mobile, project: projectAnchor,
+    viewport: () => ({ width: stage.clientWidth || window.innerWidth || 1280, height: stage.clientHeight || window.innerHeight || 800 }),
+    safeRects,
+    onHighlight: (ids) => { if (api3) api3.setHighlight(ids); refreshLegendPressed(); markDirty(); },
+    onFocus: (gr) => focusGroup(gr),
+  });
+
   if (mobile) { panel.classList.add('is-collapsed'); toggle.setAttribute('aria-expanded', 'false'); }
   toggle.addEventListener('click', () => {
     const open = panel.classList.toggle('is-collapsed') === false;
@@ -184,7 +220,7 @@ export function mountView3D(el, { garden, onClose } = {}) {
   function close() { if (typeof onClose === 'function') onClose(); else unmount(); }
 
   // ── utilitaires ──
-  const markDirty = () => { dirty = true; };
+  const markDirty = () => { dirty = true; labelsDirty = true; };
   function refreshLabels() {
     hourLbl.textContent = hLabel(S.hour);
     seasonLbl.textContent = seasonLabel(S.date, glat);
@@ -222,8 +258,22 @@ export function mountView3D(el, { garden, onClose } = {}) {
     if (!ids.length) legend.append(h('li', { class: 'v3d-muted' }, 'Aucune essence plantée pour le moment.'));
     for (const id of ids) {
       const p = getPlant(id);
-      legend.append(h('li', null, h('i', { class: 'v3d-dot', style: { background: p.foliageColor || '#5a9a45', boxShadow: p.flowerColor ? `0 0 0 2px ${p.flowerColor}` : 'none' } }), h('span', null, `${p.commonName} ×${counts.get(id)}`)));
+      const pick = () => labelsUI.selectedGroup() && labelsUI.selectedGroup().essence === id ? labelsUI.clear() : labelsUI.selectEssence(id);
+      legend.append(h('li', { 'data-essence': id, role: 'button', tabindex: '0', 'aria-pressed': 'false', title: 'Mettre en évidence cette essence', onclick: pick, onkeydown: (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pick(); } } },
+        h('i', { class: 'v3d-dot', style: { background: p.foliageColor || '#5a9a45', boxShadow: p.flowerColor ? `0 0 0 2px ${p.flowerColor}` : 'none' } }), h('span', null, `${p.commonName} ×${counts.get(id)}`)));
     }
+    refreshLegendPressed();
+  }
+  function refreshLegendPressed() {
+    const sel = labelsUI.selectedGroup();
+    for (const li of legend.children) if (li.dataset && li.dataset.essence) li.setAttribute('aria-pressed', String(!!sel && sel.essence === li.dataset.essence));
+  }
+  /** Centrage doux de la caméra sur un groupe (sans changer la distance ni l'angle). */
+  function focusGroup(gr) {
+    if (!api3 || !camera || !controls || S.mode !== 'orbit') return;
+    const target = new THREE.Vector3(gr.anchor.x, Math.min(gr.hAdult * 0.5, 1.5), gr.anchor.z);
+    const delta = target.clone().sub(controls.target);
+    flyTo(camera.position.clone().add(delta), target, 600);
   }
 
   // ── rendu ──
@@ -257,6 +307,8 @@ export function mountView3D(el, { garden, onClose } = {}) {
     controls.enableDamping = true; controls.dampingFactor = 0.08;
     controls.maxPolarAngle = Math.PI / 2 - 0.02; controls.screenSpacePanning = false;
     controls.addEventListener('change', markDirty);
+    controls.addEventListener('start', () => { gesture = true; if (mobile) labelsUI.setMoving(true); });
+    controls.addEventListener('end', () => { gesture = false; labelsDirty = true; });
     attachLook();
   }
   function computeQuality() {
@@ -316,7 +368,10 @@ export function mountView3D(el, { garden, onClose } = {}) {
     api3.update({ date: S.date, doy: S.doyF, hour: S.hour, month, leaves: S.leaves });
     updateEnvironment(true);
     if (savedView) { camera.position.copy(savedView.p); controls.target.copy(savedView.t); controls.update(); }
-    refreshLegend(); refreshInfo(); markDirty();
+    refreshLegend(); refreshInfo();
+    try { labelsUI.setGrowth({ age: S.age, month }); labelsUI.setGroups(buildLabelGroups(g, { plantsById: getPlant, age: S.age, month })); } catch (e) { console.error(e); }
+    if (labelsUI.selected() && api3) api3.setHighlight(labelsUI.highlightIds());
+    markDirty();
   }
 
   // ── caméra ──
@@ -405,8 +460,10 @@ export function mountView3D(el, { garden, onClose } = {}) {
     joy.addEventListener('pointerup', end); joy.addEventListener('pointercancel', end);
   }
   const KEYMAP = { z: 'f', w: 'f', arrowup: 'f', s: 'b', arrowdown: 'b', q: 'l', a: 'l', arrowleft: 'l', d: 'r', arrowright: 'r' };
+  const isTyping = (t) => !!t && (/^(SELECT|TEXTAREA)$/.test(t.tagName) || (t.tagName === 'INPUT' && !/^(checkbox|radio|range|button)$/i.test(t.type || 'text')) || t.isContentEditable);
   const onKeyDown = (e) => {
-    if (e.key === 'Escape') { e.preventDefault(); close(); return; }
+    if (e.key === 'Escape') { e.preventDefault(); if (labelsUI.clear()) return; close(); return; }
+    if ((e.key === 'n' || e.key === 'N') && !e.ctrlKey && !e.metaKey && !e.altKey && !isTyping(e.target)) { e.preventDefault(); setNames(!S.names); return; }
     if (S.mode !== 'eye' || e.target && /^(INPUT|SELECT|TEXTAREA)$/.test(e.target.tagName)) return;
     const k = KEYMAP[String(e.key).toLowerCase()];
     if (k) { fp.keys.add(k); if (e.shiftKey) fp.keys.add('shift'); e.preventDefault(); }
@@ -424,6 +481,7 @@ export function mountView3D(el, { garden, onClose } = {}) {
   function setDoy(n, fast = false) {
     S.doyF = Math.max(1, Math.min(365, Number(n)));
     S.date = fromDoy(S.date.getFullYear(), Math.floor(S.doyF));
+    labelsUI.setGrowth({ month: S.date.getMonth() + 1 }); labelsDirty = true;
     if (api3) { api3.update({ date: S.date, doy: S.doyF }); updateEnvironment(!fast); }
     refreshLabels(); markDirty();
   }
@@ -435,6 +493,7 @@ export function mountView3D(el, { garden, onClose } = {}) {
   }
   function setAge(a) {
     S.age = Math.max(0, Math.min(1, Number(a)));
+    labelsUI.setGrowth({ age: S.age }); labelsDirty = true;
     if (api3) api3.update({ age: S.age });
     refreshLabels(); markDirty();
   }
@@ -447,6 +506,12 @@ export function mountView3D(el, { garden, onClose } = {}) {
     applyRendererQuality();
     await buildAll();
   }
+  function setNames(on) {
+    S.names = !!on; namesCb.checked = S.names; latinCb.disabled = !S.names;
+    labelsUI.setOptions({ names: S.names, latin: S.latin }); markDirty();
+  }
+  namesCb.addEventListener('change', () => setNames(namesCb.checked));
+  latinCb.addEventListener('change', () => { S.latin = latinCb.checked; labelsUI.setOptions({ names: S.names, latin: S.latin }); markDirty(); });
   hourIn.addEventListener('input', () => { S.playing = false; setHour(hourIn.value); });
   const onSeasonInput = (inp) => () => { S.lapse = false; setDoy(inp.value, true); };
   seasonIn.addEventListener('input', onSeasonInput(seasonIn)); stripIn.addEventListener('input', onSeasonInput(stripIn));
@@ -527,6 +592,7 @@ export function mountView3D(el, { garden, onClose } = {}) {
     if (dirty || moved || animated) {
       dirty = false;
       renderer.render(api3.scene, camera);
+      rendered = true; labelsDirty = true;
       frames++;
       const dr = now - lastRender; lastRender = now;
       if (dr < 150) {
@@ -535,6 +601,15 @@ export function mountView3D(el, { garden, onClose } = {}) {
       } else { activeMs = 0; avgDt = 0; }
       if (now - fpsT > 500) { if (avgDt) S.fps = Math.round(1000 / avgDt); fpsEl.textContent = `${S.fps || '—'} FPS`; frames = 0; fpsT = now; }
     } else if (now - fpsT > 1500) { fpsEl.textContent = `${S.fps || '—'} FPS (au repos)`; fpsT = now; frames = 0; }
+    // étiquettes : PC = à chaque image rendue ; mobile = seulement quand la caméra est arrêtée (pas de boucle en plus)
+    if (labelsDirty && rendered) {
+      if (mobile && (gesture || moved || animated)) labelsUI.setMoving(true);
+      else {
+        labelsDirty = false; labelsUI.setMoving(false);
+        const b = api3.bounds;
+        labelsUI.update({ distance: camera.position.distanceTo(S.mode === 'orbit' ? controls.target : new THREE.Vector3(b.cx, 0, b.cz)) / Math.max(1, b.radius) });
+      }
+    }
   }
 
   // Retour (Android) = fermer la vue : un état d'historique est poussé à l'ouverture.
@@ -550,7 +625,10 @@ export function mountView3D(el, { garden, onClose } = {}) {
   const api = {
     snapshot() { api3.update({}); renderer.render(api3.scene, camera); return canvas.toDataURL('image/png'); },
     setHour, setDate, setDoy, playYear, setAge, setQuality, setView, photo,
-    info: () => ({ gpu: S.gpu, software: S.software, quality: S.qualityResolved, fps: S.fps, generation: api3 && api3.generation, canvas, webgl2: true, instances: api3 && api3.stats.instances, state: { ...S } }),
+    info: () => ({ gpu: S.gpu, software: S.software, quality: S.qualityResolved, fps: S.fps, generation: api3 && api3.generation, canvas, webgl2: true, instances: api3 && api3.stats.instances, state: { ...S }, labels: labelsUI.visible().length }),
+    labels: labelsUI, setNames,
+    get camera() { return camera; },
+    get controls() { return controls; },
     get scene() { return api3 && api3.scene; },
     get renderer() { return renderer; },
   };
@@ -596,10 +674,13 @@ export function mountView3D(el, { garden, onClose } = {}) {
     try { controls && controls.dispose(); } catch (e) { /* ignoré */ }
     try { if (renderer) { renderer.dispose(); renderer.forceContextLoss(); } } catch (e) { /* ignoré */ }
     try { pool && pool.dispose(); } catch (e) { /* ignoré */ }
+    try { labelsUI.destroy(); } catch (e) { /* ignoré */ }
     root.remove();
     try { delete el.__view3d; } catch (e) { /* ignoré */ }
   }
   unmount.api = api;
+  unmount.labels = labelsUI;
+  unmount.hasSelection = () => labelsUI.selected() != null;
   unmount.ready = ready;
   el.__view3d = api;
   void sunDirection; void viewGroupItems;

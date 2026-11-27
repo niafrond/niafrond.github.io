@@ -227,7 +227,7 @@ export function openPreview(garden, { zoneId = null, tab = 'zones', onClose, onS
   let histPushed = false;
   try { history.pushState({ pv: true }, ''); histPushed = true; } catch { /* ignoré */ }
   const onPop = () => { if (disposed || un3d) return; if (ignorePop) { ignorePop = false; return; } histPushed = false; close(); };
-  const onKey = (e) => { if (e.key === 'Escape' && !disposed) { e.preventDefault(); close(); } };
+  const onKey = (e) => { if (e.key === 'Escape' && !disposed) { if (un3d && typeof un3d.hasSelection === 'function' && un3d.hasSelection()) return; /* Échap ôte d'abord la mise en évidence d'une essence en 3D */ e.preventDefault(); close(); } };
   window.addEventListener('popstate', onPop);
   document.addEventListener('keydown', onKey);
 

@@ -95,3 +95,42 @@
 .v3d--mobile .v3d-hud { bottom: calc(66px + env(safe-area-inset-bottom, 0px)); }
 .v3d--mobile .v3d-joy { bottom: calc(84px + env(safe-area-inset-bottom, 0px)); }
 .v3d--mobile .v3d-lapse select { min-height: 44px; }
+
+/* ── noms des plantes : calque d'étiquettes (une pastille par groupe, jamais une par plant) ── */
+.v3d-labels { position: absolute; inset: 0; z-index: 1; pointer-events: none; overflow: hidden; transition: opacity .12s; --lb-bg: #ffffffeb; --lb-fg: #14210f; --lb-sub: #4b5a47; --lb-bd: #00000030; --lb-sh: 0 1px 3px #0006, 0 3px 10px #0004; --lb-lead: #ffffffd9; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .v3d-labels { --lb-bg: #141d17ea; --lb-fg: #f1f7f2; --lb-sub: #b6c9bb; --lb-bd: #ffffff38; --lb-lead: #ffffffb3; } }
+:root[data-theme="dark"] .v3d-labels { --lb-bg: #141d17ea; --lb-fg: #f1f7f2; --lb-sub: #b6c9bb; --lb-bd: #ffffff38; --lb-lead: #ffffffb3; }
+.v3d-labels.is-off, .v3d-labels.is-moving { opacity: 0; }
+.v3d-leads { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
+.v3d-lead { stroke: var(--lb-lead); stroke-width: 1; filter: drop-shadow(0 0 1px #000a); }
+.v3d-lead-dot { fill: var(--lb-lead); stroke: #0008; stroke-width: .6; }
+.v3d-label { position: absolute; left: 0; top: 0; display: flex; align-items: center; gap: 5px; padding: 0 9px; margin: 0; border: 1px solid var(--lb-bd); border-radius: 13px; background: var(--lb-bg); color: var(--lb-fg); box-shadow: var(--lb-sh); font: 600 12px/1.2 system-ui, -apple-system, "Segoe UI", sans-serif; text-align: left; white-space: nowrap; cursor: pointer; pointer-events: auto; opacity: 0; transition: opacity .12s; touch-action: manipulation; -webkit-tap-highlight-color: transparent; backdrop-filter: blur(3px); }
+.v3d-label.is-in { opacity: 1; }
+.v3d-label.has-latin { border-radius: 12px; }
+.v3d-label:hover { border-color: #5fbf84; }
+.v3d-label:focus-visible { outline: 2px solid #8fe0a8; outline-offset: 1px; }
+.v3d-label.is-selected { border-color: #5fbf84; box-shadow: 0 0 0 2px #5fbf84, var(--lb-sh); z-index: 1; }
+.v3d-label.is-essence { border-color: #5fbf84; }
+.v3d-label.is-ghost { opacity: .72; }
+.v3d-label-dot { flex: none; width: 8px; height: 8px; border-radius: 50%; border: 1px solid #0005; margin: 0 2px 0 0; }
+.v3d-label-text { display: flex; flex-direction: column; min-width: 0; overflow: hidden; }
+.v3d-label-name { overflow: hidden; text-overflow: ellipsis; }
+.v3d-label-latin { display: none; font: italic 400 10.5px/1.25 system-ui, -apple-system, "Segoe UI", sans-serif; color: var(--lb-sub); overflow: hidden; text-overflow: ellipsis; }
+.v3d-label.has-latin .v3d-label-latin { display: block; }
+@media (prefers-reduced-motion: reduce) { .v3d-label, .v3d-labels { transition: none; } }
+.v3d--mobile .v3d-label { min-height: 24px; }
+
+.v3d-card { position: absolute; left: 12px; bottom: 56px; z-index: 4; width: min(300px, calc(100vw - 24px)); padding: 10px 14px 12px; border-radius: 14px; background: #141d17f2; border: 1px solid #ffffff2e; box-shadow: 0 8px 30px #0008; color: #e8f0ea; font-size: 13px; }
+.v3d-card-name { display: block; font-size: 15px; padding-right: 30px; }
+.v3d-card-latin { display: block; color: #9fd2b0; font-size: 12.5px; margin-bottom: 4px; }
+.v3d-card-rows { display: grid; grid-template-columns: auto 1fr; gap: 3px 10px; margin: 6px 0 0; }
+.v3d-card-rows dt { color: #9db3a2; }
+.v3d-card-rows dd { margin: 0; }
+.v3d-card-close { position: absolute; top: 4px; right: 4px; width: 32px; height: 32px; border-radius: 50%; border: 0; background: transparent; color: #e8f0ea; font: inherit; cursor: pointer; }
+.v3d-card-close:hover { background: #ffffff1a; }
+.v3d--mobile .v3d-card { left: calc(10px + env(safe-area-inset-left, 0px)); right: calc(10px + env(safe-area-inset-right, 0px)); bottom: auto; top: calc(58px + env(safe-area-inset-top, 0px)); width: auto; }
+.v3d--mobile .v3d-card-close { width: 44px; height: 44px; top: 0; right: 0; }
+.v3d-legend li[data-essence] { cursor: pointer; border-radius: 8px; padding: 2px 4px; margin: 0 -4px; }
+.v3d-legend li[data-essence]:hover, .v3d-legend li[data-essence]:focus-visible { background: #ffffff14; outline: none; }
+.v3d-legend li[aria-pressed="true"] { background: #2f7d4f66; }
+.v3d--mobile .v3d-legend li[data-essence] { min-height: 44px; }

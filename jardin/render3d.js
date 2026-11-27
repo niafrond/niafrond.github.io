@@ -6,6 +6,7 @@ import { getZoneType, isAbovePool } from './model.js';
 import { getPlant } from './catalog.js';
 import { culmColor, hedgeSeg, familyOf } from './gl-worker-core.js';
 import { habitOf, habitParams } from './habits.js';
+import { buildLabelGroups, declutter, LABEL, estimateWidth } from './gl-labels.js';
 import { zoneHeight, obstacleHeight, defaultItemHeight } from './heights.js';
 import {
   FONT, BARE_WOOD, BARE_HERB, esc, f, darken, lighten, mixHex, rng, rngOf, hash32, normMonth, monthLabel, plantState,
@@ -153,7 +154,9 @@ export function renderViewSVG(garden, opts = {}) {
   }
   const age = opts.age === 'young' ? 'young' : 'adult';
   const month = normMonth(opts.month);
+  // names : pastilles des plantes (une par groupe, désencombrées) ; zoneNames : noms des zones (par défaut comme `names`) ; latinNames : nom latin en 2e ligne
   const layers = { dims: false, legend: true, sun: false, names: true, budget: false, cartouche: true, ...(opts.layers || {}) };
+  const zoneNames = layers.zoneNames != null ? layers.zoneNames !== false : layers.names !== false;
   const W = Math.max(320, Math.round(opts.width || 1000));
   const H = Math.max(240, Math.round(opts.height || 760));
   const P = opts.idPrefix || 'jv';
@@ -262,7 +265,7 @@ export function renderViewSVG(garden, opts = {}) {
       if (st.flowering) for (let k = 0; k < 500 && dots.length < 30; k++) { const p = { x: bd.minX + R() * bd.width, y: bd.minY + R() * bd.height }; if (pointInPolygon(p, zp)) dots.push(pr(p.x, p.y, 0.02)); }
       ground.push((T) => `<polygon points="${poly(T, top)}" fill="${st.foliage}" fill-opacity=".7"/><polygon points="${poly(T, top)}" fill="url(#${id})"/>${dots.length ? `<g data-flower="1" fill="${st.flower}" stroke="${darken(st.flower, 0.35)}" stroke-width=".4">${dots.map((d) => `<circle cx="${T.p(d).split(',')[0]}" cy="${T.p(d).split(',')[1]}" r="1.5"/>`).join('')}</g>` : ''}`);
     }
-    if (layers.names && !flatMode && polygonArea(zp) > 1.2) {
+    if (zoneNames && !flatMode && polygonArea(zp) > 1.2) {
       const c = centroid(zp); const pc = pr(c.x, c.y, above ? (zoneHeight(z) || ABOVE_POOL_H) + 0.1 : 0.05);
       labels.push({ pt: pc, text: z.label || t.label });
     }
@@ -1015,8 +1018,36 @@ export function renderViewSVG(garden, opts = {}) {
   out.push(`<g data-role="ground">${ground.map((fn) => fn(T)).join('')}</g>`);
   if (shadows.length) out.push(`<g clip-path="url(#${P}-clip)"><g filter="url(#${P}-blur)" fill="#1b2a10" fill-opacity=".26" data-role="shadows">${shadows.map((pts) => `<polygon points="${poly(T, pts)}"/>`).join('')}</g></g>`);
   out.push(`<g data-role="volumes">${prims.map((p) => p.fn(T)).join('')}</g>`);
+  // noms des plantes : mêmes groupes que la vue 3D (un par massif / haie / touffe), projetés par la projection de cette vue
+  const pillRects = [];
+  if (layers.names !== false) {
+    const groups = buildLabelGroups(garden, { plantsById: lookup, age: age === 'young' ? 0 : 1, month, existing: exList });
+    const proj = new Map();
+    for (const gr of groups) { const q = pr(gr.anchor.x, gr.anchor.z, gr.anchor.y); proj.set(gr.key, { x: T.ox + q[0] * s, y: T.oy + q[1] * s }); }
+    const safe = [{ x: ax + aw - 66, y: ay + 6, w: 64, h: 76 }, { x: ax + 6, y: ay + ah - 36, w: 150, h: 32 }];
+    const shown = declutter(groups, proj, { viewport: { x: ax, y: ay, width: aw, height: ah }, maxLabels: Number.isFinite(opts.maxNames) ? opts.maxNames : 12, safe, latin: !!layers.latinNames, measure: estimateWidth, dense: false });
+    let pills = '';
+    for (const r of shown) {
+      const { rect: q, group: gr } = r;
+      pillRects.push(q);
+      const toBottom = r.slot < 2; const tx = Math.max(q.x + 6, Math.min(q.x + q.w - 6, r.ax)); const ty = toBottom ? q.y + q.h : q.y;
+      const dotX = q.x + LABEL.padX + 4; const mid = r.lines === 2 ? q.y + 16 : q.y + q.h / 2 + 4;
+      const ring = gr.colors.flower ? `<circle cx="${f(dotX)}" cy="${f(q.y + (r.lines === 2 ? 14 : q.h / 2))}" r="6.2" fill="none" stroke="${esc(gr.colors.flower)}" stroke-width="1.6"/>` : '';
+      pills += `<g data-role="plant-label" data-label-key="${esc(gr.key)}" data-label-plant="${esc(gr.plantId || '')}" data-label-count="${gr.count}">`
+        + `<line x1="${f(tx)}" y1="${f(ty)}" x2="${f(r.ax)}" y2="${f(r.ay)}" stroke="#14210f" stroke-opacity=".55" stroke-width=".9"/><circle cx="${f(r.ax)}" cy="${f(r.ay)}" r="2.2" fill="#fff" stroke="#14210f" stroke-opacity=".6" stroke-width=".8"/>`
+        + `<rect data-label-rect="1" x="${f(q.x)}" y="${f(q.y)}" width="${f(q.w)}" height="${f(q.h)}" rx="${r.lines === 2 ? 10 : 12}" fill="#fff" fill-opacity=".93" stroke="#14210f" stroke-opacity=".28" stroke-width=".8"/>`
+        + `${ring}<circle cx="${f(dotX)}" cy="${f(q.y + (r.lines === 2 ? 14 : q.h / 2))}" r="4.2" fill="${esc(gr.colors.foliage)}" stroke="#0006" stroke-width=".6"/>`
+        + `<text x="${f(q.x + LABEL.padX + 16)}" y="${f(mid)}" font-size="${LABEL.fontPx}" font-weight="700" fill="#14210f" font-family="${FONT}">${esc(gr.name)}</text>`
+        + (r.lines === 2 ? `<text x="${f(q.x + LABEL.padX + 16)}" y="${f(q.y + 30)}" font-size="${LABEL.latinPx}" font-style="italic" fill="#4b5a47" font-family="${FONT}">${esc(gr.latin)}</text>` : '')
+        + '</g>';
+    }
+    if (pills) out.push(`<g data-role="plant-labels" font-family="${FONT}">${pills}</g>`);
+  }
   for (const lb of labels) {
-    out.push(`<text x="${f(T.ox + lb.pt[0] * s)}" y="${f(T.oy + lb.pt[1] * s)}" font-size="11" font-weight="700" text-anchor="middle" fill="#14210f" stroke="#fff" stroke-width="3" paint-order="stroke" font-family="${FONT}" opacity=".9">${esc(lb.text)}</text>`);
+    const lx = T.ox + lb.pt[0] * s; const ly = T.oy + lb.pt[1] * s; const tw = estimateWidth(lb.text, { size: 11 });
+    const box = { x: lx - tw / 2, y: ly - 12, w: tw, h: 16 };
+    if (pillRects.some((q) => q.x < box.x + box.w + 4 && box.x < q.x + q.w + 4 && q.y < box.y + box.h + 4 && box.y < q.y + q.h + 4)) continue; // jamais sous une pastille de plante
+    out.push(`<text x="${f(lx)}" y="${f(ly)}" font-size="11" font-weight="700" text-anchor="middle" fill="#14210f" stroke="#fff" stroke-width="3" paint-order="stroke" font-family="${FONT}" opacity=".9">${esc(lb.text)}</text>`);
   }
   if (front) {
     // règle des hauteurs (au premier plan)
@@ -1057,7 +1088,7 @@ export function renderContactSheet(garden, opts = {}) {
   const W = CW * 2; const HH = TOP + CH * 3;
   const ids = ['top', 'iso-ne', 'iso-se', 'iso-sw', 'iso-nw'];
   const cells = ids.map((v, i) => {
-    const svg = renderViewSVG(garden, { view: v, month, age, width: CW, height: CH, idPrefix: `c${i}`, plantLookup: opts.plantLookup, layers: { legend: false, cartouche: false, dims: false }, caption: VIEWS.find((q) => q.id === v).label === 'Dessus' ? 'Dessus' : `Vue ${VIEW_TEXT[v].replace('isométrique depuis le ', '')}` });
+    const svg = renderViewSVG(garden, { view: v, month, age, width: CW, height: CH, idPrefix: `c${i}`, plantLookup: opts.plantLookup, layers: { legend: false, cartouche: false, dims: false, names: false, zoneNames: true }, caption: VIEWS.find((q) => q.id === v).label === 'Dessus' ? 'Dessus' : `Vue ${VIEW_TEXT[v].replace('isométrique depuis le ', '')}` });
     const x = (i % 2) * CW; const y = TOP + Math.floor(i / 2) * CH;
     return `<g>${svg.replace(/^<svg [^>]*>/, `<svg x="${x}" y="${y}" width="${CW}" height="${CH}" viewBox="0 0 ${CW} ${CH}" font-family="${FONT}">`)}<rect x="${x}" y="${y}" width="${CW}" height="${CH}" fill="none" stroke="#9aa" stroke-width="1"/></g>`;
   });
