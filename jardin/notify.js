@@ -100,3 +100,23 @@ export async function refreshAndSchedule(garden, settings, opts = {}) {
   const scheduled = permission ? await scheduleAll(plan.notifications, { ...opts, now }) : 0;
   return { plan, forecast, scheduled, permission };
 }
+
+const ID_NOW = 4243;
+/**
+ * Notification immédiate (ex. « Le PDF est prêt »). Ne fait pas partie des rappels d'arrosage : jamais annulée par `scheduleAll`.
+ * → true si une notification a été demandée. `opts` : {plugin, id}
+ */
+export async function notifyNow({ title, body, id = ID_NOW }, opts = {}) {
+  try {
+    const p = plugin(opts);
+    if (p?.schedule) {
+      if (p.checkPermissions && (await p.checkPermissions()).display !== 'granted') return false;
+      await p.schedule({ notifications: [{ id, title, body, schedule: { at: new Date(Date.now() + 500), allowWhileIdle: true }, extra: { source: 'jardin-pdf' } }] });
+      return true;
+    }
+    const N = globalThis.Notification;
+    if (!N || N.permission !== 'granted') return false;
+    new N(title, { body, tag: `jardin-${id}` });
+    return true;
+  } catch { return false; }
+}

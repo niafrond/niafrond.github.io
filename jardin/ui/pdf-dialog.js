@@ -3,6 +3,8 @@
 import { h } from './draw-util.js';
 import { openSaveDialog } from './save-file.js';
 import { MONTHS } from '../render-common.js';
+import { emitPdf } from '../pdf-ready.js';
+import { setPdfCancel } from './pdf-ready.js';
 
 const KEY = 'jardin-pdf-options';
 const DEFAULTS = { format: 'a4', l1: true, l2: true, l3: true, zonePages: true, advice: true, shopping: true, photos: true, iso: false, layers: true, month: '' };
@@ -19,7 +21,7 @@ export function toPdfOptions(o) {
  */
 export function openPdfDialog({ garden, appVersion = '', deps = {}, onDone } = {}) {
   const st = load();
-  let ctrl = null; let closed = false;
+  let ctrl = null; let closed = false; let bg = false; // bg : fenêtre quittée, la génération continue et prévient par notification
   const chk = (key, label, hint) => h('label', { class: 'pdf-opt', style: { display: 'flex', gap: '8px', alignItems: 'flex-start', minHeight: '32px' } },
     h('input', { type: 'checkbox', 'data-opt': key, checked: !!st[key], onchange: (e) => { st[key] = e.target.checked; } }), h('span', {}, label, hint ? h('small', { class: 'muted', style: { display: 'block' } }, hint) : null));
   const format = h('select', { 'data-opt': 'format', 'aria-label': 'Format du plan', onchange: (e) => { st.format = e.target.value; } }, h('option', { value: 'a4' }, 'A4 paysage'), h('option', { value: 'a3' }, 'A3 paysage'));
@@ -44,7 +46,9 @@ export function openPdfDialog({ garden, appVersion = '', deps = {}, onDone } = {
     h('label', {}, 'Floraison représentée ', month), err, diagBox, h('div', { class: 'row' }, copyDiag, retry));
   const go = h('button', { class: 'btn btn-primary', type: 'button', 'data-act': 'pdf-go', onclick: () => run() }, 'Générer le PDF');
   const cancel = h('button', { class: 'btn', type: 'button', 'data-act': 'pdf-cancel', onclick: () => { if (ctrl) { ctrl.abort(); label.textContent = 'Annulation…'; } else close(); } }, 'Annuler');
-  const progress = h('div', { hidden: true, 'data-role': 'pdf-run' }, bar, label);
+  const detach = h('button', { class: 'btn', type: 'button', 'data-act': 'pdf-background', onclick: () => goBackground() }, '🔔 Continuer en arrière-plan');
+  const progress = h('div', { hidden: true, 'data-role': 'pdf-run' }, bar, label,
+    h('p', { class: 'muted small' }, 'Ça peut être long : vous pouvez quitter cette fenêtre, une notification « Le PDF est prêt » vous préviendra, puis vous le téléchargerez en revenant dans l’app.'), detach);
   const close = () => { if (closed) return; closed = true; if (ctrl) ctrl.abort(); overlay.remove(); document.removeEventListener('keydown', onKey); };
   const onKey = (e) => { if (e.key === 'Escape') cancel.click(); };
   const overlay = h('div', { class: 'overlay', 'data-role': 'pdf-dialog' },
@@ -53,6 +57,14 @@ export function openPdfDialog({ garden, appVersion = '', deps = {}, onDone } = {
       form, progress, h('div', { class: 'row end' }, cancel, go)));
   document.addEventListener('keydown', onKey);
   document.body.append(overlay);
+
+  /** Quitte la fenêtre sans interrompre la génération ; le bandeau global prend le relais. */
+  function goBackground() {
+    if (bg || closed || !ctrl) return;
+    bg = true; overlay.remove(); document.removeEventListener('keydown', onKey);
+    const c = ctrl; setPdfCancel(() => c.abort());
+    emitPdf({ type: 'running', pct: Math.round(bar.value || 0), label: label.textContent });
+  }
 
   /** Texte de diagnostic : étape, cause, taille du SVG, éléments, résolution, appareil, version. */
   function diagnose(e, version) {
@@ -74,6 +86,7 @@ export function openPdfDialog({ garden, appVersion = '', deps = {}, onDone } = {
     diagBox.hidden = true; copyDiag.hidden = true; retry.hidden = true; copyDiag.textContent = 'Copier le diagnostic';
     err.hidden = true; form.hidden = true; progress.hidden = false; go.disabled = true; cancel.textContent = 'Annuler la génération';
     ctrl = new AbortController();
+    Promise.resolve().then(async () => (deps.ensurePermission || (await import('../notify.js')).ensurePermission)()).catch(() => {}); // permission demandée pendant le geste, sans bloquer
     try {
       const build = deps.build || (await import('../pdf-content.js')).buildGardenPdf;
       const rasterize = deps.rasterize || (await import('../pdf-raster.js')).rasterizeSVG;
@@ -82,15 +95,17 @@ export function openPdfDialog({ garden, appVersion = '', deps = {}, onDone } = {
       if (!version) { try { version = (await import('../../version.js')).getVersion(); } catch { /* hors dépôt (APK) */ } }
       const res = await build(garden, opts, {
         rasterize, photo, signal: ctrl.signal, appVersion: version,
-        onProgress: ({ label: l, step, total }) => { lastStep = l; label.textContent = l; bar.value = Math.round((step / Math.max(1, total)) * 100); },
+        onProgress: ({ label: l, step, total }) => { lastStep = l; label.textContent = l; bar.value = Math.round((step / Math.max(1, total)) * 100); if (bg) emitPdf({ type: 'progress', pct: bar.value, label: l }); },
       });
       if (closed) return;
+      if (bg || document.hidden) { await finishInBackground(res); return; }
       const blob = new Blob([res.bytes], { type: 'application/pdf' });
       close();
       (deps.openSave || openSaveDialog)({ filename: res.filename, blob, mime: 'application/pdf', title: 'PDF du jardin prêt' });
       if (onDone) onDone(res);
     } catch (e) {
       if (closed) return;
+      if (bg) { ctrl = null; setPdfCancel(null); if (e && e.name === 'AbortError') emitPdf({ type: 'cleared' }); else { console.error(e); emitPdf({ type: 'error', message: (e && e.message) || 'erreur' }); await notify('Jardin : PDF impossible', 'La génération du PDF a échoué. Rouvrez l’app pour réessayer.'); } return; }
       ctrl = null; go.disabled = false; cancel.textContent = 'Fermer'; progress.hidden = true; form.hidden = false;
       if (e && e.name === 'AbortError') { err.hidden = false; err.textContent = 'Génération annulée.'; }
       else {
@@ -100,5 +115,15 @@ export function openPdfDialog({ garden, appVersion = '', deps = {}, onDone } = {
       }
     }
   }
-  return { close, overlay, run };
+  async function notify(title, body) { try { return await (deps.notify || (await import('../notify.js')).notifyNow)({ title, body }); } catch { return false; } }
+  /** Génération finie hors fenêtre : on garde le PDF, on prévient, et le bandeau propose le téléchargement. */
+  async function finishInBackground(res) {
+    ctrl = null; setPdfCancel(null);
+    await (deps.saveReady || (await import('../pdf-ready.js')).saveReady)({ filename: res.filename, bytes: res.bytes, name: (garden && garden.name) || '' });
+    emitPdf({ type: 'ready', filename: res.filename });
+    await notify('Jardin : le PDF est prêt', 'Ouvrez l’app pour le télécharger.');
+    if (!closed) { closed = true; overlay.remove(); document.removeEventListener('keydown', onKey); }
+    if (onDone) onDone(res);
+  }
+  return { close, overlay, run, goBackground };
 }

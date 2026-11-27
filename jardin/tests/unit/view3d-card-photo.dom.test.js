@@ -2,7 +2,7 @@
 import { createLabelsUI } from '../../ui/view3d-labels.js';
 
 const plant = { id: 'lavande', commonName: 'Lavande vraie', latinName: 'Lavandula angustifolia' };
-const group = { key: 'a', name: 'Lavande vraie', latin: 'Lavandula angustifolia', essence: 'lavande', catalog: plant, plant, renderIds: ['r1'], zones: [{ id: 'z', label: 'Massif' }], bloom: [6], priceEur: 6, count: 5, colors: { foliage: '#4a7', flower: '#86b' }, anchor: { x: 0, y: 0, z: 0 }, priority: 1, height: 0.6, source: 'zone' };
+const group = { key: 'a', name: 'Lavande vraie', latin: 'Lavandula angustifolia', essence: 'lavande', photo: plant, renderIds: ['r1'], zones: [{ id: 'z', label: 'Massif' }], bloom: [6], priceEur: 6, count: 5, colors: { foliage: '#4a7', flower: '#86b' }, anchor: { x: 0, y: 0, z: 0 }, priority: 1, height: 0.6, source: 'zone' };
 const mk = (getPhoto) => {
   document.body.innerHTML = ''; const root = document.createElement('div'); document.body.appendChild(root);
   const ui = createLabelsUI({ root, project: () => ({ x: 10, y: 10 }), viewport: () => ({ width: 800, height: 600 }), getPhoto });
@@ -32,4 +32,16 @@ test('la fiche propose un bouton de téléchargement de la photo', async () => {
   ui.select('a'); await tick();
   const btn = root.querySelector('.v3d-card-photo [data-act=card-download]');
   expect(btn).not.toBeNull(); expect(btn.textContent).toContain('Photo');
+});
+
+import { buildLabelGroups } from '../../gl-labels.js';
+import { createGarden, createZone } from '../../model.js';
+test('les groupes réels transmettent la plante pour la photo', () => {
+  const g = createGarden('T'); g.boundary = [{ x: 0, y: 0 }, { x: 10, y: 0 }, { x: 10, y: 10 }, { x: 0, y: 10 }]; g.boundaryClosed = true;
+  const z = createZone('midplants', { kind: 'polygon', points: [{ x: 1, y: 1 }, { x: 5, y: 1 }, { x: 5, y: 5 }, { x: 1, y: 5 }] });
+  z.plantings.push({ plantId: 'lavande', count: 4 }); g.zones.push(z);
+  const lav = { id: 'lavande', commonName: 'Lavande vraie', latinName: 'Lavandula angustifolia', category: 'perennial', heightAdult: 0.6, widthAdult: 0.5, bloom: [6] };
+  const gs = buildLabelGroups(g, { plantsById: () => lav, age: 1, month: 6 });
+  expect(gs.length).toBeGreaterThan(0);
+  expect(gs[0].photo).toMatchObject({ id: 'lavande', commonName: 'Lavande vraie', latinName: 'Lavandula angustifolia' });
 });

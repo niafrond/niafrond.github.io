@@ -1,5 +1,5 @@
 // Service worker : cache hors ligne des fichiers statiques (stale-while-revalidate).
-const CACHE = 'jardin-v14';
+const CACHE = 'jardin-v17';
 const FILES = [
   './', 'index.html', 'style.css', 'desktop.css', 'app.js', 'manifest.webmanifest', 'icon.svg',
   'model.js', 'geometry.js', 'zone-rotate.js', 'sun.js', 'storage.js', 'climate.js', 'catalog.js', 'recommend.js',
@@ -16,7 +16,7 @@ const FILES = [
   'ponds.js', 'data/plants/pond-tags.js', 'ui/preview-overlay.js',
   'spacing.js', 'gl-worker-core.js', 'gl-labels.js', 'ui/view3d-labels.js',
   'existing.js', 'ui/existing-panel.js', 'heights.js', 'ui/height-field.js',
-  'pdf-writer.js', 'pdf-layout.js', 'pdf-content.js', 'pdf-raster.js', 'shopping.js', 'ui/pdf-dialog.js', 'ui/save-file.js',
+  'pdf-writer.js', 'pdf-layout.js', 'pdf-content.js', 'pdf-raster.js', 'shopping.js', 'ui/pdf-dialog.js', 'ui/pdf-ready.js', 'pdf-ready.js', 'ui/save-file.js',
 ];
 
 self.addEventListener('install', (e) => {
