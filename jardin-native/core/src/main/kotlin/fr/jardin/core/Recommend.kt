@@ -13,8 +13,6 @@ import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.booleanOrNull
-import java.text.Collator
-import java.util.Locale
 import kotlin.math.PI
 import kotlin.math.abs
 import kotlin.math.floor
@@ -129,9 +127,42 @@ internal fun seedToString(seed: Any?): String = when (seed) {
     else -> seed.toString()
 }
 
-/** `localeCompare(…, 'fr')`. */
-private val FR_COLLATOR: Collator = Collator.getInstance(Locale.FRENCH)
-internal fun frCompare(a: String, b: String): Int = FR_COLLATOR.compare(a, b)
+/**
+ * `localeCompare(…, 'fr')` (ICU) : espaces et ponctuation d'abord (non ignorés), puis chiffres, puis lettres sans accent ;
+ * à égalité, accents (secondaire), puis minuscule avant majuscule (tertiaire).
+ */
+internal fun frCompare(a: String, b: String): Int {
+    val ka = collationKey(a); val kb = collationKey(b)
+    var c = cmpInts(ka.first, kb.first); if (c != 0) return c
+    c = cmpInts(ka.second, kb.second); if (c != 0) return c
+    return cmpInts(ka.third, kb.third)
+}
+
+private const val PUNCT_ORDER = "_-,;:!?.'\"()[]{}@*/\\&#%`^+<=>|~$"
+
+private fun cmpInts(x: List<Int>, y: List<Int>): Int {
+    val n = minOf(x.size, y.size)
+    for (i in 0 until n) if (x[i] != y[i]) return x[i].compareTo(y[i])
+    return x.size.compareTo(y.size)
+}
+
+private fun collationKey(s: String): Triple<List<Int>, List<Int>, List<Int>> {
+    val d = java.text.Normalizer.normalize(s.replace("œ", "oe").replace("Œ", "OE").replace("æ", "ae").replace("Æ", "AE"), java.text.Normalizer.Form.NFD)
+    val prim = ArrayList<Int>(); val sec = ArrayList<Int>(); val ter = ArrayList<Int>()
+    for (ch in d) {
+        if (ch.code in 0x300..0x36f) { if (sec.isNotEmpty()) sec[sec.size - 1] = sec[sec.size - 1] * 1000 + ch.code; continue }
+        val lower = ch.lowercaseChar()
+        prim.add(when {
+            ch.isWhitespace() -> 100
+            ch in '0'..'9' -> 1000 + (ch - '0')
+            ch.isLetter() -> if (lower in 'a'..'z') 2000 + (lower - 'a') else 3000 + lower.code
+            else -> { val i = PUNCT_ORDER.indexOf(ch); if (i >= 0) 200 + i else 400 + ch.code }
+        })
+        sec.add(0)
+        ter.add(if (ch != lower) 1 else 0)
+    }
+    return Triple(prim, sec, ter)
+}
 
 object Recommend {
     private val SUN_ORDER = mapOf("shade" to 0, "partial" to 1, "full" to 2)

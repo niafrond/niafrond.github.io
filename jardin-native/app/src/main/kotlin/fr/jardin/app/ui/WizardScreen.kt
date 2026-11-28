@@ -40,7 +40,9 @@ import androidx.compose.ui.unit.dp
 import androidx.activity.compose.BackHandler
 import androidx.lifecycle.viewmodel.compose.viewModel
 import fr.jardin.app.WizardViewModel
+import fr.jardin.app.plan.BoundaryController
 import fr.jardin.core.app.WizardState
+import fr.jardin.core.plan.ContourState
 import fr.jardin.core.app.WizardSteps
 
 @Composable
@@ -64,6 +66,17 @@ fun WizardScreen(gardenId: String, onBack: () -> Unit) {
         return
     }
 
+    val boundary = remember(gardenId) {
+        BoundaryController(ContourState(s.garden.boundary, s.garden.boundaryClosed)) { st ->
+            vm.update { g -> g.copy(boundary = st.points, boundaryClosed = st.isClosed) }
+        }
+    }
+    // atelier plein écran de l'étape Terrain : le plan prend tout l'écran, barre du bas fixe
+    if (s.stepId == "boundary" && boundary.fullscreen) {
+        BoundaryWorkshop(s.garden, boundary, onChange = vm::update)
+        return
+    }
+
     // « Précédent » du système : étape précédente, puis accueil depuis la première étape.
     BackHandler(enabled = s.previous != null) { vm.goPrevious() }
 
@@ -80,6 +93,7 @@ fun WizardScreen(gardenId: String, onBack: () -> Unit) {
             s.notes.forEach { Notice(it.message, warn = true) }
             when (s.stepId) {
                 "context" -> ContextStep(s.garden, onChange = vm::update)
+                "boundary" -> BoundaryStep(s.garden, boundary, onChange = vm::update)
                 else -> ComingSoonStep(s.step.label)
             }
         }
