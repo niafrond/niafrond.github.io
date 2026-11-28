@@ -129,7 +129,11 @@ class TransferTest {
             if (o["error"] != null) {
                 val ex = assertFailsWith<TransferException>("custom ${c.take(30)}") { Transfer.decodeGarden(c) }
                 assertEquals(o["error"]!!.jsonPrimitive.content, ex.message, "custom ${c.take(30)}")
-            } else assertSame2(o["decoded"], Transfer.decodeGardenJson(c), "custom ${c.take(30)}")
+            } else {
+                // id et dates sont tirés au hasard quand le code ne les porte pas
+                fun volatile(j: JsonElement?) = JsonObject(j!!.jsonObject.filterKeys { it !in setOf("id", "createdAt", "updatedAt") })
+                assertSame2(volatile(o["decoded"]), volatile(Transfer.decodeGardenJson(c)), "custom ${c.take(30)}")
+            }
         }
         for (e in gj["urls"]!!.jsonArray) {
             val o = e.jsonObject; val u = o["u"]?.jsonPrimitive?.contentOrNull
