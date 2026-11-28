@@ -67,7 +67,7 @@ const urls = urlInputs.map((u) => ({ u, code: codeFromUrl(u), route: routeFromIn
 const links = [['v1.AbC-_123', 'https://niafrond.github.io/jardin/'], ['v2.1.a', 'https://x/y#/import/old'], ['v1.a', ''], ['v1.a', null], ['v1.a', 'https://x/?q=1#h']]
   .map(([code, base]) => ({ code, base, share: buildShareLink(code, base), app: buildAppLink(code) }));
 const descs = gardens.map((g) => describeGarden(g));
-const extraDesc = [{ g: {}, d: describeGarden({}) }, { g: { name: 'X', boundary: [{ x: 0, y: 0 }, { x: 1, y: 0 }] }, d: describeGarden({ name: 'X', boundary: [{ x: 0, y: 0 }, { x: 1, y: 0 }] }) }, { g: { zones: [{ plantings: [{ count: 0 }, {}, { count: 4 }] }], obstacles: [1, 2] }, d: describeGarden({ zones: [{ plantings: [{ count: 0 }, {}, { count: 4 }] }], obstacles: [1, 2] }) }];
+const extraDesc = [{ g: {}, d: describeGarden({}) }, { g: { name: 'X', boundary: [{ x: 0, y: 0 }, { x: 1, y: 0 }] }, d: describeGarden({ name: 'X', boundary: [{ x: 0, y: 0 }, { x: 1, y: 0 }] }) }, (() => { const g = { zones: [{ id: 'z', type: 'other', plantings: [{ plantId: 'a', count: 0 }, { plantId: 'b' }, { plantId: 'c', count: 4 }] }], obstacles: [{ id: 'o', kind: 'tree' }, { id: 'p', kind: 'tree' }] }; return { g, d: describeGarden(g) }; })()];
 const sizes = ['', 'v1.abc', 'v1.' + 'a'.repeat(1900), 'v1.' + 'a'.repeat(1917), 'v1.' + 'a'.repeat(1918), 'v1.' + 'a'.repeat(3000), null].map((c) => ({ c, s: sizeInfo(c) }));
 mkdirSync(resolve(here, '../golden'), { recursive: true });
 writeFileSync(resolve(here, '../golden/transfer.json'), JSON.stringify({ qrMax: QR_MAX_BYTES, gardens, withCodes, codesU, custom, urls, links, descs, extraDesc, sizes }));

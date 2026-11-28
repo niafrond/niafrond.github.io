@@ -31,5 +31,14 @@ Réécriture complète de l'app web `jardin/` en application Android native. L'a
 |---|---|---|
 | model, geometry, sun, items, existing, heights, habits, spacing, ponds | `fr.jardin.core` | en cours |
 | catalog + data/plants, climate, ambiances, maintenance | `fr.jardin.core` | en cours |
-| recommend, massifs, pricing, shopping, advice, watering, transfer, qr | — | à faire |
+| pricing, shopping, advice, watering, transfer, weather (parties pures), geo (parties pures) | `Pricing.kt`, `Shopping.kt`, `Advice.kt`, `Watering.kt`, `Transfer.kt`, `Weather.kt`, `Geo.kt` | porté, golden + tests JS portés |
+| qr | `Transfer.QR_MAX_BYTES` (2000) ; générateur QR = ZXing côté `app/` | constante seule |
+| recommend, massifs | — | à faire |
 | UI (assistant, dessin, rendus, 3D, PDF, notifications) | `app/` | à faire |
+
+## Notes de portage — prix, courses, conseils, arrosage, transfert, météo, géo
+
+- Golden : `tools/golden-{pricing,shopping,advice,watering,weather,geo,transfer}.mjs` (jardins de test déterministes dans `tools/fixtures-jardins.mjs`, essences synthétiques en plus du catalogue). Le golden d'arrosage fixe le fuseau Europe/Paris (les tests Kotlin passent le même `ZoneId`).
+- Transfert : format binaire identique au web (`v2.<longueur base 36>.<base64url(deflate-raw(JSON))>`, `v2u.` non compressé, `v1` lisible) ; `tools/verify-transfer-kotlin.mjs` relit côté JS les codes produits par Kotlin (écrits par `TransferTest` dans `core/build/`). À l'encodage, Kotlin omet les `null` du JSON (le web les tolère).
+- Tri « fr » des courses : `Shopping.fr` reproduit `localeCompare('fr')` (ICU) ; `java.text.Collator` ignore la ponctuation et donne un autre ordre.
+- Écarts assumés : fiche `care` entièrement vide = fiche absente (repli générique) ; `Plant.hardiness`/`kc` valent 0 quand absents (le JS distingue `undefined`) — sans effet sur le catalogue réel ; `describeGarden` compte les obstacles dans `items` (comme le web) ; les couches réseau/capteurs de `weather.js` / `geo.js` (fetch, cache localStorage, watchFix, wake lock) restent à l'application (le noyau fournit URL, analyse des réponses, moyenne GPS, déclinaison, lissage de boussole).
