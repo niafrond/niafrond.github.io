@@ -72,6 +72,7 @@ import fr.jardin.core.getEdgeKind
 import fr.jardin.core.getItemKind
 import fr.jardin.core.itemPolygon
 import fr.jardin.core.shapePolygon
+import fr.jardin.core.shapeArea
 import fr.jardin.core.signedArea
 import fr.jardin.core.plan.ContourState
 import fr.jardin.core.plan.LengthInput
@@ -100,6 +101,8 @@ data class PlanOverlay(
     /** Point aimanté sous le doigt / curseur (trait pointillé depuis le dernier sommet). */
     val ghost: Point? = null,
     val grid: Double? = null,
+    /** Dessin supplémentaire de l'éditeur (sélection, poignées, tracé en cours…) : reçoit la vue, 1 dp en pixels et le mesureur de texte. */
+    val extra: (DrawScope.(PlanView, Float, TextMeasurer) -> Unit)? = null,
 )
 
 /** Orientation du plan : angle du nord (0 = nord en haut, sens horaire). `known` = false : pastille en pointillés + « ? ». */
@@ -296,7 +299,14 @@ private fun DrawScope.drawPlan(view: PlanView, garden: Garden, ov: PlanOverlay, 
             if (poly.size >= 3) {
                 drawPath(path(poly, true), col.copy(alpha = 0.45f))
                 drawPath(path(poly, true), col, style = Stroke(1.5f * dp))
+                val zt = ZONE_TYPES.firstOrNull { it.id == z.type }
+                val ctr = sp(centroid(poly))
+                if (view.scale * kotlin.math.sqrt(shapeArea(sh)) > 40 * dp) drawLabel(tm, "${zt?.icon ?: ""} ${z.label}".trim(), ctr, 11 * dp, c.fg, c.bg)
             }
+        }
+        if (sh is LineShape && sh.points.size >= 2) {
+            val mid = sh.points[sh.points.size / 2]
+            if (view.scale * 3 > 24 * dp) drawLabel(tm, "${ZONE_TYPES.firstOrNull { it.id == z.type }?.icon ?: ""} ${z.label}".trim(), sp(mid), 11 * dp, c.fg, c.bg)
         }
     }
     // obstacles
@@ -404,6 +414,7 @@ private fun DrawScope.drawPlan(view: PlanView, garden: Garden, ov: PlanOverlay, 
             drawCircle(c.accent, 5f * dp, go, style = Stroke(1.5f * dp))
         }
     }
+    ov.extra?.invoke(this, view, dp, tm)
 }
 
 private fun DrawScope.drawLabel(tm: TextMeasurer, text: String, center: Offset, fontPx: Float, color: Color, halo: Color?, bold: Boolean = false) {

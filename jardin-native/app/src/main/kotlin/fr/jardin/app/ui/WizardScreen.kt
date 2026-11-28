@@ -41,6 +41,8 @@ import androidx.activity.compose.BackHandler
 import androidx.lifecycle.viewmodel.compose.viewModel
 import fr.jardin.app.WizardViewModel
 import fr.jardin.app.plan.BoundaryController
+import fr.jardin.app.plan.ItemsController
+import fr.jardin.app.plan.ZonesController
 import fr.jardin.core.app.WizardState
 import fr.jardin.core.plan.ContourState
 import fr.jardin.core.app.WizardSteps
@@ -76,6 +78,17 @@ fun WizardScreen(gardenId: String, onBack: () -> Unit) {
         BoundaryWorkshop(s.garden, boundary, onChange = vm::update)
         return
     }
+    // étapes Aménagements et Zones : même principe (atelier plein écran, barre du bas fixe)
+    val items = remember(gardenId) { ItemsController({ vm.state.value?.garden }, vm::update) }
+    val zonesEd = remember(gardenId) { ZonesController({ vm.state.value?.garden }, vm::update) }
+    if (s.stepId == "items" && items.fullscreen) {
+        ItemsWorkshop(items, s.garden)
+        return
+    }
+    if (s.stepId == "zones" && zonesEd.fullscreen) {
+        ZonesWorkshop(zonesEd, s.garden)
+        return
+    }
 
     // « Précédent » du système : étape précédente, puis accueil depuis la première étape.
     BackHandler(enabled = s.previous != null) { vm.goPrevious() }
@@ -94,6 +107,12 @@ fun WizardScreen(gardenId: String, onBack: () -> Unit) {
             when (s.stepId) {
                 "context" -> ContextStep(s.garden, onChange = vm::update)
                 "boundary" -> BoundaryStep(s.garden, boundary, onChange = vm::update)
+                "items" -> ItemsStep(items, s.garden)
+                "zones" -> ZonesStep(zonesEd, s.garden)
+                "wished" -> WishedStepScreen(s.garden, onChange = vm::update)
+                "sun" -> SunStepScreen(s.garden, onChange = vm::update)
+                "beds" -> BedsStepScreen(s.garden, onChange = vm::update, goTo = vm::goTo)
+                "plants" -> PlantsStepScreen(s.garden, onChange = vm::update, goTo = vm::goTo)
                 else -> ComingSoonStep(s.step.label)
             }
         }
