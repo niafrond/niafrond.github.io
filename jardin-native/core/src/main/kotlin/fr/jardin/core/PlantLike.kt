@@ -53,4 +53,4 @@ data class SimplePlant(
 
 /** Résolution d'essence par défaut (équivalent de `getPlant` du catalogue JS) : à brancher sur le catalogue. */
 @Volatile
-var defaultPlantLookup: PlantLookup = { null }
+var defaultPlantLookup: PlantLookup = { id -> Catalog.getPlant(id) }

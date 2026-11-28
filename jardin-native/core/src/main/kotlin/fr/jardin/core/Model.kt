@@ -117,7 +117,8 @@ data class Existing(
     val id: String,
     val kind: String,
     val plantId: String? = null,
-    val label: String = "",
+    /** Libellé saisi (null = absent : `ensureExisting` le remplace par le libellé du type). */
+    val label: String? = null,
     val x: Double = 0.0,
     val y: Double = 0.0,
     val points: List<Point>? = null,
@@ -317,3 +318,82 @@ fun createOpening(kindId: String, ref: OpeningRef, t: Double = 0.5): Opening {
 
 /** Complète un jardin ancien (les listes absentes sont déjà vides à la désérialisation) et migre les existants. */
 fun ensureAmenagements(g: Garden): Garden = ensureExisting(g)
+
+private const val SEUIL_CHEVAUCHEMENT = 0.1 // m²
+
+/** Résultat de `validateGarden` : erreurs bloquantes et avertissements. */
+data class Validation(val ok: Boolean, val errors: List<String>, val warnings: List<String>)
+
+/**
+ * Valide un jardin. Erreurs bloquantes : contour absent, non fermé, auto-intersecté, surface ≤ 1 m², zone dégénérée ou
+ * de type inconnu. Avertissements : zone hors contour, chevauchement de zones « au sol », zone souhaitée sans forme dessinée.
+ */
+fun validateGarden(g: Garden, lookup: PlantLookup = defaultPlantLookup): Validation {
+    val errors = ArrayList<String>()
+    val warnings = ArrayList<String>()
+    val contour = g.boundary
+    var contourValide = false
+
+    if (contour.size < 3) {
+        errors.add("Le contour du terrain doit comporter au moins 3 sommets.")
+    } else if (!g.boundaryClosed) {
+        errors.add("Le contour du terrain n'est pas fermé.")
+    } else if (!isSimplePolygon(contour)) {
+        errors.add("Le contour du terrain se croise lui-même.")
+    } else if (polygonArea(contour) <= 1) {
+        errors.add("La surface du terrain doit dépasser 1 m².")
+    } else {
+        contourValide = true
+    }
+
+    class ZP(val z: Zone, val nom: String, val type: ZoneType, val poly: List<Point>)
+    val polys = ArrayList<ZP>()
+    g.zones.forEachIndexed { i, z ->
+        val nom = z.label.ifEmpty { "Zone ${i + 1}" }
+        val type = getZoneType(z.type)
+        if (type == null) { errors.add("Zone « $nom » : type inconnu."); return@forEachIndexed }
+        val poly = shapePolygon(z.shape)
+        if (poly.size < 3 || shapeArea(z.shape) <= 1e-6) { errors.add("Zone « $nom » : forme invalide ou vide."); return@forEachIndexed }
+        polys.add(ZP(z, nom, type, poly))
+        if (contourValide && !polygonInside(poly, contour)) warnings.add("Zone « $nom » : sort du contour du terrain.")
+    }
+
+    val sol = polys.filter { it.type.layer == "ground" }
+    for (i in sol.indices) {
+        for (j in i + 1 until sol.size) {
+            if (overlapArea(sol[i].poly, sol[j].poly) > SEUIL_CHEVAUCHEMENT) {
+                warnings.add("Zones « ${sol[i].nom} » et « ${sol[j].nom} » : elles se chevauchent.")
+            }
+        }
+    }
+
+    g.items.forEachIndexed { i, it ->
+        val k = getItemKind(it.kind)
+        val nom = it.label?.takeIf { l -> l.isNotEmpty() } ?: k?.label ?: "Élément ${i + 1}"
+        if (k == null) { warnings.add("Élément « $nom » : type inconnu."); return@forEachIndexed }
+        if (contourValide && !polygonInside(itemPolygon(it), contour)) warnings.add("Élément « $nom » : sort du contour du terrain.")
+    }
+    g.openings.forEachIndexed { i, op ->
+        val k = getOpeningKind(op.kind)
+        val nom = k?.label ?: "Ouverture ${i + 1}"
+        if (resolveSide(g, op.ref) == null) warnings.add("Ouverture « $nom » : le côté qui la porte n'existe plus.")
+    }
+
+    g.existing.forEachIndexed { i, e ->
+        if (!contourValide) return@forEachIndexed
+        val pts = if (!e.points.isNullOrEmpty()) e.points else listOf(Point(e.x, e.y))
+        if (pts.any { !pointInPolygon(it, contour) }) {
+            warnings.add("${if (e.kind == "fence") "Clôture existante" else "Plante existante"} « ${existingLabel(e, lookup).ifEmpty { "Élément ${i + 1}" }} » : sort du contour du terrain.")
+        }
+    }
+
+    val auto = bedModeOf(g) == "auto"
+    for (id in g.wishedZoneTypes) {
+        if (auto && (id == "lowplants" || id == "midplants" || id == "tallplants")) continue
+        if (g.zones.none { it.type == id }) {
+            val t = getZoneType(id)
+            warnings.add("Zone souhaitée « ${t?.label ?: id} » : aucune forme dessinée.")
+        }
+    }
+    return Validation(errors.isEmpty(), errors, warnings)
+}

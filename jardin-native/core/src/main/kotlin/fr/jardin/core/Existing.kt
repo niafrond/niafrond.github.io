@@ -85,7 +85,7 @@ fun existingPlant(e: Existing?, lookup: PlantLookup = defaultPlantLookup): Plant
 
 /** Nom affiché : libellé saisi, sinon nom de l'essence, sinon libellé par défaut du type. */
 fun existingLabel(e: Existing?, lookup: PlantLookup = defaultPlantLookup): String {
-    if (e != null && e.label.trim().isNotEmpty()) return e.label.trim()
+    if (e?.label != null && e.label.trim().isNotEmpty()) return e.label.trim()
     val p = existingPlant(e, lookup)
     if (p != null) return p.commonName?.takeIf { it.isNotEmpty() } ?: p.id
     val k = e?.let { getExistingKind(it.kind) }
@@ -117,6 +117,7 @@ fun ensureExisting(g: Garden): Garden {
         val k = getExistingKind(e.kind) ?: getExistingKind("other")!!
         var out = e.copy(kind = k.id)
         if (out.id.isEmpty()) out = out.copy(id = newEid())
+        if (out.label == null) out = out.copy(label = k.defaultLabel)
         out.points?.let { ps -> out = out.copy(points = ps.filter { it.x.isFinite() && it.y.isFinite() }.map { Point(it.x, it.y) }) }
         if (k.linear && (out.points == null || out.points!!.size < 2)) {
             out = out.copy(points = listOf(Point(numF(out.x, 0.0) - 1, numF(out.y, 0.0)), Point(numF(out.x, 0.0) + 1, numF(out.y, 0.0))))
